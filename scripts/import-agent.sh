@@ -36,7 +36,8 @@ usage() {
   --branch <name>   ветка агента (например agent/01-brand-concept)
   --pr <number>     номер PR (ветка берётся из gh; путь не тестировался на живом PR)
   --agent <NN>      номер агента; если не указан — определяется по путям
-  --stage <1|2>     1 = концепции (по умолчанию), 2 = мокапы
+  --stage <1|2|3>   1 = концепции (по умолчанию), 2 = одностраничные мокапы,
+                    3 = многостраничные мокапы раунда 2Б (папка mockups/round2b/)
   --dry-run         только проверки, без копирования
   -h, --help        эта справка
 EOF
@@ -128,6 +129,7 @@ fi
 
 REQUIRED="concept.md"
 [[ "$STAGE" == "2" ]] && REQUIRED="mockup.html"
+[[ "$STAGE" == "3" ]] && REQUIRED="mockup-notes.md"
 
 WARNINGS=()
 ERRORS=()
@@ -144,7 +146,7 @@ for f in "${FILES[@]}"; do
 
   ext="${f##*.}"
   case "$ext" in
-    md|html|txt|svg|json) ;;
+    md|html|css|js|txt|svg|json) ;;
     *) ERRORS+=("запрещённый тип файла: $f"); continue ;;
   esac
 
@@ -153,6 +155,9 @@ for f in "${FILES[@]}"; do
   fi
   if [[ "$ext" == "html" && "$size" -gt 614400 ]]; then
     ERRORS+=("html больше 600 КБ: $f")
+  fi
+  if [[ "$ext" == "css" || "$ext" == "js" ]] && [[ "$size" -gt 204800 ]]; then
+    ERRORS+=("$ext больше 200 КБ: $f")
   fi
 
   content="$(git show "$REF:$PREFIX/$f")"
@@ -163,8 +168,16 @@ for f in "${FILES[@]}"; do
   if grep -Eqi '(password|passwd|api[_-]?key|token)[[:space:]]*[:=][[:space:]]*[^[:space:]<{[$]' <<<"$content"; then
     WARNINGS+=("возможный секрет в тексте: $f")
   fi
-  if [[ "$ext" == "html" ]] && grep -Eq '<script[^>]+src=' <<<"$content"; then
+  # Локальные подключения (assets/app.js) в многостраничном мокапе разрешены;
+  # запрещены только абсолютные и протокол-относительные адреса.
+  if [[ "$ext" == "html" ]] && grep -Eq '<script[^>]+src=["'"'"']?(https?:)?//' <<<"$content"; then
     ERRORS+=("внешний JS запрещён в мокапе: $f")
+  fi
+  if [[ "$ext" == "html" ]] && grep -Eqi '<link[^>]+href="https?://' <<<"$content"; then
+    ERRORS+=("внешний CSS/шрифт запрещён в мокапе: $f")
+  fi
+  if [[ "$ext" == "css" ]] && grep -Eqi '@import[^;]*https?://|url\(["'"'"']?https?://' <<<"$content"; then
+    ERRORS+=("внешний ресурс в CSS запрещён в мокапе: $f")
   fi
 done
 
@@ -180,6 +193,7 @@ fi
 
 DEST_DIR="agents-output/round1/agent-$AGENT"
 [[ "$STAGE" == "2" ]] && DEST_DIR="mockups/agent-$AGENT"
+[[ "$STAGE" == "3" ]] && DEST_DIR="mockups/round2b/agent-$AGENT"
 
 echo "──────────────────────────────────────────────"
 echo "Ветка:   $BRANCH"

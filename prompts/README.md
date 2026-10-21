@@ -47,3 +47,15 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 - `00-context-pack.md` — факты отдельно, для замен и дополнительных агентов.
 - `../scripts/import-agent.sh` — импорт ветки агента с проверками.
 - `../docs/06-fact-check.md` — что проверено, что нет и какие есть противоречия.
+
+---
+
+## Раунд 2Б — новые мокапы по референсу (21.10.2026)
+
+Заказчик выбрал другой формат: сайт многостраничный, структура — с шаблона `matronet.com/demo/car-7`. Прежние одностраничные мокапы сняты.
+
+- Задание: `03-template-mockups-task.md` — одно для всех пяти.
+- Карта референса: `docs/08-reference-car7.md`.
+- Как сохранить исходники сайта: `docs/09-save-reference.md`.
+- Сдача: 8 страниц + `assets/style.css` + `assets/app.js` + `mockup-notes.md` в `mockups/agent-NN/`.
+- Импорт: `scripts/import-agent.sh --branch <ветка> --agent NN --stage 3`.
