@@ -72,4 +72,4 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 - `04-implementation-task.md` — задание A5: `site/` на Astro 7 + SQLite, форма, заявки в Telegram и на почту, админка, медиа, SEO, тесты, деплой. Этапы M1–M5, Definition of Done.
 - `05-review-task.md` — задание A6: 65 проверок, сценарии «попробуй сломать», severity и вердикт, отчёт `reviews/round3-implementation.md`, статус гейтов G6/G7.
 - `../docs/12-content-checklist.md` — что владелец заменяет после запуска.
-- Импорт кода: `scripts/import-agent.sh --branch <ветка> --agent 05 --stage 4` (после появления `site/` в ветке; до этого — обычный PR).
+- Код приходит PR-ом в `arena/099a14c5-avtotehservis`: импортёр для `site/` не нужен, мержим после ревью A6.
