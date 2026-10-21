@@ -41,7 +41,9 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 | 2. Мокапы | «ЭТАП 2» (пять агентам) | `agents/agent-NN/mockup.html` | снято 21.10.2026 |
 | 2Б. Многостраничные мокапы | `03-template-mockups-task.md` | `mockups/round2b/agent-NN/` | техприёмка, выбор заказчика |
 | 3. Внедрение | `04-implementation-task.md` — только A5 | `site/` | ревью A6 по `05-review-task.md` |
-| 4. Приёмка | `05-review-task.md` — A6 | `reviews/round3-implementation.md` | вердикт, гейты G6/G7 |
+| 4. Ревью внедрения | `05-review-task.md` — A6 | `reviews/round3-implementation.md` | вердикт |
+| 5. Доработка | `06-fix-task.md` — A5 | тот же PR #5 | повторное ревью A6 |
+| 6. Приёмка | `05-review-task.md` §7 — A6 | раздел «Повторное ревью» | вердикт, гейты G6/G7 |
 
 ## Файлы
 
@@ -70,6 +72,14 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 Победитель раунда 2Б — **A5** (`arena/c0d7d4ba-avtotehservis`). Остальные участники выведены, их ветки — архив. A6 назначен независимым ревьюером.
 
 - `04-implementation-task.md` — задание A5: `site/` на Astro 7 + SQLite, форма, заявки в Telegram и на почту, админка, медиа, SEO, тесты, деплой. Этапы M1–M5, Definition of Done.
-- `05-review-task.md` — задание A6: 65 проверок, сценарии «попробуй сломать», severity и вердикт, отчёт `reviews/round3-implementation.md`, статус гейтов G6/G7.
+- `05-review-task.md` — задание A6: 69 проверок, сценарии «попробуй сломать», severity и вердикт, отчёт `reviews/round3-implementation.md`, статус гейтов G6/G7, §7 — правила повторного ревью.
 - `../docs/12-content-checklist.md` — что владелец заменяет после запуска.
 - Код приходит PR-ом в `arena/099a14c5-avtotehservis`: импортёр для `site/` не нужен, мержим после ревью A6.
+
+### Итог первого круга (21.10.2026)
+
+A6 вынес **REQUEST CHANGES**: два блокера (нет `site/migrations/001_init.sql` и маршрута `/media/*` — оба не попали в коммит из-за широких правил `.gitignore`), шесть major. Ревью: `reviews/round3-implementation.md`. Проверка оркестратора с дополнениями: `evaluation/round3-verification.md`.
+
+**Что важно на будущее:** обе дыры в `.gitignore` были невидимы в `git status` — чистый рабочий каталог при неполном индексе. Поэтому в `04` добавлены проверки `git ls-files` перед PR, а в `05` — проверка индекса и гигиены PR.
+
+**Забирать из PR #5 частично:** только `site/**` и `docs/12-content-checklist.md`; остальные файлы (мокапы A5, каталог `promts/`, удаление `mockups/agent-05/mockup.html`) в базу не идут.
