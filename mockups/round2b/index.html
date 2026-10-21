@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Раунд 2Б — пять мокапов АвтоТехСервис</title>
+<style>
+  :root{
+    --bg:#0d0f12; --panel:#15181d; --line:#2a2f37; --text:#e9edf3; --muted:#8f9aa8;
+    --a1:#b6ff3d; --a2:#e9d9bd; --a4:#ff6b2c; --a5:#c9a227; --a6:#ff3d6e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:40px 24px 64px}
+  h1{font-size:clamp(28px,4vw,44px);line-height:1.15;margin:0 0 12px;letter-spacing:-.02em}
+  .lead{color:var(--muted);max-width:760px;margin:0 0 32px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--c)}
+  .card h2{margin:0;font-size:20px;letter-spacing:-.01em}
+  .card h2 span{color:var(--c)}
+  .palette{display:flex;gap:6px}
+  .palette i{width:26px;height:26px;border-radius:8px;border:1px solid #0004}
+  .meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;color:var(--muted);margin:0}
+  .meta b{color:var(--text);font-weight:600}
+  .card ul{margin:0;padding-left:18px;font-size:14px;color:var(--muted)}
+  .card ul li{margin:4px 0}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;border:1px solid var(--line);color:var(--text);background:#1b1f26}
+  .btn:hover{background:#222831}
+  .btn-main{background:var(--c);color:#0b0d10;border-color:transparent}
+  .btn-main:hover{filter:brightness(1.07);background:var(--c)}
+  footer{margin-top:36px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+  code{background:#1b1f26;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px}
+  @media(max-width:520px){.wrap{padding:24px 14px 48px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Раунд 2Б: пять многостраничных мокапов</h1>
+  <p class="lead">Задание — <code>prompts/03-template-mockups-task.md</code>. У каждого агента 8 обязательных страниц плюс демо-админка, свой визуальный язык, локальные шрифты и анимация. Шаблон matronet взят как структура; тексты, фото, код и палитра — свои. Ниже: открыть мокап в браузере или скачать архивом.</p>
+
+  <div class="grid">
+    <article class="card" style="--c:var(--a1)">
+      <h2><span>А1</span> Тёмная техничная</h2>
+      <div class="palette"><i style="background:#0e1114"></i><i style="background:#161b20"></i><i style="background:#b6ff3d"></i><i style="background:#e9edf3"></i></div>
+      <p class="meta"><b>Шрифты</b><span>Manrope + Unbounded, woff2 локально</span><b>Вес</b><span>351 КБ, 19 файлов</span><b>Форма</b><span>5 шагов, 26 полей, «Далее» активна</span></p>
+      <ul><li>Слайдер-герой 3 слайда, галерея с лайтбоксом</li><li>Поиск марки, VIN с запретом I/O/Q, слоты 09:00–19:00</li><li>Админка с лентой заявок и статусами</li></ul>
+      <div class="actions">
+        <a class="btn btn-main" href="agent-01/index.html">Открыть мокап</a>
+        <a class="btn" href="_downloads/agent-01.zip" download>Скачать ZIP</a>
+      </div>
+    </article>
+
+    <article class="card" style="--c:var(--a2)">
+      <h2><span>А2</span> Тёплая бумажная</h2>
+      <div class="palette"><i style="background:#faf6ee"></i><i style="background:#e9d9bd"></i><i style="background:#1f3a5f"></i><i style="background:#e2654f"></i></div>
+      <p class="meta"><b>Шрифты</b><span>Golos Text + Onest, woff2 локально</span><b>Вес</b><span>457 КБ, 36 файлов</span><b>Форма</b><span>5 шагов, 39 полей, «Далее» блокируется до валидности</span></p>
+      <ul><li>Панель «Что уйдёт на сервер» с JSON</li><li>Кнопка «Показать ошибку демо-отправки»</li><li>Слоты 09:00–19:00, «занято» недоступно</li></ul>
+      <div class="actions">
+        <a class="btn btn-main" href="agent-02/index.html">Открыть мокап</a>
+        <a class="btn" href="_downloads/agent-02.zip" download>Скачать ZIP</a>
+      </div>
+    </article>
+
+    <article class="card" style="--c:var(--a4)">
+      <h2><span>А4</span> Индустриальная светлая</h2>
+      <div class="palette"><i style="background:#f2f1ee"></i><i style="background:#c9c6bf"></i><i style="background:#1f242b"></i><i style="background:#ff6b2c"></i></div>
+      <p class="meta"><b>Шрифты</b><span>системный стек</span><b>Вес</b><span>141 КБ, 27 файлов — самый лёгкий</span><b>Форма</b><span>5 экранов, рендер из JS, очередь заявок</span></p>
+      <ul><li>Офлайн-очередь и идемпотентность</li><li>Поиск марки + чипы, «Не знаю VIN»</li><li>Страницы собираются скриптом: без JS пусто</li></ul>
+      <div class="actions">
+        <a class="btn btn-main" href="agent-04/index.html">Открыть мокап</a>
+        <a class="btn" href="_downloads/agent-04.zip" download>Скачать ZIP</a>
+      </div>
+    </article>
+
+    <article class="card" style="--c:var(--a5)">
+      <h2><span>А5</span> Ночь и медь</h2>
+      <div class="palette"><i style="background:#0f1513"></i><i style="background:#17201d"></i><i style="background:#c9a227"></i><i style="background:#e8efe9"></i></div>
+      <p class="meta"><b>Шрифты</b><span>Golos Text + Unbounded, woff2 локально</span><b>Вес</b><span>520 КБ, 42 файла</span><b>Форма</b><span>5 шагов, 28 полей</span></p>
+      <ul><li>Кейсы-заглушки SVG, карта района</li><li>«Смета до ремонта» отдельным блоком</li><li>Черновик формы сохраняется, есть очистка</li></ul>
+      <div class="actions">
+        <a class="btn btn-main" href="agent-05/index.html">Открыть мокап</a>
+        <a class="btn" href="_downloads/agent-05.zip" download>Скачать ZIP</a>
+      </div>
+    </article>
+
+    <article class="card" style="--c:var(--a6)">
+      <h2><span>А6</span> Плакатная контрастная</h2>
+      <div class="palette"><i style="background:#ffffff"></i><i style="background:#111111"></i><i style="background:#ff3d6e"></i><i style="background:#1f4bff"></i></div>
+      <p class="meta"><b>Шрифты</b><span>локальные, пара с кириллицей</span><b>Вес</b><span>413 КБ, 14 файлов</span><b>Форма</b><span>5 шагов, 26 полей, 58 кнопок</span></p>
+      <ul><li>«Талон заезда» как экран успеха</li><li>Крупные цветовые плоскости, плакатный ритм</li><li>Ни одного внешнего запроса</li></ul>
+      <div class="actions">
+        <a class="btn btn-main" href="agent-06/index.html">Открыть мокап</a>
+        <a class="btn" href="_downloads/agent-06.zip" download>Скачать ZIP</a>
+      </div>
+    </article>
+  </div>
+
+  <footer>
+    Все мокапы: 9 HTML-страниц, локальные шрифты и SVG, без внешних CSS/JS. Техническая приёмка — <code>evaluation/round2b-mockups.md</code>. Полная проверка визуала и Lighthouse в песочнице невозможна: браузера нет.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Запись — АвтоТехСервис, Ростов-на-Дону</title>
+<meta name="description" content="Запись на шиномонтаж, ремонт и диагностику. 5 шагов, телефон и согласие — остальное по желанию.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <img src="assets/logo.svg" alt="" width="38" height="38">
+      <span class="brand-text">АвтоТехСервис<span>на Портовой, 439</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Основная навигация">
+      <ul>
+        <li><a href="index.html">Главная</a></li>
+        <li><a href="about.html">О компании</a></li>
+        <li><a href="services.html">Услуги</a></li>
+        <li><a href="appointment.html" aria-current="page">Запись</a></li>
+        <li><a href="news.html">Новости</a></li>
+        <li><a href="contacts.html">Контакты</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a class="header-phone" href="tel:+79289065700" data-track="call_click" data-source="header">+7 (928) 906-57-00</a>
+      <a class="btn btn-primary" href="appointment.html" data-track="route_click" data-source="header-cta" style="min-height:44px;padding:10px 20px;">Записаться</a>
+      <button class="burger" id="menuToggle" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobileNav"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-top">
+    <a class="brand" href="index.html"><img src="assets/logo.svg" alt="" width="34" height="34"><span class="brand-text">АвтоТехСервис</span></a>
+    <button class="mobile-nav-close" id="mobileNavClose" aria-label="Закрыть меню">×</button>
+  </div>
+  <nav aria-label="Мобильная навигация">
+    <ul>
+      <li><a href="index.html">Главная</a></li>
+      <li><a href="about.html">О компании</a></li>
+      <li><a href="services.html">Услуги</a></li>
+      <li><a href="appointment.html" aria-current="page">Запись</a></li>
+      <li><a href="news.html">Новости</a></li>
+      <li><a href="contacts.html">Контакты</a></li>
+    </ul>
+  </nav>
+  <div class="mobile-nav-foot">
+    <a href="tel:+79289065700" data-track="call_click" data-source="mobile-menu">+7 (928) 906-57-00</a>
+    <a href="appointment.html" class="btn btn-primary btn-block">Записаться</a>
+  </div>
+</div>
+
+<main id="main">
+
+<div data-first-screen>
+<section class="breadcrumb-area">
+  <div class="container breadcrumbs">
+    <a href="index.html">Главная</a><span class="sep">/</span><span class="current">Запись</span>
+  </div>
+</section>
+<section class="page-title">
+  <div class="container"><h1>Запись на сервис</h1><p class="lead" style="margin-top:10px;">5 коротких шагов. Обязательны только телефон и согласие — марку, год и VIN можно пропустить, если не знаете.</p></div>
+</section>
+</div>
+
+<section class="section-pad-sm">
+  <div class="container">
+    <form class="wizard" id="apptWizard" novalidate>
+
+      <div class="wizard-progress">
+        <div class="track"><div class="fill"></div></div>
+        <div class="label"><span>Шаг <span class="cur">1</span> из 5</span><span id="wizStepName"></span></div>
+      </div>
+
+      <!-- STEP 1: Авто -->
+      <div class="wizard-step active" data-step="1">
+        <fieldset>
+          <legend>Автомобиль</legend>
+          <div class="field brand-search" id="field-brand">
+            <label for="f-brand">Марка *</label>
+            <input type="text" id="f-brand" placeholder="Начните вводить — Lada, Hyundai, Kia…" autocomplete="off">
+            <div class="brand-results" id="brandResults"></div>
+            <p class="error-text">Укажите марку автомобиля</p>
+            <p class="hint">Нет в списке — впишите свою, подойдёт любая.</p>
+          </div>
+          <div class="field">
+            <label for="f-model">Модель</label>
+            <input type="text" id="f-model" placeholder="Например, Vesta">
+          </div>
+          <div class="vin-row" style="margin-bottom:18px;">
+            <div class="field" style="margin-bottom:0;">
+              <label for="f-year">Год выпуска</label>
+              <input type="text" inputmode="numeric" id="f-year" placeholder="2019" maxlength="4">
+            </div>
+          </div>
+          <label class="check-row"><input type="checkbox" id="f-year-unknown"><span>Не помню год выпуска</span></label>
+
+          <div class="field" id="field-vin">
+            <label for="f-vin">VIN (17 символов, без I, O, Q)</label>
+            <div class="vin-row">
+              <input type="text" id="f-vin" data-vin-input style="text-transform:uppercase;letter-spacing:.06em;" placeholder="XTA212300X0000001">
+              <button type="button" class="btn btn-outline" id="vinUnknownBtn" style="flex:none;">Не знаю VIN</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-mileage">Пробег, км (необязательно)</label>
+            <input type="text" inputmode="numeric" id="f-mileage" placeholder="84000">
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 2: Что нужно -->
+      <div class="wizard-step" data-step="2">
+        <fieldset id="field-services">
+          <legend>Что нужно сделать</legend>
+          <p class="error-text" style="margin-bottom:14px;">Выберите хотя бы одну услугу или «не знаю»</p>
+
+          <p class="hint" style="margin:0 0 8px;font-weight:700;color:var(--text);">Колёса</p>
+          <div class="chip-grid" style="margin-bottom:18px;">
+            <label class="chip"><input type="checkbox" data-service-chip value="shinomontazh"><span>Шиномонтаж</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="balansirovka"><span>Балансировка</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="pravka-diskov"><span>Правка диска</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="porez-gryzha"><span>Порез / грыжа</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="hranenie-shin"><span>Хранение шин</span></label>
+          </div>
+
+          <p class="hint" style="margin:0 0 8px;font-weight:700;color:var(--text);">ТО и ходовая</p>
+          <div class="chip-grid" style="margin-bottom:18px;">
+            <label class="chip"><input type="checkbox" data-service-chip value="to-maslo"><span>ТО и масло</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="razval-shozhdenie"><span>Развал-схождение</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="hodovaya-tormoza"><span>Ходовая, тормоза</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="rulevye-reiki"><span>Рулевые рейки</span></label>
+          </div>
+
+          <p class="hint" style="margin:0 0 8px;font-weight:700;color:var(--text);">Двигатель и электрика</p>
+          <div class="chip-grid" style="margin-bottom:18px;">
+            <label class="chip"><input type="checkbox" data-service-chip value="dvigatel"><span>Двигатель</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="akpp-mkpp"><span>АКПП / МКПП</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="elektrika"><span>Электрика</span></label>
+            <label class="chip"><input type="checkbox" data-service-chip value="kondicioner"><span>Кондиционер</span></label>
+          </div>
+
+          <label class="check-row"><input type="checkbox" id="f-unsure"><span>Сложно объяснить — нужна диагностика</span></label>
+
+          <div class="field" style="margin-top:18px;">
+            <label>Фото (до 3, необязательно)</label>
+            <div class="photo-upload" id="photoSlots">
+              <label class="photo-slot">
+                <input type="file" id="f-photos" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+                + Фото
+              </label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 3: Когда -->
+      <div class="wizard-step" data-step="3">
+        <fieldset id="field-when">
+          <legend>Когда удобно</legend>
+          <p class="error-text" style="margin-bottom:14px;">Выберите дату и время или «как можно раньше»</p>
+          <button type="button" class="btn btn-outline btn-block" id="asapBtn" aria-pressed="false" style="margin-bottom:18px;">Как можно раньше</button>
+          <p class="hint" style="margin:0 0 8px;font-weight:700;color:var(--text);">Дата</p>
+          <div class="days-row" id="daysRow" style="margin-bottom:20px;"></div>
+          <p class="hint" style="margin:0 0 8px;font-weight:700;color:var(--text);">Время (09:00–19:00)</p>
+          <div class="slots-grid" id="slotsGrid"></div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 4: Контакты -->
+      <div class="wizard-step" data-step="4">
+        <fieldset>
+          <legend>Контакты</legend>
+          <div class="field">
+            <label for="f-name">Имя</label>
+            <input type="text" id="f-name" placeholder="Как к вам обращаться">
+          </div>
+          <div class="field" id="field-phone">
+            <label for="f-phone">Телефон *</label>
+            <input type="tel" id="f-phone" data-phone-mask placeholder="+7 (___) ___-__-__" inputmode="tel">
+            <p class="error-text">Укажите телефон — 11 цифр, формат +7 (999) 999-99-99</p>
+          </div>
+          <div class="field">
+            <label>Как удобнее ответить</label>
+            <div style="display:flex;gap:16px;margin-top:4px;">
+              <label class="check-row" style="margin-bottom:0;"><input type="radio" name="channel" value="call" style="border-radius:50%;"><span>Звонок</span></label>
+              <label class="check-row" style="margin-bottom:0;"><input type="radio" name="channel" value="telegram" style="border-radius:50%;"><span>Telegram</span></label>
+            </div>
+          </div>
+          <div class="field" id="field-consent" style="margin-top:4px;">
+            <label class="check-row" style="margin-bottom:0;">
+              <input type="checkbox" id="f-consent">
+              <span>Согласен(на) на обработку персональных данных. <a href="#" data-modal-open="consentModal">Подробнее</a></span>
+            </label>
+            <p class="error-text">Нужно согласие на обработку персональных данных</p>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- STEP 5: Сводка -->
+      <div class="wizard-step" data-step="5">
+        <fieldset>
+          <legend>Проверьте заявку</legend>
+
+          <div id="wizIdle" class="state-block active">
+            <div class="summary-box" id="summaryBox"></div>
+            <button type="button" class="payload-toggle" id="payloadToggle" aria-expanded="false">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+              Что уйдёт на сервер
+            </button>
+            <div class="payload-panel" id="payloadPanel"><pre id="payloadPre"></pre></div>
+            <p class="demo-note">Демо: данные никуда не отправляются. Отправка имитируется локально.</p>
+            <p class="demo-note"><button type="button" id="wizSimError" style="text-decoration:underline;">Симулировать ошибку отправки (для проверки)</button></p>
+          </div>
+
+          <div id="wizSending" class="state-block">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Отправляем заявку…</p>
+          </div>
+
+          <div id="wizSuccess" class="state-block" role="status">
+            <div class="success-mark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
+            <h3>Заявка принята</h3>
+            <div class="ticket"><span class="hint">Номер заявки</span><div class="id" id="ticketId">№ ATS-000000</div></div>
+            <p class="lead" style="margin:0 auto 18px;max-width:46ch;">Мы свяжемся с вами выбранным способом в рабочее время (9:00–19:00). Если вопрос срочный — позвоните сами.</p>
+            <p class="hint" style="margin-bottom:18px;">Что взять с собой: документы на автомобиль, по возможности — старые детали, если меняли сами.</p>
+            <a class="btn btn-primary" href="tel:+79289065700" data-track="call_click" data-source="appt-success">Позвонить сейчас</a>
+          </div>
+
+          <div id="wizError" class="state-block">
+            <div class="success-mark" style="background:rgba(255,107,107,.14);color:var(--error);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div>
+            <h3>Не получилось отправить</h3>
+            <p class="lead" style="margin:0 auto 18px;max-width:42ch;">Данные сохранены, ничего вводить заново не нужно. Попробуйте ещё раз или позвоните нам.</p>
+            <button type="button" class="btn btn-primary" id="wizRetry">Попробовать снова</button>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="wizard-nav">
+        <button type="button" class="btn btn-outline" id="wizBack">Назад</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-primary" id="wizNext">Далее</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a class="brand" href="index.html" style="margin-bottom:14px;"><img src="assets/logo.svg" width="34" height="34" alt=""><span class="brand-text">АвтоТехСервис</span></a>
+        <p class="muted">Автосервис и шиномонтаж в Ростове-на-Дону.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Контакты</h5>
+        <a href="tel:+79289065700" data-track="call_click" data-source="footer">+7 (928) 906-57-00</a>
+        <a href="#" data-track="telegram_click" data-source="footer">Telegram: +7 (951) 826-98-39</a>
+        <a href="mailto:avtotehservis439@mail.ru">avtotehservis439@mail.ru</a>
+        <p class="muted">Ежедневно, 9:00–19:00</p>
+      </div>
+      <div class="footer-col">
+        <h5>Навигация</h5>
+        <a href="about.html">О компании</a>
+        <a href="services.html">Услуги</a>
+        <a href="appointment.html">Запись</a>
+        <a href="news.html">Новости и акции</a>
+        <a href="contacts.html">Контакты</a>
+      </div>
+      <div class="footer-col">
+        <h5>Адрес</h5>
+        <p>Ростов-на-Дону, ул. Портовая, 439</p>
+        <p class="muted">Ост. «3-й Поселковый» ~330 м, рядом база «Бум»</p>
+        <a href="admin.html" class="muted" style="text-decoration:underline;">Демо-админка</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 АвтоТехСервис · ИП Яковенко П. И., ИНН 341010400388, ОГРНИП 324619600117335</span>
+      <div class="links">
+        <button type="button" data-modal-open="policyModal">Политика конфиденциальности</button>
+        <button type="button" data-modal-open="consentModal">Согласие на обработку ПДн</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="modal-backdrop" id="policyModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="policyTitle">
+    <button class="modal-close" aria-label="Закрыть">×</button>
+    <h3 id="policyTitle">Политика конфиденциальности</h3>
+    <p>Оператор персональных данных — ИП Яковенко Павел Иванович, ИНН 341010400388.</p>
+    <p style="font-size:12.5px;">Демонстрационный текст мокапа, не юридический документ.</p>
+  </div>
+</div>
+<div class="modal-backdrop" id="consentModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
+    <button class="modal-close" aria-label="Закрыть">×</button>
+    <h3 id="consentTitle">Согласие на обработку персональных данных</h3>
+    <p>Отправляя форму, вы соглашаетесь на обработку имени и телефона оператором — ИП Яковенко П. И. — в целях связи по заявке, согласно 152-ФЗ «О персональных данных». Согласие можно отозвать на avtotehservis439@mail.ru.</p>
+    <p style="font-size:12.5px;">Демонстрационный текст мокапа.</p>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Контакты — АвтоТехСервис</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="topbar"><div class="container"><div class="row"><span>Портовая, 439</span><a href="tel:+79289065700">+7 (928) 906-57-00</a></div></div></div>
+<header class="header"><div class="container"><div class="header__inner"><a class="logo" href="index.html"><span class="logo__mark"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#1F242B"/><circle cx="32" cy="32" r="20" fill="none" stroke="#FF6B2C" stroke-width="4"/></svg></span><span class="logo__text"><b>АвтоТехСервис</b><span>Портовая, 439</span></span></a><nav class="nav"><a href="index.html">Главная</a><a href="about.html">О компании</a><a href="services.html">Услуги</a><a href="appointment.html">Запись</a><a href="news.html">Новости</a><a class="is-active" href="contacts.html">Контакты</a></nav><div class="header__actions"><a class="btn btn--accent" href="appointment.html">Записаться</a><button class="burger" id="burger"><span></span></button></div></div></div></header>
+<div class="mnav" id="mnav" aria-hidden="true"><div class="mnav__bg" data-close></div><div class="mnav__panel"><nav class="mnav__links"><a href="index.html">Главная</a><a href="about.html">О компании</a><a href="services.html">Услуги</a><a href="appointment.html">Запись</a><a href="news.html">Новости</a><a class="is-active" href="contacts.html">Контакты</a></nav></div></div>
+
+<nav class="breadcrumbs container"><ol><li><a href="index.html">Главная</a></li><li>Контакты</li></ol></nav>
+<section class="section"><div class="container"><div class="kicker">Контакты</div><h1 class="h2">Портовая, 439 — схема проезда без внешних запросов</h1><div class="title-accent"></div>
+<div class="map"><div class="map__bar"><button class="btn btn--accent" id="loadMapBtn" style="padding:8px 12px; min-height:36px">Показать схему</button><a class="btn btn--ghost" href="https://yandex.ru/maps/?text=Портовая%20439%20Ростов" target="_blank" rel="noopener">Яндекс</a><a class="btn btn--ghost" href="https://2gis.ru/rostov/search/Портовая%20439" target="_blank" rel="noopener">2ГИС</a><a class="btn btn--ghost" href="https://www.google.com/maps/search/Портовая+439+Ростов" target="_blank" rel="noopener">Google</a></div><div class="map__canvas" id="mapCanvas"><svg viewBox="0 0 800 320" style="width:100%;height:100%" aria-hidden="true"><rect width="800" height="320" fill="#F2F4F7"/><path d="M0 150 H800" stroke="#D1D5DB" stroke-width="14"/><path d="M0 158 H800" stroke="#fff" stroke-width="2" stroke-dasharray="14 12"/><text x="80" y="90" font-size="12" fill="#6B7280">остановка 3-й Поселковый → 330 м →</text><rect x="520" y="110" width="120" height="80" rx="12" fill="#1F242B" opacity=".08"/><text x="580" y="155" text-anchor="middle" font-size="11" fill="#6B7280">База «Бум»</text></svg><div class="pin">Мы здесь — Портовая, 439</div></div></div>
+
+<div class="contacts-grid" style="margin-top:16px">
+<div class="contact-card"><h3>Реквизиты и связь</h3><div class="kv"><span>📍</span><span>Ростов-на-Дону, ул. Портовая, 439, 1 этаж, рядом с базой «Бум», индекс 344033, координаты 47.193068, 39.648295</span></div><div class="kv"><span>🕘</span><span><b>Ежедневно 9:00–19:00</b> — подтверждено владельцем 21.10.2026</span></div><div class="kv"><span>📞</span><span><a href="tel:+79289065700">+7 (928) 906-57-00</a> • <a href="tel:+78632291950">+7 (863) 229-19-50</a> • <a href="tel:+79518269847">+7 (951) 826-58-47</a></span></div><div class="kv"><span>💬</span><span><a href="tel:+79518269839">+7 (951) 826-98-39</a> — Telegram (владелец)</span></div><div class="kv"><span>✉️</span><span><a href="mailto:avtotehservis439@mail.ru">avtotehservis439@mail.ru</a> — заявки</span></div><div class="kv"><span>🏢</span><span>ИП Яковенко Павел Иванович, ИНН 341010400388, ОГРНИП 324619600117335</span></div><div class="kv"><span>💳</span><span>Оплата: наличные, через банк. Без цифр цен на сайте.</span></div><div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap"><a class="btn btn--accent" href="tel:+79289065700">Позвонить</a><a class="btn btn--dark" href="https://t.me/+79518269839" target="_blank" rel="noopener">Telegram</a></div></div>
+
+<div class="contact-card"><h3>Быстрая связь</h3>
+<form id="contactForm" novalidate>
+<div class="field"><label for="cName">Имя *</label><input class="input" id="cName" placeholder="Как к вам обращаться"><span class="err" id="cNameErr">От 2 букв</span></div>
+<div class="field"><label for="cPhone">Телефон *</label><input class="input" id="cPhone" placeholder="+7 (___) ___-__-__" inputmode="tel"><span class="err" id="cPhoneErr">Нужно 11 цифр</span></div>
+<div class="field"><label for="cMsg">Сообщение</label><textarea class="input" id="cMsg" rows="4" placeholder="Коротко — что случилось"></textarea></div>
+<label class="choice" style="background:transparent;border:0;padding:0"><input type="checkbox" id="cConsent"> <span style="font-size:13px">Я даю согласие на обработку ПД (152-ФЗ) — <a href="#" data-open-policy>Политика</a> *</span></label><span class="err" id="cConsentErr">Отметьте согласие</span>
+<div style="margin-top:12px; display:flex; gap:8px"><button type="submit" class="btn btn--accent">Отправить</button><button type="button" class="btn btn--ghost" id="cPayload">Что уйдёт на сервер</button></div>
+<pre class="payload hidden" id="cPre"></pre>
+<div id="cResult" class="hidden" style="margin-top:12px; background:#ECFDF3; border:1px solid #ABEFC6; border-radius:12px; padding:12px"><b>Заявка <span id="cTicket"></span> принята</b></div>
+</form>
+</div>
+</div>
+</div></section>
+
+<footer class="footer"><div class="container"><small>© <span id="y"></span> • ИП Яковенко П.И. • <a href="#" data-open-policy>Политика</a> • <a href="#" data-open-policy>Согласие</a></small></div></footer>
+<div class="toast" id="toast"></div>
+<div class="lightbox" id="policyModal" aria-hidden="true"><div class="lightbox__bg" data-close-policy></div><div class="lightbox__panel"><div class="lightbox__card"><div class="lightbox__head"><b>Политика — коротко</b><button data-close-policy>✕</button></div><div style="padding:16px; font-size:14px; color:var(--muted)">Оператор — ИП Яковенко П.И., ИНН 341010400388, Портовая, 439. Цель — обработка заявки. Храним в РФ, 1 год. Отзыв — по телефону/e-mail. Полный текст — у юриста.</div></div></div></div>
+<script src="assets/app.js"></script>
+<script>
+(function(){
+  const form=$('#contactForm'); if(!form) return;
+  const phone=$('#cPhone');
+  function fmt(v){let d=v.replace(/\D/g,''); if(d.startsWith('8')) d='7'+d.slice(1); if(d&&!d.startsWith('7')) d='7'+d; d=d.slice(0,11); let o='+7'; if(d.length>1) o+=' ('+d.slice(1,4); if(d.length>=4) o+=') '+d.slice(4,7); if(d.length>=7) o+='-'+d.slice(7,9); if(d.length>=9) o+='-'+d.slice(9,11); return d.length?o:''}
+  phone.addEventListener('input',()=>{phone.value=fmt(phone.value)}); phone.addEventListener('paste',e=>{e.preventDefault(); phone.value=fmt((e.clipboardData||window.clipboardData).getData('text'))});
+  $('#cPayload')?.addEventListener('click',()=>{const p={name:$('#cName').value.trim(), phone:phone.value, message:$('#cMsg').value.trim(), consent:$('#cConsent').checked, page:'contacts', idempotency_key:localStorage.getItem('ats_idem')||''}; $('#cPre').textContent=JSON.stringify(p,null,2); $('#cPre').classList.toggle('hidden')});
+  form.addEventListener('submit',e=>{
+    e.preventDefault(); let ok=true;
+    if(!$('#cName').value.trim()||$('#cName').value.trim().length<2){$('#cNameErr').classList.add('show'); $('#cName').classList.add('is-invalid'); ok=false} else {$('#cNameErr').classList.remove('show'); $('#cName').classList.remove('is-invalid')}
+    const d=phone.value.replace(/\D/g,''); if(d.length!==11){$('#cPhoneErr').classList.add('show'); phone.classList.add('is-invalid'); ok=false} else {$('#cPhoneErr').classList.remove('show'); phone.classList.remove('is-invalid')}
+    if(!$('#cConsent').checked){$('#cConsentErr').classList.add('show'); ok=false} else $('#cConsentErr').classList.remove('show');
+    if(!ok) return;
+    const t='ATS-'+Math.floor(1000+Math.random()*9000); $('#cTicket').textContent=t; $('#cResult').classList.remove('hidden'); toast('Заявка '+t+' принята');
+  });
+})();
+</script>
+</body>
+</html>

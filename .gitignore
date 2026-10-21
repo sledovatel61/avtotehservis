@@ -43,3 +43,6 @@ test-results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# скачиваемые архивы мокапов (собираются из папок, в git не нужны)
+mockups/round2b/_downloads/*.zip

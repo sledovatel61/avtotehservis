@@ -119,13 +119,33 @@ if [[ -z "$AGENT" ]]; then
   exit 1
 fi
 
-PREFIX="agents/agent-$AGENT"
-mapfile -t FILES < <(git ls-tree -r --name-only "$REF" -- "$PREFIX" | sed "s#^$PREFIX/##")
+# Этап 3: агенты сдают многостраничный мокап в mockups/agent-NN/ (так требует
+# задание). Старое поведение (agents/agent-NN/) поддерживаем как запасной путь.
+# Из этой папки берём только файлы мокапа: концепция живёт в agents/agent-NN/.
+if [[ "$STAGE" == "3" ]]; then
+  PREFIX="mockups/agent-$AGENT"
+  if ! git ls-tree -r --name-only "$REF" -- "$PREFIX" | grep -q '\.html$'; then
+    if git ls-tree -r --name-only "$REF" -- "agents/agent-$AGENT" | grep -q '\.html$'; then
+      echo "ВНИМАНИЕ: мокап лежит в agents/agent-$AGENT/ вместо mockups/agent-$AGENT/ — беру оттуда."
+      PREFIX="agents/agent-$AGENT"
+    fi
+  fi
+else
+  PREFIX="agents/agent-$AGENT"
+fi
+
+mapfile -t FILES < <(git ls-tree -r --name-only "$REF" -- "$PREFIX" \
+  | sed "s#^$PREFIX/##" \
+  | grep -v -x 'mockup.html' \
+  | grep -v -x 'concept.md')
 
 if [[ ${#FILES[@]} -eq 0 ]]; then
   echo "ОШИБКА: папка $PREFIX пуста." >&2
   exit 1
 fi
+
+# Сколько HTML-страниц в мокапе — для отчёта и проверки полноты.
+PAGES=$(printf '%s\n' "${FILES[@]}" | grep -c '\.html$' || true)
 
 REQUIRED="concept.md"
 [[ "$STAGE" == "2" ]] && REQUIRED="mockup.html"
@@ -145,10 +165,18 @@ for f in "${FILES[@]}"; do
   TOTAL=$((TOTAL + size))
 
   ext="${f##*.}"
-  case "$ext" in
-    md|html|css|js|txt|svg|json) ;;
-    *) ERRORS+=("запрещённый тип файла: $f"); continue ;;
-  esac
+  if [[ "$STAGE" == "3" ]]; then
+    # В многостраничном мокапе разрешены локальные вложения: шрифты и картинки.
+    case "$ext" in
+      md|html|css|js|txt|svg|json|woff2|woff|ttf|png|jpg|jpeg|webp|avif) ;;
+      *) ERRORS+=("запрещённый тип файла: $f"); continue ;;
+    esac
+  else
+    case "$ext" in
+      md|html|css|js|txt|svg|json) ;;
+      *) ERRORS+=("запрещённый тип файла: $f"); continue ;;
+    esac
+  fi
 
   if [[ "$ext" == "md" && "$size" -gt 204800 ]]; then
     ERRORS+=("md больше 200 КБ: $f")
@@ -158,6 +186,17 @@ for f in "${FILES[@]}"; do
   fi
   if [[ "$ext" == "css" || "$ext" == "js" ]] && [[ "$size" -gt 204800 ]]; then
     ERRORS+=("$ext больше 200 КБ: $f")
+  fi
+  if [[ "$STAGE" == "3" ]]; then
+    case "$ext" in
+      woff2|woff|ttf) [[ "$size" -gt 122880 ]] && ERRORS+=("шрифт больше 120 КБ: $f") ;;
+      png|jpg|jpeg|webp|avif) [[ "$size" -gt 524288 ]] && ERRORS+=("картинка больше 512 КБ: $f") ;;
+    esac
+  fi
+
+  # Задание: только заглушки/assets, свои изображения из шаблона не тащим.
+  if [[ "$STAGE" == "3" && "$ext" =~ ^(png|jpg|jpeg|webp|avif)$ ]]; then
+    WARNINGS+=("растровая картинка в мокапе (проверь, что своя): $f")
   fi
 
   content="$(git show "$REF:$PREFIX/$f")"
@@ -201,7 +240,7 @@ echo "Ref:     $REF"
 echo "Коммит:  $SHA — $SUBJECT"
 echo "Агент:   $AGENT"
 echo "Этап:    $STAGE"
-echo "Файлов:  ${#FILES[@]}, суммарно $TOTAL байт"
+echo "Файлов:  ${#FILES[@]}$([[ "$STAGE" == "3" ]] && echo ", из них страниц: $PAGES"), суммарно $TOTAL байт"
 echo "Куда:    $DEST_DIR"
 echo "──────────────────────────────────────────────"
 for f in "${FILES[@]}"; do
@@ -216,7 +255,14 @@ if [[ ${#ERRORS[@]} -gt 0 ]]; then
   exit 1
 fi
 
-echo "Проверки: OK (типы, размеры, секреты, внешний JS)"
+if [[ "$STAGE" == "3" && "$PAGES" -lt 8 ]]; then
+  ERRORS+=("страниц меньше 8: $PAGES")
+  echo "ПРОВЕРКА НЕ ПРОЙДЕНА:"
+  for e in "${ERRORS[@]}"; do echo "  ✗ $e"; done
+  exit 1
+fi
+
+echo "Проверки: OK (типы, размеры, секреты, внешние ресурсы${STAGE:+}, страниц: $PAGES)"
 echo "ВНИМАНИЕ: содержательная проверка (факты, плагиат, качество) — вручную."
 
 if [[ $DRY -eq 1 ]]; then
