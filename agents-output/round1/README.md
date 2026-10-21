@@ -30,6 +30,7 @@ scripts/import-agent.sh --branch arena/<ветка-агента> --agent NN
 | `agent-03/` | `arena/d1841141-avtotehservis` | `0170957` | 48 288 | 70,7 · заменён на A6 |
 | `agent-04/` | `arena/eea54dae-avtotehservis` | `70cea5f` | 100 898 | 88,2 |
 | `agent-05/` | `arena/c0d7d4ba-avtotehservis` | `54d99e1` | 147 108 | 89,2 |
+| `agent-06/` | `arena/e8cb8e2a-avtotehservis` | `fa1eb66` | 182 681 | 97,8 · лидер |
 
 Разбор и решения — `evaluation/round1-scorecard.md` и `evaluation/decision-log.md`.
 
@@ -41,4 +42,4 @@ scripts/import-agent.sh --branch arena/<ветка-агента> --agent NN
 
 ## Имена папок
 
-Совпадают с номером агента: `agent-01` … `agent-05`, замена — `agent-06`. Чужой номер не переиспользуется.
+Совпадают с номером агента: `agent-01` … `agent-06`; `agent-06` — замена A3, чужой номер не переиспользуется.
