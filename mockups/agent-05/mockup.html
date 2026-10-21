@@ -1,0 +1,1619 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>АвтоТехСервис — автосервис и шиномонтаж на Западном, Ростов-на-Дону | Портовая, 439</title>
+<meta name="description" content="Автосервис и шиномонтаж на Портовой, 439 в Ростове-на-Дону. Сначала диагностика и смета — потом работа. Ежедневно 9:00–19:00. Заявка за 2 минуты.">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"AutoRepair","name":"АвтоТехСервис","telephone":"+79289065700","email":"avtotehservis439@mail.ru","address":{"@type":"PostalAddress","streetAddress":"ул. Портовая, 439","addressLocality":"Ростов-на-Дону","postalCode":"344033","addressCountry":"RU"},"geo":{"@type":"GeoCoordinates","latitude":47.193068,"longitude":39.648295},"openingHoursSpecification":{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],"opens":"09:00","closes":"19:00"}}
+</script>
+<style>
+/* ============ токены ============ */
+:root{
+  --ink:#1A1D21; --ink2:#5A6068; --paper:#FFFFFF; --p2:#F4F5F6;
+  --acc:#C2410C; --acc-s:#FEEBD9; --ok:#2B7A3D; --warn:#B54708; --line:#E3E5E8;
+  --r:12px; --rb:10px; --shadow:0 8px 28px rgba(26,29,33,.12);
+  --dock-h:60px;
+}
+/* ============ база ============ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth}
+html,body{max-width:100%; overflow-x:clip}
+body{margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px; line-height:1.55; color:var(--ink); background:var(--paper);
+  padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));}
+img,svg{display:block; max-width:100%}
+a{color:var(--acc)}
+a:hover{text-decoration:none}
+button{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--acc); outline-offset:2px; border-radius:4px}
+h1,h2,h3,h4{margin:0; letter-spacing:-.015em; line-height:1.15; font-weight:800}
+h1{font-size:clamp(26px,6.6vw,44px)}
+h2{font-size:clamp(22px,5.2vw,32px)}
+h3{font-size:clamp(17px,3.6vw,20px); font-weight:700}
+p{margin:0 0 12px}
+p:last-child{margin-bottom:0}
+section{scroll-margin-top:76px}
+.w{width:min(1160px,100% - 32px); margin-inline:auto}
+@media (max-width:360px){.w{width:calc(100% - 24px)}}
+.k{display:block; font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--acc); margin-bottom:10px}
+.lead{font-size:clamp(16px,3.6vw,19px); color:var(--ink2)}
+.small{font-size:13px; color:var(--ink2); line-height:1.45}
+.tiny{font-size:12px; color:var(--ink2)}
+.muted{color:var(--ink2)}
+/* ============ демо-полоса ============ */
+.demo-strip{background:var(--ink); color:#fff; font-size:12.5px; line-height:1.4; text-align:center; padding:7px 12px}
+.demo-strip b{color:#FFD9BE}
+/* ============ кнопки/чипы ============ */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:10px 20px;
+  border-radius:var(--rb); border:2px solid transparent; font-size:16px; font-weight:700; cursor:pointer;
+  text-decoration:none; text-align:center; transition:transform 120ms ease, opacity 150ms ease, background-color 150ms ease;
+  -webkit-tap-highlight-color:transparent; user-select:none}
+.btn:active{transform:scale(.98)}
+.btn-a{background:var(--acc); color:#fff}
+.btn-a:hover{background:#A8380A}
+.btn-o{border-color:var(--ink); color:var(--ink); background:transparent}
+.btn-o:hover{background:var(--p2)}
+.btn-g{background:var(--p2); color:var(--ink)}
+.btn-g:hover{background:var(--line)}
+.btn[disabled]{opacity:.45; pointer-events:none}
+.btn-sm{min-height:44px; padding:8px 14px; font-size:14.5px}
+.btn-block{width:100%}
+.linkbtn{background:none; border:0; padding:0; color:var(--acc); font-weight:700; cursor:pointer; text-decoration:underline; min-height:24px}
+.chip{display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:8px 14px; border:1.5px solid var(--line);
+  border-radius:999px; background:var(--paper); font-size:14.5px; font-weight:600; cursor:pointer;
+  transition:transform 120ms ease, border-color 150ms ease, background-color 150ms ease; -webkit-tap-highlight-color:transparent}
+.chip:active{transform:scale(.97)}
+.chip[aria-pressed="true"],.chip[aria-checked="true"]{border-color:var(--acc); background:var(--acc-s); color:#7C2D08}
+/* ============ шапка ============ */
+.hdr{position:sticky; top:0; z-index:50; background:rgba(255,255,255,.94); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line)}
+.hdr-in{display:flex; align-items:center; gap:12px; min-height:60px}
+.logo{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink)}
+.logo-t{display:flex; flex-direction:column; line-height:1.15}
+.logo-t b{font-size:14.5px; font-weight:800; letter-spacing:-.01em}
+.logo-t span{font-size:10.5px; color:var(--ink2); font-weight:600}
+.hdr-nav{display:none; gap:18px; margin-left:auto}
+.hdr-nav a{color:var(--ink); text-decoration:none; font-size:14.5px; font-weight:600; padding:8px 2px; border-bottom:2px solid transparent}
+.hdr-nav a:hover{border-color:var(--acc)}
+.hdr-right{margin-left:auto; display:flex; align-items:center; gap:10px}
+.hdr-phone{display:none; flex-direction:column; line-height:1.2; text-decoration:none; color:var(--ink)}
+.hdr-phone b{font-size:15px}
+.hdr-phone span{font-size:11px; color:var(--ink2)}
+.iconbtn{display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px;
+  border:1.5px solid var(--line); border-radius:var(--rb); background:var(--paper); cursor:pointer; text-decoration:none; color:var(--ink)}
+.iconbtn:hover{background:var(--p2)}
+@media (min-width:960px){
+  .hdr-nav{display:flex}
+  .hdr-right{margin-left:16px}
+  .hdr-phone{display:flex}
+  .burger{display:none}
+}
+/* ============ меню (оверлей) ============ */
+.ov{position:fixed; inset:0; z-index:80; display:block}
+.ov[hidden]{display:none}
+.ov-bg{position:absolute; inset:0; background:rgba(26,29,33,.55)}
+.menu-panel{position:absolute; inset:0; background:var(--paper); display:flex; flex-direction:column;
+  padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px)); overflow-y:auto}
+.menu-top{display:flex; justify-content:space-between; align-items:center; min-height:48px; margin-bottom:12px}
+.menu-nav{display:flex; flex-direction:column; gap:2px; margin:8px 0 16px}
+.menu-nav a{display:flex; align-items:center; min-height:56px; font-size:19px; font-weight:700; color:var(--ink);
+  text-decoration:none; border-bottom:1px solid var(--line)}
+.menu-nav a span{margin-left:auto; color:var(--acc)}
+.menu-cta{display:flex; flex-direction:column; gap:10px; margin-top:auto}
+/* ============ hero ============ */
+.hero{background:linear-gradient(180deg,var(--p2) 0%,var(--paper) 78%); padding:30px 0 36px; position:relative}
+.hero-grid{display:grid; gap:22px}
+@media (min-width:960px){.hero-grid{grid-template-columns:1.15fr .85fr; align-items:center; gap:40px}}
+.trustline{display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 20px; padding:0; list-style:none}
+.trustline li{display:inline-flex; align-items:center; gap:6px; background:var(--paper); border:1px solid var(--line);
+  border-radius:999px; padding:7px 12px; font-size:13px; font-weight:600; min-height:36px}
+.trustline .star{color:var(--acc); font-weight:800}
+.hero-cta{display:grid; gap:10px; margin-bottom:12px}
+@media (min-width:560px){.hero-cta{grid-template-columns:1fr 1fr}}
+.hero-art{position:relative; border-radius:var(--r); border:2px dashed var(--line); background:
+  radial-gradient(120% 90% at 85% 10%, var(--acc-s) 0%, transparent 55%),
+  linear-gradient(135deg,#ECEEF0 0%,#F7F8F9 100%);
+  min-height:220px; display:flex; align-items:center; justify-content:center; padding:20px}
+@media (min-width:960px){.hero-art{min-height:360px}}
+.hero-art-in{text-align:center; max-width:280px}
+.hero-art .tag{display:inline-block; margin-top:10px; font-size:12px; color:var(--ink2); font-weight:600}
+/* ============ секции ============ */
+.sec{padding:44px 0}
+.sec.p2{background:var(--p2)}
+.sec-head{margin-bottom:22px; max-width:720px}
+.sec-head .lead{margin-top:10px}
+/* ============ развилка ============ */
+.fork{display:grid; gap:12px}
+@media (min-width:640px){.fork{grid-template-columns:1fr 1fr}}
+@media (min-width:1040px){.fork{grid-template-columns:repeat(4,1fr)}}
+.fork-card{display:flex; flex-direction:column; gap:8px; text-align:left; background:var(--paper); border:1.5px solid var(--line);
+  border-radius:var(--r); padding:18px 16px; min-height:150px; cursor:pointer; text-decoration:none; color:var(--ink);
+  transition:transform 120ms ease, border-color 150ms ease, box-shadow 150ms ease; -webkit-tap-highlight-color:transparent}
+.fork-card:hover{border-color:var(--acc); box-shadow:var(--shadow)}
+.fork-card:active{transform:scale(.985)}
+.fork-card b{font-size:17px}
+.fork-card .go{margin-top:auto; color:var(--acc); font-weight:800; font-size:14px}
+.fork-card .ic{width:40px; height:40px; border-radius:10px; background:var(--acc-s); display:flex; align-items:center; justify-content:center}
+/* ============ услуги ============ */
+.svc{display:grid; gap:12px}
+@media (min-width:640px){.svc{grid-template-columns:1fr 1fr}}
+@media (min-width:1040px){.svc{grid-template-columns:repeat(3,1fr)}}
+.svc-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--r); padding:16px}
+.svc-card h3{margin-bottom:6px}
+.svc-card p{font-size:14.5px; color:var(--ink2); margin:0}
+.svc-card ul{margin:8px 0 0; padding:0; list-style:none; font-size:14px}
+.svc-card li{padding:3px 0 3px 18px; position:relative}
+.svc-card li::before{content:""; position:absolute; left:0; top:11px; width:8px; height:8px; border-radius:2px; background:var(--acc-s); border:1.5px solid var(--acc)}
+/* ============ процесс («смета до ремонта») ============ */
+.proc{display:grid; gap:10px; counter-reset:st}
+@media (min-width:960px){.proc{grid-template-columns:repeat(5,1fr)}}
+.proc-step{background:var(--paper); border:1px solid var(--line); border-radius:var(--r); padding:16px; position:relative}
+.proc-step .n{font-size:28px; font-weight:800; color:var(--acc); letter-spacing:-.03em; line-height:1}
+.proc-step b{display:block; margin:8px 0 4px; font-size:15.5px}
+.proc-step p{font-size:13.5px; color:var(--ink2); margin:0}
+.guarantee{margin-top:16px; background:var(--acc-s); border-radius:var(--r); padding:16px 18px; display:flex; gap:12px; align-items:flex-start}
+.guarantee p{font-size:15px; font-weight:600; color:#7C2D08; margin:0}
+/* ============ квиз ============ */
+.quiz-card{background:var(--paper); border:1.5px solid var(--line); border-radius:16px; padding:20px 16px 18px; max-width:720px; margin-inline:auto; box-shadow:var(--shadow)}
+@media (min-width:640px){.quiz-card{padding:28px 28px 22px}}
+.q-top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:8px}
+.q-top b{font-size:15px}
+.q-top span{font-size:13px; color:var(--ink2); font-weight:600; white-space:nowrap}
+.q-bar{height:6px; background:var(--line); border-radius:99px; overflow:hidden; margin-bottom:20px}
+.q-bar i{display:block; height:100%; background:var(--acc); border-radius:99px; transform-origin:left; transform:scaleX(.1429);
+  transition:transform 250ms ease}
+.qstep{display:none}
+.qstep.on{display:block; animation:stepIn 220ms ease}
+@keyframes stepIn{from{opacity:0; transform:translateX(22px)} to{opacity:1; transform:none}}
+.qstep h3{font-size:clamp(19px,4.4vw,23px); font-weight:800; margin-bottom:6px}
+.qstep .hint{font-size:14px; color:var(--ink2); margin-bottom:16px}
+.opts{display:grid; gap:10px}
+.opt{display:flex; gap:12px; align-items:flex-start; background:var(--paper); border:1.5px solid var(--line);
+  border-radius:var(--rb); padding:13px 14px; min-height:56px; cursor:pointer; text-align:left; width:100%;
+  transition:transform 120ms ease, border-color 150ms ease, background-color 150ms ease; -webkit-tap-highlight-color:transparent}
+.opt:active{transform:scale(.99)}
+.opt b{display:block; font-size:15.5px}
+.opt span{display:block; font-size:13px; color:var(--ink2); line-height:1.4}
+.opt input{position:absolute; opacity:0; pointer-events:none}
+.opt:has(input:checked){border-color:var(--acc); background:var(--acc-s)}
+.opt:has(input:focus-visible){outline:3px solid var(--acc); outline-offset:2px}
+.opt .dot{flex:0 0 22px; width:22px; height:22px; border-radius:50%; border:2px solid var(--ink2); margin-top:2px; position:relative}
+.opt .dot::after{content:""; position:absolute; inset:3px; border-radius:50%; background:var(--acc); transform:scale(0); transition:transform 150ms ease}
+.opt:has(input:checked) .dot{border-color:var(--acc)}
+.opt:has(input:checked) .dot::after{transform:scale(1)}
+.opt .box{flex:0 0 22px; width:22px; height:22px; border-radius:6px; border:2px solid var(--ink2); margin-top:2px; position:relative}
+.opt .box::after{content:""; position:absolute; left:6px; top:2px; width:6px; height:11px; border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(45deg) scale(0); transition:transform 150ms ease}
+.opt:has(input:checked) .box{background:var(--acc); border-color:var(--acc)}
+.opt:has(input:checked) .box::after{transform:rotate(45deg) scale(1)}
+/* фолбэк для браузеров без :has — класс .sel ставит JS */
+.opt.sel{border-color:var(--acc); background:var(--acc-s)}
+.opt.sel .dot{border-color:var(--acc)}
+.opt.sel .dot::after{transform:scale(1)}
+.opt.sel .box{background:var(--acc); border-color:var(--acc)}
+.opt.sel .box::after{transform:rotate(45deg) scale(1)}
+fieldset{border:0; margin:0; padding:0}
+legend{font-weight:700; font-size:15px; padding:0; margin-bottom:10px}
+.field{margin-bottom:14px}
+.field label,.flabel{display:block; font-size:14px; font-weight:700; margin-bottom:6px}
+.field .sub{display:block; font-size:12.5px; color:var(--ink2); font-weight:500; margin-top:2px}
+.inp{width:100%; min-height:48px; padding:11px 14px; font-size:16px; font-family:inherit; color:var(--ink);
+  background:var(--paper); border:1.5px solid var(--line); border-radius:var(--rb)}
+.inp:focus{border-color:var(--acc); outline:none; box-shadow:0 0 0 3px var(--acc-s)}
+.inp[aria-invalid="true"]{border-color:var(--warn)}
+textarea.inp{min-height:84px; resize:vertical}
+.err{display:flex; gap:6px; align-items:flex-start; color:var(--warn); font-size:13.5px; font-weight:600; margin-top:6px}
+.err[hidden]{display:none}
+.q-nav{display:flex; gap:10px; margin-top:18px}
+.q-nav .btn{flex:1}
+.q-nav .btn-o{flex:0 0 auto; min-width:104px}
+.q-foot{margin-top:12px; text-align:center}
+.q-result{display:none}
+.q-result.on{display:block; animation:stepIn 220ms ease}
+.ok-badge{width:56px; height:56px; border-radius:50%; background:#E7F2E9; display:flex; align-items:center; justify-content:center; margin-bottom:12px}
+.sum{border:1px solid var(--line); border-radius:var(--rb); overflow:hidden; margin:14px 0}
+.sum-row{display:flex; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); align-items:baseline}
+.sum-row:last-child{border-bottom:0}
+.sum-row dt{flex:0 0 42%; font-size:13px; color:var(--ink2); font-weight:600}
+.sum-row dd{margin:0; font-size:14.5px; font-weight:600; flex:1}
+.sum-row .linkbtn{font-size:12.5px; white-space:nowrap}
+.nextsteps{margin:14px 0; padding:0; list-style:none; counter-reset:ns}
+.nextsteps li{counter-increment:ns; display:flex; gap:10px; padding:8px 0; font-size:14.5px}
+.nextsteps li::before{content:counter(ns); flex:0 0 26px; height:26px; border-radius:50%; background:var(--acc-s); color:#7C2D08;
+  font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+.loadbar{height:4px; background:var(--line); border-radius:99px; overflow:hidden; margin-top:12px; display:none}
+.loadbar.on{display:block}
+.loadbar i{display:block; height:100%; width:100%; background:var(--acc); transform:scaleX(0); transform-origin:left; animation:load 300ms ease forwards}
+@keyframes load{to{transform:scaleX(1)}}
+.demo-err-toggle{display:flex; gap:8px; align-items:center; font-size:12.5px; color:var(--ink2); justify-content:center; margin-top:10px}
+/* ============ галерея ============ */
+.gal{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+@media (min-width:960px){.gal{grid-template-columns:repeat(3,1fr)}}
+.gcard{background:var(--paper); border:1px solid var(--line); border-radius:var(--r); overflow:hidden; cursor:pointer;
+  text-align:left; padding:0; width:100%; transition:transform 120ms ease, box-shadow 150ms ease; -webkit-tap-highlight-color:transparent}
+.gcard:hover{box-shadow:var(--shadow)}
+.gcard:active{transform:scale(.985)}
+.gmedia{position:relative; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center}
+.gmedia.aft{background:linear-gradient(135deg,#DDE7E0 0%,#EEF3EF 100%)}
+.gmedia.bef{background:linear-gradient(135deg,#E7DFD8 0%,#F4EFEB 100%)}
+.gmedia.vid{background:linear-gradient(135deg,#23272C 0%,#3A4046 100%)}
+.gmedia svg{opacity:.85}
+.gbadge{position:absolute; top:8px; left:8px; background:rgba(26,29,33,.82); color:#fff; font-size:11px; font-weight:700;
+  padding:4px 9px; border-radius:99px; letter-spacing:.04em}
+.gbadge.new{background:var(--ok)}
+.gplay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center}
+.gplay i{width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center}
+.gbody{padding:10px 12px 12px}
+.gbody b{display:block; font-size:14px; line-height:1.3}
+.gbody span{display:block; font-size:12px; color:var(--ink2); margin-top:3px; line-height:1.35}
+/* ============ лайтбокс / модалки ============ */
+.lb-panel{position:relative; width:100%; height:100%; display:flex; flex-direction:column; padding:12px; gap:10px}
+.lb-top{display:flex; align-items:center; gap:10px; color:#fff; min-height:44px}
+.lb-count{font-size:14px; font-weight:700; margin-right:auto; padding-left:6px}
+.lb-x{width:44px; height:44px; border-radius:10px; border:1.5px solid rgba(255,255,255,.4); background:transparent;
+  color:#fff; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center}
+.lb-stage{flex:1; display:flex; align-items:center; justify-content:center; position:relative; min-height:0}
+.lb-media{width:min(92vw,860px); aspect-ratio:4/3; max-height:100%; border-radius:var(--r); display:flex; align-items:center;
+  justify-content:center; position:relative; transition:opacity 200ms ease}
+.lb-media.flip{opacity:.35}
+.lb-arrow{position:absolute; top:50%; transform:translateY(-50%); width:48px; height:64px; border:0; border-radius:10px;
+  background:rgba(255,255,255,.14); color:#fff; font-size:26px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2}
+.lb-arrow:hover{background:rgba(255,255,255,.28)}
+.lb-prev{left:6px} .lb-next{right:6px}
+.lb-bottom{color:#fff; display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; justify-content:center; padding-bottom:env(safe-area-inset-bottom,0px)}
+.lb-cap{font-size:15px; font-weight:700; text-align:center; max-width:70ch}
+.lb-sub{width:100%; text-align:center; font-size:12.5px; color:rgba(255,255,255,.75)}
+.ba-toggle{min-height:44px}
+.ba-toggle .chip{background:transparent; color:#fff; border-color:rgba(255,255,255,.45)}
+.ba-toggle .chip[aria-pressed="true"]{background:#fff; color:var(--ink); border-color:#fff}
+.modal-panel{position:relative; width:min(560px,100%); max-height:88vh; overflow-y:auto; background:var(--paper);
+  border-radius:16px; padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px)); margin:auto; box-shadow:var(--shadow);
+  animation:pop 200ms ease}
+@keyframes pop{from{opacity:0; transform:scale(.96)} to{opacity:1; transform:none}}
+.modal-x{position:absolute; top:12px; right:12px; width:44px; height:44px; border-radius:10px; border:1.5px solid var(--line);
+  background:var(--paper); font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center}
+.modal-panel h3{padding-right:48px; margin-bottom:10px}
+/* ============ отзывы ============ */
+.rate-card{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; background:var(--paper); border:1.5px solid var(--line);
+  border-radius:var(--r); padding:18px}
+.rate-num{font-size:44px; font-weight:800; letter-spacing:-.03em; line-height:1}
+.rate-meta{flex:1; min-width:200px}
+.maps-row{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 6px; padding:0; list-style:none}
+.maps-row li{border:1px solid var(--line); background:var(--paper); border-radius:99px; padding:6px 12px; font-size:12.5px; font-weight:600; min-height:34px; display:flex; align-items:center; gap:6px}
+.revs{display:grid; gap:12px; margin-top:16px}
+@media (min-width:760px){.revs{grid-template-columns:repeat(3,1fr)}}
+.rev{background:var(--paper); border:1px solid var(--line); border-radius:var(--r); padding:16px; display:flex; flex-direction:column; gap:10px}
+.rev q{font-size:14.5px; line-height:1.5; quotes:"«" "»"}
+.rev .who{margin-top:auto; font-size:13px; color:var(--ink2); font-weight:600}
+.rev .demo-tag{display:inline-block; font-size:11px; font-weight:700; color:var(--warn); background:#FBEEE2; border-radius:99px; padding:3px 9px; align-self:flex-start}
+.stars{color:var(--acc); letter-spacing:2px; font-size:15px}
+.revform{margin-top:14px; background:var(--paper); border:1.5px dashed var(--line); border-radius:var(--r); padding:16px; display:none}
+.revform.on{display:block; animation:stepIn 220ms ease}
+.revform .ok-note{display:none; background:#E7F2E9; color:#1F5C2E; border-radius:var(--rb); padding:12px; font-size:14.5px; font-weight:600}
+.revform.sent .ok-note{display:block}
+.revform.sent form{display:none}
+.consent{display:flex; gap:10px; align-items:flex-start; font-size:13.5px; color:var(--ink2); margin:12px 0}
+.consent input{width:22px; height:22px; margin:2px 0 0; accent-color:var(--acc); flex:0 0 22px}
+/* ============ B2B ============ */
+.b2b{background:var(--ink); color:#fff; border-radius:16px; padding:26px 20px}
+@media (min-width:960px){.b2b{padding:36px; display:grid; grid-template-columns:1.2fr .8fr; gap:30px}}
+.b2b h2{color:#fff}
+.b2b .k{color:#FFB27A}
+.b2b ul{margin:14px 0; padding:0; list-style:none}
+.b2b li{padding:7px 0 7px 26px; position:relative; font-size:15.5px}
+.b2b li::before{content:""; position:absolute; left:0; top:14px; width:12px; height:12px; border-radius:3px; background:var(--acc)}
+.b2b .btn-a{background:#fff; color:var(--ink)}
+.b2b .btn-a:hover{background:var(--acc-s)}
+.b2b-side{background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.18); border-radius:var(--r); padding:18px; align-self:start}
+.b2b-side p{font-size:14px; color:rgba(255,255,255,.82)}
+.b2b-side a{color:#FFB27A}
+/* ============ FAQ ============ */
+.faq{max-width:820px; display:flex; flex-direction:column; gap:8px}
+.faq details{background:var(--paper); border:1px solid var(--line); border-radius:var(--rb)}
+.faq summary{min-height:56px; display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer;
+  font-weight:700; font-size:15.5px; list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+"; margin-left:auto; font-size:22px; color:var(--acc); font-weight:700; line-height:1; transition:transform 200ms ease}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq .a{padding:0 16px 14px; font-size:14.5px; color:var(--ink2)}
+/* ============ контакты ============ */
+.ct-grid{display:grid; gap:18px}
+@media (min-width:960px){.ct-grid{grid-template-columns:1fr 1fr; gap:28px}}
+.ct-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+.ct-list li{padding:12px 0; border-bottom:1px solid var(--line)}
+.ct-list .t{font-size:12.5px; color:var(--ink2); font-weight:700; text-transform:uppercase; letter-spacing:.08em}
+.ct-list .v{font-size:16.5px; font-weight:700; margin-top:3px}
+.ct-list a{text-decoration:none}
+.ct-list a:hover{text-decoration:underline}
+.map-card{border:1px solid var(--line); border-radius:var(--r); overflow:hidden; background:var(--p2)}
+.map-card svg{width:100%; height:auto}
+.map-note{padding:10px 14px; font-size:12.5px; color:var(--ink2); background:var(--paper); border-top:1px solid var(--line)}
+.ct-btns{display:grid; gap:10px; margin-top:16px}
+@media (min-width:560px){.ct-btns{grid-template-columns:1fr 1fr}}
+/* ============ футер ============ */
+.ftr{background:var(--p2); border-top:1px solid var(--line); padding:30px 0 26px; font-size:13.5px}
+.ftr-grid{display:grid; gap:20px}
+@media (min-width:860px){.ftr-grid{grid-template-columns:1.4fr 1fr 1fr}}
+.ftr h4{font-size:12.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink2); margin:0 0 10px}
+.ftr p{color:var(--ink2); font-size:13.5px}
+.ftr ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px}
+.ftr ul a,.ftr ul button{color:var(--ink); text-decoration:none; font-size:14px; background:none; border:0; padding:4px 0; cursor:pointer; text-align:left; font-weight:600; min-height:32px}
+.ftr ul a:hover,.ftr ul button:hover{color:var(--acc)}
+.ftr-bottom{margin-top:22px; padding-top:14px; border-top:1px solid var(--line); color:var(--ink2); font-size:12.5px; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between}
+/* ============ dock (sticky низ) ============ */
+.dock{position:fixed; left:0; right:0; bottom:0; z-index:60; display:flex; gap:8px;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));
+  background:rgba(255,255,255,.96); backdrop-filter:blur(8px); border-top:1px solid var(--line);
+  transform:translateY(120%); transition:transform 220ms ease}
+.dock.show{transform:none}
+.dock .btn{flex:1}
+@media (min-width:960px){.dock{display:none} body{padding-bottom:0}}
+/* ============ админка (демо) ============ */
+.adm-lead{display:flex; flex-direction:column; gap:8px; align-items:flex-start; text-align:center; padding:14px 0 4px}
+.adm-tabs{display:flex; gap:8px; margin:14px 0}
+.adm-tab{flex:1}
+.adm-pane{display:none}
+.adm-pane.on{display:block; animation:stepIn 200ms ease}
+.lead-row{border:1px solid var(--line); border-radius:var(--rb); padding:12px; margin-bottom:8px; background:var(--paper)}
+.lead-row .top{display:flex; justify-content:space-between; gap:8px; align-items:baseline; flex-wrap:wrap}
+.lead-row b{font-size:15px}
+.lead-row .meta{font-size:13px; color:var(--ink2)}
+.lead-row .acts{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
+.status{font-size:11.5px; font-weight:800; border-radius:99px; padding:3px 10px; letter-spacing:.03em; text-transform:uppercase}
+.status.new{background:var(--acc-s); color:#7C2D08}
+.status.work{background:#E3ECFB; color:#21498F}
+.status.done{background:#E7F2E9; color:#1F5C2E}
+.adm-timer{font-variant-numeric:tabular-nums; font-weight:800; font-size:15px; background:var(--p2); border-radius:99px; padding:8px 14px; display:inline-flex; gap:8px; align-items:center; min-height:38px}
+.adm-timer.good{background:#E7F2E9; color:#1F5C2E}
+.adm-timer.bad{background:#FBEEE2; color:var(--warn)}
+.drop{border:2px dashed var(--line); border-radius:var(--rb); padding:16px; text-align:center; background:var(--p2)}
+.prev{margin-top:12px; border-radius:var(--rb); overflow:hidden; border:1px solid var(--line); aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#E7DFD8,#F4EFEB)}
+.prev img{width:100%; height:100%; object-fit:cover}
+.prev .noimg{font-size:13px; color:var(--ink2); padding:16px; text-align:center}
+.toast{position:fixed; left:50%; bottom:calc(var(--dock-h) + 16px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,20px);
+  background:var(--ink); color:#fff; border-radius:12px; padding:12px 18px; font-size:14px; font-weight:600; z-index:120;
+  opacity:0; pointer-events:none; transition:opacity 200ms ease, transform 200ms ease; max-width:calc(100% - 32px); text-align:center}
+.toast.show{opacity:1; transform:translate(-50%,0)}
+/* ============ анимации появления ============ */
+.js .rv{opacity:0; transform:translateY(14px); transition:opacity 300ms ease, transform 300ms ease}
+.js .rv.in{opacity:1; transform:none}
+.js .rv[data-st="1"]{transition-delay:80ms}
+.js .rv[data-st="2"]{transition-delay:160ms}
+/* ============ доп. правила ============ */
+#hdrCta{display:none}
+@media (min-width:640px){#hdrCta{display:inline-flex}}
+body.ov-open{overflow:hidden}
+body.ov-open .dock{transform:translateY(120%)}
+.gcard.new-pub{border-color:var(--ok)}
+.qstep-h{font-size:clamp(19px,4.4vw,23px); font-weight:800; letter-spacing:-.015em; line-height:1.15; margin-bottom:6px}
+/* ============ reduced motion ============ */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+  .js .rv{opacity:1; transform:none}
+}
+</style>
+</head>
+<body>
+<a class="btn btn-g" href="#main" style="position:absolute;left:-9999px;top:0" onfocus="this.style.left='12px';this.style.top='12px';this.style.zIndex=200;this.style.position='fixed'" onblur="this.style.left='-9999px'">К содержанию</a>
+
+<p class="demo-strip">Демонстрационный макет сайта: формы ничего не отправляют, кейсы и отзывы — <b>примеры</b>. Данные никуда не передаются.</p>
+
+<header class="hdr">
+  <div class="w hdr-in">
+    <a class="logo" href="#hero" aria-label="АвтоТехСервис — на первый экран">
+      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4 L54.5 17 L54.5 43 L32 56 L9.5 43 L9.5 17 L20 10.9" fill="none" stroke="#1A1D21" stroke-width="5" stroke-linecap="round"/><path d="M22 40 L27.5 24 L33 40 M24.2 34.5 h6.6 M38 24 v16 M38 24 h7 a4 4 0 0 1 0 8 h-7" fill="none" stroke="#C2410C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="logo-t"><b>АвтоТехСервис</b><span>ежедневно 9:00–19:00 · Портовая, 439</span></span>
+    </a>
+    <nav class="hdr-nav" aria-label="Основная навигация">
+      <a href="#services">Услуги</a>
+      <a href="#process">Как работаем</a>
+      <a href="#cases">Работы</a>
+      <a href="#reviews">Отзывы</a>
+      <a href="#contacts">Контакты</a>
+    </nav>
+    <div class="hdr-right">
+      <a class="hdr-phone" href="tel:+79289065700" data-track="call_click"><b>+7 (928) 906-57-00</b><span>Ростов-на-Дону</span></a>
+      <a class="iconbtn" href="tel:+79289065700" data-track="call_click" aria-label="Позвонить +7 (928) 906-57-00">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.6 3h-2A1.6 1.6 0 0 0 3 4.7C3 12.6 11.4 21 19.3 21a1.6 1.6 0 0 0 1.7-1.6v-2a1.6 1.6 0 0 0-1.3-1.6l-2.3-.4a1.6 1.6 0 0 0-1.5.6l-.8 1a13.6 13.6 0 0 1-5.5-5.5l1-.8a1.6 1.6 0 0 0 .6-1.5l-.4-2.3A1.6 1.6 0 0 0 9.2 3h-2.6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </a>
+      <button class="btn btn-a btn-sm" type="button" data-quiz-open id="hdrCta">Заявка</button>
+      <button class="iconbtn burger" type="button" id="burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="ov" id="menu" hidden role="dialog" aria-modal="true" aria-label="Меню">
+  <div class="ov-bg" data-close></div>
+  <div class="menu-panel">
+    <div class="menu-top">
+      <span class="logo-t"><b>АвтоТехСервис</b><span>Портовая, 439 · ежедневно 9:00–19:00</span></span>
+      <button class="iconbtn" type="button" data-close aria-label="Закрыть меню">✕</button>
+    </div>
+    <nav class="menu-nav" aria-label="Меню">
+      <a href="#services" data-menu-link>Услуги <span>→</span></a>
+      <a href="#process" data-menu-link>Как мы работаем <span>→</span></a>
+      <a href="#quiz" data-menu-link>Заявка (квиз) <span>→</span></a>
+      <a href="#cases" data-menu-link>Наши работы <span>→</span></a>
+      <a href="#reviews" data-menu-link>Отзывы <span>→</span></a>
+      <a href="#b2b" data-menu-link>Паркам и юрлицам <span>→</span></a>
+      <a href="#faq" data-menu-link>Вопросы и ответы <span>→</span></a>
+      <a href="#contacts" data-menu-link>Контакты и маршрут <span>→</span></a>
+    </nav>
+    <div class="menu-cta">
+      <a class="btn btn-a btn-block" href="tel:+79289065700" data-track="call_click">Позвонить +7 (928) 906-57-00</a>
+      <button class="btn btn-o btn-block" type="button" data-quiz-open data-menu-link>Оставить заявку</button>
+      <a class="btn btn-g btn-block" href="https://t.me/+79518269839" data-track="telegram_click">Telegram: +7 (951) 826-98-39</a>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+
+<section class="hero" id="hero">
+  <div class="w hero-grid">
+    <div>
+      <span class="k">Ростов-на-Дону · Западный · Железнодорожный район</span>
+      <h1>Автосервис и шиномонтаж на Западном</h1>
+      <p class="lead" style="margin-top:12px">От переобувки до ремонта двигателя. Сначала диагностика и смета — потом работа. Ничего не начинаем без вашего «да».</p>
+      <ul class="trustline">
+        <li>🕘 Ежедневно 9:00–19:00</li>
+        <li>📍 Портовая, 439 · ~330 м от ост. «3-й Поселковый»</li>
+        <li><span class="star">★ 4,5</span>&nbsp;на Яндекс.Картах · 182 оценки</li>
+      </ul>
+      <div class="hero-cta">
+        <button class="btn btn-a" type="button" data-quiz-open data-track="quiz_open">Рассчитать стоимость — заявка за 2 минуты</button>
+        <a class="btn btn-o" href="tel:+79289065700" data-track="call_click">Позвонить +7 (928) 906-57-00</a>
+      </div>
+      <p class="tiny">Заявка ни к чему не обязывает: сначала смета, потом решение.</p>
+    </div>
+    <div class="hero-art rv" aria-hidden="true">
+      <div class="hero-art-in">
+        <svg width="120" height="120" viewBox="0 0 64 64"><path d="M32 4 L54.5 17 L54.5 43 L32 56 L9.5 43 L9.5 17 L20 10.9" fill="none" stroke="#1A1D21" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="30" r="10" fill="none" stroke="#C2410C" stroke-width="2.5"/><circle cx="32" cy="30" r="3" fill="#C2410C"/></svg>
+        <span class="tag">Здесь будет фото площадки на Портовой, 439 — после съёмочного дня (демо-заглушка)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="fork" aria-labelledby="fork-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Развилка</span>
+      <h2 id="fork-h">Что случилось с машиной?</h2>
+      <p class="lead">Выберите одно направление — вопросы в заявке подстроятся под него.</p>
+    </div>
+    <div class="fork">
+      <button class="fork-card rv" type="button" data-fork="wheels" data-quiz-open data-track="quiz_open">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#C2410C" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="#C2410C" stroke-width="2"/></svg></span>
+        <b>Колёса</b>
+        <span class="small">Шиномонтаж, балансировка, правка дисков, порезы и грыжи, хранение шин</span>
+        <span class="go">Заполнить заявку →</span>
+      </button>
+      <button class="fork-card rv" type="button" data-fork="repair" data-quiz-open data-st="1" data-track="quiz_open">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.1-.4-.4-2.1 2.4-2.4Z" fill="none" stroke="#C2410C" stroke-width="2" stroke-linejoin="round"/></svg></span>
+        <b>Ремонт и обслуживание</b>
+        <span class="small">Двигатель, АКПП/МКПП, ходовая, тормоза, электрика, кондиционеры, стёкла, ТО</span>
+        <span class="go">Заполнить заявку →</span>
+      </button>
+      <a class="fork-card rv" href="#b2b" data-st="2">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M2 8h11v9H2zM13 11h4l3 3v3h-7" fill="none" stroke="#C2410C" stroke-width="2" stroke-linejoin="round"/><circle cx="6" cy="18.5" r="1.8" fill="#C2410C"/><circle cx="16.5" cy="18.5" r="1.8" fill="#C2410C"/></svg></span>
+        <b>Парк или несколько машин</b>
+        <span class="small">Грузовой шиномонтаж, коммерческий транспорт, обслуживание парка, безналичный расчёт</span>
+        <span class="go">Условия для юрлиц →</span>
+      </a>
+      <button class="fork-card rv" type="button" data-fork="dunno" data-quiz-open data-track="quiz_open">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M9.2 9a2.9 2.9 0 1 1 3.8 2.8c-.7.2-1 .9-1 1.6v.4" fill="none" stroke="#C2410C" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="#C2410C"/><circle cx="12" cy="12" r="9.2" fill="none" stroke="#C2410C" stroke-width="2"/></svg></span>
+        <b>Пока не знаю</b>
+        <span class="small">Что-то не так, но что именно — непонятно. Начнём с диагностики</span>
+        <span class="go">Описать симптомы →</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<section class="sec p2" id="services" aria-labelledby="svc-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Услуги</span>
+      <h2 id="svc-h">От колеса до двигателя — на одной площадке</h2>
+      <p class="lead">Шесть направлений. Точную стоимость называем после диагностики — до начала работ.</p>
+    </div>
+    <div class="svc">
+      <div class="svc-card rv">
+        <h3>Колёса и шины</h3>
+        <p>Полный цикл работ с колёсами — легковыми и грузовыми.</p>
+        <ul><li>Шиномонтаж легковой и грузовой</li><li>Балансировка</li><li>Правка и прокатка дисков</li><li>Ремонт порезов и грыж, вулканизация</li><li>Сезонное хранение шин</li></ul>
+      </div>
+      <div class="svc-card rv" data-st="1">
+        <h3>ТО и масло</h3>
+        <p>Обслуживание по регламенту — без лишнего и навязанного.</p>
+        <ul><li>Техническое обслуживание</li><li>Аппаратная замена масла</li><li>Плановые работы по пробегу</li></ul>
+      </div>
+      <div class="svc-card rv" data-st="2">
+        <h3>Ходовая, тормоза, рулевое</h3>
+        <p>Стук, гул, увод в сторону, вибрация — находим причину, а не меняем детали наугад.</p>
+        <ul><li>Диагностика и ремонт ходовой</li><li>Тормозная система</li><li>Рулевые рейки</li><li>Развал-схождение</li></ul>
+      </div>
+      <div class="svc-card rv">
+        <h3>Двигатель и трансмиссия</h3>
+        <p>Говорим прямо, что чинится, что меняется и сколько стоит каждый путь.</p>
+        <ul><li>Ремонт двигателя</li><li>АКПП и МКПП</li></ul>
+      </div>
+      <div class="svc-card rv" data-st="1">
+        <h3>Электрика и кондиционеры</h3>
+        <p>Ищем причину по цепочке. Кондиционер обслуживаем до жары, а не в +35.</p>
+        <ul><li>Ремонт автоэлектрики</li><li>Обслуживание кондиционеров</li></ul>
+      </div>
+      <div class="svc-card rv" data-st="2">
+        <h3>Стёкла</h3>
+        <p>Подберём стекло под вашу модель — если указали VIN в заявке, к приезду всё будет готово.</p>
+        <ul><li>Замена лобовых стёкол</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="process" aria-labelledby="proc-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Смета до ремонта</span>
+      <h2 id="proc-h">Как проходит обращение: пять шагов без сюрпризов</h2>
+      <p class="lead">Главное правило сервиса: вы знаете, что и за какую сумму будет сделано, до начала работ. Итог не отличается от согласованного без вашего звонка.</p>
+    </div>
+    <div class="proc">
+      <div class="proc-step rv"><span class="n">01</span><b>Заявка</b><p>Квиз на сайте или звонок. Перезваниваем в рабочее время — ежедневно 9:00–19:00.</p></div>
+      <div class="proc-step rv"><span class="n">02</span><b>Диагностика</b><p>Смотрим машину и слушаем вас. Называем, что нашли, — показываем глазами.</p></div>
+      <div class="proc-step rv" data-st="1"><span class="n">03</span><b>Смета</b><p>Работы и сумма — до начала ремонта. Согласовываем с вами каждый пункт.</p></div>
+      <div class="proc-step rv" data-st="1"><span class="n">04</span><b>Работа</b><p>Если по ходу нашли ещё что-то — сначала звоним и спрашиваем. Без вашего «да» ничего не добавляем.</p></div>
+      <div class="proc-step rv" data-st="2"><span class="n">05</span><b>Выдача</b><p>Показываем, что заменили, отдаём старые детали и рассказываем, что посмотреть в следующий раз.</p></div>
+    </div>
+    <div class="guarantee rv">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:0 0 26px"><path d="M12 2.5 4.5 5.5v5.8c0 4.6 3.1 8.4 7.5 10.2 4.4-1.8 7.5-5.6 7.5-10.2V5.5L12 2.5Z" stroke="#C2410C" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.8 11.8 2.3 2.3 4.2-4.4" stroke="#C2410C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <p>Гарантия на работы — есть. Срок и условия фиксируем в заказ-наряде и называем до начала работ, а не после.</p>
+    </div>
+  </div>
+</section>
+<section class="sec p2" id="quiz" aria-labelledby="quiz-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Заявка · квиз</span>
+      <h2 id="quiz-h">Расскажите о машине — перезвоним с планом</h2>
+      <p class="lead">7 коротких шагов, около двух минут. Можно проходить одной рукой. VIN и год — необязательно.</p>
+    </div>
+
+    <div class="quiz-card rv" id="quizCard">
+      <div class="q-top"><b>Заявка на ремонт</b><span id="qCount" aria-live="polite">Шаг 1 из 7</span></div>
+      <div class="q-bar" aria-hidden="true"><i id="qBarFill"></i></div>
+
+      <form id="quizForm" novalidate>
+        <!-- шаг 1 -->
+        <div class="qstep on" data-n="1">
+          <fieldset>
+            <legend class="qstep-h"><h3 style="display:inline;font-size:inherit">Что случилось с машиной?</h3></legend>
+            <p class="hint">Выберите одно направление — следующие вопросы подстроятся под него.</p>
+            <div class="opts" role="radiogroup" aria-label="Направление обращения">
+              <label class="opt"><input type="radio" name="branch" value="wheels"><span class="dot" aria-hidden="true"></span><span><b>Колёса</b><span>Переобувка, балансировка, диски, порезы и грыжи, хранение шин</span></span></label>
+              <label class="opt"><input type="radio" name="branch" value="repair"><span class="dot" aria-hidden="true"></span><span><b>Ремонт и обслуживание</b><span>Двигатель, коробка, ходовая, тормоза, электрика, кондиционер, стёкла, ТО</span></span></label>
+              <label class="opt"><input type="radio" name="branch" value="dunno"><span class="dot" aria-hidden="true"></span><span><b>Пока не знаю</b><span>Что-то не так, но что именно — непонятно. Начнём с диагностики</span></span></label>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- шаг 2 -->
+        <div class="qstep" data-n="2">
+          <h3 tabindex="-1">Какая машина?</h3>
+          <p class="hint">Начните вводить марку — подскажем. Нет в списке? Впишите свою — это нормально.</p>
+          <div class="field">
+            <label for="qMarka">Марка <span class="sub">обязательно</span></label>
+            <input class="inp" id="qMarka" name="marka" type="text" list="brands" autocomplete="off" placeholder="Например: Hyundai" aria-describedby="qMarkaErr">
+            <datalist id="brands">
+              <option value="Lada (ВАЗ)"></option><option value="Toyota"></option><option value="Kia"></option>
+              <option value="Hyundai"></option><option value="Renault"></option><option value="Volkswagen"></option>
+              <option value="Skoda"></option><option value="Nissan"></option><option value="Chevrolet"></option>
+              <option value="Ford"></option><option value="Mitsubishi"></option><option value="BMW"></option>
+              <option value="Mercedes-Benz"></option><option value="Audi"></option><option value="Chery"></option>
+              <option value="Haval"></option><option value="Geely"></option><option value="Changan"></option>
+              <option value="ГАЗ"></option><option value="УАЗ"></option>
+            </datalist>
+            <p class="err" id="qMarkaErr" data-err="qMarka" hidden role="alert">Напишите марку — хотя бы пару букв. Например: Lada, Kia, ГАЗ.</p>
+          </div>
+        </div>
+
+        <!-- шаг 3 -->
+        <div class="qstep" data-n="3">
+          <h3 tabindex="-1">Модель и год выпуска</h3>
+          <p class="hint">Необязательно. Год помогает точнее подобрать запчасти. Не помните — так и нажмите.</p>
+          <div class="field">
+            <label for="qModel">Модель <span class="sub">необязательно</span></label>
+            <input class="inp" id="qModel" name="model" type="text" autocomplete="off" placeholder="Например: Solaris, Granta, Camry">
+          </div>
+          <div class="field">
+            <label for="qYear">Год выпуска <span class="sub">необязательно</span></label>
+            <input class="inp" id="qYear" name="year" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Например: 2018" aria-describedby="qYearErr" style="max-width:180px">
+            <p class="err" id="qYearErr" data-err="qYear" hidden role="alert">Похоже на опечатку: год — четыре цифры, от 1950 до 2027.</p>
+          </div>
+          <button class="chip" type="button" id="skipYear" aria-pressed="false">Не помню год — пропустить</button>
+        </div>
+
+        <!-- шаг 4 -->
+        <div class="qstep" data-n="4">
+          <h3 tabindex="-1">VIN — чтобы сразу посмотреть запчасти под вашу машину</h3>
+          <p class="hint">VIN — это 17 символов: есть в СТС и обычно виден под лобовым стеклом. Используем его только для подбора запчастей. Не знаете — пропускайте, уточним по телефону.</p>
+          <div class="field">
+            <label for="qVin">VIN <span class="sub">необязательно · 17 символов</span></label>
+            <input class="inp" id="qVin" name="vin" type="text" maxlength="17" autocapitalize="characters" spellcheck="false" autocomplete="off" placeholder="Например: Z94CB41A9JR000000" aria-describedby="qVinErr qVinHint" style="text-transform:uppercase;letter-spacing:.06em;font-family:ui-monospace,monospace">
+            <p class="tiny" id="qVinHint" style="margin-top:6px;color:var(--ink2)"></p>
+            <p class="err" id="qVinErr" data-err="qVin" hidden role="alert">В VIN ровно 17 символов (буквы и цифры, без I, O, Q). Проверьте номер или пропустите шаг — это не обязательно.</p>
+          </div>
+          <button class="chip" type="button" id="skipVin" aria-pressed="false">Не знаю VIN — пропустить</button>
+        </div>
+
+        <!-- шаг 5 -->
+        <div class="qstep" data-n="5">
+          <h3 tabindex="-1" id="qIssuesH">Что нужно сделать?</h3>
+          <p class="hint">Можно несколько пунктов. Не нашли своего — выберите «Сложно объяснить» и допишите словами ниже.</p>
+
+          <fieldset data-issues="wheels" hidden>
+            <legend>Колёса</legend>
+            <div class="opts">
+              <label class="opt"><input type="checkbox" name="issues" value="Переобувка (сезонная замена)"><span class="box" aria-hidden="true"></span><span><b>Переобувка</b><span>сезонная замена шин</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Балансировка"><span class="box" aria-hidden="true"></span><span><b>Балансировка</b><span>бьёт руль, вибрация на скорости</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Правка / прокатка дисков"><span class="box" aria-hidden="true"></span><span><b>Правка / прокатка дисков</b><span>диск кривой после ямы</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Ремонт пореза или грыжи"><span class="box" aria-hidden="true"></span><span><b>Ремонт пореза или грыжи</b><span>боковой порез, шишка на колесе</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Вулканизация"><span class="box" aria-hidden="true"></span><span><b>Вулканизация</b><span>ремонт прокола/пореза</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Сезонное хранение шин"><span class="box" aria-hidden="true"></span><span><b>Сезонное хранение шин</b><span>оставить комплект у нас</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Грузовые колёса / коммерческий транспорт"><span class="box" aria-hidden="true"></span><span><b>Грузовые колёса</b><span>коммерческий транспорт</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Сложно объяснить"><span class="box" aria-hidden="true"></span><span><b>Сложно объяснить</b><span>расскажу по телефону</span></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset data-issues="repair" hidden>
+            <legend>Ремонт и обслуживание</legend>
+            <div class="opts">
+              <label class="opt"><input type="checkbox" name="issues" value="Стук/гул в подвеске, уводит в сторону"><span class="box" aria-hidden="true"></span><span><b>Подвеска</b><span>стук, гул, уводит в сторону</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Тормоза"><span class="box" aria-hidden="true"></span><span><b>Тормоза</b><span>скрип, вибрация, длинный путь</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Двигатель: звук, дым, ошибка"><span class="box" aria-hidden="true"></span><span><b>Двигатель</b><span>звук, дым, ошибка на панели</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Коробка (АКПП/МКПП): пинки, вой"><span class="box" aria-hidden="true"></span><span><b>Коробка (АКПП/МКПП)</b><span>пинки, вой, тугое переключение</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Электрика: не заводится, ошибки, свет"><span class="box" aria-hidden="true"></span><span><b>Электрика</b><span>не заводится, ошибки, свет</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Кондиционер: не холодит"><span class="box" aria-hidden="true"></span><span><b>Кондиционер</b><span>не холодит, запах</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="ТО / замена масла"><span class="box" aria-hidden="true"></span><span><b>ТО / замена масла</b><span>плановое обслуживание</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Лобовое стекло: трещина, скол"><span class="box" aria-hidden="true"></span><span><b>Лобовое стекло</b><span>трещина, скол, замена</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Рулевая рейка"><span class="box" aria-hidden="true"></span><span><b>Рулевая рейка</b><span>стук, люфт, тугой руль</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Сложно объяснить"><span class="box" aria-hidden="true"></span><span><b>Сложно объяснить</b><span>расскажу по телефону</span></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset data-issues="dunno" hidden>
+            <legend>Пока не знаю</legend>
+            <div class="opts">
+              <label class="opt"><input type="checkbox" name="issues" value="Машина едет не так, как раньше"><span class="box" aria-hidden="true"></span><span><b>«Едет не так»</b><span>шумы, вибрации, потеря мощности</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Что-то стучит или гремит"><span class="box" aria-hidden="true"></span><span><b>Что-то стучит</b><span>не могу определить откуда</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Горит лампочка на панели"><span class="box" aria-hidden="true"></span><span><b>Лампочка на панели</b><span>check engine и другие</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Нужна диагностика перед дальней поездкой"><span class="box" aria-hidden="true"></span><span><b>Диагностика перед поездкой</b><span>проверить машину целиком</span></span></label>
+              <label class="opt"><input type="checkbox" name="issues" value="Сложно объяснить"><span class="box" aria-hidden="true"></span><span><b>Сложно объяснить</b><span>расскажу по телефону</span></span></label>
+            </div>
+          </fieldset>
+
+          <p class="err" id="qIssuesErr" data-err="issues" hidden role="alert">Отметьте хотя бы один пункт — или «Сложно объяснить», тогда мастер расспросит по телефону.</p>
+
+          <div class="field" style="margin-top:14px">
+            <label for="qFree">Пара слов своими словами <span class="sub">необязательно</span></label>
+            <textarea class="inp" id="qFree" name="free" placeholder="Например: стучит спереди справа на кочках, началось неделю назад"></textarea>
+          </div>
+        </div>
+
+        <!-- шаг 6 -->
+        <div class="qstep" data-n="6">
+          <h3 tabindex="-1">Куда перезвонить с планом?</h3>
+          <p class="hint">Перезвоним в рабочее время — ежедневно 9:00–19:00. Заявка ни к чему не обязывает.</p>
+          <div class="field">
+            <label for="qName">Как к вам обращаться <span class="sub">необязательно</span></label>
+            <input class="inp" id="qName" name="name" type="text" autocomplete="name" placeholder="Имя">
+          </div>
+          <div class="field">
+            <label for="qPhone">Телефон <span class="sub">обязательно</span></label>
+            <input class="inp" id="qPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="qPhoneErr" style="font-variant-numeric:tabular-nums">
+            <p class="err" id="qPhoneErr" data-err="qPhone" hidden role="alert">Телефон неполный: нужно 11 цифр, формат +7 (928) 906-57-00.</p>
+          </div>
+          <fieldset>
+            <legend>Когда удобно принять звонок?</legend>
+            <div class="opts">
+              <label class="opt"><input type="radio" name="calltime" value="Как можно скорее" checked><span class="dot" aria-hidden="true"></span><span><b>Как можно скорее</b><span>в рабочее время</span></span></label>
+              <label class="opt"><input type="radio" name="calltime" value="Утром (9:00–12:00)"><span class="dot" aria-hidden="true"></span><span><b>Утром</b><span>9:00–12:00</span></span></label>
+              <label class="opt"><input type="radio" name="calltime" value="Днём (12:00–15:00)"><span class="dot" aria-hidden="true"></span><span><b>Днём</b><span>12:00–15:00</span></span></label>
+              <label class="opt"><input type="radio" name="calltime" value="Вечером (15:00–19:00)"><span class="dot" aria-hidden="true"></span><span><b>Вечером</b><span>15:00–19:00</span></span></label>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- шаг 7 -->
+        <div class="qstep" data-n="7">
+          <h3 tabindex="-1">Проверьте и отправьте</h3>
+          <p class="hint">Всё верно? Отправляйте — мастер посмотрит заявку и перезвонит. Что-то не так — нажмите «изменить».</p>
+          <dl class="sum" id="qSummary"></dl>
+          <div class="consent">
+            <input type="checkbox" id="qConsent" name="consent" aria-describedby="qConsentErr">
+            <label for="qConsent">Согласен(на) на обработку персональных данных — <button class="linkbtn" type="button" data-doc="consent">текст согласия</button>, <button class="linkbtn" type="button" data-doc="policy">политика обработки</button>. В демо-версии данные никуда не отправляются.</label>
+          </div>
+          <p class="err" id="qConsentErr" data-err="qConsent" hidden role="alert">Без согласия мы не сможем перезвонить. Это один короткий документ — откройте ссылку и отметьте галочку.</p>
+          <button class="btn btn-a btn-block" type="submit" id="qSubmit" disabled>Отправить заявку</button>
+          <div class="loadbar" id="qLoadBar" aria-hidden="true"><i></i></div>
+          <p class="tiny q-foot">Демонстрация: данные никуда не отправляются.</p>
+          <label class="demo-err-toggle"><input type="checkbox" id="qDemoErr" style="width:18px;height:18px;accent-color:var(--warn)"> сымитировать ошибку сети (для проверки состояний)</label>
+        </div>
+
+        <div class="q-nav" id="qNav">
+          <button class="btn btn-o" type="button" id="qBack" hidden>← Назад</button>
+          <button class="btn btn-a" type="button" id="qNext" disabled>Далее →</button>
+        </div>
+      </form>
+
+      <!-- загрузка -->
+      <div class="q-result" id="qLoading" role="status">
+        <h3 tabindex="-1">Отправляем заявку…</h3>
+        <div class="loadbar on" aria-hidden="true"><i></i></div>
+      </div>
+
+      <!-- успех -->
+      <div class="q-result" id="qSuccess" role="status">
+        <div class="ok-badge" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7" stroke="#2B7A3D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3 tabindex="-1">Заявка принята <span class="tiny" style="font-weight:600">(демо)</span></h3>
+        <p style="margin-top:6px"><b id="qNum">№ A-2110-0000</b></p>
+        <ol class="nextsteps">
+          <li>Мастер посмотрит заявку и перезвонит в рабочее время — ежедневно 9:00–19:00.</li>
+          <li>По телефону уточнит детали и предложит удобное время.</li>
+          <li>На месте — диагностика и смета. Работу начнём только после вашего «да».</li>
+        </ol>
+        <p class="tiny">Демонстрация: заявка никуда не отправлена и не сохранена.</p>
+        <div class="hero-cta" style="margin-top:14px">
+          <a class="btn btn-a" href="tel:+79289065700" data-track="call_click">Позвонить сейчас</a>
+          <button class="btn btn-o" type="button" id="qAgain">Заполнить ещё раз</button>
+        </div>
+      </div>
+
+      <!-- ошибка -->
+      <div class="q-result" id="qError" role="alert">
+        <div class="ok-badge" style="background:#FBEEE2" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 7v6" stroke="#B54708" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="16.6" r="1.4" fill="#B54708"/><path d="M12 2.8 2.6 19.4h18.8L12 2.8Z" stroke="#B54708" stroke-width="2" stroke-linejoin="round" fill="none"/></svg></div>
+        <h3 tabindex="-1">Заявка не ушла — связь оборвалась</h3>
+        <p style="margin-top:6px">Демо-имитация ошибки. Всё, что вы заполнили, сохранено в этой вкладке: нажмите «Отправить ещё раз» или позвоните нам — так даже быстрее.</p>
+        <div class="hero-cta" style="margin-top:14px">
+          <button class="btn btn-a" type="button" id="qRetry">Отправить ещё раз</button>
+          <a class="btn btn-o" href="tel:+79289065700" data-track="call_click">Позвонить +7 (928) 906-57-00</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="cases" aria-labelledby="cases-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Наши работы</span>
+      <h2 id="cases-h">Работы: было — стало</h2>
+      <p class="lead">Каждый кейс — реальная машина на Портовой, 439, а комментарий пишет мастер, который делал работу. Пока здесь демо-заглушки: настоящие фото появятся после первого съёмочного дня.</p>
+    </div>
+    <div class="gal" id="gal">
+      <button class="gcard rv" type="button" data-cap="Боковой порез — ремонт, R16" data-sub="Вулканизация, монтаж/демонтаж, балансировка · демо-кейс, заменим реальными работами" data-demo="Демо-заглушка: здесь будет фото «до» и «после» с нашего поста">
+        <span class="gmedia bef"><span class="gbadge">до / после</span><svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#8A6A4F" stroke-width="1.8"/><circle cx="12" cy="12" r="3.4" stroke="#8A6A4F" stroke-width="1.8"/><path d="m17.6 6.4 1.8-1.8" stroke="#C2410C" stroke-width="2" stroke-linecap="round"/></svg></span>
+        <span class="gbody"><b>Боковой порез — ремонт, R16</b><span>вулканизация · балансировка</span></span>
+      </button>
+      <button class="gcard rv" type="button" data-st="1" data-cap="Правка диска R17 после ямы" data-sub="Прокатка на станке, контроль биения · демо-кейс, заменим реальными работами" data-demo="Демо-заглушка: здесь будет фото диска до и после прокатки">
+        <span class="gmedia aft"><span class="gbadge">до / после</span><svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#4C6B57" stroke-width="1.8"/><circle cx="12" cy="12" r="3.4" stroke="#4C6B57" stroke-width="1.8"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#4C6B57" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <span class="gbody"><b>Правка диска R17 после ямы</b><span>прокатка · контроль биения</span></span>
+      </button>
+      <button class="gcard rv" type="button" data-st="2" data-cap="Сезонная переобувка + балансировка" data-sub="Комплект R15, монтаж/демонтаж, балансировка четырёх колёс · демо-кейс" data-demo="Демо-заглушка: здесь будет фото шиномонтажного поста в работе">
+        <span class="gmedia bef"><span class="gbadge">до / после</span><svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#8A6A4F" stroke-width="1.8"/><path d="M12 7v10M7 12h10" stroke="#8A6A4F" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <span class="gbody"><b>Сезонная переобувка + балансировка</b><span>комплект R15</span></span>
+      </button>
+      <button class="gcard rv" type="button" data-cap="Грыжа на колесе R15 — ремонт" data-sub="Ремонт боковой грыжи, балансировка · демо-кейс, заменим реальными работами" data-demo="Демо-заглушка: здесь будет фото грыжи «до» и колеса «после»">
+        <span class="gmedia aft"><span class="gbadge">до / после</span><svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#4C6B57" stroke-width="1.8"/><path d="M8.5 15.5c1-3 6-3 7 0" stroke="#4C6B57" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <span class="gbody"><b>Грыжа на колесе R15 — ремонт</b><span>вулканизация · балансировка</span></span>
+      </button>
+      <button class="gcard rv" type="button" data-st="1" data-cap="Тормоза: колодки и диски" data-sub="Замена с проверкой суппортов и уровня жидкости · демо-кейс, заменим реальными работами" data-demo="Демо-заглушка: здесь будет фото тормозного узла до и после замены">
+        <span class="gmedia bef"><span class="gbadge">до / после</span><svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="#8A6A4F" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="#8A6A4F" stroke-width="1.8"/><path d="M18.5 5.5 21 3" stroke="#C2410C" stroke-width="2" stroke-linecap="round"/></svg></span>
+        <span class="gbody"><b>Тормоза: колодки и диски</b><span>замена · проверка суппортов</span></span>
+      </button>
+      <button class="gcard rv" type="button" data-st="2" data-cap="ТО с аппаратной заменой масла" data-sub="Масло, фильтры, проверка по регламенту · демо-кейс, заменим реальными работами" data-demo="Демо-заглушка: здесь будет фото поста ТО и аппарата замены масла">
+        <span class="gmedia aft"><span class="gbadge">до / после</span><svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3s5 6.2 5 10a5 5 0 0 1-10 0c0-3.8 5-10 5-10Z" stroke="#4C6B57" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+        <span class="gbody"><b>ТО с аппаратной заменой масла</b><span>масло · фильтры · регламент</span></span>
+      </button>
+      <button class="gcard rv" type="button" id="videoCard" data-video="1" aria-haspopup="dialog">
+        <span class="gmedia vid"><span class="gplay" aria-hidden="true"><i><svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="#1A1D21"/></svg></i></span><span class="gbadge">видео</span></span>
+        <span class="gbody"><b>Как проходит переобувка</b><span>видео 20–30 секунд · скоро</span></span>
+      </button>
+    </div>
+    <p class="tiny" style="margin-top:12px">Демо-кейсы: дизайнерские плашки вместо фото. Стоковые снимки и «чужие работы» не используем — только свою съёмку.</p>
+  </div>
+</section>
+<section class="sec p2" id="reviews" aria-labelledby="rev-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Отзывы и доверие</span>
+      <h2 id="rev-h">Что говорят клиенты</h2>
+    </div>
+
+    <div class="rate-card rv">
+      <div><span class="rate-num">4,5</span> <span class="stars" aria-hidden="true">★★★★☆</span></div>
+      <div class="rate-meta">
+        <b>182 оценки · источник: Яндекс.Карты</b>
+        <p class="tiny" style="margin:4px 0 0">Цифра предоставлена заказчиком и требует перепроверки перед публикацией. Ссылка на карточку — заглушка.</p>
+        <a href="#reviews" data-track="route_click" style="font-weight:700">Читать отзывы в Яндекс.Картах →</a>
+      </div>
+    </div>
+
+    <ul class="maps-row rv" aria-label="Мы на картах — разные площадки, одна компания">
+      <li>Яндекс.Карты: <b>4,5</b>&nbsp;(182)</li>
+      <li>2ГИС: <b>3,6</b>&nbsp;(12)</li>
+      <li>Zoon: <b>2,2</b>&nbsp;(1)</li>
+    </ul>
+    <p class="small rv">Мы на нескольких площадках под разными названиями — это одна и та же компания на Портовой, 439. Карточки приводим к одному имени и отвечаем на каждый отзыв, включая неудобные. Средний балл по площадкам не выводим — смотрим на первоисточники.</p>
+
+    <div class="revs">
+      <div class="rev rv"><span class="demo-tag">демо-отзыв · пример</span><q>Показали изношенные детали и объяснили, что можно подождать, а что нет. Спокойно, без нажима.</q><span class="who">Игорь · Kia Rio, ходовая</span></div>
+      <div class="rev rv" data-st="1"><span class="demo-tag">демо-отзыв · пример</span><q>Оставила заявку на сайте вечером — перезвонили в рабочее время, как и обещали. Колесо после пореза спасли.</q><span class="who">Анна · шиномонтаж</span></div>
+      <div class="rev rv" data-st="2"><span class="demo-tag">демо-отзыв · пример</span><q>Приехал с непонятным стуком. Нашли причину и согласовали сумму до начала работ — по факту она не изменилась.</q><span class="who">Сергей · диагностика подвески</span></div>
+    </div>
+    <p class="tiny" style="margin-top:10px">Демонстрационные тексты: без сумм, сроков и фамилий. Заменяются реальными отзывами после модерации (правила — в концепции).</p>
+
+    <button class="btn btn-o rv" type="button" id="revOpen" style="margin-top:14px">Оставить отзыв</button>
+    <div class="revform" id="revForm">
+      <form novalidate id="revFormEl">
+        <div class="field">
+          <label for="revText">Ваш отзыв <span class="sub">что делали, что понравилось или нет — своими словами</span></label>
+          <textarea class="inp" id="revText" placeholder="Например: менял колёса, приняли без очереди, показали старую резину…" aria-describedby="revTextErr"></textarea>
+          <p class="err" id="revTextErr" hidden role="alert">Напишите хотя бы пару слов — так отзыв полезнее для других.</p>
+        </div>
+        <div class="field">
+          <label for="revName">Как подписать <span class="sub">имя или инициалы, необязательно</span></label>
+          <input class="inp" id="revName" type="text" placeholder="Например: Игорь, владелец Kia Rio">
+        </div>
+        <div class="consent">
+          <input type="checkbox" id="revConsent" aria-describedby="revConsentErr">
+          <label for="revConsent">Согласен(на) на публикацию отзыва и обработку персональных данных — <button class="linkbtn" type="button" data-doc="consent">текст согласия</button>.</label>
+        </div>
+        <p class="err" id="revConsentErr" hidden role="alert">Для публикации нужно согласие — отметьте галочку.</p>
+        <button class="btn btn-a" type="submit">Отправить отзыв (демо)</button>
+        <p class="tiny" style="margin-top:8px">Демонстрация: отзыв никуда не отправляется. В продакшне — публикация после модерации.</p>
+      </form>
+      <div class="ok-note">Спасибо! В реальной версии отзыв появился бы на сайте после модерации. В демо — ничего не отправлено.</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="b2b" aria-labelledby="b2b-h">
+  <div class="w">
+    <div class="b2b rv">
+      <div>
+        <span class="k">Юрлицам и паркам</span>
+        <h2 id="b2b-h">Обслуживание парка — без «каждая машина сама по себе»</h2>
+        <ul>
+          <li>Грузовой шиномонтаж и балансировка коммерческого транспорта</li>
+          <li>ТО, ходовая, тормоза, электрика — по графику или по заявке</li>
+          <li>Безналичный расчёт для юрлиц</li>
+          <li>Один ответственный менеджер: заявки, статусы и документы в одной переписке</li>
+        </ul>
+        <p style="color:rgba(255,255,255,.75);font-size:13.5px">Условия намеренно не публикуем: тарифы зависят от парка и объёма работ. Обсудим лично — без выдуманных «скидок до 50%».</p>
+        <div class="hero-cta" style="max-width:460px;margin-top:16px">
+          <a class="btn btn-a" href="tel:+79289065700" data-track="call_click">Позвонить по парку</a>
+          <a class="btn" style="background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff" href="mailto:avtotehservis439@mail.ru">Написать на почту</a>
+        </div>
+      </div>
+      <div class="b2b-side">
+        <b>Как это работает</b>
+        <p>1. Вы пишете или звоните — собираем список машин и типовых работ.<br>2. Согласуем график и порядок заявок.<br>3. Машины приезжают по записи — без очереди в сезон.<br>4. Отчётность и закрывающие документы — по безналу.</p>
+        <p class="tiny" style="color:rgba(255,255,255,.6)">Демо: схема illustrative — детали подтверждаются владельцем.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec p2" id="faq" aria-labelledby="faq-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Вопросы и ответы</span>
+      <h2 id="faq-h">Частые вопросы</h2>
+    </div>
+    <div class="faq rv">
+      <details>
+        <summary>Где вы находитесь и как вас найти?</summary>
+        <div class="a">Ростов-на-Дону, улица Портовая, 439 (Железнодорожный район, Западный жилой массив, индекс 344033). От остановки «3-й Поселковый» — около 330 метров вдоль Портовой; рядом продуктовая база «Бум». Для навигатора: координаты 47.193068, 39.648295 или поиск «АвтоТехСервис Портовая 439».</div>
+      </details>
+      <details>
+        <summary>Когда вы работаете?</summary>
+        <div class="a">Ежедневно, 9:00–19:00. В сезон переобувки (октябрь–ноябрь, март–апрель) советуем оставить заявку заранее — приедете к назначенному времени, без ожидания в очереди.</div>
+      </details>
+      <details>
+        <summary>Нужно ли записываться на шиномонтаж заранее?</summary>
+        <div class="a">Можно приехать и так — примем в порядке живой очереди. Но если хотите гарантированное время, оставьте заявку на сайте: перезвоним и запишем. В пик сезона запись экономит время ожидания.</div>
+      </details>
+      <details>
+        <summary>Есть ли гарантия на работы?</summary>
+        <div class="a">Да, гарантия есть. Срок и условия фиксируем в заказ-наряде и называем до начала работ — вы видите их на бумаге, а не слышите «на словах».</div>
+      </details>
+      <details>
+        <summary>Сколько стоит ремонт / переобувка?</summary>
+        <div class="a">Цены намеренно не публикуем: стоимость зависит от диаметра колёс, модели машины и объёма работ, а «средние цифры» в жанре «от …» чаще путают, чем помогают. Точную сумму называем после диагностики — до начала работ. По телефону сориентируем по вашему случаю за пару минут: +7 (928) 906-57-00.</div>
+      </details>
+      <details>
+        <summary>Что если я не знаю, что именно сломалось?</summary>
+        <div class="a">Так бывает чаще, чем кажется, и это нормально. В заявке выберите «Пока не знаю»: мастер выслушает симптомы по телефону, а на площадке посмотрит машину и назовёт, что нашёл, — до начала работ.</div>
+      </details>
+      <details>
+        <summary>Можно ли подождать машину на месте?</summary>
+        <div class="a">Шиномонтаж и большинство работ по ТО выполняем в день обращения — машину можно подождать. Если ремонт займёт больше времени, скажем об этом заранее, чтобы вы планировали день. [Зону ожидания уточнить у владельца — в финальной версии здесь детали: где подождать, чай/кофе.]</div>
+      </details>
+      <details>
+        <summary>Работаете ли вы с юрлицами и парками?</summary>
+        <div class="a">Да: грузовой шиномонтаж, балансировка коммерческого транспорта, обслуживание парков, безналичный расчёт. Один ответственный менеджер на весь парк — подробности в разделе «Паркам и юрлицам» выше.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="contacts" aria-labelledby="ct-h">
+  <div class="w">
+    <div class="sec-head rv">
+      <span class="k">Контакты</span>
+      <h2 id="ct-h">Портовая, 439 — 330 метров от остановки «3-й Поселковый»</h2>
+    </div>
+    <div class="ct-grid">
+      <div class="rv">
+        <ul class="ct-list">
+          <li><span class="t">Адрес</span><div class="v">Ростов-на-Дону, ул. Портовая, 439 <span class="tiny">(индекс 344033)</span></div></li>
+          <li><span class="t">Как найти</span><div class="v" style="font-size:14.5px;font-weight:600">От остановки «3-й Поселковый» ~330 м вдоль Портовой. Ориентир — продуктовая база «Бум» рядом.</div></li>
+          <li><span class="t">Часы работы</span><div class="v">Ежедневно 9:00–19:00</div></li>
+          <li><span class="t">Телефон</span><div class="v"><a href="tel:+79289065700" data-track="call_click">+7 (928) 906-57-00</a></div></li>
+          <li><span class="t">Telegram</span><div class="v"><a href="https://t.me/+79518269839" data-track="telegram_click">+7 (951) 826-98-39</a></div></li>
+          <li><span class="t">E-mail для заявок</span><div class="v"><a href="mailto:avtotehservis439@mail.ru">avtotehservis439@mail.ru</a></div></li>
+        </ul>
+        <div class="ct-btns">
+          <a class="btn btn-a" href="https://yandex.ru/maps/?pt=39.648295,47.193068&z=17&l=map" data-track="route_click" rel="noopener">Построить маршрут</a>
+          <button class="btn btn-o" type="button" data-quiz-open data-track="quiz_open">Оставить заявку</button>
+        </div>
+      </div>
+      <div class="map-card rv" data-st="1">
+        <svg viewBox="0 0 640 400" role="img" aria-label="Схема расположения: улица Портовая, 439, ориентир — остановка «3-й Поселковый» и продуктовая база «Бум»">
+          <rect width="640" height="400" fill="#EEF0F2"/>
+          <rect x="0" y="150" width="640" height="90" fill="#DFE3E7"/>
+          <text x="24" y="202" font-size="22" font-weight="700" fill="#5A6068" font-family="system-ui,sans-serif">ул. Портовая</text>
+          <rect x="420" y="0" width="70" height="150" fill="#DFE3E7"/>
+          <text x="430" y="90" font-size="15" fill="#5A6068" font-family="system-ui,sans-serif" transform="rotate(-90 442 96)">пер. 3-й Поселковый</text>
+          <rect x="80" y="290" width="180" height="70" rx="8" fill="#E3E5E8" stroke="#C9CDD2"/>
+          <text x="98" y="330" font-size="15" fill="#5A6068" font-family="system-ui,sans-serif">продуктовая база «Бум»</text>
+          <circle cx="330" cy="268" r="9" fill="#C2410C"/>
+          <circle cx="330" cy="268" r="17" fill="none" stroke="#C2410C" stroke-width="3" opacity=".5"/>
+          <text x="352" y="262" font-size="18" font-weight="800" fill="#1A1D21" font-family="system-ui,sans-serif">АвтоТехСервис</text>
+          <text x="352" y="284" font-size="15" fill="#5A6068" font-family="system-ui,sans-serif">Портовая, 439</text>
+          <rect x="536" y="118" width="16" height="16" fill="#2B7A3D"/>
+          <text x="452" y="112" font-size="14" fill="#2B7A3D" font-weight="700" font-family="system-ui,sans-serif">ост. «3-й Поселковый»</text>
+          <path d="M544 134 C 544 190, 420 210, 348 258" stroke="#C2410C" stroke-width="3" stroke-dasharray="8 7" fill="none"/>
+          <text x="470" y="196" font-size="14" fill="#C2410C" font-weight="700" font-family="system-ui,sans-serif">~330 м пешком</text>
+        </svg>
+        <p class="map-note">Демо-схема вместо интерактивной карты (в мокапе запрещены внешние запросы). В продакшне — карта Яндекса с меткой и кнопкой «маршрут».</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="ftr">
+  <div class="w">
+    <div class="ftr-grid">
+      <div>
+        <h4>АвтоТехСервис</h4>
+        <p>Автосервис и шиномонтаж. Ростов-на-Дону, ул. Портовая, 439. Ежедневно 9:00–19:00.<br>
+        <a href="tel:+79289065700" data-track="call_click" style="color:var(--ink);font-weight:700">+7 (928) 906-57-00</a> · <a href="mailto:avtotehservis439@mail.ru" style="color:var(--ink)">avtotehservis439@mail.ru</a></p>
+      </div>
+      <div>
+        <h4>Организация</h4>
+        <p>ИП Яковенко Павел Иванович<br>ИНН 341010400388<br>ОГРНИП 324619600117335</p>
+      </div>
+      <div>
+        <h4>Документы и демо</h4>
+        <ul>
+          <li><button type="button" data-doc="policy">Политика обработки персональных данных</button></li>
+          <li><button type="button" data-doc="consent">Согласие на обработку персональных данных</button></li>
+          <li><button type="button" id="admOpen">Демо админки (публикация с телефона)</button></li>
+          <li><a href="#hero">Наверх ↑</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="ftr-bottom">
+      <span>© <span id="year">2026</span> АвтоТехСервис · Ростов-на-Дону</span>
+      <span>Демонстрационный макет (Агент 5) — не является публичной офертой</span>
+    </div>
+  </div>
+</footer>
+
+<div class="dock" id="dock">
+  <a class="btn btn-o" href="tel:+79289065700" data-track="call_click">Позвонить</a>
+  <button class="btn btn-a" type="button" data-quiz-open data-track="quiz_open">Заявка</button>
+</div>
+
+<!-- лайтбокс галереи -->
+<div class="ov" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Просмотр работы">
+  <div class="ov-bg" data-close></div>
+  <div class="lb-panel">
+    <div class="lb-top">
+      <span class="lb-count" id="lbCount">1 / 6</span>
+      <button class="lb-x" type="button" data-close aria-label="Закрыть просмотр (Esc)">✕</button>
+    </div>
+    <div class="lb-stage" id="lbStage">
+      <button class="lb-arrow lb-prev" type="button" id="lbPrev" aria-label="Предыдущая работа">‹</button>
+      <div class="lb-media bef" id="lbMedia" role="img" aria-label="Демо-заглушка фотографии работы">
+        <svg width="90" height="90" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4" opacity=".55"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="1.4" opacity=".55"/></svg>
+        <span class="gbadge" id="lbPhase" style="top:auto;bottom:10px;left:10px">было</span>
+      </div>
+      <button class="lb-arrow lb-next" type="button" id="lbNext" aria-label="Следующая работа">›</button>
+    </div>
+    <div class="lb-bottom">
+      <div class="ba-toggle" role="group" aria-label="Переключатель «было/стало»">
+        <button class="chip" type="button" id="lbToggle" aria-pressed="false">Было / Стало</button>
+      </div>
+      <p class="lb-cap" id="lbCap"></p>
+      <p class="lb-sub" id="lbSub"></p>
+    </div>
+  </div>
+</div>
+
+<!-- видео-модалка -->
+<div class="ov" id="videoModal" hidden role="dialog" aria-modal="true" aria-label="Видео работы">
+  <div class="ov-bg" data-close></div>
+  <div class="modal-panel" style="width:min(640px,100%)">
+    <button class="modal-x" type="button" data-close aria-label="Закрыть видео">✕</button>
+    <div class="gmedia vid" style="aspect-ratio:16/9;border-radius:var(--r)" role="img" aria-label="Заглушка видео">
+      <span class="gplay" aria-hidden="true"><i><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="#1A1D21"/></svg></i></span>
+    </div>
+    <h3 style="margin-top:14px">Здесь будет видео 20–30 секунд</h3>
+    <p class="small">Процесс переобувки на нашем посту: снято на телефон, без постановки. В демо видеофайла нет (мокап не содержит медиа). В продакшне: постер грузится сразу, ролик начинается по тапу, звук — только по явному действию, никакой автопрокрутки.</p>
+    <button class="btn btn-g btn-block" type="button" data-close>Закрыть</button>
+  </div>
+</div>
+
+<!-- модалка документов -->
+<div class="ov" id="docModal" hidden role="dialog" aria-modal="true" aria-labelledby="docTitle">
+  <div class="ov-bg" data-close></div>
+  <div class="modal-panel">
+    <button class="modal-x" type="button" data-close aria-label="Закрыть документ">✕</button>
+    <h3 id="docTitle">Документ</h3>
+    <div id="docBody" class="small"></div>
+  </div>
+</div>
+<template id="docPolicy"><p><b>Проект документа для демо.</b> Финальный текст согласуется с юристом владельца до запуска.</p><p>ИП Яковенко Павел Иванович (ИНН 341010400388, ОГРНИП 324619600117335) — оператор персональных данных. Сайт собирает: имя (если указано), телефон, марку/модель/год автомобиля, VIN (если указан), описание неисправности, предпочтительное время звонка — исключительно чтобы перезвонить, согласовать диагностику и смету.</p><p>Данные хранятся в базе на сервере в Российской Федерации (требование ч. 5 ст. 18 152-ФЗ о локализации), не передаются третьим лицам, кроме случаев, предусмотренных законом. Срок хранения заявки — 12 месяцев, затем удаление.</p><p>Отозвать согласие: письмо на avtotehservis439@mail.ru или звонок +7 (928) 906-57-00.</p></template>
+<template id="docConsent"><p><b>Проект документа для демо.</b> Согласие оформляется отдельным документом (требование ст. 9 152-ФЗ в редакции, действующей с 01.09.2025) — отдельно от политики и оферты.</p><p>Я, действуя свободно, своей воёй и в своём интересе, даю согласие ИП Яковенко Павел Иванович (ИНН 341010400388) на обработку моих персональных данных: имя, телефон, сведения об автомобиле (марка, модель, год, VIN), описание неисправности, предпочтительное время звонка.</p><p>Цель обработки: обработка заявки на услуги автосервиса, обратный звонок, согласование диагностики и сметы. Действия: сбор, запись, систематизация, накопление, хранение (база данных в РФ), уточнение, использование, удаление. Срок: 12 месяцев с даты отправки заявки либо до отзыва согласия.</p><p>Согласие может быть отозвано письмом на avtotehservis439@mail.ru. В уведомлениях в Telegram и e-mail передаётся минимальный состав данных: имя, телефон, автомобиль, описание проблемы, номер заявки.</p></template>
+
+<!-- демо-админка -->
+<div class="ov" id="admin" hidden role="dialog" aria-modal="true" aria-label="Демо админки">
+  <div class="ov-bg" data-close></div>
+  <div class="modal-panel" style="width:min(600px,100%)">
+    <button class="modal-x" type="button" data-close aria-label="Закрыть админку">✕</button>
+
+    <div id="admLogin">
+      <span class="k">Демо админки</span>
+      <h3 style="padding-right:0">Как владелец публикует работу с телефона</h3>
+      <p class="small">Это упрощённая копия реальной админки. В продакшне тот же поток ещё короче — через Telegram-бот: фото → тип работы → подпись → «Опубликовать». HEIC и MOV конвертируются на сервере автоматически. Здесь — демо в браузере: после перезагрузки страницы добавленные кейсы исчезают.</p>
+      <div class="adm-lead">
+        <span class="adm-timer" id="admTimerLogin">⏱ цель — 60 секунд</span>
+      </div>
+      <button class="btn btn-a btn-block" type="button" id="admEnter">Войти (демо, без пароля)</button>
+      <p class="tiny" style="margin-top:8px;text-align:center">Вход по магической ссылке в Telegram — без пароля, который можно забыть.</p>
+    </div>
+
+    <div id="admDash" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="padding-right:0">Админка (демо)</h3>
+        <span class="adm-timer" id="admTimer">⏱ 00:00 / цель 60 с</span>
+      </div>
+      <div class="adm-tabs" role="tablist" aria-label="Разделы админки">
+        <button class="btn btn-g btn-sm adm-tab" type="button" id="tabLeads" role="tab" aria-selected="true" aria-controls="paneLeads">Заявки · 3</button>
+        <button class="btn btn-g btn-sm adm-tab" type="button" id="tabAdd" role="tab" aria-selected="false" aria-controls="paneAdd">＋ Добавить работу</button>
+      </div>
+
+      <div class="adm-pane on" id="paneLeads" role="tabpanel" aria-labelledby="tabLeads">
+        <div class="lead-row"><div class="top"><b>Заявка №A-2110-0142</b><span class="status new">новая</span></div>
+          <span class="meta">Колёса · переобувка R16 · Lada Vesta · «как можно скорее» · 12 минут назад<br>Демо-телефон: +7 (900) 000-00-01</span>
+          <div class="acts"><button class="btn btn-g btn-sm" type="button" data-lead="work">В работу</button><button class="btn btn-g btn-sm" type="button" data-lead="done">Закрыта</button></div></div>
+        <div class="lead-row"><div class="top"><b>Заявка №A-2110-0141</b><span class="status work">в работе</span></div>
+          <span class="meta">Ремонт · стук в подвеске · Kia Rio · VIN указан · утром · 1 час назад<br>Демо-телефон: +7 (900) 000-00-02</span>
+          <div class="acts"><button class="btn btn-g btn-sm" type="button" data-lead="work">В работу</button><button class="btn btn-g btn-sm" type="button" data-lead="done">Закрыта</button></div></div>
+        <div class="lead-row"><div class="top"><b>Заявка №A-2110-0139</b><span class="status done">закрыта</span></div>
+          <span class="meta">Пока не знаю · диагностика · Hyundai Solaris · клиент приехал вчера<br>Демо-телефон: +7 (900) 000-00-03</span>
+          <div class="acts"><button class="btn btn-g btn-sm" type="button" data-lead="work">В работу</button><button class="btn btn-g btn-sm" type="button" data-lead="done">Закрыта</button></div></div>
+        <p class="tiny">Демо-строки. В продакшне заявки падают сюда из формы сайта и дублируются в Telegram и на e-mail; статусы те же.</p>
+      </div>
+
+      <div class="adm-pane" id="paneAdd" role="tabpanel" aria-labelledby="tabAdd" hidden>
+        <div class="drop">
+          <label class="flabel" for="admFile">1. Фото работы (до/после)</label>
+          <input class="inp" type="file" id="admFile" accept="image/*" style="max-width:100%;background:var(--paper)">
+          <p class="tiny" style="margin-top:8px">iPhone снимает в HEIC — браузеры (кроме Safari) его не показывают, поэтому в продакшне конвертация идёт на сервере. Здесь превью может не открыться для HEIC — это ожидаемо.</p>
+        </div>
+        <div class="prev" id="admPrev" hidden></div>
+        <div class="field" style="margin-top:12px">
+          <label for="admCap">2. Подпись — что сделали, одной фразой</label>
+          <input class="inp" id="admCap" type="text" placeholder="Например: Правка диска R16 после ямы" aria-describedby="admCapErr">
+          <p class="err" id="admCapErr" hidden role="alert">Добавьте подпись — хотя бы 3 символа, чтобы клиенты понимали, что на фото.</p>
+        </div>
+        <div class="field">
+          <label for="admCat">3. Категория</label>
+          <select class="inp" id="admCat">
+            <option>Шиномонтаж и диски</option><option>ТО и масло</option><option>Ходовая и тормоза</option>
+            <option>Двигатель и КПП</option><option>Электрика и кондиционеры</option><option>Стёкла</option>
+          </select>
+        </div>
+        <button class="btn btn-a btn-block" type="button" id="admPublish">4. Опубликовать</button>
+        <p class="tiny" style="margin-top:8px;text-align:center">Демо: карточка появится в галерее выше. После перезагрузки страницы исчезнет.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+'use strict';
+var d=document;
+function $(s,c){return (c||d).querySelector(s);}
+function $$(s,c){return Array.prototype.slice.call((c||d).querySelectorAll(s));}
+d.documentElement.classList.add('js');
+var RMq=(window.matchMedia?window.matchMedia('(prefers-reduced-motion: reduce)'):null);
+function reduced(){return !!(RMq&&RMq.matches);}
+/* аналитика в демо: события НЕ отправляются; перечень — в mockup-notes.md */
+function track(name){ if(window.console&&console.debug){console.debug('[demo-event]',name);} }
+$$('[data-track]').forEach(function(el){ el.addEventListener('click',function(){ track(el.getAttribute('data-track')); }); });
+
+/* ---------- оверлеи: стек, Esc, фокус-ловушка ---------- */
+var ovStack=[], lastFocus=null;
+function focusables(el){
+  return $$('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',el)
+    .filter(function(n){ return !n.hidden && !n.closest('[hidden]') && n.getAttribute('type')!=='hidden'; });
+}
+function openOv(el){
+  if(!el.hidden) return;
+  lastFocus=d.activeElement;
+  el.hidden=false; d.body.classList.add('ov-open'); ovStack.push(el);
+  var f=focusables(el); if(f.length){ f[0].focus(); }
+}
+function closeOv(el){
+  if(el.hidden) return;
+  el.hidden=true;
+  var i=ovStack.indexOf(el); if(i>-1) ovStack.splice(i,1);
+  if(!ovStack.length){ d.body.classList.remove('ov-open'); }
+  if(lastFocus&&lastFocus.focus){ try{lastFocus.focus();}catch(e){} }
+  lastFocus=null;
+}
+function topOv(){ return ovStack.length?ovStack[ovStack.length-1]:null; }
+d.addEventListener('keydown',function(e){
+  var ov=topOv(); if(!ov) return;
+  if(e.key==='Escape'){ e.preventDefault(); closeOv(ov); return; }
+  if(e.key==='Tab'){
+    var f=focusables(ov); if(!f.length) return;
+    var first=f[0], last=f[f.length-1];
+    if(e.shiftKey && (d.activeElement===first || !ov.contains(d.activeElement))){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && (d.activeElement===last || !ov.contains(d.activeElement))){ e.preventDefault(); first.focus(); }
+  }
+});
+$$('.ov [data-close]').forEach(function(el){
+  el.addEventListener('click',function(){ var ov=el.closest('.ov'); if(ov) closeOv(ov); });
+});
+
+/* ---------- появление при скролле ---------- */
+var rvs=$$('.rv');
+if('IntersectionObserver' in window && !reduced()){
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  },{threshold:.1,rootMargin:'0px 0px -5% 0px'});
+  rvs.forEach(function(el){io.observe(el);});
+}else{
+  rvs.forEach(function(el){el.classList.add('in');});
+}
+
+/* ---------- sticky-панель после первого экрана ---------- */
+var dock=$('#dock'), hero=$('#hero');
+if('IntersectionObserver' in window && dock && hero){
+  new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(!en.isIntersecting && en.boundingClientRect.top<0){ dock.classList.add('show'); }
+      else if(en.isIntersecting){ dock.classList.remove('show'); }
+    });
+  },{threshold:0}).observe(hero);
+}else if(dock){ dock.classList.add('show'); }
+
+/* ---------- меню ---------- */
+var menu=$('#menu'), burger=$('#burger');
+if(burger&&menu){
+  burger.addEventListener('click',function(){
+    if(menu.hidden){ openOv(menu); burger.setAttribute('aria-expanded','true'); }
+    else { closeOv(menu); burger.setAttribute('aria-expanded','false'); }
+  });
+  $$('[data-menu-link]',menu).forEach(function(a){
+    a.addEventListener('click',function(){ closeOv(menu); burger.setAttribute('aria-expanded','false'); });
+  });
+}
+
+/* ---------- документы (политика/согласие) ---------- */
+var docModal=$('#docModal');
+$$('[data-doc]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var kind=btn.getAttribute('data-doc');
+    var tpl=kind==='policy'?$('#docPolicy'):$('#docConsent');
+    $('#docTitle').textContent=kind==='policy'?'Политика обработки персональных данных (проект)':'Согласие на обработку персональных данных (проект)';
+    $('#docBody').innerHTML=tpl.innerHTML;
+    openOv(docModal);
+  });
+});
+
+/* ---------- toast ---------- */
+var toast=$('#toast'), toastT=null;
+function showToast(msg,ms){
+  toast.textContent=msg; toast.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){toast.classList.remove('show');},ms||2800);
+}
+
+/* ---------- галерея: лайтбокс ---------- */
+var lightbox=$('#lightbox'), lbMedia=$('#lbMedia'), lbCap=$('#lbCap'), lbSub=$('#lbSub'), lbCount=$('#lbCount'),
+    lbPhase=$('#lbPhase'), lbToggle=$('#lbToggle'), lbItems=[], lbIdx=0, lbAfter=false;
+function galCards(){ return $$('#gal .gcard').filter(function(c){return !c.dataset.video;}); }
+function renderLB(){
+  var c=lbItems[lbIdx]; if(!c) return;
+  lbCap.textContent=c.dataset.cap||'';
+  lbSub.textContent=(lbAfter?'Стало. ':'Было. ')+(c.dataset.sub||'')+' — '+(c.dataset.demo||'демо-заглушка');
+  lbCount.textContent=(lbIdx+1)+' / '+lbItems.length;
+  lbMedia.classList.toggle('aft',lbAfter); lbMedia.classList.toggle('bef',!lbAfter);
+  lbPhase.textContent=lbAfter?'стало':'было';
+  lbToggle.setAttribute('aria-pressed',lbAfter?'true':'false');
+  lbMedia.setAttribute('aria-label',(c.dataset.demo||'демо-заглушка')+' — '+lbAfter?'стало':'было');
+}
+function openLB(i){ lbItems=galCards(); lbIdx=i; lbAfter=false; renderLB(); openOv(lightbox); }
+function lbGo(step){ lbIdx=(lbIdx+step+lbItems.length)%lbItems.length; lbAfter=false; renderLB(); }
+$$('#gal .gcard').forEach(function(card){
+  card.addEventListener('click',function(){
+    if(card.dataset.video){ openOv($('#videoModal')); return; }
+    var items=galCards(), i=items.indexOf(card);
+    if(i>-1) openLB(i);
+  });
+});
+$('#lbPrev').addEventListener('click',function(){lbGo(-1);});
+$('#lbNext').addEventListener('click',function(){lbGo(1);});
+lbToggle.addEventListener('click',function(){
+  lbAfter=!lbAfter;
+  if(!reduced()){ lbMedia.classList.add('flip'); setTimeout(function(){ lbMedia.classList.remove('flip'); renderLB(); },180); }
+  else renderLB();
+});
+/* свайп в лайтбоксе */
+(function(){
+  var sx=0,sy=0,stage=$('#lbStage');
+  stage.addEventListener('touchstart',function(e){ var t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; },{passive:true});
+  stage.addEventListener('touchend',function(e){
+    var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Math.abs(dx)>44 && Math.abs(dx)>Math.abs(dy)){ lbGo(dx<0?1:-1); }
+  },{passive:true});
+})();
+/* ---------- КВИЗ ---------- */
+var qForm=$('#quizForm'), qSteps=$$('.qstep',qForm), qNav=$('#qNav'), qBack=$('#qBack'), qNext=$('#qNext'),
+    qCount=$('#qCount'), qBarFill=$('#qBarFill'), qSummary=$('#qSummary'), qCard=$('#quizCard'),
+    TOTAL=7, cur=1, vinSkipped=false, yearSkipped=false;
+var branchNames={wheels:'Колёса',repair:'Ремонт и обслуживание',dunno:'Пока не знаю — начнём с диагностики'};
+var step5Heads={wheels:'Какие работы с колёсами нужны?',repair:'Что беспокоит в машине?',dunno:'Что происходит с машиной?'};
+
+function qVal(name){ var el=qForm.elements[name]; if(!el) return ''; if(el.length&&el[0]&&el[0].type==='radio'){ for(var i=0;i<el.length;i++){if(el[i].checked)return el[i].value;} return ''; } return el.value; }
+function activeIssues(){
+  var b=qVal('branch'); if(!b) return [];
+  var fs=$('[data-issues="'+b+'"]'); if(!fs) return [];
+  return $$('input[name="issues"]:checked',fs).map(function(i){return i.value;});
+}
+function errEl(id){ return $('.err[data-err="'+id+'"]'); }
+function setErr(id,on){
+  var e=errEl(id); if(e) e.hidden=!on;
+  var inp=$('#'+id); if(inp) inp.setAttribute('aria-invalid',on?'true':'false');
+}
+function stepValid(n){
+  switch(n){
+    case 1: return !!qVal('branch');
+    case 2: return qVal('marka').trim().length>=2;
+    case 3: var y=qVal('year').trim(); return y===''||yearSkipped||(/^\d{4}$/.test(y)&&+y>=1950&&+y<=2027);
+    case 4: var v=qVal('vin').trim(); return vinSkipped||v===''||(/^[A-Z0-9]{17}$/.test(v));
+    case 5: return activeIssues().length>=1;
+    case 6: return qVal('phone').replace(/\D/g,'').length===11;
+    case 7: return $('#qConsent').checked;
+  }
+  return true;
+}
+function showStepErrors(n){
+  if(n===2&&!stepValid(2)) setErr('qMarka',true);
+  if(n===3&&!stepValid(3)) setErr('qYear',true);
+  if(n===4&&!stepValid(4)) setErr('qVin',true);
+  if(n===5&&!stepValid(5)) setErr('issues',true);
+  if(n===6&&!stepValid(6)) setErr('qPhone',true);
+  if(n===7&&!stepValid(7)) setErr('qConsent',true);
+  var first=$('.qstep.on .err:not([hidden])');
+  if(first){
+    var key=first.getAttribute('data-err');
+    var t=(key==='issues')
+      ? $$('.qstep.on [data-issues]:not([hidden]) input[name="issues"]')[0]
+      : $('#'+key);
+    if(t&&t.focus) t.focus();
+  }
+}
+function clearStepErrors(n){
+  $$('.qstep[data-n="'+n+'"] .err').forEach(function(e){e.hidden=true;});
+  $$('.qstep[data-n="'+n+'"] .inp').forEach(function(e){e.removeAttribute('aria-invalid');});
+}
+function syncNav(){
+  qCount.textContent='Шаг '+cur+' из '+TOTAL;
+  qBarFill.style.transform='scaleX('+(cur/TOTAL)+')';
+  qBack.hidden=cur===1;
+  qNext.hidden=cur===TOTAL;
+  if(cur<TOTAL) qNext.disabled=!stepValid(cur);
+  $('#qSubmit').disabled=!stepValid(7);
+}
+function gotoStep(n){
+  cur=Math.max(1,Math.min(TOTAL,n));
+  track('step_view');
+  qSteps.forEach(function(s){ s.classList.toggle('on',+s.getAttribute('data-n')===cur); });
+  clearStepErrors(cur);
+  if(cur===5){
+    var b=qVal('branch');
+    $$('[data-issues]').forEach(function(f){ f.hidden=(f.getAttribute('data-issues')!==b); });
+    $('#qIssuesH').textContent=step5Heads[b]||'Что нужно сделать?';
+  }
+  if(cur===7) renderSummary();
+  syncNav();
+  var h=$('.qstep.on h3')||$('.qstep.on .qstep-h');
+  if(h&&h.focus){ try{h.focus({preventScroll:true});}catch(e){h.focus();} }
+}
+function renderSummary(){
+  var rows=[
+    ['Направление',branchNames[qVal('branch')]||'—',1],
+    ['Марка',qVal('marka').trim()||'—',2],
+    ['Модель / год',[qVal('model').trim(),yearSkipped?'год не помню':qVal('year').trim()].filter(Boolean).join(', ')||'не указаны',3],
+    ['VIN',vinSkipped?'не знаю — уточним по телефону':(qVal('vin').trim()||'не указан'),4],
+    ['Работы / симптомы',activeIssues().join('; ')||'—',5],
+    ['Своими словами',qVal('free').trim()||'—',5],
+    ['Имя',qVal('name').trim()||'не указано',6],
+    ['Телефон',qVal('phone')||'—',6],
+    ['Удобное время',qVal('calltime')||'как можно скорее',6]
+  ];
+  qSummary.innerHTML='';
+  rows.forEach(function(r){
+    var div=d.createElement('div'); div.className='sum-row';
+    var dt=d.createElement('dt'); dt.textContent=r[0];
+    var dd=d.createElement('dd'); dd.textContent=r[1];
+    var btn=d.createElement('button'); btn.type='button'; btn.className='linkbtn'; btn.textContent='изменить';
+    btn.addEventListener('click',function(){ track('step_back'); gotoStep(r[2]); });
+    div.appendChild(dt); div.appendChild(dd); div.appendChild(btn);
+    qSummary.appendChild(div);
+  });
+}
+qNext.addEventListener('click',function(){
+  if(stepValid(cur)){ track('step_next'); gotoStep(cur+1); }
+  else showStepErrors(cur);
+});
+qBack.addEventListener('click',function(){ track('step_back'); gotoStep(cur-1); });
+qForm.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.closest&&t.closest('.opt')){
+    if(t.type==='radio'){
+      $$('input[name="'+t.name+'"]',qForm).forEach(function(i){ var o=i.closest('.opt'); if(o) o.classList.toggle('sel',i.checked); });
+    }else{
+      var o0=t.closest('.opt'); if(o0) o0.classList.toggle('sel',t.checked);
+    }
+  }
+  if(t.name==='branch'){
+    var b=t.value;
+    $$('[data-issues]').forEach(function(f){
+      var on=f.getAttribute('data-issues')===b; f.hidden=!on;
+      if(!on) $$('input',f).forEach(function(i){i.checked=false;});
+    });
+    $('#qIssuesH').textContent=step5Heads[b]||'Что нужно сделать?';
+  }
+  if(t.id==='qConsent') setErr('qConsent',false);
+  clearStepErrors(cur); syncNav();
+});
+qForm.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.id==='qVin'){
+    var raw=t.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    var had=/[IOQ]/.test(raw);
+    raw=raw.replace(/[IOQ]/g,'');
+    t.value=raw;
+    $('#qVinHint').textContent=had?'Буквы I, O, Q в VIN не используются — мы их убрали.':(raw.length?raw.length+' / 17 символов':'');
+    if(had) vinSkipped=false;
+    if(raw.length===17){ vinSkipped=false; $('#skipVin').setAttribute('aria-pressed','false'); }
+  }
+  clearStepErrors(cur); syncNav();
+});
+/* маска телефона */
+var qPhone=$('#qPhone');
+qPhone.addEventListener('input',function(){
+  var raw=qPhone.value.replace(/\D/g,'');
+  if(!raw){ qPhone.value=''; return; }
+  if(raw.charAt(0)==='8') raw='7'+raw.slice(1);
+  if(raw.charAt(0)!=='7') raw='7'+raw;
+  raw=raw.slice(0,11);
+  var p=raw.slice(1), out='+7';
+  if(p.length){ out+=' ('+p.slice(0,3); }
+  if(p.length>=3){ out+=')'; }
+  if(p.length>3){ out+=' '+p.slice(3,6); }
+  if(p.length>6){ out+='-'+p.slice(6,8); }
+  if(p.length>8){ out+='-'+p.slice(8,10); }
+  qPhone.value=out;
+});
+/* пропуски */
+$('#skipVin').addEventListener('click',function(){
+  vinSkipped=true; $('#qVin').value=''; setErr('qVin',false);
+  $('#qVinHint').textContent='Пропущено — уточним VIN по телефону, если понадобится.';
+  this.setAttribute('aria-pressed','true'); track('skip_vin'); syncNav();
+});
+$('#skipYear').addEventListener('click',function(){
+  yearSkipped=true; $('#qYear').value=''; setErr('qYear',false);
+  this.setAttribute('aria-pressed','true'); this.textContent='Год не помню — ок, не препятствие'; syncNav();
+});
+/* панели результатов */
+function showPanel(name){
+  ['qLoading','qSuccess','qError'].forEach(function(id){
+    $('#'+id).classList.toggle('on', name!=='' && id==='q'+name.charAt(0).toUpperCase()+name.slice(1));
+  });
+  qForm.hidden=(name!=='');
+  qNav.hidden=(name!=='');
+  $('.q-top').style.visibility=name?'hidden':'visible';
+  $('.q-bar').style.visibility=name?'hidden':'visible';
+  if(name){ var h=$('#q'+name.charAt(0).toUpperCase()+name.slice(1)+' h3'); if(h&&h.focus){ try{h.focus({preventScroll:true});}catch(e){h.focus();} } }
+}
+function leadNumber(){
+  var dt=new Date(), dd=('0'+dt.getDate()).slice(-2), mm=('0'+(dt.getMonth()+1)).slice(-2);
+  return 'A-'+dd+mm+'-'+(1000+Math.floor(Math.random()*9000));
+}
+qForm.addEventListener('submit',function(e){
+  e.preventDefault(); track('quiz_submit_attempt');
+  if(!stepValid(7)){ showStepErrors(7); return; }
+  var wantError=$('#qDemoErr').checked;
+  showPanel('loading');
+  var delay=700+Math.round(Math.random()*500);
+  setTimeout(function(){
+    if(wantError){ showPanel('error'); }
+    else { $('#qNum').textContent='№ '+leadNumber(); showPanel('success'); track('quiz_success'); }
+  },delay);
+});
+$('#qRetry').addEventListener('click',function(){
+  var wantError=$('#qDemoErr').checked;
+  showPanel('loading');
+  setTimeout(function(){
+    if(wantError){ showPanel('error'); }
+    else { $('#qNum').textContent='№ '+leadNumber(); showPanel('success'); track('quiz_success'); }
+  },700+Math.round(Math.random()*500));
+});
+$('#qAgain').addEventListener('click',function(){
+  qForm.reset(); vinSkipped=false; yearSkipped=false;
+  $('#qVinHint').textContent=''; $('#skipVin').setAttribute('aria-pressed','false');
+  $('#skipYear').setAttribute('aria-pressed','false'); $('#skipYear').textContent='Не помню год — пропустить';
+  qPhone.value=''; $$('.opt.sel').forEach(function(o){o.classList.remove('sel');}); showPanel(''); gotoStep(1);
+});
+/* открытие квиза (в т.ч. с предвыбранной веткой) */
+$$('[data-quiz-open]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var fork=btn.getAttribute('data-fork');
+    if(fork){
+      var radio=qForm.elements['branch'];
+      for(var i=0;i<radio.length;i++){ radio[i].checked=(radio[i].value===fork); }
+      /* синхронно переключаем наборы шага 5 */
+      $$('[data-issues]').forEach(function(f){
+        var on=f.getAttribute('data-issues')===fork; f.hidden=!on;
+        if(!on) $$('input',f).forEach(function(inp){inp.checked=false;});
+      });
+      gotoStep(2);
+    }
+    showPanel('');
+    if(typeof qCard.scrollIntoView==='function'){ qCard.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'}); }
+  });
+});
+gotoStep(1); showPanel('');
+
+/* ---------- форма отзыва ---------- */
+var revOpen=$('#revOpen'), revForm=$('#revForm');
+revOpen.addEventListener('click',function(){
+  revForm.classList.toggle('on');
+  if(revForm.classList.contains('on')){ if(typeof revForm.scrollIntoView==='function'){ revForm.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'center'}); } $('#revText').focus(); }
+});
+$('#revFormEl').addEventListener('submit',function(e){
+  e.preventDefault();
+  var ok=true;
+  var txt=$('#revText').value.trim().length>=10;
+  $('#revTextErr').hidden=txt; if(!txt) ok=false;
+  var cons=$('#revConsent').checked;
+  $('#revConsentErr').hidden=cons; if(!cons) ok=false;
+  if(!ok){ (txt?$('#revConsent'):$('#revText')).focus(); return; }
+  revForm.classList.add('sent'); showToast('Спасибо! В демо отзыв не отправляется.');
+});
+
+/* ---------- демо-админка ---------- */
+var admin=$('#admin'), admTimer=null, admT0=0;
+function fmtT(s){ var m=Math.floor(s/60), ss=s%60; return (m<10?'0':'')+m+':'+(ss<10?'0':'')+ss; }
+function timerTick(){
+  var el=$('#admTimer'); if(!el) return;
+  var s=Math.floor((Date.now()-admT0)/1000);
+  el.textContent='⏱ '+fmtT(s)+' / цель 60 с';
+  el.classList.toggle('good',s<=60); el.classList.toggle('bad',s>60);
+}
+$('#admOpen').addEventListener('click',function(){ openOv(admin); });
+$('#admEnter').addEventListener('click',function(){
+  $('#admLogin').hidden=true; $('#admDash').hidden=false;
+  admT0=Date.now(); clearInterval(admTimer); admTimer=setInterval(timerTick,1000); timerTick();
+  $('#tabLeads').focus();
+});
+function admCloseCleanup(){ clearInterval(admTimer); }
+var adminOvEl=admin;
+new MutationObserver(function(){ if(adminOvEl.hidden) admCloseCleanup(); }).observe(adminOvEl,{attributes:true,attributeFilter:['hidden']});
+function admTab(which){
+  var leads=which==='leads';
+  $('#tabLeads').setAttribute('aria-selected',leads?'true':'false');
+  $('#tabAdd').setAttribute('aria-selected',leads?'false':'true');
+  $('#paneLeads').classList.toggle('on',leads); $('#paneLeads').hidden=!leads;
+  $('#paneAdd').classList.toggle('on',!leads); $('#paneAdd').hidden=leads;
+}
+$('#tabLeads').addEventListener('click',function(){admTab('leads');});
+$('#tabAdd').addEventListener('click',function(){admTab('add');});
+$$('#paneLeads [data-lead]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var row=btn.closest('.lead-row'), st=$('.status',row), kind=btn.getAttribute('data-lead');
+    if(kind==='work'){ st.className='status work'; st.textContent='в работе'; }
+    else { st.className='status done'; st.textContent='закрыта'; }
+    showToast('Статус заявки обновлён (демо)');
+  });
+});
+var admFile=$('#admFile'), admPrev=$('#admPrev');
+admFile.addEventListener('change',function(){
+  var f=admFile.files&&admFile.files[0]; if(!f) return;
+  admPrev.hidden=false; admPrev.innerHTML='';
+  if(/^image\//.test(f.type)){
+    var img=d.createElement('img'); img.alt='Превью загруженного фото';
+    img.onerror=function(){ admPrev.innerHTML='<span class="noimg">Превью не открылось (например, HEIC). В продакшне файл сконвертируется на сервере — публикация всё равно сработает.</span>'; };
+    var fr=new FileReader();
+    fr.onload=function(){ img.src=String(fr.result); };
+    fr.readAsDataURL(f);
+    admPrev.appendChild(img);
+  }else{
+    admPrev.innerHTML='<span class="noimg">Файл получен. В продакшне: конвертация HEIC/MOV на сервере автоматически.</span>';
+  }
+});
+$('#admPublish').addEventListener('click',function(){
+  var cap=$('#admCap').value.trim();
+  var ok=cap.length>=3;
+  $('#admCapErr').hidden=ok;
+  if(!ok){ $('#admCap').focus(); return; }
+  var cat=$('#admCat').value;
+  var card=d.createElement('button');
+  card.type='button'; card.className='gcard in new-pub';
+  card.setAttribute('data-cap',cap+' — '+cat);
+  card.setAttribute('data-sub','Опубликовано из демо-админки · '+cat);
+  card.setAttribute('data-demo','Демо: добавлено владельцем только что, без перезагрузки сайта');
+  card.innerHTML='<span class="gmedia aft"><span class="gbadge new">новое · демо</span>'+
+    '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#4C6B57" stroke-width="1.8"/><circle cx="12" cy="12" r="3.4" stroke="#4C6B57" stroke-width="1.8"/></svg></span>'+
+    '<span class="gbody"><b></b><span></span></span>';
+  $('b',card).textContent=cap;
+  $('span',card.querySelector('.gbody')).textContent=cat+' · только что с телефона';
+  card.addEventListener('click',function(){
+    var items=galCards(), i=items.indexOf(card);
+    if(i>-1) openLB(i);
+  });
+  var gal=$('#gal');
+  gal.insertBefore(card,gal.firstChild);
+  var secs=Math.floor((Date.now()-admT0)/1000);
+  var msg=secs<=60?('Опубликовано за '+secs+' с — цель «60 секунд» выполнена ✓')
+                  :('Опубликовано за '+secs+' с. В продакшне поток короче: это делается из Telegram-бота — фото → тип → подпись → «Опубликовать».');
+  timerTick(); clearInterval(admTimer);
+  showToast(msg,4200);
+  $('#admCap').value=''; admFile.value=''; admPrev.hidden=true; admPrev.innerHTML='';
+  $('#admCapErr').hidden=true;
+});
+
+/* ---------- год в футере ---------- */
+$('#year').textContent=new Date().getFullYear();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мокапы АвтоТехСервис — сравнение</title>
+<style>
+  :root{--bg:#f4f2ed;--ink:#14181c;--muted:#5a625f;--line:#d9d5cc;--card:#fffefa;--accent:#e4571f;--ok:#0f5132;--bad:#a3251c}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.55}
+  .wrap{width:min(1080px,calc(100% - 32px));margin:0 auto;padding:40px 0 64px}
+  h1{font-size:clamp(28px,4vw,44px);line-height:1.1;letter-spacing:-.03em;margin:0 0 8px}
+  .lead{color:var(--muted);max-width:720px;margin:0 0 8px}
+  .note{font-size:13px;color:var(--muted);margin:0 0 32px}
+  .grid{display:grid;gap:14px}
+  @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px}
+  .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .agent{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .score{font-weight:800;font-size:14px}
+  h2{font-size:19px;line-height:1.25;margin:0;letter-spacing:-.02em}
+  .desc{font-size:14px;color:var(--muted);margin:0;flex:1}
+  .meta{font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+  a.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;border:1px solid var(--ink)}
+  a.primary{background:var(--ink);color:#fff}
+  a.quiet{background:transparent;color:var(--ink)}
+  a.primary:hover{background:#000}
+  a.quiet:hover{background:#eae6dd}
+  .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid currentColor}
+  .ok{color:var(--ok)} .bad{color:var(--bad)}
+  .footer{margin-top:28px;font-size:13px;color:var(--muted)}
+  .footer a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Пять мокапов — одна страница сравнения</h1>
+  <p class="lead">Служебная страница оркестратора. Каждый мокап — один HTML-файл без внешних запросов; открывается и скачивается отдельно. Порядок — по номерам агентов, не по местам.</p>
+  <p class="note">Техническая приёмка 21.10.2026: A1, A2, A5, A6 допущены; A4 не допущен — внешние шрифты Google, цены «от 800 ₽», часы «до 20:00» и вымышленные суммы в ответах на отзывы.</p>
+
+  <div class="grid">
+    <article class="card">
+      <div class="top"><span class="agent">A1 · PR #4</span><span class="score">84,4</span></div>
+      <h2>«Цифровая вывеска с доказательствами»</h2>
+      <p class="desc">Тёмный визуал, оранжевый акцент, честные карточки рейтингов. Семь шагов квиза, демо-админка с переключателем «слабая сеть».</p>
+      <div class="meta"><span>93 КБ</span><span class="badge ok">допущен</span></div>
+      <div class="actions">
+        <a class="btn primary" href="agent-01/mockup.html">Открыть</a>
+        <a class="btn quiet" href="agent-01/mockup.html" download="agent-01-mockup.html">Скачать HTML</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="top"><span class="agent">A2 · PR #3</span><span class="score">88,0</span></div>
+      <h2>«Спокойная приёмная»</h2>
+      <p class="desc">Светлая бумага, охра, крупная типографика и нарисованное колесо. Мягкий тон, аккуратные состояния, семь экранов квиза.</p>
+      <div class="meta"><span>93 КБ</span><span class="badge ok">допущен</span></div>
+      <div class="actions">
+        <a class="btn primary" href="agent-02/mockup.html">Открыть</a>
+        <a class="btn quiet" href="agent-02/mockup.html" download="agent-02-mockup.html">Скачать HTML</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="top"><span class="agent">A4 · PR #1</span><span class="score">88,2</span></div>
+      <h2>«Диспетчерская с человеческим лицом»</h2>
+      <p class="desc">Светлая сетка, оранжевый акцент, сильная техническая часть. Но: Google Fonts, цены, часы «до 20:00» — три стоп-фильтра.</p>
+      <div class="meta"><span>94 КБ</span><span class="badge bad">не допущен</span></div>
+      <div class="actions">
+        <a class="btn primary" href="agent-04/mockup.html">Открыть</a>
+        <a class="btn quiet" href="agent-04/mockup.html" download="agent-04-mockup.html">Скачать HTML</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="top"><span class="agent">A5 · PR #5</span><span class="score">89,2</span></div>
+      <h2>«Сначала смета, потом ремонт»</h2>
+      <p class="desc">Белый лист, терракота, блок «смета до ремонта». Лучшие тексты, демо-админка с публикацией работы и таймером 60 секунд.</p>
+      <div class="meta"><span>123 КБ</span><span class="badge ok">допущен</span></div>
+      <div class="actions">
+        <a class="btn primary" href="agent-05/mockup.html">Открыть</a>
+        <a class="btn quiet" href="agent-05/mockup.html" download="agent-05-mockup.html">Скачать HTML</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="top"><span class="agent">A6 · PR #6</span><span class="score">97,8</span></div>
+      <h2>«Паспорт двора» + «талон заезда»</h2>
+      <p class="desc">Бетон и асфальт, сигнальный оранжевый, двенадцать секций. Талон с номером и окном, семь шагов, демо-админка.</p>
+      <div class="meta"><span>138 КБ</span><span class="badge ok">допущен</span></div>
+      <div class="actions">
+        <a class="btn primary" href="agent-06/mockup.html">Открыть</a>
+        <a class="btn quiet" href="agent-06/mockup.html" download="agent-06-mockup.html">Скачать HTML</a>
+      </div>
+    </article>
+  </div>
+
+  <p class="footer">Служебная страница, не часть сайта. Заметки агентов — в папках <code>agent-NN/mockup-notes.md</code>. Выбор мокапа — за заказчиком.</p>
+</div>
+</body>
+</html>
