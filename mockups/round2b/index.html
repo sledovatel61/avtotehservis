@@ -18,6 +18,8 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
   .card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--c)}
   .card h2{margin:0;font-size:20px;letter-spacing:-.01em}
+  .card.is-winner{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 18px 50px -30px var(--c)}
+  .badge{position:absolute;top:14px;right:14px;background:var(--c);color:#0b0d10;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;letter-spacing:.02em}
   .card h2 span{color:var(--c)}
   .palette{display:flex;gap:6px}
   .palette i{width:26px;height:26px;border-radius:8px;border:1px solid #0004}
@@ -39,6 +41,7 @@
 <div class="wrap">
   <h1>Раунд 2Б: пять многостраничных мокапов</h1>
   <p class="lead">Задание — <code>prompts/03-template-mockups-task.md</code>. У каждого агента 8 обязательных страниц плюс демо-админка, свой визуальный язык, локальные шрифты и анимация. Шаблон matronet взят как структура; тексты, фото, код и палитра — свои. Ниже: открыть мокап в браузере или скачать архивом.</p>
+  <p class="lead" style="color:var(--text)"><b>21.10.2026 заказчик выбрал А5</b> — тёмно-зелёную тему «ночь + изумруд + медь». Она уходит в продакшн; остальные мокапы остаются для истории. Ревьюер этапа внедрения — А6.</p>
 
   <div class="grid">
     <article class="card" style="--c:var(--a1)">
@@ -74,7 +77,8 @@
       </div>
     </article>
 
-    <article class="card" style="--c:var(--a5)">
+    <article class="card is-winner" style="--c:var(--a5)">
+      <span class="badge">Выбран заказчиком</span>
       <h2><span>А5</span> Ночь и медь</h2>
       <div class="palette"><i style="background:#0f1513"></i><i style="background:#17201d"></i><i style="background:#c9a227"></i><i style="background:#e8efe9"></i></div>
       <p class="meta"><b>Шрифты</b><span>Golos Text + Unbounded, woff2 локально</span><b>Вес</b><span>520 КБ, 42 файла</span><b>Форма</b><span>5 шагов, 28 полей</span></p>

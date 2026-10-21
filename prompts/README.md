@@ -38,8 +38,10 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 | Этап | Команда агенту | Файл | Что делаю я |
 |---|---|---|---|
 | 1. Концепции | «работай по промпту» | `agents/agent-NN/concept.md` | скоринг 100 баллов, таблица, разбор, замены |
-| 2. Мокапы | «ЭТАП 2» (пять агентам) | `agents/agent-NN/mockup.html` | проверка по чек-листу, сборка превью, рекомендация |
-| 3. Код | только победителю | ветка `dev` | ревью каждого PR, приёмка |
+| 2. Мокапы | «ЭТАП 2» (пять агентам) | `agents/agent-NN/mockup.html` | снято 21.10.2026 |
+| 2Б. Многостраничные мокапы | `03-template-mockups-task.md` | `mockups/round2b/agent-NN/` | техприёмка, выбор заказчика |
+| 3. Внедрение | `04-implementation-task.md` — только A5 | `site/` | ревью A6 по `05-review-task.md` |
+| 4. Приёмка | `05-review-task.md` — A6 | `reviews/round3-implementation.md` | вердикт, гейты G6/G7 |
 
 ## Файлы
 
@@ -60,3 +62,14 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 - Как сохранить сайт самому (запасной способ): `docs/09-save-reference.md`.
 - Сдача: 8 страниц + `assets/style.css` + `assets/app.js` + `mockup-notes.md` в `mockups/agent-NN/`.
 - Импорт: `scripts/import-agent.sh --branch <ветка> --agent NN --stage 3`.
+
+---
+
+## Этапы 4–5 — внедрение и ревью (21.10.2026)
+
+Победитель раунда 2Б — **A5** (`arena/c0d7d4ba-avtotehservis`). Остальные участники выведены, их ветки — архив. A6 назначен независимым ревьюером.
+
+- `04-implementation-task.md` — задание A5: `site/` на Astro 7 + SQLite, форма, заявки в Telegram и на почту, админка, медиа, SEO, тесты, деплой. Этапы M1–M5, Definition of Done.
+- `05-review-task.md` — задание A6: 65 проверок, сценарии «попробуй сломать», severity и вердикт, отчёт `reviews/round3-implementation.md`, статус гейтов G6/G7.
+- `../docs/12-content-checklist.md` — что владелец заменяет после запуска.
+- Импорт кода: `scripts/import-agent.sh --branch <ветка> --agent 05 --stage 4` (после появления `site/` в ветке; до этого — обычный PR).
