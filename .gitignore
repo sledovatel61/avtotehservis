@@ -1,0 +1,45 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next / build
+.next/
+out/
+dist/
+build/
+.turbo/
+.vercel/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# uploads / media (в репозиторий не кладём, живут на сервере)
+uploads/
+media/
+!media/.gitkeep
+
+# backups / dumps
+backups/
+*.sql
+*.dump
+
+# logs / temp
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# tests & coverage
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+
+# editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
