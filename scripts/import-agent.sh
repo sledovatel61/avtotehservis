@@ -91,8 +91,10 @@ done
 
 if [[ -z "$REF" ]]; then
   echo "Пробую git fetch origin $BRANCH …"
+  # Без явного refspec git пишет результат только в FETCH_HEAD и НЕ создаёт
+  # refs/remotes/origin/<branch>, поэтому ссылаемся на FETCH_HEAD.
   if git fetch --quiet origin "$BRANCH" 2>/dev/null; then
-    REF="refs/remotes/origin/$BRANCH"
+    REF="FETCH_HEAD"
   fi
 fi
 
