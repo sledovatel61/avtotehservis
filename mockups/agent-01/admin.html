@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Демо-админка — АвтоТехСервис</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <img src="assets/logo.svg" alt="" width="38" height="38">
+      <span class="brand-text">АвтоТехСервис<span>демо-админка</span></span>
+    </a>
+    <div class="header-actions">
+      <a class="btn btn-outline" href="index.html">← На сайт</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <div class="container section-pad-sm">
+    <div class="admin-banner">Демо-режим: без логина, без реального сервера, без сохранения после перезагрузки страницы. Показывает только сценарий работы.</div>
+
+    <div id="adminGate" class="admin-gate">
+      <h1>Демо-админка</h1>
+      <p class="lead">Здесь владелец видит заявки и публикует новые работы в галерею — с телефона, без разработчика.</p>
+      <button class="btn btn-primary" id="adminEnterBtn">Войти в демо-режим</button>
+    </div>
+
+    <div id="adminMain" style="display:none;">
+      <div class="admin-grid">
+        <section>
+          <h2 style="margin-bottom:16px;">Заявки</h2>
+          <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead><tr><th>Клиент</th><th>Что нужно</th><th>Канал</th><th>Статус</th></tr></thead>
+            <tbody>
+              <tr><td>Алексей К.<br><span class="muted" style="font-size:12px;">+7 (928) ***-**-12</span></td><td>Порез колеса, R16</td><td>Звонок</td><td><span class="status-pill new">Новая</span></td></tr>
+              <tr><td>Марина С.<br><span class="muted" style="font-size:12px;">+7 (951) ***-**-47</span></td><td>Развал-схождение</td><td>Telegram</td><td><span class="status-pill progress">В работе</span></td></tr>
+              <tr><td>Игорь П.<br><span class="muted" style="font-size:12px;">+7 (908) ***-**-03</span></td><td>Диагностика, не знаю причину</td><td>Звонок</td><td><span class="status-pill done">Выполнена</span></td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p class="hint" style="margin-top:12px;">Демонстрационные заявки. Телефоны частично скрыты намеренно.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:16px;">Опубликовать работу</h2>
+          <span class="timer-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Таймер: <span id="adminTimer">0.0 с</span></span>
+          <p class="hint" style="margin:10px 0 16px;">Цель — уложиться в 60 секунд: фото, подпись, категория, «Опубликовать».</p>
+
+          <div class="field">
+            <label for="pubFile">Фото работы</label>
+            <input type="file" id="pubFile" accept="image/*">
+            <img id="pubPreview" alt="" style="display:none;margin-top:10px;max-width:160px;border-radius:var(--radius-s);">
+          </div>
+          <div class="field">
+            <label for="pubCaption">Подпись</label>
+            <input type="text" id="pubCaption" placeholder="Например: Правка диска R17">
+          </div>
+          <div class="field">
+            <label for="pubCategory">Категория</label>
+            <select id="pubCategory">
+              <option>Колёса</option>
+              <option>ТО и ходовая</option>
+              <option>Двигатель и электрика</option>
+            </select>
+          </div>
+
+          <label class="check-row"><input type="checkbox" id="weakNetToggle"><span>Симулировать слабый интернет (очередь и повтор)</span></label>
+
+          <button type="button" class="btn btn-primary btn-block" id="publishBtn">Опубликовать</button>
+          <p class="queue-status" id="queueStatus"></p>
+        </section>
+      </div>
+
+      <section style="margin-top:40px;">
+        <h2 style="margin-bottom:16px;">Галерея (предпросмотр)</h2>
+        <div class="svc-grid" id="adminPreviewGrid"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
