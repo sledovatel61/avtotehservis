@@ -26,7 +26,7 @@ scripts/import-agent.sh --branch arena/<ветка-агента> --agent NN
 | Папка | Ветка | Коммит | Байт | Балл |
 |---|---|---|---|---|
 | `agent-01/` | `arena/0ca7fc90-avtotehservis` | `90181c6` | 100 409 | 84,4 |
-| `agent-02/` | `arena/fc11e617-avtotehservis` | `de252bf` | 116 771 | 87,0 |
+| `agent-02/` | `arena/fc11e617-avtotehservis` | `de252bf` | 116 771 | 88,0 |
 | `agent-03/` | `arena/d1841141-avtotehservis` | `0170957` | 48 288 | 70,7 · заменён на A6 |
 | `agent-04/` | `arena/eea54dae-avtotehservis` | `70cea5f` | 100 898 | 88,2 |
 | `agent-05/` | `arena/c0d7d4ba-avtotehservis` | `54d99e1` | 147 108 | 89,2 |
