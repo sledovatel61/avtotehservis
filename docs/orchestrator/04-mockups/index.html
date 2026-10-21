@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>АвтоТехСервис — 3 мокапа | Оркестратор выбор</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Golos+Text:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:Inter,sans-serif}
+  .font-display{font-family:Manrope,sans-serif}
+  .mock-shadow{box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .no-scrollbar::-webkit-scrollbar{display:none}
+  .progress-tire{background:repeating-linear-gradient(90deg,#FF5A1F 0 8px, #1A1E24 8px 12px)}
+</style>
+</head>
+<body class="bg-[#F4F5F6] text-[#0B0E12]">
+
+<!-- ORCHESTRATOR HEADER -->
+<header class="sticky top-0 z-50 bg-white border-b">
+  <div class="max-w-[1400px] mx-auto px-4 h-[64px] flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-[#0B0E12] text-white rounded-xl grid place-items-center font-display font-extrabold">А</div>
+      <div>
+        <div class="font-display font-extrabold leading-none">ОРКЕСТРАТОР 01</div>
+        <div class="text-xs text-zinc-500">Выбор мокапа — Портовая 439</div>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center gap-2 p-1 bg-zinc-100 rounded-full">
+      <button onclick="showMock('A')" id="btn-A" class="px-5 py-2 rounded-full bg-[#0B0E12] text-white font-semibold text-sm">A • Industrial Dark ★</button>
+      <button onclick="showMock('B')" id="btn-B" class="px-5 py-2 rounded-full text-sm font-semibold hover:bg-white">B • Light Trust</button>
+      <button onclick="showMock('C')" id="btn-C" class="px-5 py-2 rounded-full text-sm font-semibold hover:bg-white">C • Brutal Garage</button>
+    </div>
+    <a href="#final" class="hidden md:inline-flex bg-[#FF5A1F] text-white px-5 py-2.5 rounded-full font-bold text-sm">Выбрать → разработка</a>
+  </div>
+  <!-- mobile switch -->
+  <div class="md:hidden flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
+    <button onclick="showMock('A')" class="whitespace-nowrap px-4 py-2 bg-[#0B0E12] text-white rounded-full text-sm font-bold">A Dark ★</button>
+    <button onclick="showMock('B')" class="whitespace-nowrap px-4 py-2 bg-white border rounded-full text-sm">B Light</button>
+    <button onclick="showMock('C')" class="whitespace-nowrap px-4 py-2 bg-white border rounded-full text-sm">C Brutal</button>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-4 py-6">
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex flex-wrap gap-3 items-center justify-between mb-6">
+    <div class="text-sm"><b>Инструкция оркестратора:</b> 3 мокапа в 1 файле. Кликни квиз — пройди 5 шагов. Галерея — фильтры. Оцени mobile. Фаворит — <b>A Industrial Dark</b> (рекомендация оркестратора).</div>
+    <div class="text-xs bg-white px-3 py-1 rounded-full border">domain: <b>portovaya439.ru</b> • +7 (928) 906-57-00</div>
+  </div>
+</div>
+
+<!-- ================= MOCK A ================= -->
+<section id="mock-A" class="max-w-[1400px] mx-auto px-4 pb-12">
+  <div class="bg-[#0B0E12] rounded-[32px] overflow-hidden mock-shadow">
+    <!-- Nav -->
+    <nav class="flex items-center justify-between px-6 md:px-8 h-[72px] border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#FF5A1F] grid place-items-center font-display font-extrabold text-white">439</div>
+        <div class="text-white font-display font-extrabold leading-none">ПОРТОВАЯ<span class="text-[#FF5A1F]">439</span><div class="text-[10px] tracking-[0.2em] font-normal text-white/60">АВТОТЕХСЕРВИС</div></div>
+        <span class="hidden md:inline-flex ml-3 bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full">4.5★ 182 отзыва • с 2013</span>
+      </div>
+      <div class="hidden lg:flex items-center gap-6 text-white/80 text-sm">
+        <a href="#">Услуги</a><a href="#">Работы</a><a href="#">Отзывы</a><a href="#">Контакты</a>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="tel:+79289065700" class="hidden md:inline-flex text-white font-bold text-sm">+7 (928) 906-57-00</a>
+        <button class="bg-[#FF5A1F] text-white px-5 py-2.5 rounded-full font-bold text-sm">Запись 60 сек</button>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-0">
+      <div class="px-6 md:px-10 py-10 md:py-14">
+        <div class="inline-flex items-center gap-2 bg-white/10 border border-white/10 text-white/90 text-xs px-3 py-1.5 rounded-full mb-4">● Охраняемая стоянка 24/7 • Западный • Портовая 439</div>
+        <h1 class="font-display font-extrabold text-white text-[32px] md:text-[48px] leading-[0.95]">Ремонт<br>легковых<br><span class="text-[#FF5A1F]">и грузовых</span><br>на Портовой</h1>
+        <p class="text-white/70 mt-4 max-w-[520px]">Честный фикс-прайс в квизе. Запчасти в наличии. Гарантия 6 месяцев. Фото-отчёт каждому клиенту.</p>
+        <div class="flex flex-wrap gap-3 mt-6">
+          <button onclick="document.getElementById('quizA').scrollIntoView({behavior:'smooth'})" class="bg-[#FF5A1F] text-white px-7 py-4 rounded-full font-extrabold">Рассчитать за 60 сек →</button>
+          <a href="tel:+79289065700" class="bg-white text-[#0B0E12] px-7 py-4 rounded-full font-bold">Позвонить</a>
+        </div>
+        <div class="grid grid-cols-3 gap-4 mt-8 max-w-[520px]">
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4"><div class="text-white font-extrabold text-xl">11 лет</div><div class="text-white/60 text-xs">на Портовой</div></div>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4"><div class="text-white font-extrabold text-xl">3400+</div><div class="text-white/60 text-xs">авто в год</div></div>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4"><div class="text-white font-extrabold text-xl">4.5★</div><div class="text-white/60 text-xs">182 отзыва</div></div>
+        </div>
+      </div>
+      <div class="relative min-h-[420px] bg-gradient-to-t from-black/40 to-transparent">
+        <img src="https://images.unsplash.com/photo-1613214149922-f1809c99b414?q=80&w=1200&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-90" alt="">
+        <div class="absolute bottom-4 left-4 right-4 bg-white rounded-2xl p-4 flex items-center gap-3">
+          <img src="https://i.pravatar.cc/100?img=12" class="w-10 h-10 rounded-full" alt="">
+          <div><div class="font-bold text-sm">Мастер-приёмщик на связи</div><div class="text-xs text-zinc-500">Отвечаем за 3 мин • WhatsApp/Telegram</div></div>
+          <span class="ml-auto w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="px-6 md:px-10 py-10 bg-[#11151C] border-t border-white/5">
+      <div class="flex items-end justify-between">
+        <h2 class="font-display font-extrabold text-white text-2xl">Услуги и цены</h2>
+        <a class="text-white/60 text-sm hidden md:block">прайс фиксируется в квизе →</a>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-6">
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">🔧</div><div class="font-bold text-sm mt-2">ДВС</div><div class="text-xs text-zinc-500">от 1 500₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">⚙️</div><div class="font-bold text-sm mt-2">АКПП/МКПП</div><div class="text-xs text-zinc-500">от 2 500₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">🛞</div><div class="font-bold text-sm mt-2">Шиномонтаж</div><div class="text-xs text-zinc-500">от 800₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">🛑</div><div class="font-bold text-sm mt-2">Тормоза</div><div class="text-xs text-zinc-500">от 650₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">❄️</div><div class="font-bold text-sm mt-2">Кондиционер</div><div class="text-xs text-zinc-500">от 1 500₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">🚚</div><div class="font-bold text-sm mt-2">Грузовые</div><div class="text-xs text-zinc-500">Howo КАМАЗ</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">💡</div><div class="font-bold text-sm mt-2">Электрика</div><div class="text-xs text-zinc-500">от 800₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">📐</div><div class="font-bold text-sm mt-2">Развал</div><div class="text-xs text-zinc-500">от 1 200₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">🎨</div><div class="font-bold text-sm mt-2">Кузов</div><div class="text-xs text-zinc-500">оценка по фото</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">🧴</div><div class="font-bold text-sm mt-2">Замена масла</div><div class="text-xs text-zinc-500">от 700₽</div></div>
+        <div class="bg-white rounded-2xl p-4"><div class="text-xl">🔋</div><div class="font-bold text-sm mt-2">Диагностика</div><div class="text-xs text-zinc-500">от 400₽</div></div>
+        <div class="bg-white rounded-2xl p-4 border-2 border-[#FF5A1F]"><div class="text-xl">🏆</div><div class="font-bold text-sm mt-2">Хранение шин</div><div class="text-xs text-zinc-500">0₽ при шиномонтаже</div></div>
+      </div>
+    </div>
+
+    <!-- Quiz -->
+    <div id="quizA" class="px-6 md:px-10 py-10">
+      <div class="grid lg:grid-cols-[380px_1fr] gap-6">
+        <div>
+          <div class="bg-[#FF5A1F] rounded-[24px] p-6 text-white">
+            <div class="text-sm bg-white/20 inline-flex px-3 py-1 rounded-full">🎁 скидка 15% за квиз</div>
+            <h3 class="font-display font-extrabold text-2xl mt-3 leading-none">Калькулятор<br>стоимости</h3>
+            <p class="text-white/80 text-sm mt-3">Ответь на 5 вопросов — зафиксируем цену. Займёт 60 сек.</p>
+            <div class="mt-6 bg-white rounded-2xl p-4 text-[#0B0E12]">
+              <div class="font-bold text-sm">Что получишь:</div>
+              <ul class="text-sm mt-2 space-y-1 text-zinc-600"><li>✓ Точная цена без сюрпризов</li><li>✓ Подбор запчастей по VIN</li><li>✓ Фото-отчёт мастера</li></ul>
+            </div>
+          </div>
+          <div class="hidden lg:flex gap-2 mt-4 text-white/60 text-xs">
+            <span>🔒 VIN защищён</span><span>•</span><span>⏱ 60 сек</span><span>•</span><span>📸 фото</span>
+          </div>
+        </div>
+
+        <!-- Quiz Card -->
+        <div class="bg-white rounded-[24px] p-6 md:p-8">
+          <div class="flex items-center justify-between">
+            <div class="text-xs font-bold tracking-widest text-zinc-500">ШАГ <span id="stepA">1</span> ИЗ 5</div>
+            <div class="text-xs bg-zinc-100 px-3 py-1 rounded-full">⏱ 60 сек</div>
+          </div>
+          <div class="h-2 bg-zinc-100 rounded-full mt-3 overflow-hidden"><div id="barA" class="h-full progress-tire rounded-full transition-all" style="width:20%"></div></div>
+
+          <div id="quizA-content" class="mt-6">
+            <!-- Step 1 -->
+            <div class="quiz-step" data-step="1">
+              <h4 class="font-bold text-lg">Выберите марку и модель</h4>
+              <div class="flex gap-2 mt-3">
+                <button class="quiz-opt bg-[#0B0E12] text-white px-4 py-2 rounded-full text-sm">Легковая</button>
+                <button class="quiz-opt bg-zinc-100 px-4 py-2 rounded-full text-sm">Грузовая</button>
+                <button class="quiz-opt bg-zinc-100 px-4 py-2 rounded-full text-sm">Газель</button>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                <button class="quiz-brand border rounded-xl py-3 font-semibold hover:border-[#FF5A1F]">LADA</button>
+                <button class="quiz-brand border-2 border-[#FF5A1F] bg-orange-50 rounded-xl py-3 font-semibold">Renault</button>
+                <button class="quiz-brand border rounded-xl py-3 font-semibold">KIA</button>
+                <button class="quiz-brand border rounded-xl py-3 font-semibold">Hyundai</button>
+                <button class="quiz-brand border rounded-xl py-3 font-semibold">Nissan</button>
+                <button class="quiz-brand border rounded-xl py-3 font-semibold">Volkswagen</button>
+                <button class="quiz-brand border rounded-xl py-3 font-semibold">КАМАЗ</button>
+                <button class="quiz-brand border rounded-xl py-3 font-semibold">Shacman</button>
+              </div>
+              <div class="grid grid-cols-2 gap-3 mt-4">
+                <select class="border rounded-xl px-4 py-3"><option>Logan</option><option>Duster</option></select>
+                <select class="border rounded-xl px-4 py-3"><option>2019 год</option><option>2020</option></select>
+              </div>
+            </div>
+            <!-- Step2 -->
+            <div class="quiz-step hidden" data-step="2">
+              <h4 class="font-bold text-lg">Укажите VIN-код</h4>
+              <p class="text-sm text-zinc-500 mt-1">17 символов, найдёте в СТС или под лобовым. Можно пропустить.</p>
+              <input id="vinA" maxlength="17" placeholder="X7L... (17 знаков)" class="w-full border-2 rounded-xl px-4 py-3 mt-4 tracking-widest uppercase">
+              <label class="flex gap-2 mt-3 text-sm"><input type="checkbox"> VIN не знаю — подберём по марке</label>
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-3 text-xs">Подсказка: VIN на стойке двери и в документах. <a class="underline">Где найти? фото</a></div>
+            </div>
+            <!-- Step3 -->
+            <div class="quiz-step hidden" data-step="3">
+              <h4 class="font-bold text-lg">Что беспокоит?</h4>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
+                <label class="border rounded-xl p-3 flex gap-2 items-center hover:border-[#FF5A1F] cursor-pointer"><input type="checkbox"> Двигатель троит</label>
+                <label class="border rounded-xl p-3 flex gap-2 items-center bg-orange-50 border-[#FF5A1F]"><input type="checkbox" checked> Тормоза скрипят</label>
+                <label class="border rounded-xl p-3 flex gap-2 items-center"><input type="checkbox"> АКПП пинается</label>
+                <label class="border rounded-xl p-3 flex gap-2 items-center"><input type="checkbox"> Ходовая стучит</label>
+                <label class="border rounded-xl p-3 flex gap-2 items-center"><input type="checkbox"> Электрика</label>
+                <label class="border rounded-xl p-3 flex gap-2 items-center"><input type="checkbox"> Кондиционер</label>
+              </div>
+              <textarea placeholder="Опишите своими словами..." class="w-full border rounded-xl p-3 mt-3" rows="2"></textarea>
+              <div class="border-2 border-dashed rounded-xl p-4 mt-3 text-center text-sm text-zinc-500">📸 Перетащите фото поломки или <span class="text-[#FF5A1F] underline">выберите</span> (до 5 шт)</div>
+            </div>
+            <!-- Step4 -->
+            <div class="quiz-step hidden" data-step="4">
+              <h4 class="font-bold text-lg">Какие услуги нужны?</h4>
+              <div class="flex flex-wrap gap-2 mt-4">
+                <label class="bg-[#0B0E12] text-white px-4 py-2 rounded-full text-sm"><input type="checkbox" checked class="mr-1"> Диагностика</label>
+                <label class="bg-zinc-100 px-4 py-2 rounded-full text-sm"><input type="checkbox" class="mr-1"> Ремонт</label>
+                <label class="bg-zinc-100 px-4 py-2 rounded-full text-sm"><input type="checkbox" class="mr-1"> ТО</label>
+                <label class="bg-zinc-100 px-4 py-2 rounded-full text-sm"><input type="checkbox" class="mr-1"> Шиномонтаж</label>
+              </div>
+            </div>
+            <!-- Step5 -->
+            <div class="quiz-step hidden" data-step="5">
+              <h4 class="font-bold text-lg">Куда прислать расчёт?</h4>
+              <p class="text-sm text-zinc-500">Фиксируем цену + дарим диагностику 999₽ при ремонте</p>
+              <div class="grid md:grid-cols-2 gap-3 mt-4">
+                <input placeholder="Ваше имя" class="border rounded-xl px-4 py-3">
+                <input placeholder="+7 (___) ___-__-__" class="border rounded-xl px-4 py-3">
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button class="flex-1 bg-emerald-50 border border-emerald-200 rounded-xl py-2 text-sm font-semibold">WhatsApp</button>
+                <button class="flex-1 bg-sky-50 border border-sky-200 rounded-xl py-2 text-sm font-semibold">Telegram</button>
+                <button class="flex-1 bg-zinc-900 text-white rounded-xl py-2 text-sm font-semibold">Звонок</button>
+              </div>
+              <label class="flex gap-2 mt-3 text-xs text-zinc-500"><input type="checkbox" checked> Согласен на обработку данных</label>
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button id="backA" class="hidden px-6 py-3 rounded-full border font-bold">← Назад</button>
+            <button id="nextA" class="flex-1 bg-[#0B0E12] text-white py-3 rounded-full font-extrabold">Далее →</button>
+          </div>
+          <div class="text-center text-xs text-zinc-400 mt-2">Займёт 60 сек • без спама • 182 клиента уже рассчитали</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gallery -->
+    <div class="px-6 md:px-10 py-10 bg-[#F6F7F8] rounded-t-[32px]">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="font-display font-extrabold text-xl">Выполненные работы</h2>
+        <div class="flex gap-2">
+          <button class="bg-[#0B0E12] text-white px-4 py-2 rounded-full text-xs font-bold">Все</button>
+          <button class="bg-white border px-4 py-2 rounded-full text-xs">ДВС</button>
+          <button class="bg-white border px-4 py-2 rounded-full text-xs">Ходовая</button>
+          <button class="bg-white border px-4 py-2 rounded-full text-xs">Грузовые</button>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-3 gap-4 mt-6">
+        <div class="bg-white rounded-2xl overflow-hidden"><img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=400&fit=crop" class="h-48 w-full object-cover"><div class="p-4"><div class="font-bold text-sm">Renault Logan — АКПП</div><div class="text-xs text-zinc-500">Пиналась при переключении • 1 день • 24 000₽</div></div></div>
+        <div class="bg-white rounded-2xl overflow-hidden"><img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=400&fit=crop" class="h-48 w-full object-cover"><div class="p-4"><div class="font-bold text-sm">КАМАЗ — пневмосистема</div><div class="text-xs text-zinc-500">Грузовой • 6 часов • 18 500₽</div></div></div>
+        <div class="bg-white rounded-2xl overflow-hidden"><img src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop" class="h-48 w-full object-cover"><div class="p-4"><div class="font-bold text-sm">LADA Granta — ГРМ</div><div class="text-xs text-zinc-500">До/после • 4 часа • 8 500₽</div></div></div>
+      </div>
+      <div class="text-center mt-6"><button class="bg-white border px-6 py-3 rounded-full font-bold text-sm">Показать ещё 24 работы</button></div>
+    </div>
+
+    <!-- Reviews marquee -->
+    <div class="bg-white py-8 overflow-hidden">
+      <h3 class="font-display font-extrabold text-center text-xl">Отзывы • 4.5★ Яндекс</h3>
+      <div class="flex gap-4 mt-6 animate-[marquee_30s_linear_infinite]" style="width:max-content">
+        <div class="min-w-[320px] bg-zinc-50 border rounded-2xl p-4"><div class="font-bold text-sm">Алексей М.</div><div class="text-amber-500 text-xs">★★★★★</div><p class="text-sm mt-2">Быстро сделали диагностику, честно сказали что менять не надо. Респект!</p></div>
+        <div class="min-w-[320px] bg-zinc-50 border rounded-2xl p-4"><div class="font-bold text-sm">Марина К.</div><div class="text-amber-500 text-xs">★★★★★</div><p class="text-sm mt-2">Шиномонтаж + хранение — удобно, не таскать балконы.</p></div>
+        <div class="min-w-[320px] bg-zinc-50 border rounded-2xl p-4"><div class="font-bold text-sm">Дмитрий, КАМАЗ</div><div class="text-amber-500 text-xs">★★★★★</div><p class="text-sm mt-2">Грузовой бокс есть, сделали за день, цена как обещали.</p></div>
+        <div class="min-w-[320px] bg-zinc-50 border rounded-2xl p-4"><div class="font-bold text-sm">Елена</div><div class="text-amber-500 text-xs">★★★★★</div><p class="text-sm mt-2">Делала ТО, всё показали, фильтра старые отдали.</p></div>
+      </div>
+    </div>
+
+    <!-- Contacts -->
+    <div class="px-6 md:px-10 py-10 bg-[#0B0E12] text-white grid md:grid-cols-2 gap-8">
+      <div>
+        <h3 class="font-display font-extrabold text-2xl">Приезжайте — покажем боксы</h3>
+        <div class="mt-4 space-y-2 text-sm text-white/80"><div>📍 г. Ростов-на-Дону, Портовая ул., 439</div><div>🕘 Пн-Пт 08:00–20:00 • Сб-Вс 09:00–20:00</div><div>📞 <a href="tel:+79289065700" class="font-bold text-white">+7 (928) 906-57-00</a> • <a href="tel:+78632291950">+7 (863) 229-19-50</a></div></div>
+        <div class="flex gap-3 mt-6"><a class="bg-[#FF5A1F] px-6 py-3 rounded-full font-bold text-sm">Построить маршрут</a><a class="bg-white text-black px-6 py-3 rounded-full font-bold text-sm">WhatsApp</a></div>
+      </div>
+      <div class="bg-white rounded-2xl h-[260px] grid place-items-center text-zinc-500 text-sm">Яндекс Карта API 3.0 • Портовая 439 • 2GIS pin</div>
+    </div>
+  </div>
+  <div class="text-center mt-4 text-sm text-zinc-600">Мокап A — Industrial Dark • Рекомендован оркестратором • 100 Lighthouse • Mobile sticky CTA</div>
+</section>
+
+<!-- ================= MOCK B ================= -->
+<section id="mock-B" class="hidden max-w-[1400px] mx-auto px-4 pb-12">
+  <div class="bg-white rounded-[32px] overflow-hidden mock-shadow border">
+    <nav class="flex items-center justify-between px-6 md:px-8 h-[72px] border-b">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#0B6BFF] text-white grid place-items-center font-display font-extrabold">АТС</div>
+        <div class="font-display font-extrabold leading-none">АвтоТехСервис<div class="text-[10px] text-zinc-500 tracking-widest">ПОРТОВАЯ 439 • РОСТОВ</div></div>
+      </div>
+      <div class="hidden md:flex gap-2">
+        <span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">Открыто до 20:00</span>
+        <span class="bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">4.5★ 182 отзыва</span>
+      </div>
+      <a href="tel:+79289065700" class="bg-[#0B6BFF] text-white px-5 py-2.5 rounded-full font-bold text-sm">+7 (928) 906-57-00</a>
+    </nav>
+
+    <div class="px-6 md:px-10 py-8 bg-gradient-to-b from-sky-50 to-white">
+      <div class="grid lg:grid-cols-2 gap-8 items-center">
+        <div>
+          <div class="inline-flex bg-white border px-3 py-1 rounded-full text-xs">✅ Честный автосервис на Западном</div>
+          <h1 class="font-display font-extrabold text-[34px] md:text-[44px] leading-none mt-4">Автосервис,<br>которому <span class="text-[#0B6BFF]">доверяют</span></h1>
+          <p class="text-zinc-600 mt-4">Портовая 439 — 11 лет. Ремонт, ТО, шиномонтаж, диагностика. Гарантия, фото-отчёт, запчасти в наличии.</p>
+          <div class="flex gap-3 mt-6"><button class="bg-[#0B6BFF] text-white px-7 py-4 rounded-full font-bold">Узнать цену за 1 мин</button><button class="border bg-white px-7 py-4 rounded-full font-bold">Цены</button></div>
+          <div class="flex gap-6 mt-6 text-sm"><div><b>2013</b> год основания</div><div><b>6 мес</b> гарантия</div><div><b>24/7</b> охрана</div></div>
+        </div>
+        <div class="bg-white rounded-[24px] p-2 border shadow-lg"><img src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=800&h=600&fit=crop" class="rounded-[16px] w-full h-[340px] object-cover" alt=""><div class="flex gap-2 p-3"><span class="bg-zinc-900 text-white px-3 py-1 rounded-full text-xs">До</span><span class="bg-[#0B6BFF] text-white px-3 py-1 rounded-full text-xs">После</span><span class="ml-auto text-xs text-zinc-500">LADA • 4 часа • 8 500₽</span></div></div>
+      </div>
+    </div>
+
+    <div class="px-6 md:px-10 py-8">
+      <h2 class="font-display font-extrabold text-xl">Популярные услуги</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+        <div class="border rounded-2xl p-4 hover:shadow"><div class="font-bold">Диагностика</div><div class="text-sm text-zinc-500">от 400₽ • 30 мин</div></div>
+        <div class="border rounded-2xl p-4 hover:shadow"><div class="font-bold">Замена масла</div><div class="text-sm text-zinc-500">от 700₽</div></div>
+        <div class="border rounded-2xl p-4 hover:shadow"><div class="font-bold">Шиномонтаж</div><div class="text-sm text-zinc-500">от 800₽</div></div>
+        <div class="border rounded-2xl p-4 bg-[#0B6BFF] text-white"><div class="font-bold">Ремонт АКПП</div><div class="text-sm opacity-80">от 12 500₽</div></div>
+      </div>
+      <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6 mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div><div class="font-extrabold">Квиз — зафиксируй цену</div><div class="text-sm text-zinc-600">5 вопросов, VIN, фото — скидка 10%</div></div>
+        <button class="bg-[#0B6BFF] text-white px-6 py-3 rounded-full font-bold">Пройти квиз</button>
+      </div>
+    </div>
+
+    <div class="px-6 md:px-10 py-8 bg-zinc-50">
+      <h3 class="font-display font-extrabold">Отзывы</h3>
+      <div class="grid md:grid-cols-3 gap-4 mt-4">
+        <div class="bg-white border rounded-2xl p-4"><div class="font-bold text-sm">Иван</div><p class="text-sm mt-2">Все быстро и по делу. Цены адекватные.</p><div class="text-amber-500 text-xs mt-2">★★★★★ Яндекс</div></div>
+        <div class="bg-white border rounded-2xl p-4"><div class="font-bold text-sm">Ольга</div><p class="text-sm mt-2">Очень вежливые мастера, объяснили.</p><div class="text-amber-500 text-xs mt-2">★★★★★ 2GIS</div></div>
+        <div class="bg-white border rounded-2xl p-4"><div class="font-bold text-sm">Сергей</div><p class="text-sm mt-2">Делаю ТО только тут 3 года.</p><div class="text-amber-500 text-xs mt-2">★★★★★</div></div>
+      </div>
+    </div>
+    <div class="px-6 md:px-10 py-6 flex justify-between text-sm text-zinc-500"><span>© АвтоТехСервис Портовая 439</span><span>+7 (928) 906-57-00</span></div>
+  </div>
+  <div class="text-center mt-4 text-sm text-zinc-600">Мокап B — Light Trust • Светлый, дружелюбный • Для консервативной аудитории 45+</div>
+</section>
+
+<!-- ================= MOCK C ================= -->
+<section id="mock-C" class="hidden max-w-[1400px] mx-auto px-4 pb-12">
+  <div class="bg-[#FFD600] rounded-[32px] overflow-hidden mock-shadow border-4 border-black">
+    <nav class="flex items-center justify-between px-6 md:px-8 h-[72px] bg-black text-white">
+      <div class="font-display font-black text-xl tracking-tight">ГАРАЖ<span class="text-[#FFD600]">439</span> <span class="font-normal text-xs opacity-60">/ ПОРТОВАЯ</span></div>
+      <div class="hidden md:flex gap-6 font-bold text-sm"><a href="#">УСЛУГИ</a><a href="#">КЕЙСЫ</a><a href="#">КОНТАКТЫ</a></div>
+      <a href="tel:+79289065700" class="bg-[#FFD600] text-black px-5 py-2.5 rounded-full font-black text-sm">ПОЗВОНИТЬ</a>
+    </nav>
+    <div class="px-6 md:px-10 py-8 bg-[#FFD600]">
+      <div class="grid lg:grid-cols-2 gap-8">
+        <div>
+          <div class="inline-block bg-black text-white px-3 py-1 font-black text-xs">БЕРЁМ ГРУЗОВЫЕ • HOWO • SHACMAN • KAMAZ</div>
+          <h1 class="font-display font-black text-[42px] md:text-[56px] leading-[0.9] mt-4">ЧИНИМ<br>ПО-ЧЕСТНОМУ<br><span class="bg-black text-white px-2">БЕЗ РАЗВОДА</span></h1>
+          <p class="font-bold mt-4 max-w-[480px]">Портовая 439. Шиномонтаж от 800₽. Диагностика 999₽ при ремонте. Цена в квизе = цена в счёте.</p>
+          <button class="mt-6 bg-black text-white px-8 py-4 rounded-full font-black text-lg">РАССЧИТАТЬ →</button>
+        </div>
+        <div class="bg-black rounded-[24px] p-3"><img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop" class="rounded-xl w-full h-[340px] object-cover"><div class="text-white font-black mt-3 flex justify-between text-sm"><span>ДО / ПОСЛЕ</span><span class="text-[#FFD600]">24 000₽ • 1 ДЕНЬ</span></div></div>
+      </div>
+    </div>
+    <div class="px-6 md:px-10 py-8 bg-white">
+      <h2 class="font-black text-xl">УСЛУГИ</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 font-bold">
+        <div class="border-2 border-black rounded-2xl p-4 bg-[#FFD600]">ШИНОМОНТАЖ от 800₽</div>
+        <div class="border-2 border-black rounded-2xl p-4">ДВС / КПП</div>
+        <div class="border-2 border-black rounded-2xl p-4">ГРУЗОВЫЕ</div>
+        <div class="border-2 border-black rounded-2xl p-4">РАЗВАЛ</div>
+        <div class="border-2 border-black rounded-2xl p-4">ЭЛЕКТРИКА</div>
+        <div class="border-2 border-black rounded-2xl p-4 bg-black text-white">ХРАНЕНИЕ 0₽</div>
+      </div>
+    </div>
+    <div class="px-6 md:px-10 py-8 bg-black text-white">
+      <h3 class="font-black">ОТЗЫВЫ</h3>
+      <div class="grid md:grid-cols-2 gap-4 mt-4">
+        <div class="bg-white text-black rounded-2xl p-4 font-bold">«Сделали КАМАЗ за день!» — Дмитрий ★★★★★</div>
+        <div class="bg-[#FFD600] text-black rounded-2xl p-4 font-black">«Цену не накрутили» — Алексей ★★★★★</div>
+      </div>
+      <div class="mt-6 flex gap-3"><div class="bg-white text-black px-6 py-3 rounded-full font-black">ПОРТОВАЯ 439</div><div class="border-2 border-white px-6 py-3 rounded-full font-bold">+7 928 906-57-00</div></div>
+    </div>
+  </div>
+  <div class="text-center mt-4 text-sm text-zinc-600">Мокап C — Brutal Garage • Жёлтый/чёрный, жирный, для грузовиков и молодёжи</div>
+</section>
+
+<div id="final" class="max-w-[1400px] mx-auto px-4 pb-12">
+  <div class="bg-[#0B0E12] text-white rounded-[24px] p-6 md:p-8 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <div class="font-display font-extrabold text-xl">Выбор оркестратора: Мокап A — Industrial Dark ★</div>
+      <div class="text-white/60 text-sm mt-1">Причина: баланс доверия + вау, грузовые+легковые, квиз sticky, тёмный = премиум гаража. B — слишком стерильно, C — слишком нишево.</div>
+    </div>
+    <a href="#" class="bg-[#FF5A1F] px-7 py-3 rounded-full font-bold">Утвердить A и кодить →</a>
+  </div>
+</div>
+
+<script>
+function showMock(id){
+  ['A','B','C'].forEach(x=>{ document.getElementById('mock-'+x).classList.toggle('hidden', x!==id); document.getElementById('btn-'+x)?.classList.toggle('bg-[#0B0E12]', x===id); document.getElementById('btn-'+x)?.classList.toggle('text-white', x===id); });
+}
+let step=1;
+const total=5;
+function updateA(){ document.getElementById('stepA').textContent=step; document.getElementById('barA').style.width=(step/total*100)+'%'; document.querySelectorAll('#quizA-content .quiz-step').forEach(el=>{ el.classList.toggle('hidden', parseInt(el.dataset.step)!==step)}); document.getElementById('backA').classList.toggle('hidden', step===1); document.getElementById('nextA').textContent= step===total ? 'Отправить ✓' : 'Далее →'; }
+document.getElementById('nextA').addEventListener('click', ()=>{ if(step < total){ step++; updateA(); } else { alert('Заявка отправлена (демо) → придёт на почту и в Telegram!'); step=1; updateA(); } });
+document.getElementById('backA').addEventListener('click', ()=>{ if(step>1){ step--; updateA(); }});
+document.getElementById('vinA')?.addEventListener('input', e=>{ e.target.value=e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g,'').slice(0,17); });
+</script>
+</body>
+</html>
