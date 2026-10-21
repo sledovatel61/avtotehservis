@@ -55,7 +55,8 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 Заказчик выбрал другой формат: сайт многостраничный, структура — с шаблона `matronet.com/demo/car-7`. Прежние одностраничные мокапы сняты.
 
 - Задание: `03-template-mockups-task.md` — одно для всех пяти.
-- Карта референса: `docs/08-reference-car7.md`.
-- Как сохранить исходники сайта: `docs/09-save-reference.md`.
+- Разбор референса: `docs/08-reference-car7.md` — 8 страниц, стек, шрифты, палитра, дефекты формы.
+- Исходники шаблона: Google Drive заказчика — `https://drive.google.com/drive/folders/18iNEQaFElf8-8IszfxX77NGzK5GDbWcB`. Агентам читать разрешено.
+- Как сохранить сайт самому (запасной способ): `docs/09-save-reference.md`.
 - Сдача: 8 страниц + `assets/style.css` + `assets/app.js` + `mockup-notes.md` в `mockups/agent-NN/`.
 - Импорт: `scripts/import-agent.sh --branch <ветка> --agent NN --stage 3`.

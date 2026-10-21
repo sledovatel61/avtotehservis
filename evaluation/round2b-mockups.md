@@ -1,6 +1,9 @@
 # Раунд 2Б — многостраничные мокапы по референсу
 
-Старт: **21.10.2026**. Задание: `prompts/03-template-mockups-task.md`. Карта референса: `docs/08-reference-car7.md`.
+Старт: **21.10.2026**. Задание: `prompts/03-template-mockups-task.md`. Разбор референса: `docs/08-reference-car7.md`.
+
+Исходники шаблона (HTML, CSS, JS, скриншоты) — в Google Drive заказчика:
+`https://drive.google.com/drive/folders/18iNEQaFElf8-8IszfxX77NGzK5GDbWcB`
 
 Участники: A1, A2, A4, A5, A6. Импорт:
 
