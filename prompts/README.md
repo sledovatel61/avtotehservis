@@ -45,8 +45,8 @@ scripts/import-agent.sh --branch agent/01-brand-concept
 | 5. Доработка, круг 2 | `06-fix-task.md` — A5 | тот же PR #5 | повторное ревью A6 (`reviews/round4`) |
 | 6. Доработка, круг 3 | `07-fix-task-round3.md` — A5 | тот же PR #5 | ревью №3 A6 (`reviews/round5`) |
 | 7. Доработка, круг 4 | `08-fix-task-round4.md` — A5 | тот же PR #5 | приёмка A6 (`reviews/round6`) |
-| 8. Доработка, круг 5 | `09-fix-task-round5.md` — A5 | тот же PR #5 | подтверждение A6 |
-| 9. Приёмка | `05-review-task.md` §7 — A6 | раздел «Повторное ревью» | вердикт, гейты G6/G7 |
+| 8. Доработка, круг 5 | `09-fix-task-round5.md` — A5 | тот же PR #5 | проверка оркестратора (`evaluation/round7`) — **принято** |
+| 9. Merge | частичный: `site/**` + `docs/12-content-checklist.md` | — | затем гейты G6/G7 у владельца |
 
 ## Файлы
 
