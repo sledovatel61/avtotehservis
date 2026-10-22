@@ -214,3 +214,26 @@ test('limitFromEnv: пустая строка/пробелы/0/мусор/отр
   assert.equal(limitFromEnv('RL_T_FLOAT', 5), 2.5, 'дробное положительное применяется как есть');
   for (const k of keys) delete process.env[k];
 });
+
+test('seed:demo помечает записи, seed:demo:clear удаляет только помеченное (этап 6, §2.3)', async () => {
+  runMigrations();
+  const { runSeedDemo, clearSeedDemo, DEMO_NEWS, DEMO_REVIEWS } = await import('../scripts/seed-demo.ts');
+  const cnt = (q: string): number => (db().prepare(q).get() as { c: number }).c;
+  // Реальные (не демо) записи — clear их трогать не должен.
+  db().prepare(`INSERT INTO reviews(author,text,rating,source,status) VALUES('Настоящий Клиент','Реальный текст отзыва',5,'Яндекс Карты','published')`).run();
+  db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES('nastoyashchaya-novost','Настоящая новость','x','текст','sovety','published',datetime('now'))`).run();
+  runSeedDemo();
+  runSeedDemo(); // идемпотентно: второй запуск не удваивает набор
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), DEMO_REVIEWS.length, 'демо-отзывы помечены source=demo');
+  assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug LIKE 'demo-%'`), DEMO_NEWS.length, 'демо-новости помечены slug demo-*');
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE status='published'`), DEMO_REVIEWS.length + 1, 'без дублей после повторного запуска');
+  const res = clearSeedDemo();
+  assert.equal(res.news, DEMO_NEWS.length);
+  assert.equal(res.reviews, DEMO_REVIEWS.length);
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), 0, 'демо-отзывы удалены');
+  assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug LIKE 'demo-%'`), 0, 'демо-новости удалены');
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='Яндекс Карты'`), 1, 'реальный отзыв не тронут');
+  assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug='nastoyashchaya-novost'`), 1, 'реальная новость не тронута');
+  db().prepare(`DELETE FROM reviews WHERE author='Настоящий Клиент'`).run();
+  db().prepare(`DELETE FROM news WHERE slug='nastoyashchaya-novost'`).run();
+});

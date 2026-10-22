@@ -13,10 +13,13 @@
     "preview": "astro build && node ./dist/server/entry.mjs",
     "migrate": "node scripts/migrate.ts",
     "seed": "node scripts/seed.ts",
+    "seed:demo": "node scripts/seed-demo.ts",
+    "seed:demo:clear": "node scripts/seed-demo.ts clear",
     "admin:create": "node scripts/create-admin.ts",
     "test": "npm run build && node --test tests/unit.test.ts tests/integration.test.ts tests/e2e-form.test.ts tests/admin.test.ts",
     "typecheck": "tsc --noEmit",
-    "audit": "npm audit --omit=dev"
+    "audit": "npm audit --omit=dev",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@astrojs/node": "11.1.9",
