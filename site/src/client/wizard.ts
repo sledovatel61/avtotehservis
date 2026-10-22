@@ -217,6 +217,7 @@ if (wizEl) {
     if (fPhotos) fPhotos.parentElement?.classList.toggle('is-full', st.photos.length >= 3);
   }
   function addPhoto(file: File): void {
+    if (document.body.dataset.preview === 'true') return;
     if (file.size > 15 * 1024 * 1024) {
       st.photos.push({ id: null, url: URL.createObjectURL(file), name: `${file.name} — больше 15 МБ`, state: 'error' });
       renderPhotos(); return;
@@ -289,6 +290,10 @@ if (wizEl) {
   });
   async function loadSlots(): Promise<void> {
     if (!slotsBox || !st.date) return;
+    if (document.body.dataset.preview === 'true') {
+      renderSlots(['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00'].map((time) => ({ time, available: true })));
+      return;
+    }
     slotsBox.innerHTML = '<p class="hint">Загружаем свободное время…</p>';
     if (slotTitle) slotTitle.textContent = 'Время визита — выберите дату';
     try {
@@ -486,6 +491,10 @@ if (wizEl) {
   }
 
   async function submit(): Promise<void> {
+    if (document.body.dataset.preview === 'true') {
+      window.alert('Демонстрационная версия: отправка заявок отключена.');
+      return;
+    }
     clearErrs();
     const first = validateStep(4, true);
     if (first) { goStep(4); try { first.focus(); } catch { /* ignore */ } return; }

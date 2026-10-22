@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:pages": "node scripts/export-pages.mjs",
     "start": "node ./dist/server/entry.mjs",
     "preview": "astro build && node ./dist/server/entry.mjs",
     "migrate": "node scripts/migrate.ts",

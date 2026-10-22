@@ -6,6 +6,7 @@ node_modules/
 .next/
 out/
 dist/
+pages-dist/
 build/
 .turbo/
 .vercel/
