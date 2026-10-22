@@ -1,0 +1,70 @@
+/* ---------- Шапка (три колонки: логотип — меню — контакт) ---------- */
+.hdr{
+  position:sticky;top:0;z-index:80;
+  background:rgba(11,20,16,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+  transition:padding var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease);
+}
+.hdr-in{display:flex;align-items:center;gap:24px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
+.hdr.is-compact .hdr-in{padding-top:8px;padding-bottom:8px}
+.logo{display:flex;align-items:center;gap:12px;color:var(--ivory);flex-shrink:0}
+.logo:hover{color:var(--ivory)}
+.logo img{width:44px;height:44px;transition:transform var(--t-mid) var(--ease)}
+.hdr.is-compact .logo img{transform:scale(.86)}
+.logo-t{font-family:var(--font-display);font-weight:600;font-size:17px;letter-spacing:-.01em;line-height:1.1}
+.logo-t b{display:block;font-family:var(--font-text);font-weight:400;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);margin-top:3px}
+.nav{margin-left:auto}
+.nav ul{display:flex;gap:4px}
+.nav a{
+  display:block;padding:10px 13px;border-radius:8px;color:var(--mist);
+  font-size:14.5px;font-weight:500;letter-spacing:.01em;min-height:44px;
+  display:flex;align-items:center;
+  transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+}
+.nav a:hover{color:var(--ivory);background:rgba(224,169,109,.08)}
+.nav a.is-active{color:var(--brass);background:rgba(224,169,109,.1)}
+.nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:7px}
+.hdr-cta{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.hdr-phone{
+  font-weight:700;font-size:16.5px;color:var(--ivory);white-space:nowrap;
+  display:flex;align-items:center;gap:8px;min-height:44px;
+}
+.hdr-phone:hover{color:var(--brass)}
+.hdr-phone svg{width:17px;height:17px;stroke:var(--brass)}
+.burger{
+  display:none;width:48px;height:48px;border-radius:10px;border:1px solid var(--line);
+  background:transparent;cursor:pointer;position:relative;flex-shrink:0;
+}
+.burger span{
+  position:absolute;left:12px;right:12px;height:2px;background:var(--ivory);border-radius:2px;
+  transition:transform var(--t-mid) var(--ease),opacity var(--t-mid) var(--ease);
+}
+.burger span:nth-child(1){top:16px}
+.burger span:nth-child(2){top:23px}
+.burger span:nth-child(3){top:30px}
+body.menu-open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+body.menu-open .burger span:nth-child(2){opacity:0}
+body.menu-open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ---------- Мобильное меню (на весь экран) ---------- */
+.m-menu{
+  position:fixed;inset:0;z-index:90;background:var(--night);
+  display:flex;flex-direction:column;padding:20px 24px calc(28px + env(safe-area-inset-bottom));
+  opacity:0;visibility:hidden;transform:translateY(-12px);
+  transition:opacity var(--t-mid) var(--ease),transform var(--t-mid) var(--ease),visibility var(--t-mid);
+}
+body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
+.m-menu-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px}
+.m-close{width:48px;height:48px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ivory);font-size:22px;cursor:pointer;line-height:1}
+.m-menu nav ul{display:flex;flex-direction:column;gap:6px}
+.m-menu nav a{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:var(--font-display);font-weight:600;font-size:clamp(1.3rem,6vw,1.8rem);
+  color:var(--ivory);padding:13px 4px;border-bottom:1px solid var(--line-soft);min-height:56px;
+}
+.m-menu nav a.is-active{color:var(--brass)}
+.m-menu nav a .n{font-family:var(--font-text);font-size:12px;font-weight:500;color:var(--copper);letter-spacing:.1em}
+.m-menu-contacts{margin-top:auto;display:grid;gap:12px;padding-top:28px}
+.m-menu-contacts a{font-weight:500;font-size:17px;min-height:44px;display:flex;align-items:center;gap:10px}
+.m-menu-contacts .tel{font-size:22px;font-weight:700;color:var(--ivory)}
+

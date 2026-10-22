@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import { listCatalogServices } from '../server/services.ts';
+import { fmtDateRu, plural } from '../server/format.ts';
+
+const S = getSettings();
+const services = listCatalogServices();
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Услуги' },
+    ],
+  },
+  {
+    '@context': 'https://schema.org', '@type': 'ItemList',
+    itemListElement: services.map((sv, i) => ({
+      '@type': 'ListItem', position: i + 1, name: sv.title, url: siteUrl + '/services/' + sv.slug,
+    })),
+  },
+];
+---
+<Base
+  page="services"
+  title="Услуги — АвтоТехСервис, Ростов-на-Дону"
+  description="Шиномонтаж, балансировка и ремонт дисков, ремонт шин, ТО и замена масла, ходовая и тормоза, электрика и диагностика. Стоимость — после осмотра, смета до начала работ."
+  jsonLd={jsonLd}
+>
+
+<nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">Услуги</span></nav>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Услуги</span>
+    <h1>Услуги «АвтоТехСервис»</h1>
+    <p class="lead">Шесть направлений — от сезонной переобувки до ремонта двигателя и АКПП. Цен в каталоге нет: стоимость зависит от автомобиля и объёма работ, точную сумму называем в смете после осмотра — и до начала ремонта.</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="sv-grid-h">
+  <div class="container">
+    <h2 id="sv-grid-h" class="u-sr">Каталог услуг</h2>
+    <div class="svc-grid">
+          {services.map((sv) => (
+            <a class="svc-card" href={`/services/${sv.slug}`}>
+              <span class="svc-img"><img src={sv.icon ?? '/img/svc-1.svg'} alt={`${sv.title} — фото появится после съёмки`} width="800" height="600" loading="lazy"></span>
+              <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
+            </a>
+          ))}
+      </div>
+    <p class="svc-grid-note">Полный перечень работ, которые подтверждены каталогами сервиса: шиномонтаж легковой и грузовой, балансировка, правка и прокатка дисков, ремонт порезов и грыж, вулканизация, сезонное хранение шин, ТО и аппаратная замена масла, развал-схождение, ходовая и тормоза, рулевые рейки, бензиновые и дизельные двигатели, АКПП и МКПП, дизельные форсунки, автоэлектрика, ремонт и заправка кондиционеров, замена лобовых стёкол (в том числе панорамных). Чего-то не нашли в списке? Позвоните — {S.phone_main}.</p>
+    <p class="u-chips-mt26">
+      <a class="btn btn--copper" href="/appointment">Записаться на визит</a>
+      <a class="btn btn--ghost" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: {S.phone_main}</a>
+    </p>
+  </div>
+</section>
+
+</Base>

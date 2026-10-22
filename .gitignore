@@ -26,6 +26,9 @@ media/
 backups/
 *.sql
 *.dump
+# ...но схема БД сайта — это код, а не дамп: без неё чистый клон не поднимается
+!site/migrations/
+!site/migrations/*.sql
 
 # logs / temp
 *.log

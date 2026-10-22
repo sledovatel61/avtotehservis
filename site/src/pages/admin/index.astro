@@ -1,0 +1,63 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { db } from '../../server/db.ts';
+import { listAudit } from '../../server/admin-auth.ts';
+import { fmtDateShort } from '../../server/format.ts';
+
+const cnt = (sql: string): number => (db().prepare(sql).get() as { c: number }).c;
+const newLeads = cnt(`SELECT COUNT(*) c FROM leads WHERE status='new'`);
+const deliveryFailed = cnt(`SELECT COUNT(*) c FROM outbox WHERE status='failed' AND attempts>=8`);
+const deliveryRetrying = cnt(`SELECT COUNT(*) c FROM outbox WHERE status='failed' AND attempts<8`);
+const draftCases = cnt(`SELECT COUNT(*) c FROM cases WHERE status='draft'`);
+const draftNews = cnt(`SELECT COUNT(*) c FROM news WHERE status='draft'`);
+const pendingReviews = cnt(`SELECT COUNT(*) c FROM reviews WHERE status='pending'`);
+const recentLeads = db().prepare(`SELECT id, ticket, kind, name, phone, created_at, status FROM leads ORDER BY id DESC LIMIT 6`).all() as
+  { id: number; ticket: string; kind: string; name: string; phone: string; created_at: string; status: string }[];
+const audit = listAudit(8);
+---
+<Admin section="dash" title="Дашборд">
+  <h1 class="adm-h1">Дашборд</h1>
+  <div class="adm-grid">
+    <a class="adm-stat" href="/admin/leads?status=new"><div class="n">{newLeads}</div><div class="t">Новых заявок</div></a>
+    <a class="adm-stat" href="/admin/leads?delivery=failed"><div class="n">{deliveryFailed}</div><div class="t">Доставка не удалась (≥8 попыток)</div></a>
+    <div class="adm-stat"><div class="n">{deliveryRetrying}</div><div class="t">Доставка в ретраях</div></div>
+    <a class="adm-stat" href="/admin/cases"><div class="n">{draftCases}</div><div class="t">Черновиков кейсов</div></a>
+    <a class="adm-stat" href="/admin/news"><div class="n">{draftNews}</div><div class="t">Черновиков новостей</div></a>
+    <a class="adm-stat" href="/admin/reviews"><div class="n">{pendingReviews}</div><div class="t">Отзывов на модерации</div></a>
+  </div>
+
+  <div class="adm-card u-mt24">
+    <h2>Последние заявки</h2>
+    {recentLeads.length ? (
+      <table class="adm-table">
+        <thead><tr><th>Талон</th><th>Когда</th><th>Имя</th><th>Телефон</th><th>Статус</th><th></th></tr></thead>
+        <tbody>
+          {recentLeads.map((l) => (
+            <tr>
+              <td><a href={`/admin/leads/${l.id}`}>{l.ticket}</a>{l.kind === 'message' && <span class="hint"> обращение</span>}</td>
+              <td>{fmtDateShort(l.created_at)}</td>
+              <td>{l.name}</td>
+              <td>{l.phone}</td>
+              <td><span class={`badge badge--${l.status}`}>{l.status}</span></td>
+              <td><a href={`/admin/leads/${l.id}`}>открыть →</a></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ) : <p class="adm-empty">Заявок пока нет — они появятся здесь сразу после отправки формы на сайте.</p>}
+  </div>
+
+  <div class="adm-card">
+    <h2>Последние действия</h2>
+    {audit.length ? (
+      <table class="adm-table">
+        <thead><tr><th>Когда</th><th>Кто</th><th>Что</th><th>Объект</th></tr></thead>
+        <tbody>
+          {audit.map((a) => (
+            <tr><td>{a.at}</td><td>{a.login ?? '—'}</td><td>{a.action}</td><td>{a.entity ?? ''}{a.entity_id ? ` #${a.entity_id}` : ''}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    ) : <p class="adm-empty">Журнал пока пуст.</p>}
+  </div>
+</Admin>

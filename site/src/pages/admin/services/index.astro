@@ -1,0 +1,34 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { listCatalogServices } from '../../../server/services.ts';
+
+const all = db().prepare('SELECT * FROM services ORDER BY hidden, grp, sort').all() as {
+  slug: string; title: string; grp: string | null; tag: string | null; sort: number; hidden: number; chip: number;
+}[];
+const catalog = listCatalogServices();
+---
+<Admin section="services" title="Услуги">
+  <h1 class="adm-h1">Услуги</h1>
+  <p class="hint u-mb18">Каталог — страницы услуг и карточки на сайте. Чипы — позиции формы записи (могут быть без публичной страницы). Порядок влияет на карусели и группы чипов.</p>
+  <div class="adm-card">
+    <h2>Каталог ({catalog.length}) и чипы формы ({all.length})</h2>
+    <table class="adm-table">
+      <thead><tr><th>Слаг</th><th>Название</th><th>Группа</th><th>Метка</th><th>Порядок</th><th>Каталог</th><th>Чип</th><th></th></tr></thead>
+      <tbody>
+        {all.map((s) => (
+          <tr>
+            <td><code>{s.slug}</code></td>
+            <td><a href={`/admin/services/${s.slug}`}><b>{s.title}</b></a></td>
+            <td>{s.grp ?? '—'}</td>
+            <td>{s.tag ?? '—'}</td>
+            <td>{s.sort}</td>
+            <td>{s.hidden ? '—' : '✓ страница'}</td>
+            <td>{s.chip ? '✓' : '—'}</td>
+            <td><a href={`/admin/services/${s.slug}`}>править →</a></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Admin>

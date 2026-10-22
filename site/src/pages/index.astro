@@ -1,0 +1,302 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import { listCatalogServices } from '../server/services.ts';
+import { listPublishedCases, listPublishedReviews, coverInfo } from '../server/content.ts';
+import { fmtDateRu, plural } from '../server/format.ts';
+
+const S = getSettings();
+const services = listCatalogServices();
+const cases = listPublishedCases(6);
+const reviews = listPublishedReviews(8);
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'AutoRepair',
+  name: S.site_name,
+  description: 'Автосервис и шиномонтаж на Западном: колёса, ремонт и обслуживание, диагностика. Сначала смета — потом ремонт.',
+  url: siteUrl + '/',
+  image: siteUrl + '/img/og.png',
+  telephone: S.phone_main_tel,
+  address: { '@type': 'PostalAddress', addressCountry: 'RU', addressLocality: S.city, streetAddress: S.address },
+  geo: { '@type': 'GeoCoordinates', latitude: S.coords.lat, longitude: S.coords.lon },
+  openingHoursSpecification: [{
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    opens: '09:00', closes: '19:00',
+  }],
+};
+---
+<Base
+  page="home"
+  title="АвтоТехСервис — автосервис и шиномонтаж на Портовой, 439 · Ростов-на-Дону"
+  description="Ремонт авто на Портовой, 439: шиномонтаж, балансировка, ремонт шин, ТО, ходовая, тормоза, электрика. Сначала смета — потом ремонт. Ежедневно 9:00–19:00."
+  jsonLd={jsonLd}
+>
+
+<section class="hero" id="hero" aria-roledescription="карусель" aria-label="Первый экран">
+  <div class="hero-track">
+      <div class="slide is-active" role="group" aria-roledescription="слайд" aria-label="Слайд 1 из 3">
+        <div class="slide-bg"><img src="/img/hero-1.svg" alt="" fetchpriority="high"></div>
+        <div class="slide-in container">
+          <span class="slide-eyebrow">Автосервис и шиномонтаж · Западный</span>
+          <h1>Ремонт авто на Портовой — от колеса до двигателя</h1>
+          <p class="slide-sub">{S.address_full}. {S.hours}, остановка «3-й Поселковый» в 330 метрах. Запишитесь на удобное время — без живой очереди.</p>
+          <div class="slide-cta">
+          <a class="btn btn--copper" href="/appointment">Записаться на визит</a>
+          <a class="btn btn--ghost" href="/services">Все услуги</a>
+          </div>
+        </div>
+      </div>
+      <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 2 из 3">
+        <div class="slide-bg"><img src="/img/hero-2.svg" alt="" fetchpriority="low"></div>
+        <div class="slide-in container">
+          <span class="slide-eyebrow">Правило сервиса</span>
+          <p class="h1">Сначала смета — потом ремонт</p>
+          <p class="slide-sub">Диагностируем, показываем проблему, называем перечень работ и стоимость — и только после вашего согласия начинаем. Никаких работ «втихую» и сюрпризов при выдаче.</p>
+          <div class="slide-cta">
+          <a class="btn btn--copper" href="/appointment?s=diagnostika">Получить смету</a>
+          <a class="btn btn--ghost" href="/about">Как мы работаем</a>
+          </div>
+        </div>
+      </div>
+      <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 3 из 3">
+        <div class="slide-bg"><img src="/img/hero-3.svg" alt="" fetchpriority="low"></div>
+        <div class="slide-in container">
+          <span class="slide-eyebrow">Легковые и коммерческие</span>
+          <p class="h1">Колёса, ходовая, двигатель, электрика</p>
+          <p class="slide-sub">Один сервис закрывает почти весь цикл: шиномонтаж и балансировка, ТО и масло, тормоза и подвеска, АКПП/МКПП, автоэлектрика и кондиционеры, стёкла.</p>
+          <div class="slide-cta">
+          <a class="btn btn--copper" href="/services">Выбрать услугу</a>
+          <a class="btn btn--ghost" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: {S.phone_main}</a>
+          </div>
+        </div>
+      </div>
+  </div>
+  <div class="hero-ui">
+    <div class="container">
+      <button class="hero-arrow" id="hero-prev" type="button" aria-label="Предыдущий слайд">←</button>
+      <button class="hero-arrow" id="hero-next" type="button" aria-label="Следующий слайд">→</button>
+      <span class="hero-note">Автопрокрутка · пауза при наведении · свайп</span>
+      <div class="hero-dots" id="hero-dots" role="tablist" aria-label="Слайды"></div>
+    </div>
+  </div>
+</section>
+<section class="sec sec--deep" aria-labelledby="tri-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Три направления</span>
+      <h2 id="tri-h">Чем сервис занимается каждый день</h2>
+    </div>
+    <div class="tri">
+      <article class="tri-card reveal" data-d="0">
+        <span class="tri-num" aria-hidden="true">01</span>
+        <h3>Колёса</h3>
+        <p>Шиномонтаж легковой и грузовой, балансировка, правка и прокатка дисков, ремонт порезов и грыж, вулканизация, сезонное хранение шин. То, с чем приезжают чаще всего — и что нужно сделать быстро и ровно.</p>
+        <a class="link-more" href="/services/shinomontazh">Шиномонтаж и диски <span class="ar" aria-hidden="true">→</span></a>
+      </article>
+      <article class="tri-card tri-card--accent reveal" data-d="1">
+        <span class="tri-num" aria-hidden="true">02</span>
+        <h3>Ремонт и ТО</h3>
+        <p>ТО и аппаратная замена масла, ходовая и тормоза, рулевые рейки, развал-схождение, двигатели, АКПП и МКПП, дизельные форсунки, замена лобовых стёкол. Обслуживание, которое не допускает сюрпризов в дороге.</p>
+        <a class="link-more" href="/services/to-maslo">Ремонт и обслуживание <span class="ar" aria-hidden="true">→</span></a>
+      </article>
+      <article class="tri-card reveal" data-d="2">
+        <span class="tri-num" aria-hidden="true">03</span>
+        <h3>Диагностика</h3>
+        <p>Компьютерная диагностика, автоэлектрика, ремонт и заправка кондиционеров. Начинаем с причины: находим неисправность, показываем её и согласуем смету — до начала работ.</p>
+        <a class="link-more" href="/services/elektrika">Диагностика и электрика <span class="ar" aria-hidden="true">→</span></a>
+      </article>
+    </div>
+  </div>
+</section>
+<section class="sec" aria-labelledby="about-h">
+  <div class="container about-grid">
+    <div class="reveal">
+      <span class="eyebrow">О компании</span>
+      <h2 id="about-h">«АвтоТехСервис» на Западном: честно, по делу, с сметой до работ</h2>
+      <p class="lead">Мы — автосервис и шиномонтаж на улице Портовой, 439: рядом с остановкой «3-й Поселковый» и базой «Бум». Принимаем легковые и коммерческие автомобили ежедневно, с 9:00 до 19:00.</p>
+      <p class="lead u-mt14">За одним визитом здесь закрывают и «переобуться», и стук в подвеске, и горящий «чек»: от балансировки до ремонта двигателя и АКПП. Правило одно для всех работ — сначала показываем проблему и называем стоимость, потом берёмся за инструмент.</p>
+      <div class="facts">
+        <div class="fact"><b>{S.address_full}</b><span>ост. «3-й Поселковый» ~330 м</span></div>
+        <div class="fact"><b>{S.hours}</b><span>без выходных</span></div>
+        <div class="fact"><b>Гарантия на работы</b><span>условия фиксируем в заказ-наряде</span></div>
+        <div class="fact"><b>Легковые и грузовые</b><span>включая коммерческий транспорт</span></div>
+      </div>
+      <p class="u-mt24"><a class="btn btn--ghost" href="/about">Подробнее о сервисе</a></p>
+    </div>
+    <div class="about-media reveal" data-d="1">
+      <img src="/img/svc-1.svg" alt="фото рабочего бокса появится после съёмки" width="800" height="600">
+    </div>
+  </div>
+  <div class="container">
+    <div class="feats">
+      <div class="feat reveal" data-d="0">
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+        <h3>Смета до начала работ</h3>
+        <p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p>
+      </div>
+      <div class="feat reveal" data-d="1">
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <h3>Гарантия на работы</h3>
+        <p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p>
+      </div>
+      <div class="feat reveal" data-d="2">
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+        <h3>{S.hours}</h3>
+        <p>Один график всю неделю — удобно планировать визит до или после работы.</p>
+      </div>
+      <div class="feat reveal" data-d="3">
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span>
+        <h3>Легковые и коммерческие</h3>
+        <p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec sec--ivory" aria-labelledby="est-h">
+  <div class="container est-grid">
+    <div class="reveal">
+      <span class="eyebrow">Как мы работаем</span>
+      <h2 id="est-h">Смета до ремонта: четыре шага без сюрпризов</h2>
+      <div class="est-steps">
+        <div class="est-step"><span class="n" aria-hidden="true"></span><div><h3>Заявка или звонок</h3><p>Опишите задачу в форме записи или позвоните — выберем время визита, чтобы вы не сидели в живой очереди.</p></div></div>
+        <div class="est-step"><span class="n" aria-hidden="true"></span><div><h3>Осмотр и диагностика</h3><p>Поднимаем, смотрим, при необходимости считываем ошибки. Показываем проблему вам — на детали, а не «на словах».</p></div></div>
+        <div class="est-step"><span class="n" aria-hidden="true"></span><div><h3>Смета и согласование</h3><p>Перечень работ и стоимость — до начала ремонта. Что критично сейчас, а что доживёт до весны — говорим прямо.</p></div></div>
+        <div class="est-step"><span class="n" aria-hidden="true"></span><div><h3>Работы и выдача</h3><p>Делаем согласованное, показываем заменённые детали, выдаём заказ-наряд с гарантией. Дальше — по записи на ТО.</p></div></div>
+      </div>
+    </div>
+    <aside class="est-aside reveal" data-d="1">
+      <h3>Не знаете, что сломалось?</h3>
+      <p>Так бывает чаще, чем кажется: «стучит», «тянет», «горит лампочка». Начните с диагностики — она отвечает на вопрос «что случилось», а смета решает, что делать дальше. Навязывать работы не будем.</p>
+      <a class="btn btn--copper" href="/appointment?s=diagnostika">Записаться на диагностику</a>
+      <p class="u-mt14-fs13">Или позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a></p>
+    </aside>
+  </div>
+</section>
+<section class="sec sec--deep slider-sec" aria-labelledby="svc-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Услуги</span>
+        <h2 id="svc-h">Что делаем — без цен, со сметой по факту осмотра</h2>
+      </div>
+      <div class="slider-nav">
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие услуги">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие услуги">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel>
+      <div class="carousel-win">
+        <div class="carousel-track">
+          {services.map((sv) => (
+            <a class="svc-card" href={`/services/${sv.slug}`}>
+              <span class="svc-img"><img src={sv.icon ?? '/img/svc-1.svg'} alt={`${sv.title} — фото появится после съёмки`} width="800" height="600" loading="lazy"></span>
+              <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
+            </a>
+          ))}
+          </div>
+      </div>
+    </div>
+    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="gal-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Галерея работ</span>
+        <h2 id="gal-h">Шесть кейсов «до / после»</h2>
+      </div>
+      <div class="slider-nav">
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel>
+      <div class="carousel-win">
+        <div class="carousel-track gal-track">
+          {cases.map((c, ci) => {
+            const cov = coverInfo(c, '/img/case-1.svg', c.title, `${c.title} — фото «до/после» появится после съёмки`);
+            return (
+              <button class="gal-card" type="button" data-gal={ci} data-img={cov.lg} data-title={c.title} data-sub={c.description ?? ''} aria-label={`Открыть кейс: ${c.title}`}>
+                <span class="gal-img"><img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cov.alt} width="800" height="600" loading="lazy"></span>
+                <span class="gal-cap"><span>{c.title}</span><span class="ba">до / после</span></span>
+              </button>
+            );
+          })}
+          </div>
+      </div>
+    </div>
+    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+  </div>
+</section>
+<section class="sec sec--deep" aria-labelledby="rev-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Отзывы</span>
+        <h2 id="rev-h">Что говорят клиенты — и где это проверить</h2>
+      </div>
+      <div class="slider-nav">
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel>
+      <div class="carousel-win">
+        <div class="carousel-track">
+          {reviews.length === 0 ? (
+            <article class="rev-card">
+              <div class="rev-text"><p>Собираем отзывы — пока читайте нас на Яндекс.Картах: там карточка сервиса с оценками реальных клиентов.</p></div>
+              <div class="rev-who">
+                <span class="rev-ava" aria-hidden="true">Я</span>
+                <span><b>Яндекс.Карты</b><span><a class="linklike" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer">Открыть карточку организации</a></span></span>
+              </div>
+            </article>
+          ) : reviews.map((r) => (
+            <article class="rev-card">
+              <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating ?? 5} из 5`}>{Array.from({ length: r.rating ?? 5 }).map(() => (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>))}</span>
+              <div class="rev-text"><p>{r.text}</p></div>
+              <div class="rev-who">
+                <span class="rev-ava" aria-hidden="true">{r.author.slice(0, 1)}</span>
+                <span><b>{r.author}</b><span>{[r.source, r.published_at ? fmtDateRu(r.published_at) : ''].filter(Boolean).join(' · ')}</span></span>
+              </div>
+            </article>
+          ))}
+          </div>
+      </div>
+    </div>
+    {S.ratings_visible && (
+      <div class="rates">
+        {S.ratings.map((r, ri) => (
+          <div class={`rate-card${ri === 0 ? ' rate-card--main' : ''}`}>
+            <div class="v">{r.value} <small>из 5 · {r.count} {plural(r.count, 'оценка', 'оценки', 'оценок')}</small></div>
+            <div class="s">{r.source} — {r.note} · <a class="linklike" href={r.url} target="_blank" rel="noopener noreferrer">источник</a></div>
+          </div>
+        ))}
+      </div>
+    )}
+    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="brands-h">
+  <div class="container">
+    <div class="sec-head sec-head--center reveal">
+      <span class="eyebrow">Марки</span>
+      <h2 id="brands-h">Обслуживаем легковые и коммерческие автомобили</h2>
+    </div>
+  </div>
+  <div class="marq reveal" aria-label="Марки автомобилей (бегущая строка)">
+    <div class="marq-in">
+      {[...S.brands, ...S.brands].map((b, bi) => (
+        <span class="brand-chip" aria-hidden={bi >= S.brands.length ? 'true' : 'false'}>{b}</span>
+      ))}
+    </div>
+  </div>
+  <div class="container"><p class="marq-note">Список не полный — если вашей марки здесь нет, позвоните: {S.phone_main}. Бегущая строка останавливается при наведении; с «уменьшением движения» в настройках системы показывается статичным списком.</p></div>
+</section>
+
+  <script>import '../client/hero.ts';</script>
+  <script>import '../client/lightbox.ts';</script>
+</Base>

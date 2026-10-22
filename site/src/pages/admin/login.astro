@@ -1,0 +1,66 @@
+---
+import { getSettings } from '../../server/settings.ts';
+import { ensureCsrfCookie, csrfValidForm, tryLogin, setSessionCookie, logAction } from '../../server/admin-auth.ts';
+import '../../styles/fonts.css';
+import '../../styles/tokens.css';
+import '../../styles/base.css';
+import '../../styles/buttons.css';
+import '../../styles/utils.css';
+import '../../styles/admin.css';
+
+const S = getSettings();
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const csrf = ensureCsrfCookie(Astro);
+  void csrf;
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) {
+    Astro.response.status = 403;
+    error = 'Сессия устарела (CSRF). Обновите страницу и войдите снова.';
+  } else {
+    const login = String(form.get('login') ?? '').trim();
+    const password = String(form.get('password') ?? '');
+    const res = await tryLogin(Astro, login, password);
+    if (res.ok) {
+      setSessionCookie(Astro, res.token);
+      logAction(res.user.id, 'login', 'admin_users', res.user.id);
+      return Astro.redirect('/admin');
+    }
+    error = res.reason === 'blocked'
+      ? 'Слишком много попыток входа. Повторите через 15 минут.'
+      : 'Неверный логин или пароль.';
+    Astro.response.status = 401;
+  }
+}
+const csrfToken = ensureCsrfCookie(Astro);
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Вход в админку — {S.site_name}</title>
+  <meta name="theme-color" content="#0B1410">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="adm-login">
+  <div class="adm-login-box">
+    <h1>Админка «{S.site_name}»</h1>
+    <p class="hint u-mb18">Вход для владельца сервиса. Заявки, кейсы, новости, настройки.</p>
+    {error && <div class="adm-msg adm-msg--err" role="alert">{error}</div>}
+    <form method="post" action="/admin/login" class="adm-form" novalidate>
+      <input type="hidden" name="_csrf" value={csrfToken}>
+      <label>Логин
+        <input name="login" type="text" autocomplete="username" required minlength="3" maxlength="32">
+      </label>
+      <label>Пароль
+        <input name="password" type="password" autocomplete="current-password" required minlength="12">
+      </label>
+      <button type="submit" class="btn btn--copper btn--block">Войти</button>
+      <p class="hint">Забыли пароль? Создайте новый командой <code>npm run admin:create</code> на сервере.</p>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+/* ---------- Сброс и база ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--night);color:var(--ivory);
+  font-family:var(--font-text);font-size:17px;line-height:1.6;font-weight:400;
+  overflow-x:hidden;
+}
+body.no-scroll{overflow:hidden}
+img,svg{max-width:100%;height:auto;display:block}
+a{color:var(--brass);text-decoration:none;transition:color var(--t-fast) var(--ease)}
+a:hover{color:var(--ivory)}
+ul{margin:0;padding:0;list-style:none}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;line-height:1.14;letter-spacing:-.02em;margin:0 0 .5em}
+h1{font-size:clamp(1.9rem,4.6vw,3.15rem)}
+h2{font-size:clamp(1.5rem,3.4vw,2.3rem)}
+h3{font-size:clamp(1.15rem,2.2vw,1.45rem);letter-spacing:-.01em}
+p{margin:0 0 1em}
+p:last-child{margin-bottom:0}
+b,strong{font-weight:700}
+small{font-size:.82em}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:4px}
+::selection{background:var(--copper);color:var(--night)}
+
+.container{max-width:var(--container);margin:0 auto;padding:0 20px}
+section{position:relative}
+.sec{padding:72px 0}
+.sec--deep{background:var(--deep)}
+.sec--ivory{background:var(--ivory);color:var(--night)}
+.sec--ivory h2,.sec--ivory h3{color:var(--night)}
+.sec--ivory .eyebrow{color:var(--copper-dark)}
+.sec--ivory .lead,.sec--ivory p{color:#31403A}
+
+/* Заголовок секции: надзаголовок + H2 + графический акцент (линия + точка) */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:12.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--copper);margin-bottom:14px;
+}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--brass);border-radius:2px}
+.sec-head{max-width:760px;margin-bottom:40px}
+.sec-head--center{margin-left:auto;margin-right:auto;text-align:center}
+.sec-head--center .eyebrow{justify-content:center}
+.sec-head--center .eyebrow::after{content:"";width:26px;height:2px;background:var(--brass);border-radius:2px}
+.lead{color:var(--mist);font-size:17.5px;max-width:62ch}
+.sec--ivory .lead{color:#3F4E47}
+

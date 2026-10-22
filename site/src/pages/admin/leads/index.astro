@@ -1,0 +1,88 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { fmtDateShort } from '../../../server/format.ts';
+import { serviceTitles } from '../../../server/telegram.ts';
+
+const url = Astro.url;
+const fStatus = url.searchParams.get('status') ?? '';
+const fDate = url.searchParams.get('date') ?? '';
+const fChannel = url.searchParams.get('channel') ?? '';
+const fDelivery = url.searchParams.get('delivery') ?? '';
+
+const where: string[] = [];
+const params: unknown[] = [];
+if (['new', 'confirmed', 'done', 'canceled'].includes(fStatus)) { where.push('l.status=?'); params.push(fStatus); }
+if (/^\d{4}-\d{2}-\d{2}$/.test(fDate)) { where.push('(date(l.created_at)=? OR l.preferred_date=?)'); params.push(fDate, fDate); }
+if (fChannel === 'call' || fChannel === 'telegram') { where.push('l.contact_method=?'); params.push(fChannel); }
+if (fDelivery === 'failed') where.push(`EXISTS(SELECT 1 FROM outbox o WHERE o.lead_id=l.id AND o.status='failed' AND o.attempts>=8)`);
+if (fDelivery === 'retrying') where.push(`EXISTS(SELECT 1 FROM outbox o WHERE o.lead_id=l.id AND o.status='failed' AND o.attempts<8)`);
+
+interface LeadRow {
+  id: number; ticket: string; kind: string; created_at: string; name: string; phone: string;
+  contact_method: string; brand: string | null; services_json: string; preferred_date: string | null;
+  preferred_slot: string | null; asap: number; status: string; delivery: string | null;
+}
+const leads = db().prepare(`
+  SELECT l.*, (SELECT group_concat(channel || ':' || status) FROM outbox WHERE lead_id=l.id) AS delivery
+  FROM leads l ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+  ORDER BY l.id DESC LIMIT 300`).all(...params) as LeadRow[];
+const total = (db().prepare('SELECT COUNT(*) c FROM leads').get() as { c: number }).c;
+const STATUSES = ['new', 'confirmed', 'done', 'canceled'];
+const qs = (over: Record<string, string>): string => {
+  const q = new URLSearchParams(url.searchParams);
+  for (const [k, v] of Object.entries(over)) { if (v) q.set(k, v); else q.delete(k); }
+  const s = q.toString();
+  return '/admin/leads' + (s ? `?${s}` : '');
+};
+---
+<Admin section="leads" title="Заявки">
+  <h1 class="adm-h1">Заявки <span class="hint">({leads.length} из {total})</span></h1>
+  <form class="adm-filters" method="get" action="/admin/leads">
+    <select name="status" aria-label="Статус">
+      <option value="">Все статусы</option>
+      {STATUSES.map((s) => <option value={s} selected={fStatus === s}>{s}</option>)}
+    </select>
+    <select name="channel" aria-label="Канал связи">
+      <option value="">Любой канал</option>
+      <option value="call" selected={fChannel === 'call'}>звонок</option>
+      <option value="telegram" selected={fChannel === 'telegram'}>telegram</option>
+    </select>
+    <input type="date" name="date" value={fDate} aria-label="Дата">
+    <select name="delivery" aria-label="Доставка">
+      <option value="">Доставка: любая</option>
+      <option value="failed" selected={fDelivery === 'failed'}>есть недоставленные</option>
+      <option value="retrying" selected={fDelivery === 'retrying'}>в ретраях</option>
+    </select>
+    {(fStatus || fDate || fChannel || fDelivery) && <a href="/admin/leads">Сбросить</a>}
+  </form>
+  {leads.length ? (
+    <div class="adm-card">
+      <table class="adm-table">
+        <thead><tr><th>Талон</th><th>Создана</th><th>Имя</th><th>Телефон</th><th>Авто</th><th>Услуги</th><th>Визит</th><th>Статус</th><th>Доставка</th></tr></thead>
+        <tbody>
+          {leads.map((l) => {
+            const svcs = serviceTitles(JSON.parse(l.services_json || '[]') as string[]);
+            const d = (l.delivery ?? '').split(',').filter(Boolean);
+            return (
+              <tr>
+                <td><a href={`/admin/leads/${l.id}`}><b>{l.ticket}</b></a>{l.kind === 'message' && <div class="hint">обращение</div>}</td>
+                <td>{fmtDateShort(l.created_at)}</td>
+                <td>{l.name}</td>
+                <td><a href={`tel:${l.phone}`}>{l.phone}</a><div class="hint">{l.contact_method === 'telegram' ? 'telegram' : 'звонок'}</div></td>
+                <td>{l.brand ?? '—'}</td>
+                <td>{l.kind === 'message' ? '—' : (svcs.join(', ') || '—')}</td>
+                <td>{l.asap ? 'как можно скорее' : l.preferred_date ? `${fmtDateShort(l.preferred_date)} ${l.preferred_slot ?? ''}` : '—'}</td>
+                <td><span class={`badge badge--${l.status}`}>{l.status}</span></td>
+                <td>{d.map((x) => {
+                  const [ch, stt] = x.split(':');
+                  return <span class={`badge badge--${stt === 'sent' ? 'done' : stt === 'failed' ? 'failed' : 'pending'}`} title={`${ch}: ${stt}`}>{ch === 'telegram' ? 'TG' : 'E-mail'} {stt === 'sent' ? '✓' : stt === 'failed' ? '✗' : '…'}</span>;
+                })}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  ) : <p class="adm-empty">Заявок по фильтру нет. Пустые разделы — нормальное состояние: заявки появятся сразу после отправки форм на сайте.</p>}
+</Admin>

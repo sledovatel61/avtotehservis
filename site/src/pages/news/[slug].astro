@@ -1,0 +1,109 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getSettings } from '../../server/settings.ts';
+import { getNews, otherNews, coverInfo, catTitle, NEWS_CATEGORIES, newsCategoryCounts, newsTotal } from '../../server/content.ts';
+import { fmtDateRu } from '../../server/format.ts';
+import { mdToHtml } from '../../server/markdown.ts';
+
+const S = getSettings();
+const { slug } = Astro.params;
+const post = slug ? getNews(slug) : undefined;
+if (!post) Astro.response.status = 404;
+const others = post ? otherNews(post.slug, 3) : [];
+const counts = newsCategoryCounts();
+const allCount = newsTotal();
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = post ? [
+  {
+    '@context': 'https://schema.org', '@type': 'NewsArticle',
+    headline: post.title,
+    description: post.excerpt ?? '',
+    datePublished: post.published_at ?? '',
+    inLanguage: 'ru',
+    image: siteUrl + coverInfo(post, '/img/news-1.svg', post.title).src,
+    author: { '@type': 'Organization', name: S.site_name },
+    publisher: { '@type': 'Organization', name: S.site_name },
+    mainEntityOfPage: siteUrl + '/news/' + post.slug,
+  },
+  {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Новости и акции', item: siteUrl + '/news' },
+      { '@type': 'ListItem', position: 3, name: post.title },
+    ],
+  },
+] : undefined;
+---
+{post ? (
+<Base
+  page="post"
+  title={`${post.title} — АвтоТехСервис`}
+  description={post.excerpt ?? post.title}
+  jsonLd={jsonLd}
+  ogType="article"
+  publishedTime={(post.published_at ?? '').replace(' ', 'T')}
+>
+  <nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><a href="/news">Новости и акции</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">{catTitle(post.category)}</span></nav>
+  <section class="sec u-pt34">
+    <div class="container post-layout">
+      <article class="post-main" id="post-main">
+        <div class="post-meta">
+          <a class="news-cat" href={`/news?cat=${post.category}`}>{catTitle(post.category)}</a>
+          <time datetime={(post.published_at ?? '').replace(' ', 'T')}>{fmtDateRu(post.published_at)}</time>
+        </div>
+        <h1 id="post-title">{post.title}</h1>
+        <figure id="post-img">
+          {(() => { const cov = coverInfo(post, '/img/news-1.svg', post.title); return (
+            <img src={cov.src} srcset={cov.srcset ?? undefined} sizes="min(760px, 92vw)" alt={cov.alt} width="800" height="450">
+          ); })()}
+          {!post.cover_media_id && <figcaption>Фото к статье появится после съёмки</figcaption>}
+        </figure>
+        <div class="post-text" id="post-text" set:html={mdToHtml(post.body_md)} />
+        <div class="post-cta">
+          <p><b>Нужна запись или проверка?</b> Выберите удобное время — без живой очереди, {S.hours}.</p>
+          <a class="btn btn--copper" href="/appointment">Записаться</a>
+        </div>
+      </article>
+      <aside class="post-side">
+        <div class="side-box">
+          <h3>Категории</h3>
+          <ul>
+            <li><a href="/news">Все статьи <span class="c">{allCount}</span></a></li>
+            {NEWS_CATEGORIES.map((c) => (
+              <li><a href={`/news?cat=${c.slug}`}>{c.title} <span class="c">{counts[c.slug] ?? 0}</span></a></li>
+            ))}
+          </ul>
+        </div>
+        {others.length > 0 && (
+          <div class="side-box">
+            <h3>Другие статьи</h3>
+            <ul id="post-others">
+              {others.map((o) => (
+                <li><a href={`/news/${o.slug}`}>{o.title}</a></li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div class="side-box">
+          <h3>Связаться</h3>
+          <a class="side-tel" href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a>
+          <p class="hint u-m8-0-12">{S.hours} · {S.address_full}</p>
+          <a class="btn btn--copper btn--sm btn--block" href="/appointment">Записаться на визит</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+</Base>
+) : (
+<Base page="404" title="Статья не найдена — АвтоТехСервис" description="Запрошенная статья не найдена или снята с публикации." noindex>
+  <section class="page-head">
+    <div class="container">
+      <span class="eyebrow">404</span>
+      <h1>Статья не найдена</h1>
+      <p class="lead">Возможно, она снята с публикации или адрес набран с ошибкой.</p>
+      <p class="u-chips-mt26"><a class="btn btn--copper" href="/news">Все новости</a> <a class="btn btn--ghost" href="/">На главную</a></p>
+    </div>
+  </section>
+</Base>
+)}

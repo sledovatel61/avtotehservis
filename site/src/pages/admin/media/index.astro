@@ -1,0 +1,129 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { mediaDir } from '../../../server/db.ts';
+import { bodyTooLarge } from '../../../server/http.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, adminRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+import {processVideoUpload, VIDEO_MAX_BYTES } from '../../../server/video.ts';
+import {MediaError, PHOTO_MAX_BYTES } from '../../../server/media.ts';
+import { fmtDateShort } from '../../../server/format.ts';
+
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+
+/** Удаление медиа — только если не привязано к опубликованной сущности (§10). */
+function canDelete(id: string, attached: string | null): { ok: boolean; reason?: string } {
+  // M1 ревью round4: проверяем не только attached_to, но и факт использования —
+  // обложка опубликованного кейса/статьи защищена, даже если привязка не проставлена
+  // (например, медиа взяли из библиотеки через «Сделать обложкой» в старой версии).
+  if (db().prepare(`SELECT 1 AS x FROM cases WHERE cover_media_id=? AND status='published' LIMIT 1`).get(id)) {
+    return { ok: false, reason: 'обложка опубликованного кейса' };
+  }
+  if (db().prepare(`SELECT 1 AS x FROM news WHERE cover_media_id=? AND status='published' LIMIT 1`).get(id)) {
+    return { ok: false, reason: 'обложка опубликованной статьи' };
+  }
+  if (!attached) return { ok: true };
+  const [kind, ref] = attached.split(':');
+  if (kind === 'lead') return { ok: false, reason: 'фото клиента в заявке — удаление запрещено' };
+  if (kind === 'case') {
+    const c = db().prepare('SELECT status FROM cases WHERE id=?').get(Number(ref)) as { status: string } | undefined;
+    if (c?.status === 'published') return { ok: false, reason: 'обложка/медиа опубликованного кейса' };
+    return { ok: true };
+  }
+  if (kind === 'news') {
+    const n = db().prepare('SELECT status FROM news WHERE id=?').get(Number(ref)) as { status: string } | undefined;
+    if (n?.status === 'published') return { ok: false, reason: 'обложка опубликованной статьи' };
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+if (Astro.request.method === 'POST') {
+  // Отклоняем запрос сразу по Content-Length — не буферизуя 100+ МБ в памяти (minor-5 ревью).
+  if (bodyTooLarge(Astro.request, VIDEO_MAX_BYTES + PHOTO_MAX_BYTES + 1024 * 1024)) {
+    return adminRefusal(Astro, 'Загрузка слишком большая: видео до 100 МБ, постер до 15 МБ.');
+  }
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const action = String(form.get('action') ?? '');
+  if (action === 'delete') {
+    const mid = String(form.get('id') ?? '');
+    const m = db().prepare('SELECT id, path, attached_to FROM media WHERE id=?').get(mid) as { id: string; path: string; attached_to: string | null } | undefined;
+    if (!m) return Astro.redirect('/admin/media?err=' + encodeURIComponent('Медиа не найдено'), 302);
+    const check = canDelete(m.id, m.attached_to);
+    if (!check.ok) return Astro.redirect('/admin/media?err=' + encodeURIComponent(`Нельзя удалить: ${check.reason}`), 302);
+    db().prepare('DELETE FROM case_media WHERE media_id=?').run(mid);
+    db().prepare('DELETE FROM lead_photos WHERE media_id=?').run(mid);
+    db().prepare('UPDATE cases SET cover_media_id=NULL WHERE cover_media_id=?').run(mid);
+    db().prepare('UPDATE news SET cover_media_id=NULL WHERE cover_media_id=?').run(mid);
+    db().prepare('DELETE FROM media WHERE id=?').run(mid);
+    try { rmSync(join(mediaDir(), mid), { recursive: true, force: true }); } catch { /* файлы могли быть удалены ранее */ }
+    logAction(user.id, 'media_delete', 'media', mid);
+    return Astro.redirect('/admin/media?msg=' + encodeURIComponent('Медиа удалено'), 302);
+  }
+  if (action === 'upload_video') {
+    const video = form.getAll('video').filter((f): f is File => f instanceof File && f.size > 0)[0];
+    const poster = form.getAll('poster').filter((f): f is File => f instanceof File && f.size > 0)[0];
+    if (!video) return Astro.redirect('/admin/media?err=' + encodeURIComponent('Выберите видеофайл'), 302);
+    try {
+      const v = processVideoUpload(Buffer.from(await video.arrayBuffer()), poster ? Buffer.from(await poster.arrayBuffer()) : null);
+      const alt = String(form.get('alt') ?? '').trim();
+      if (alt) db().prepare('UPDATE media SET alt=? WHERE id=?').run(alt.slice(0, 300), v.id);
+      logAction(user.id, 'media_upload_video', 'media', v.id, { mime: v.mime, bytes: v.bytes });
+      return Astro.redirect('/admin/media?msg=' + encodeURIComponent('Видео загружено'), 302);
+    } catch (e) {
+      return Astro.redirect('/admin/media?err=' + encodeURIComponent(e instanceof MediaError ? e.message : 'Ошибка загрузки видео'), 302);
+    }
+  }
+}
+const media = db().prepare('SELECT * FROM media ORDER BY created_at DESC LIMIT 400').all() as {
+  id: string; kind: string; path: string; poster_path: string | null; width: number | null; height: number | null;
+  duration: number | null; bytes: number | null; mime: string; alt: string | null; attached_to: string | null; created_at: string;
+}[];
+const orphan = (db().prepare(`SELECT COUNT(*) c FROM media WHERE attached_to IS NULL AND created_at <= datetime('now','-1 day')`).get() as { c: number }).c;
+---
+<Admin section="media" title="Медиа">
+  <h1 class="adm-h1">Библиотека медиа</h1>
+  <p class="hint u-mb18">Загруженные файлы хранятся вне репозитория и public/. Неиспользованные загрузки удаляются автоматически через 24 часа (сейчас таких: {orphan}).</p>
+  <div class="adm-card">
+    <h2>Загрузить видео</h2>
+    <form method="post" enctype="multipart/form-data" class="adm-form" data-upload>
+      <input type="hidden" name="_csrf" value={csrf}>
+      <input type="hidden" name="action" value="upload_video">
+      <label>Видео MP4/WebM, до 100 МБ, до 3 минут
+        <input type="file" name="video" accept="video/mp4,video/webm" required>
+      </label>
+      <label>Постер (фото-обложка видео; обязателен, если на сервере нет ffmpeg)
+        <input type="file" name="poster" accept="image/jpeg,image/png,image/webp">
+      </label>
+      <label>Подпись (alt) <input type="text" name="alt" maxlength="300"></label>
+      <div class="adm-progress u-none" data-progress aria-hidden="true"><i></i></div>
+      <button type="submit" class="btn btn--copper">Загрузить видео</button>
+    </form>
+  </div>
+  {media.length ? (
+    <div class="adm-media-grid">
+      {media.map((m) => (
+        <div class="adm-media">
+          <a href={`/media/${m.path}`} target="_blank" rel="noopener">
+            <img src={m.kind === 'video' ? `/media/${m.poster_path}` : `/media/${m.id}/v480.webp`} alt={m.alt ?? ''} loading="lazy" width="300" height="225">
+          </a>
+          <div class="m">
+            <b>{m.kind === 'video' ? 'видео' : 'фото'}{m.duration ? ` · ${m.duration} с` : ''}</b>
+            <span class="hint">{m.width ? `${m.width}×${m.height} · ` : ''}{Math.round((m.bytes ?? 0) / 1024)} КБ · {fmtDateShort(m.created_at)}</span>
+            <span class="hint">{m.attached_to ? `используется: ${m.attached_to}` : 'не используется'}</span>
+            {m.alt && <span class="hint">alt: {m.alt.slice(0, 60)}</span>}
+            <form method="post" data-confirm="Удалить медиафайл безвозвратно?">
+              <input type="hidden" name="_csrf" value={csrf}>
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="id" value={m.id}>
+              <button type="submit" class="linklike u-danger">удалить</button>
+            </form>
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : <p class="adm-empty">Медиа пока нет.</p>}
+</Admin>

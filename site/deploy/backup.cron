@@ -1,0 +1,2 @@
+# /etc/cron.d/avtotehservis-backup — ежедневно в 03:15, хранение 14 дней
+15 3 * * * root /var/www/avtotehservis/site/scripts/backup.sh >> /var/log/avtotehservis-backup.log 2>&1

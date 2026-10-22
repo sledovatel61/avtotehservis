@@ -1,0 +1,185 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { bodyTooLarge } from '../../../server/http.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, adminRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+import {processPhotoUpload, MediaError, PHOTO_MAX_BYTES } from '../../../server/media.ts';
+import {processVideoUpload, VIDEO_MAX_BYTES } from '../../../server/video.ts';
+import { uniqueSlug, slugify } from '../../../server/slug.ts';
+
+const id = Number(Astro.params.id);
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+
+function getCase() {
+  return db().prepare('SELECT * FROM cases WHERE id=?').get(id) as {
+    id: number; slug: string; title: string; description: string | null; service_slug: string | null;
+    cover_media_id: string | null; cover_static: string | null; status: string; published_at: string | null; sort: number;
+  } | undefined;
+}
+
+if (Astro.request.method === 'POST') {
+  // Отклоняем запрос сразу по Content-Length — не буферизуя 100+ МБ в памяти (minor-5 ревью).
+  if (bodyTooLarge(Astro.request, VIDEO_MAX_BYTES + PHOTO_MAX_BYTES + 1024 * 1024)) {
+    return adminRefusal(Astro, 'Загрузка слишком большая: видео до 100 МБ, каждое фото до 15 МБ.');
+  }
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const c = getCase();
+  if (!c) return Astro.redirect('/admin/cases?err=' + encodeURIComponent('Кейс не найден'), 302);
+  const action = String(form.get('action') ?? 'save');
+
+  if (action === 'save') {
+    const title = String(form.get('title') ?? '').trim();
+    if (title.length < 4) return Astro.redirect(`/admin/cases/${id}?err=` + encodeURIComponent('Заголовок минимум 4 символа'), 302);
+    const slugRaw = String(form.get('slug') ?? '').trim();
+    const slug = slugRaw ? uniqueSlug(slugRaw, 'cases', id) : uniqueSlug(title, 'cases', id);
+    const status = String(form.get('status') ?? 'draft') === 'published' ? 'published' : 'draft';
+    db().prepare(`UPDATE cases SET title=?, slug=?, description=?, service_slug=?, status=?, sort=?,
+      published_at=CASE WHEN ?='published' AND published_at IS NULL THEN datetime('now') ELSE published_at END WHERE id=?`)
+      .run(title, slug, String(form.get('description') ?? '').trim() || null,
+           String(form.get('service_slug') ?? '') || null, status, Number(form.get('sort') ?? 0) || 0, status, id);
+    logAction(user.id, 'case_save', 'cases', id, { slug, status });
+    return Astro.redirect(`/admin/cases/${id}?msg=` + encodeURIComponent(status === 'published' ? 'Сохранено и опубликовано' : 'Черновик сохранён'), 302);
+  }
+  if (action === 'upload') {
+    const files = form.getAll('photos').filter((f): f is File => f instanceof File && f.size > 0);
+    const poster = form.getAll('poster').filter((f): f is File => f instanceof File && f.size > 0)[0] ?? null;
+    if (!files.length) return Astro.redirect(`/admin/cases/${id}?err=` + encodeURIComponent('Выберите файлы'), 302);
+    try {
+      const cur = (db().prepare('SELECT COALESCE(MAX(sort),0)+1 AS s FROM case_media WHERE case_id=?').get(id) as { s: number }).s;
+      const ids: string[] = [];
+      for (const f of files.slice(0, 12)) {
+        const buf = Buffer.from(await f.arrayBuffer());
+        const isVideo = /\.(mp4|webm)$/i.test(f.name) || f.type.startsWith('video/');
+        const mid = isVideo
+          ? processVideoUpload(buf, poster ? Buffer.from(await poster.arrayBuffer()) : null).id
+          : (await processPhotoUpload(buf)).id;
+        ids.push(mid);
+      }
+      const ins = db().prepare('INSERT OR IGNORE INTO case_media(case_id, media_id, sort) VALUES(?,?,?)');
+      ids.forEach((mid, i) => { ins.run(id, mid, cur + i); db().prepare('UPDATE media SET attached_to=? WHERE id=?').run(`case:${id}`, mid); });
+      if (!getCase()?.cover_media_id && ids[0]) db().prepare('UPDATE cases SET cover_media_id=? WHERE id=?').run(ids[0], id);
+      logAction(user.id, 'case_upload', 'cases', id, { count: ids.length });
+      return Astro.redirect(`/admin/cases/${id}?msg=` + encodeURIComponent(`Загружено файлов: ${ids.length}`), 302);
+    } catch (e) {
+      const msg = e instanceof MediaError ? e.message : 'Не удалось загрузить';
+      return Astro.redirect(`/admin/cases/${id}?err=` + encodeURIComponent(msg), 302);
+    }
+  }
+  if (action === 'cover') {
+    // M1 ревью round4: обложка, взятая из библиотеки, должна получать привязку к кейсу,
+    // иначе её можно удалить из /admin/media и опубликованный кейс молча вернётся к заглушке.
+    const mid = String(form.get('media_id'));
+    const tx = db().transaction(() => {
+      const prev = getCase()?.cover_media_id;
+      if (prev && prev !== mid) {
+        db().prepare('UPDATE media SET attached_to=NULL WHERE id=? AND attached_to=?').run(prev, `case:${id}`);
+      }
+      db().prepare('UPDATE cases SET cover_media_id=?, cover_static=NULL WHERE id=?').run(mid, id);
+      db().prepare('UPDATE media SET attached_to=? WHERE id=?').run(`case:${id}`, mid);
+    });
+    tx();
+    logAction(user.id, 'case_cover', 'cases', id, { media: mid });
+    return Astro.redirect(`/admin/cases/${id}?msg=` + encodeURIComponent('Обложка обновлена'), 302);
+  }
+  if (action === 'alt') {
+    db().prepare('UPDATE media SET alt=? WHERE id=?').run(String(form.get('alt') ?? '').slice(0, 300), String(form.get('media_id')));
+    logAction(user.id, 'media_alt', 'media', String(form.get('media_id')), { case: id });
+    return Astro.redirect(`/admin/cases/${id}?msg=` + encodeURIComponent('Подпись (alt) сохранена'), 302);
+  }
+  if (action === 'detach') {
+    const mid = String(form.get('media_id'));
+    db().prepare('DELETE FROM case_media WHERE case_id=? AND media_id=?').run(id, mid);
+    db().prepare('UPDATE media SET attached_to=NULL WHERE id=? AND attached_to=?').run(mid, `case:${id}`);
+    if (getCase()?.cover_media_id === mid) {
+      const next = db().prepare('SELECT media_id FROM case_media WHERE case_id=? ORDER BY sort LIMIT 1').get(id) as { media_id: string } | undefined;
+      db().prepare('UPDATE cases SET cover_media_id=? WHERE id=?').run(next?.media_id ?? null, id);
+    }
+    logAction(user.id, 'case_detach', 'cases', id, { media: mid });
+    return Astro.redirect(`/admin/cases/${id}?msg=` + encodeURIComponent('Медиа откреплено (файл остался в библиотеке)'), 302);
+  }
+}
+
+const c = getCase();
+if (!c) return Astro.redirect('/admin/cases?err=' + encodeURIComponent('Кейс не найден'), 302);
+const services = db().prepare('SELECT slug, title FROM services WHERE hidden=0 ORDER BY sort').all() as { slug: string; title: string }[];
+const media = db().prepare(`SELECT m.*, cm.sort FROM case_media cm JOIN media m ON m.id=cm.media_id WHERE cm.case_id=? ORDER BY cm.sort`).all(id) as {
+  id: string; kind: string; path: string; poster_path: string | null; width: number | null; height: number | null;
+  duration: number | null; bytes: number | null; mime: string; alt: string | null; sort: number;
+}[];
+function thumbOf(m: { kind: string; id: string; poster_path: string | null }): string {
+  return m.kind === 'video' ? `/media/${m.poster_path}` : `/media/${m.id}/v480.webp`;
+}
+function fullOf(m: { kind: string; path: string }): string {
+  return `/media/${m.path}`;
+}
+---
+<Admin section="cases" title={`Кейс: ${c.title}`}>
+  <p><a href="/admin/cases" class="linklike">← все кейсы</a> · <a href={`/services/${c.service_slug ?? ''}`} class="linklike" target="_blank" rel="noopener">страница услуги ↗</a></p>
+  <h1 class="adm-h1">{c.title} <span class={`badge badge--${c.status}`}>{c.status === 'published' ? 'опубликован' : 'черновик'}</span></h1>
+
+  <form method="post" class="adm-form adm-card">
+    <input type="hidden" name="_csrf" value={csrf}>
+    <input type="hidden" name="action" value="save">
+    <label>Заголовок <input type="text" name="title" value={c.title} required minlength="4" maxlength="120"></label>
+    <label>Слаг (ЧПУ) <input type="text" name="slug" value={c.slug} pattern="[a-z0-9-]+" title="латиница, цифры, дефис"> <span class="hint">/services/… не меняется; слаг кейса участвует в адресе галереи</span></label>
+    <label>Описание <textarea name="description" maxlength="600">{c.description ?? ''}</textarea></label>
+    <label>Услуга
+      <select name="service_slug">
+        <option value="">— не выбирать —</option>
+        {services.map((s) => <option value={s.slug} selected={c.service_slug === s.slug}>{s.title}</option>)}
+      </select>
+    </label>
+    <div class="adm-row">
+      <label class="adm-row">Порядок <input type="number" name="sort" value={c.sort} min="0" max="999"></label>
+      <label class="adm-row">Статус
+        <select name="status">
+          <option value="draft" selected={c.status === 'draft'}>черновик</option>
+          <option value="published" selected={c.status === 'published'}>опубликован</option>
+        </select>
+      </label>
+      <button type="submit" class="btn btn--copper">Сохранить</button>
+    </div>
+  </form>
+
+  <div class="adm-card">
+    <h2>Медиа ({media.length})</h2>
+    {media.length ? (
+      <div class="adm-media-grid">
+        {media.map((m) => (
+          <div class="adm-media">
+            <a href={fullOf(m)} target="_blank" rel="noopener">
+              <img src={thumbOf(m)} alt={m.alt ?? 'Медиа кейса'} loading="lazy" width="300" height="225">
+            </a>
+            <div class="m">
+              <span class="hint">{m.kind === 'video' ? `видео${m.duration ? ` · ${m.duration} с` : ''}` : `${m.width ?? '?'}×${m.height ?? '?'} · ${Math.round((m.bytes ?? 0) / 1024)} КБ`}</span>
+              <form method="post"><input type="hidden" name="_csrf" value={csrf}><input type="hidden" name="action" value="cover"><input type="hidden" name="media_id" value={m.id}>
+                <button type="submit" class="linklike" disabled={c.cover_media_id === m.id}>{c.cover_media_id === m.id ? 'обложка ✓' : 'сделать обложкой'}</button>
+              </form>
+              <form method="post" class="adm-row"><input type="hidden" name="_csrf" value={csrf}><input type="hidden" name="action" value="alt"><input type="hidden" name="media_id" value={m.id}>
+                <input type="text" name="alt" value={m.alt ?? ''} placeholder="Подпись (alt)" maxlength="300" aria-label="Подпись медиа">
+                <button type="submit" class="linklike">OK</button>
+              </form>
+              <form method="post" data-confirm="Открепить медиа от кейса? Файл останется в библиотеке."><input type="hidden" name="_csrf" value={csrf}><input type="hidden" name="action" value="detach"><input type="hidden" name="media_id" value={m.id}>
+                <button type="submit" class="linklike u-danger">открепить</button>
+              </form>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : <p class="adm-empty">Медиа нет — загрузите фото «до/после».</p>}
+    <form method="post" enctype="multipart/form-data" class="adm-form u-mt18" data-upload>
+      <input type="hidden" name="_csrf" value={csrf}>
+      <input type="hidden" name="action" value="upload">
+      <label>Добавить фото/видео
+        <input type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" multiple required>
+      </label>
+      <label>Постер для видео (если нет ffmpeg на сервере)
+        <input type="file" name="poster" accept="image/jpeg,image/png,image/webp">
+      </label>
+      <div class="adm-progress u-none" data-progress aria-hidden="true"><i></i></div>
+      <button type="submit" class="btn btn--ghost">Загрузить</button>
+    </form>
+  </div>
+</Admin>

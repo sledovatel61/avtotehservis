@@ -1,0 +1,175 @@
+/* ---------- Три услуги 01/02/03 ---------- */
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.tri-card{
+  position:relative;border-radius:var(--r);padding:30px 26px 28px;min-height:300px;
+  display:flex;flex-direction:column;background:var(--deep);border:1px solid var(--line);
+  overflow:hidden;transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease);
+}
+.tri-card:hover{transform:translateY(-4px);border-color:rgba(224,169,109,.5);background:var(--deep2)}
+.tri-num{
+  font-family:var(--font-display);font-weight:600;font-size:64px;line-height:1;
+  color:transparent;-webkit-text-stroke:1.5px var(--copper);margin-bottom:18px;
+  transition:color var(--t-mid) var(--ease);
+}
+.tri-card:hover .tri-num{color:rgba(200,127,69,.16)}
+.tri-card h3{margin-bottom:.45em}
+.tri-card p{color:var(--mist);font-size:15.5px;flex:1}
+.tri-card .link-more{font-size:14.5px}
+.tri-card--accent{background:linear-gradient(150deg,#1C3126 0%,var(--deep) 70%)}
+
+/* ---------- О компании + 4 преимущества ---------- */
+.about-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:start}
+.about-media{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--deep)}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+.fact{border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:14px 16px;background:rgba(16,32,26,.6)}
+.fact b{display:block;font-size:16px;color:var(--ivory);font-weight:700}
+.fact span{font-size:13.5px;color:var(--mist)}
+.feats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px}
+.feat{
+  border:1px solid var(--line-soft);border-radius:var(--r);padding:24px 20px;background:var(--deep);
+  transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);
+}
+.feat:hover{transform:translateY(-3px);border-color:rgba(224,169,109,.45)}
+.feat-ic{
+  width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:rgba(200,127,69,.14);border:1px solid rgba(224,169,109,.35);margin-bottom:16px;
+}
+.feat-ic svg{width:26px;height:26px;stroke:var(--brass)}
+.feat h3{font-family:var(--font-text);font-weight:700;font-size:16.5px;letter-spacing:0;margin-bottom:.4em}
+.feat p{color:var(--mist);font-size:14.5px}
+
+/* ---------- Смета до ремонта (персональная секция A5, тёплый свет) ---------- */
+.est-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+.est-steps{display:grid;gap:0;counter-reset:est}
+.est-step{display:flex;gap:18px;padding:18px 0;border-bottom:1px solid rgba(11,20,16,.12)}
+.est-step:first-child{padding-top:0}
+.est-step:last-child{border-bottom:0}
+.est-step .n{
+  counter-increment:est;flex-shrink:0;width:44px;height:44px;border-radius:50%;
+  background:var(--night);color:var(--brass);font-family:var(--font-display);font-weight:600;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}
+.est-step .n::before{content:counter(est,decimal-leading-zero)}
+.est-step h3{font-family:var(--font-text);font-weight:700;font-size:17px;color:var(--night);margin:0 0 .25em;letter-spacing:0}
+.est-step p{color:#3F4E47;font-size:15px;margin:0}
+.est-aside{
+  background:var(--night);color:var(--ivory);border-radius:var(--r);padding:34px 32px;
+  border:1px solid rgba(224,169,109,.3);box-shadow:0 24px 60px rgba(11,20,16,.35);
+}
+.est-aside h3{color:var(--brass);margin-bottom:.5em}
+.est-aside p{color:var(--mist);font-size:15.5px}
+.est-aside .btn{margin-top:8px}
+
+/* ---------- Слайдер услуг ---------- */
+.slider-sec .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;max-width:none;flex-wrap:wrap}
+.slider-nav{display:flex;gap:10px}
+.carousel{position:relative}
+.carousel-win{overflow:hidden;border-radius:var(--r)}
+.carousel-track{display:flex;gap:18px;transition:transform var(--t-slow) var(--ease);will-change:transform}
+.svc-card{
+  flex:0 0 calc((100% - 36px)/3);min-width:0;border-radius:var(--r);overflow:hidden;
+  background:var(--deep);border:1px solid var(--line-soft);
+  transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);
+  display:flex;flex-direction:column;
+}
+.svc-card:hover{transform:translateY(-4px);border-color:rgba(224,169,109,.5)}
+.svc-img{aspect-ratio:4/3;background:var(--deep2);overflow:hidden}
+.svc-img img{width:100%;height:100%;object-fit:cover;transition:transform var(--t-slow) var(--ease)}
+.svc-card:hover .svc-img img{transform:scale(1.04)}
+.svc-body{padding:20px 22px 22px;display:flex;flex-direction:column;gap:8px;flex:1}
+.svc-body h3{margin:0;font-size:18px}
+.svc-body p{color:var(--mist);font-size:14.5px;flex:1;margin:0}
+.svc-body .link-more{font-size:14px;margin-top:6px}
+.svc-tag{align-self:flex-start;font-size:11.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);border:1px solid rgba(224,169,109,.35);border-radius:999px;padding:3px 10px}
+
+/* ---------- Галерея работ ---------- */
+.gal-track .svc-card{flex-basis:calc((100% - 36px)/3)}
+.gal-card{
+  flex:0 0 calc((100% - 36px)/3);border-radius:var(--r);overflow:hidden;position:relative;
+  border:1px solid var(--line-soft);background:var(--deep);cursor:pointer;padding:0;text-align:left;
+  transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);
+}
+.gal-card:hover{transform:translateY(-4px);border-color:rgba(224,169,109,.5)}
+.gal-img{aspect-ratio:4/3;background:var(--deep2)}
+.gal-img img{width:100%;height:100%;object-fit:cover}
+.gal-cap{position:absolute;left:0;right:0;bottom:0;padding:34px 18px 14px;background:linear-gradient(transparent,rgba(11,20,16,.92));color:var(--ivory);font-size:14px;font-weight:500;display:flex;justify-content:space-between;gap:10px;align-items:flex-end}
+.gal-cap .ba{color:var(--brass);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;flex-shrink:0}
+.lightbox{
+  position:fixed;inset:0;z-index:120;background:rgba(6,11,9,.94);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;visibility:hidden;transition:opacity var(--t-mid) var(--ease),visibility var(--t-mid);
+}
+.lightbox.is-open{opacity:1;visibility:visible}
+.lb-box{max-width:920px;width:100%;transform:scale(.98);opacity:0;transition:transform var(--t-mid) var(--ease),opacity var(--t-mid) var(--ease)}
+.lightbox.is-open .lb-box{transform:scale(1);opacity:1}
+.lb-img{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--deep2)}
+.lb-img img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.lb-cap{color:var(--mist);font-size:15px;margin-top:14px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.lb-cap b{color:var(--ivory)}
+.lb-close{position:absolute;top:18px;right:18px;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:rgba(16,32,26,.8);color:var(--ivory);font-size:20px;cursor:pointer}
+.lb-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(16,32,26,.85);color:var(--brass);font-size:20px;cursor:pointer;
+  transition:background-color var(--t-fast) var(--ease);
+}
+.lb-arrow:hover{background:var(--copper);color:var(--night)}
+.lb-prev{left:16px}.lb-next{right:16px}
+
+/* ---------- Отзывы ---------- */
+.rev-card{
+  flex:0 0 calc((100% - 18px)/2);border-radius:var(--r);border:1px solid var(--line-soft);
+  background:var(--deep);padding:28px 28px 24px;display:flex;flex-direction:column;gap:14px;
+}
+.rev-stars{display:flex;gap:3px;align-items:center}
+.rev-stars svg{width:17px;height:17px;fill:var(--brass)}
+.rev-text{font-size:16px;color:var(--ivory);flex:1}
+.rev-text p{margin:0 0 .7em}
+.rev-who{display:flex;align-items:center;gap:13px;border-top:1px solid var(--line-soft);padding-top:14px}
+.rev-ava{width:44px;height:44px;border-radius:50%;background:rgba(200,127,69,.16);border:1px solid rgba(224,169,109,.4);color:var(--brass);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rev-who b{display:block;font-size:15px}
+.rev-who span{font-size:13px;color:var(--mist)}
+.demo-chip{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);border:1px solid rgba(217,160,91,.4);border-radius:999px;padding:2px 9px;margin-left:auto;align-self:center;flex-shrink:0}
+.rates{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+.rate-card{border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:18px 20px;background:rgba(16,32,26,.55)}
+.rate-card .v{font-family:var(--font-display);font-weight:600;font-size:30px;color:var(--ivory);line-height:1}
+.rate-card .v small{font-family:var(--font-text);font-size:14px;color:var(--mist);font-weight:400}
+.rate-card .s{font-size:14px;color:var(--mist);margin-top:7px}
+.rate-card--main{border-color:rgba(224,169,109,.45);background:linear-gradient(160deg,rgba(200,127,69,.12),rgba(16,32,26,.6))}
+.rate-card--main .v{color:var(--brass)}
+.rate-note{font-size:13px;color:var(--mist);margin-top:16px;max-width:80ch}
+
+/* ---------- Марки (бегущая строка) ---------- */
+.marq{overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.marq-in{display:flex;gap:14px;width:max-content;animation:marq 38s linear infinite;will-change:transform}
+.marq:hover .marq-in,.marq:focus-within .marq-in{animation-play-state:paused}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.brand-chip{
+  border:1px solid var(--line-soft);border-radius:999px;padding:11px 22px;background:var(--deep);
+  font-family:var(--font-display);font-weight:600;font-size:14.5px;letter-spacing:.02em;color:var(--mist);
+  white-space:nowrap;transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
+}
+.brand-chip:hover{color:var(--brass);border-color:rgba(224,169,109,.5)}
+.marq-note{text-align:center;color:var(--mist);font-size:13.5px;margin-top:18px}
+
+/* ---------- Футер ---------- */
+.ftr{background:var(--deep);border-top:1px solid var(--line);padding:56px 0 0;margin-top:0}
+.ftr-grid{display:grid;grid-template-columns:1.3fr .8fr 1fr 1.2fr;gap:36px;padding-bottom:44px}
+.ftr h4{font-family:var(--font-text);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin:0 0 18px}
+.ftr-about p{color:var(--mist);font-size:14.5px;max-width:34ch;margin-top:16px}
+.ftr ul{display:grid;gap:9px}
+.ftr ul a{color:var(--mist);font-size:14.5px;min-height:32px;display:inline-flex;align-items:center}
+.ftr ul a:hover{color:var(--brass)}
+.ftr-contacts li{display:flex;gap:10px;color:var(--mist);font-size:14.5px;align-items:flex-start}
+.ftr-contacts li b{color:var(--ivory);font-weight:500}
+.ftr-contacts svg{width:17px;height:17px;stroke:var(--brass);flex-shrink:0;margin-top:3px}
+.ftr-legal{
+  border-top:1px solid var(--line-soft);padding:22px 0 calc(22px + env(safe-area-inset-bottom));
+  display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;justify-content:space-between;
+  color:var(--mist);font-size:13px;
+}
+.ftr-legal button{
+  background:none;border:0;color:var(--mist);font-size:13px;cursor:pointer;padding:6px 0;min-height:36px;
+  border-bottom:1px dashed rgba(183,196,187,.4);
+}
+.ftr-legal button:hover{color:var(--brass);border-color:var(--brass)}
+

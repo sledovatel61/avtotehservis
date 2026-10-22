@@ -1,0 +1,91 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { bodyTooLarge } from '../../../server/http.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, adminRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+import {processPhotoUpload, PHOTO_MAX_BYTES } from '../../../server/media.ts';
+import { processVideoUpload, VIDEO_MAX_BYTES } from '../../../server/video.ts';
+import { MediaError } from '../../../server/media.ts';
+import { uniqueSlug } from '../../../server/slug.ts';
+
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+const services = db().prepare('SELECT slug, title FROM services WHERE hidden=0 ORDER BY sort').all() as { slug: string; title: string }[];
+
+if (Astro.request.method === 'POST') {
+  // Отклоняем запрос сразу по Content-Length — не буферизуя 100+ МБ в памяти (minor-5 ревью).
+  if (bodyTooLarge(Astro.request, VIDEO_MAX_BYTES + PHOTO_MAX_BYTES + 1024 * 1024)) {
+    return adminRefusal(Astro, 'Загрузка слишком большая: видео до 100 МБ, каждое фото до 15 МБ.');
+  }
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const title = String(form.get('title') ?? '').trim();
+  const files = form.getAll('photos').filter((f): f is File => f instanceof File && f.size > 0);
+  const poster = form.getAll('poster').filter((f): f is File => f instanceof File && f.size > 0)[0] ?? null;
+  if (!title) return Astro.redirect('/admin/cases/new?err=' + encodeURIComponent('Нужен заголовок'), 302);
+  if (files.length === 0) return Astro.redirect('/admin/cases/new?err=' + encodeURIComponent('Нужно хотя бы одно фото или видео'), 302);
+  try {
+    const ids: string[] = [];
+    for (const f of files.slice(0, 12)) {
+      const buf = Buffer.from(await f.arrayBuffer());
+      const isVideo = /\.(mp4|webm)$/i.test(f.name) || f.type.startsWith('video/');
+      if (isVideo) {
+        const posterBuf = poster ? Buffer.from(await poster.arrayBuffer()) : null;
+        ids.push(processVideoUpload(buf, posterBuf).id);
+      } else {
+        ids.push((await processPhotoUpload(buf)).id);
+      }
+    }
+    const slug = uniqueSlug(title, 'cases');
+    const publish = String(form.get('publish') ?? '') === '1';
+    const info = db().prepare(`INSERT INTO cases(slug, title, description, service_slug, cover_media_id, status, published_at, sort)
+      VALUES(?,?,?,?,?,?,${publish ? "datetime('now')" : 'NULL'},?)`).run(
+      slug, title, String(form.get('description') ?? '').trim() || null,
+      String(form.get('service_slug') ?? '') || null, ids[0], publish ? 'published' : 'draft',
+      (db().prepare('SELECT COALESCE(MAX(sort),0)+1 AS s FROM cases').get() as { s: number }).s,
+    );
+    const caseId = Number(info.lastInsertRowid);
+    const insMedia = db().prepare('INSERT OR IGNORE INTO case_media(case_id, media_id, sort) VALUES(?,?,?)');
+    ids.forEach((mid, i) => { insMedia.run(caseId, mid, i); db().prepare('UPDATE media SET attached_to=? WHERE id=?').run(`case:${caseId}`, mid); });
+    logAction(user.id, publish ? 'case_publish' : 'case_draft', 'cases', caseId, { slug, media: ids.length });
+    return Astro.redirect(`/admin/cases/${caseId}?msg=${encodeURIComponent(publish ? 'Кейс опубликован' : 'Черновик сохранён')}`, 302);
+  } catch (e) {
+    const msg = e instanceof MediaError ? e.message : 'Не удалось загрузить медиа';
+    return Astro.redirect('/admin/cases/new?err=' + encodeURIComponent(msg), 302);
+  }
+}
+---
+<Admin section="cases" title="Новый кейс">
+  <p><a href="/admin/cases" class="linklike">← все кейсы</a></p>
+  <h1 class="adm-h1">Новый кейс</h1>
+  <p class="hint u-mb18">Три шага: медиа → заголовок → «Опубликовать». Слаг и обложка проставятся автоматически, услугу можно не выбирать.</p>
+  <form method="post" enctype="multipart/form-data" class="adm-form" data-upload id="case-new-form">
+    <input type="hidden" name="_csrf" value={csrf}>
+    <label><b>1. Фото или видео</b> (до 12 файлов суммарно до ~115 МБ; фото ≤15 МБ, видео ≤{VIDEO_MAX_BYTES / 1024 / 1024} МБ)
+      <input type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" multiple required>
+      <span class="hint">Снимите «до» и «после» — такие кейсы работают лучше всего. Подпись (alt) можно заполнить позже.</span>
+    </label>
+    <label>Постер для видео (обязателен, если на сервере нет ffmpeg)
+      <input type="file" name="poster" accept="image/jpeg,image/png,image/webp">
+    </label>
+    <label><b>2. Заголовок</b>
+      <input type="text" name="title" required minlength="4" maxlength="120" placeholder="Например: Правка литого диска R17 после ямы">
+    </label>
+    <label>Описание (необязательно)
+      <textarea name="description" maxlength="600" placeholder="Что сделали, что показал осмотр — 1–2 предложения"></textarea>
+    </label>
+    <label>Услуга (необязательно)
+      <select name="service_slug">
+        <option value="">— не выбирать —</option>
+        {services.map((s) => <option value={s.slug}>{s.title}</option>)}
+      </select>
+    </label>
+    <div class="adm-progress u-none" id="case-progress" aria-hidden="true"><i></i></div>
+    <p class="hint u-none" id="case-progress-text"></p>
+    <div class="adm-row">
+      <button type="submit" name="publish" value="1" class="btn btn--copper">3. Опубликовать</button>
+      <button type="submit" name="publish" value="0" class="btn btn--ghost">Сохранить черновик</button>
+      <a href="/admin/cases" class="linklike">Отмена</a>
+    </div>
+  </form>
+</Admin>

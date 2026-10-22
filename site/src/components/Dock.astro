@@ -1,0 +1,8 @@
+---
+import { getSettings } from '../server/settings.ts';
+const S = getSettings();
+---
+<div class="dock">
+  <a class="dock-call" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить</a>
+  <a class="dock-book" href="/appointment">Записаться</a>
+</div>

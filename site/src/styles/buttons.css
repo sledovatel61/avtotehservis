@@ -1,0 +1,30 @@
+/* ---------- Кнопки ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:48px;padding:12px 26px;border-radius:999px;border:1.5px solid transparent;
+  font-family:var(--font-text);font-size:15px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;cursor:pointer;text-align:center;
+  transition:transform var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
+  will-change:transform;
+}
+.btn:active{transform:translateY(1px)}
+.btn--copper{background:var(--copper);color:var(--night);box-shadow:0 6px 24px rgba(200,127,69,.28)}
+.btn--copper:hover{background:var(--brass);color:var(--night);transform:translateY(-2px)}
+.btn--ghost{border-color:rgba(224,169,109,.45);color:var(--ivory);background:transparent}
+.btn--ghost:hover{border-color:var(--brass);background:rgba(224,169,109,.1);color:var(--ivory);transform:translateY(-2px)}
+.btn--ivory{background:var(--ivory);color:var(--night)}
+.btn--ivory:hover{background:#fff;color:var(--night);transform:translateY(-2px)}
+.btn--sm{min-height:40px;padding:8px 18px;font-size:13px}
+.btn--block{width:100%}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.link-more{
+  display:inline-flex;align-items:center;gap:8px;font-weight:500;font-size:15.5px;
+  color:var(--brass);border-bottom:1px solid transparent;padding-bottom:2px;
+  transition:border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+}
+.link-more:hover{color:var(--ivory);border-color:var(--brass)}
+.link-more .ar{transition:transform var(--t-fast) var(--ease)}
+.link-more:hover .ar{transform:translateX(4px)}
+

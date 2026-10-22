@@ -1,0 +1,136 @@
+/* ---------- Крошки и шапка внутренней страницы ---------- */
+.crumbs{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13.5px;color:var(--mist);padding:18px 0 0}
+.crumbs a{color:var(--mist)}
+.crumbs a:hover{color:var(--brass)}
+.crumbs .sep{color:var(--copper)}
+.crumbs .cur{color:var(--ivory)}
+.page-head{padding:34px 0 46px;background:linear-gradient(180deg,var(--deep) 0%,var(--night) 100%);border-bottom:1px solid var(--line-soft)}
+.page-head h1{margin:14px 0 10px;max-width:20em}
+.page-head .lead{max-width:70ch}
+
+/* ---------- Сетка услуг (services.html) ---------- */
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.svc-grid .svc-card{flex-basis:auto}
+.svc-grid-note{margin-top:26px;color:var(--mist);font-size:14.5px;border-left:2px solid var(--copper);padding-left:16px;max-width:80ch}
+
+/* ---------- Страница услуги (service.html) ---------- */
+.svc-detail{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:start}
+.svc-detail-img{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--deep2);aspect-ratio:4/3}
+.svc-detail-img img{width:100%;height:100%;object-fit:cover}
+.svc-text h2{font-size:1.35rem;margin-top:1.6em}
+.svc-text ul{display:grid;gap:9px;margin:0 0 1.2em}
+.svc-text ul li{padding-left:22px;position:relative;color:var(--mist);font-size:15.5px}
+.svc-text ul li::before{content:"";position:absolute;left:2px;top:10px;width:8px;height:8px;border-radius:2px;background:var(--copper)}
+.price-note{
+  border:1px solid rgba(224,169,109,.4);border-radius:var(--r-sm);padding:18px 20px;
+  background:linear-gradient(150deg,rgba(200,127,69,.1),rgba(16,32,26,.5));margin:22px 0;
+}
+.price-note b{color:var(--brass);font-size:16px;display:block;margin-bottom:4px}
+.price-note p{color:var(--mist);font-size:14.5px;margin:0}
+.svc-side{
+  position:sticky;top:96px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--deep);padding:26px 24px;display:grid;gap:14px;
+}
+.svc-side h3{font-size:1.05rem;margin:0}
+.svc-side p{color:var(--mist);font-size:14.5px;margin:0}
+.svc-side .btn{width:100%}
+.svc-side-tel{font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--ivory);display:flex;align-items:center;gap:9px;min-height:44px}
+.svc-side-tel:hover{color:var(--brass)}
+.svc-side-tel svg{width:17px;height:17px;stroke:var(--brass)}
+.svc-side small{color:var(--mist);font-size:12.5px;display:block;margin-top:-8px}
+
+/* ---------- Новости ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px}
+.filter-chip{
+  border:1px solid var(--line-soft);background:transparent;color:var(--mist);border-radius:999px;
+  padding:9px 20px;font-size:14px;font-weight:500;cursor:pointer;min-height:44px;
+  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+}
+.filter-chip:hover{color:var(--ivory);border-color:rgba(224,169,109,.5)}
+.filter-chip.is-on{background:rgba(200,127,69,.16);border-color:var(--copper);color:var(--brass)}
+.news-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.news-card{
+  display:flex;gap:18px;border:1px solid var(--line-soft);border-radius:var(--r);background:var(--deep);
+  overflow:hidden;transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);
+}
+.news-card:hover{transform:translateY(-3px);border-color:rgba(224,169,109,.5)}
+.news-card.is-hidden{display:none}
+.news-img{flex:0 0 172px;background:var(--deep2)}
+.news-img img{width:100%;height:100%;object-fit:cover}
+.news-body{padding:20px 20px 20px 0;display:flex;flex-direction:column;gap:8px}
+.news-meta{display:flex;gap:12px;align-items:center;font-size:12.5px;color:var(--mist)}
+.news-cat{color:var(--brass);letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+.news-body h3{margin:0;font-size:17.5px;line-height:1.3}
+.news-body h3 a{color:var(--ivory)}
+.news-body h3 a:hover{color:var(--brass)}
+.news-body p{color:var(--mist);font-size:14px;margin:0;flex:1}
+.news-empty{display:none;border:1px dashed var(--line);border-radius:var(--r);padding:44px 24px;text-align:center;color:var(--mist)}
+.news-empty.is-on{display:block}
+.pager{display:flex;gap:10px;justify-content:center;margin-top:36px;align-items:center}
+.pager button,.pager a{
+  min-width:44px;height:44px;border-radius:10px;border:1px solid var(--line-soft);background:transparent;
+  color:var(--mist);font-size:15px;font-weight:500;cursor:pointer;padding:0 12px;
+  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+}
+.pager button,.pager a:hover{color:var(--ivory);border-color:rgba(224,169,109,.5)}
+.pager button,.pager a.is-on{background:var(--copper);border-color:var(--copper);color:var(--night);font-weight:700}
+.pager button,.pager a[disabled]{opacity:.4;pointer-events:none}
+
+/* ---------- Статья ---------- */
+.post-layout{display:grid;grid-template-columns:1fr 320px;gap:44px;align-items:start}
+.post-main figure{margin:0 0 28px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--deep2)}
+.post-main figure img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.post-main figcaption{font-size:13px;color:var(--mist);padding:10px 16px}
+.post-meta{display:flex;gap:14px;align-items:center;margin-bottom:16px;font-size:13.5px;color:var(--mist)}
+.post-main h1{font-size:clamp(1.6rem,3.4vw,2.4rem);margin-bottom:.5em}
+.post-text p{color:var(--mist);font-size:16.5px}
+.post-text h2{font-size:1.25rem;margin:1.4em 0 .5em}
+.post-text ul{display:grid;gap:8px;margin:0 0 1.2em}
+.post-text ul li{padding-left:22px;position:relative;color:var(--mist)}
+.post-text ul li::before{content:"";position:absolute;left:2px;top:10px;width:8px;height:8px;border-radius:2px;background:var(--copper)}
+.post-text b,.post-text strong{color:var(--ivory)}
+.post-cta{margin-top:34px;border:1px solid rgba(224,169,109,.4);border-radius:var(--r);padding:26px 28px;background:linear-gradient(150deg,rgba(200,127,69,.1),var(--deep));display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.post-cta p{margin:0;color:var(--mist);font-size:15px;max-width:44ch}
+.post-cta b{color:var(--ivory);display:block;font-size:17px;margin-bottom:3px}
+.post-side{display:grid;gap:18px;position:sticky;top:96px}
+.side-box{border:1px solid var(--line-soft);border-radius:var(--r);background:var(--deep);padding:22px}
+.side-box h3{font-family:var(--font-text);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin:0 0 14px}
+.side-box ul{display:grid;gap:4px}
+.side-box a{display:flex;justify-content:space-between;gap:10px;color:var(--mist);font-size:14.5px;padding:8px 10px;border-radius:8px;min-height:40px;align-items:center}
+.side-box a:hover{color:var(--brass);background:rgba(224,169,109,.07)}
+.side-box a.is-on{color:var(--brass);background:rgba(224,169,109,.1)}
+.side-box a .c{font-size:12px;color:var(--mist);opacity:.8}
+.side-tel{font-family:var(--font-display);font-weight:600;font-size:18px;color:var(--ivory)}
+
+/* ---------- Контакты ---------- */
+.contacts-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:start}
+.map-box{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--deep2)}
+.map-box svg{width:100%;height:auto;display:block}
+.map-cap{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--line-soft);font-size:13.5px;color:var(--mist)}
+.map-cap b{color:var(--ivory);font-weight:500}
+.c-list{display:grid;gap:0}
+.c-item{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:18px 0;border-bottom:1px solid var(--line-soft);align-items:start}
+.c-item:first-child{padding-top:0}
+.c-item:last-child{border-bottom:0}
+.c-ic{width:44px;height:44px;border-radius:12px;background:rgba(200,127,69,.13);border:1px solid rgba(224,169,109,.3);display:flex;align-items:center;justify-content:center}
+.c-ic svg{width:20px;height:20px;stroke:var(--brass)}
+.c-item h3{font-family:var(--font-text);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);margin:2px 0 5px}
+.c-item .v{font-size:17px;color:var(--ivory);font-weight:500}
+.c-item .v a{color:var(--ivory)}
+.c-item .v a:hover{color:var(--brass)}
+.c-item small{display:block;color:var(--mist);font-size:13.5px;margin-top:3px}
+
+/* ---------- Sticky-док (мобильный) ---------- */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;display:none;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));gap:10px;
+  background:rgba(11,20,16,.95);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+}
+.dock a{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;
+  border-radius:999px;font-weight:600;font-size:15px;letter-spacing:.03em;text-transform:uppercase;
+}
+.dock-call{border:1.5px solid rgba(224,169,109,.5);color:var(--ivory)}
+.dock-book{background:var(--copper);color:var(--night)}
+body.has-dock{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+

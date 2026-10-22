@@ -1,0 +1,65 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { bodyTooLarge } from '../../../server/http.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, adminRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+import {processPhotoUpload, MediaError, PHOTO_MAX_BYTES } from '../../../server/media.ts';
+import { uniqueSlug } from '../../../server/slug.ts';
+import { NEWS_CATEGORIES } from '../../../server/content.ts';
+
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+
+if (Astro.request.method === 'POST') {
+  // Отклоняем запрос сразу по Content-Length — не буферизуя 100+ МБ в памяти (minor-5 ревью).
+  if (bodyTooLarge(Astro.request, PHOTO_MAX_BYTES + 1024 * 1024)) {
+    return adminRefusal(Astro, 'Обложка слишком большая: фото до 15 МБ.');
+  }
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const title = String(form.get('title') ?? '').trim();
+  const bodyMd = String(form.get('body_md') ?? '');
+  if (title.length < 6) return Astro.redirect('/admin/news/new?err=' + encodeURIComponent('Заголовок минимум 6 символов'), 302);
+  try {
+    const cover = form.getAll('cover').filter((f): f is File => f instanceof File && f.size > 0)[0];
+    let coverId: string | null = null;
+    if (cover) coverId = (await processPhotoUpload(Buffer.from(await cover.arrayBuffer()))).id;
+    const slug = uniqueSlug(title, 'news');
+    const publish = String(form.get('publish') ?? '') === '1';
+    const cat = NEWS_CATEGORIES.some((c) => c.slug === form.get('category')) ? String(form.get('category')) : 'sovety';
+    const info = db().prepare(`INSERT INTO news(slug, title, excerpt, body_md, category, cover_media_id, status, published_at)
+      VALUES(?,?,?,?,?,?,?,${publish ? "datetime('now')" : 'NULL'})`).run(
+      slug, title, String(form.get('excerpt') ?? '').trim() || null, bodyMd, cat, coverId, publish ? 'published' : 'draft');
+    const nid = Number(info.lastInsertRowid);
+    if (coverId) db().prepare('UPDATE media SET attached_to=? WHERE id=?').run(`news:${nid}`, coverId);
+    logAction(user.id, publish ? 'news_publish' : 'news_draft', 'news', nid, { slug });
+    return Astro.redirect(`/admin/news/${nid}?msg=` + encodeURIComponent(publish ? 'Статья опубликована' : 'Черновик сохранён'), 302);
+  } catch (e) {
+    return Astro.redirect('/admin/news/new?err=' + encodeURIComponent(e instanceof MediaError ? e.message : 'Ошибка загрузки'), 302);
+  }
+}
+---
+<Admin section="news" title="Новая статья">
+  <p><a href="/admin/news" class="linklike">← все статьи</a></p>
+  <h1 class="adm-h1">Новая статья</h1>
+  <form method="post" enctype="multipart/form-data" class="adm-form" data-upload>
+    <input type="hidden" name="_csrf" value={csrf}>
+    <label>Заголовок <input type="text" name="title" required minlength="6" maxlength="160"></label>
+    <label>Категория
+      <select name="category">{NEWS_CATEGORIES.map((c) => <option value={c.slug}>{c.title}</option>)}</select>
+    </label>
+    <label>Краткое описание (лид) <textarea name="excerpt" maxlength="300" rows="2"></textarea></label>
+    <label>Текст (Markdown: # заголовки, **жирный**, *курсив*, - списки, [ссылки](https://…); сырой HTML экранируется)
+      <textarea name="body_md" rows="14"></textarea>
+    </label>
+    <label>Обложка (фото)
+      <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/avif">
+    </label>
+    <div class="adm-progress u-none" data-progress aria-hidden="true"><i></i></div>
+    <div class="adm-row">
+      <button type="submit" name="publish" value="1" class="btn btn--copper">Опубликовать</button>
+      <button type="submit" name="publish" value="0" class="btn btn--ghost">Черновик</button>
+      <a href="/admin/news" class="linklike">Отмена</a>
+    </div>
+  </form>
+</Admin>
