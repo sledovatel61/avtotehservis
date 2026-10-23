@@ -61,7 +61,7 @@ const marks = [
   ['блок героя 16:9 (пропорция кадра = пропорция блока)', /\.hero\{[^}]*aspect-ratio:16\/9/],
   ['кадр на весь блок (.slide-bg absolute inset:0)', /\.slide-bg\{position:absolute;inset:0/],
   ['скрим под текстом слева', /\.slide-bg::before\{[^}]*linear-gradient\(90deg/],
-  ['текст в левой колонке ≤46%', /max-width:min\(46%/],
+  ['текст в левой колонке ≤46% (раунд 14: 44%, коробка слева)', /max-width:44%;margin-left:0;margin-right:auto/],
   ['hero-ui справа в зазоре hp', /\.hero-ui\{left:auto;right:var\(--hp\)/],
   ['стрелка не под кнопками', /\.hero-scroll\{left:auto/],
 ];
@@ -108,23 +108,38 @@ await (async () => {
     (astro.match(/width="1600" height="900"/g) || []).length + ' шт.', '≥2');
   chk('index.astro: высота 893 не осталась', !/height="893"/.test(astro), /height="893"/.test(astro) ? 'есть' : 'нет', 'нет');
 
-  /* 2. Режим 641–1023: фото сверху ЦЕЛИКОМ во всю ширину, текст ниже на --night. */
-  console.log('\nрежим 641–1023 (планшет):');
-  const tab = css.slice(css.indexOf('@media (min-width:641px) and (max-width:1023px)'));
+  /* 2. Режим 641–1023 (РАУНД 14): фото ФОНОМ на весь блок, scrim слева,
+     текст ≤62 % ширины, заголовок clamp(1.8rem,4vw,2.4rem), кнопки в одну строку,
+     телефонная кнопка сжимается до «Позвонить». */
+  console.log('\nрежим 641–1023 (планшет, раунд 14):');
+  const tab = css.slice(css.lastIndexOf('@media (min-width:641px) and (max-width:1023px)'));
   const tabBlock = tab.slice(0, tab.indexOf('\n}'));
   const tabMarks = [
-    ['колонка: фото сверху, текст ниже', /\.hero\{flex-direction:column/],
-    ['кадр во всю ширину, 16:9', /\.slide-bg\{position:relative;inset:auto;width:100%;aspect-ratio:16\/9\}/],
-    ['текст без подложки (на --night)', /\.slide-in\{background:none/],
-    ['скрим под текстом есть', /\.slide-bg::before\{content/],
-    ['контролы карусели в потоке', /\.hero-ui\{position:static/],
+    ['фото — фон блока (absolute inset:0)', /\.slide-bg\{position:absolute;inset:0;aspect-ratio:auto\}/, tabBlock],
+    ['scrim слева под текст', /\.slide-bg::before\{[^}]*linear-gradient\(90deg,rgba\(6,11,9,\.94\)/, tabBlock],
+    ['текст не шире 62 %', /\.slide-in\{[^}]*max-width:62%/, tabBlock],
+    ['заголовок clamp(1.8rem,4vw,2.4rem)', /\.slide h1,\.slide \.h1\{font-size:clamp\(1\.8rem,4vw,2\.4rem\)/, tabBlock],
+    ['кнопки в одну строку', /\.slide-cta\{flex-wrap:nowrap\}/, tabBlock],
+    ['подписи кнопок без переноса (глобально)', /\.slide-cta \.btn\{white-space:nowrap\}/, css],
+    ['телефонная кнопка до «Позвонить»', /@media \(min-width:641px\) and \(max-width:1023px\)\{\.btn-phone \.btn-phone-num\{display:none\}\}/, css],
+    ['разметка: номер телефона обёрнут в span', /btn-phone-num/, astro],
   ];
-  for (const [name, re] of tabMarks) chk('планшет: ' + name, re.test(tabBlock), re.test(tabBlock) ? 'есть в CSS' : 'нет', 'есть в CSS');
-  /* рамка 16:9 = файл 16:9 → на планшете тоже кроп 0 px, высота кадра = ширина×9/16 */
-  for (const vw of [641, 768, 900, 1023]) {
-    chk(`планшет ${vw}: кадр целиком`, true, `${vw}×${(vw * 9 / 16).toFixed(0)} px, кроп 0 px`, 'кроп 0 px');
+  for (const [name, re, hay] of tabMarks) chk('планшет: ' + name, re.test(hay), re.test(hay) ? 'есть' : 'нет', 'есть');
+  /* геометрия фона: cover из мастера 2560×1440; машины y 30–62 % обязаны остаться
+     в кадре при любой высоте героя из clamp(480px,72svh,780px) */
+  for (const [vw, svh] of [[641, 900], [768, 1024], [900, 1200], [1023, 800], [1024, 768]]) {
+    const h = Math.min(780, Math.max(480, 0.72 * svh));
+    const scale = Math.max(vw / 2560, h / 1440);
+    const visH = Math.min(1440, h / scale);
+    const top = (1440 - visH) * 0.5;   // object-position 50% по вертикали
+    const visW = Math.min(2560, vw / scale);
+    const left = (2560 - visW) * 0.68; // object-position 68% по горизонтали
+    const okY = top <= 432 && top + visH >= 892;          // машины y 432…892
+    const okX = left <= 1296 && left + visW >= 2520;      // машины x 1296…2520
+    chk(`планшет ${vw}×${svh}: машины в кадре`, okY && (okX || visW < 2560),
+      `видимо ${visW.toFixed(0)}×${visH.toFixed(0)} из 2560×1440, машины по y ${okY ? 'в кадре' : 'СРЕЗАНЫ'}`, 'машины y в кадре');
   }
-  /* порядок в DOM: фото (.slide-bg) до текста (.slide-in) — иначе «текст ниже» неверно */
+  /* порядок в DOM: фото (.slide-bg) до текста (.slide-in) */
   const firstSlide = astro.slice(astro.indexOf('class="slide-bg"'));
   chk('планшет/мобайл: в DOM фото раньше текста',
     firstSlide.indexOf('class="slide-bg"') < firstSlide.indexOf('class="slide-in'),
@@ -132,7 +147,7 @@ await (async () => {
 
   /* 3. Режим ≤640: панель текста как есть (rgba(6,11,9,.82)), кадр мобильный 4:5. */
   console.log('\nрежим ≤640 (мобайл, без изменений по ТЗ):');
-  const iMob = css.indexOf('@media (max-width:640px){\n  .slide-in{');
+  const iMob = css.indexOf('@media (max-width:640px){\n  .slide{align-items:flex-end}');
   chk('мобайл: блок панели найден в CSS', iMob > 0, iMob > 0 ? 'строка ' + css.slice(0, iMob).split('\n').length : 'не найден', '>0');
   const mob = css.slice(Math.max(0, iMob));
   const mobBlock = mob.slice(0, mob.indexOf('\n}\n'));
@@ -140,7 +155,7 @@ await (async () => {
     (mobBlock.match(/background:rgba\([^)]+\)/) || ['—'])[0], 'rgba(6,11,9,.82)');
   chk('мобайл: радиус панели 18 + blur 6', /border-radius:18px/.test(mobBlock) && /backdrop-filter:blur\(6px\)/.test(mobBlock),
     '18px / blur(6px)', '18px / blur(6px)');
-  const iMob2 = css.indexOf('.hero{flex-direction:column;min-height:0}\n  .hero-track{min-height:max(420px,58svh)}');
+  const iMob2 = css.indexOf('.hero{flex-direction:column;min-height:0}\n  .hero-track{min-height:max(460px,76svh)}');
   chk('мобайл: блок трека найден в CSS', iMob2 > 0, iMob2 > 0 ? 'строка ' + css.slice(0, iMob2).split('\n').length : 'не найден', '>0');
   const mob2 = css.slice(Math.max(0, iMob2));
   chk('мобайл: контролы в потоке под кадром', /\.hero-ui\{position:static/.test(mob2.slice(0, 400)), 'position:static', 'position:static');
@@ -159,7 +174,7 @@ await (async () => {
   }
   /* знак не срезан: полосы неона внутри кадра (safe-zone мобильных вьюпортов
      считает check-safe-zone.mjs по safe-zone-geom.json — здесь только сам кадр) */
-  const mm = await sharp(join(GEN, 'master-mobile.jpg')).metadata();
+  const mm = await sharp(join(HERE, '../../docs/photos-source/r14-gen/master-mobile-4x5.jpg')).metadata();
   chk('мобайл: мастер 4:5', Math.abs(mm.width / mm.height - 4 / 5) <= 0.002, `${mm.width}×${mm.height}`, '4:5');
 
   /* 4. Полоса (§5) и панель (§7): веса и размеры отданных файлов. */

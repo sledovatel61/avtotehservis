@@ -24,10 +24,6 @@ import sharp from 'sharp';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const IMG = join(HERE, '../public/img');
-/* прямоугольники проёмов — те же, что в build-images.mjs (патч «О компании») */
-const AL = { x: 280, y: 437, w: 482, h: 500 };
-const AR = { x: 1005, y: 437, w: 380, h: 500 };
-const EMB = { x: AR.x + 120, y: AR.y + 280, w: 80, h: 60 };
 
 let fail = 0;
 const bad = (m) => { fail = 1; console.error('FAIL ' + m); };
@@ -81,55 +77,66 @@ const edgeFrac = ({ d, w, h }, x0, y0, ww, hh) => {
   return n ? e / n : 0;
 };
 
-console.log('§6 «О компании» — about-service-1600.webp:');
+console.log('§6 «О компании» — about-service-1600.webp (РАУНД 14: чистый кроп master-clean, без вставок и грейда):');
 const about = await raw('about-service-1600.webp');
 chk('размер кадра', about.w === 1600 && about.h === 1000, `${about.w}×${about.h}`, '1600×1000 (16:10)');
+/* проёмы в координатах кропа раунда 14 (окно {380,80,3000×1875} из master-clean):
+   прямоугольники раунда 12 {600,250,2560×1600}→orig→новое окно */
+const AL = { x: 356, y: 464, w: 411, h: 427 };
+const AR = { x: 975, y: 464, w: 324, h: 427 };
 for (const [name, r] of [['левый проём', AL], ['правый проём', AR]]) {
   const inside = r.x >= 0 && r.y >= 0 && r.x + r.w <= about.w && r.y + r.h <= about.h;
   chk(`${name} целиком в кадре`, inside,
     `x ${r.x}…${r.x + r.w}, y ${r.y}…${r.y + r.h}`, `внутри 0…${about.w} / 0…${about.h}`);
+  const inL = meanLum(about, r.x, r.y, r.w, r.h);
+  console.log(`     ${name}: средняя яркость содержимого ${inL.toFixed(1)}`);
 }
-chk('вес about ≤ 160 КБ', statSync(join(IMG, 'about-service-1600.webp')).size / 1024 <= 160,
+{
+  let y0 = -1, y1 = -1, x0 = about.w, x1 = 0;
+  for (let y = 0; y < about.h; y += 2) {
+    let c = 0, xa = about.w, xb = 0;
+    for (let x = 0; x < about.w; x += 2) {
+      const i2 = (y * about.w + x) * 3;
+      const r2 = about.d[i2], g2 = about.d[i2 + 1], b2 = about.d[i2 + 2];
+      if (g2 > r2 + 18 && b2 > r2 + 12 && g2 > 70) { c++; if (x < xa) xa = x; if (x > xb) xb = x; }
+    }
+    if (c > 200) { if (y0 < 0) y0 = y; y1 = y; if (xa < x0) x0 = xa; if (xb > x1) x1 = xb; }
+  }
+  chk('вывеска целиком в кадре', y0 >= 0 && y1 > y0 && x0 >= 0 && x1 <= about.w,
+    `x ${x0}…${x1}, y ${y0}…${y1}`, 'внутри 0…1600 / 0…1000');
+}
+chk('вес about webp ≤ 160 КБ', statSync(join(IMG, 'about-service-1600.webp')).size / 1024 <= 160,
   (statSync(join(IMG, 'about-service-1600.webp')).size / 1024).toFixed(1) + ' КБ', '≤ 160 КБ');
-
-/* Эталон — тот же кроп фасада БЕЗ вставок (aboutBase из сборщика: SRCW, окно
-   {left:600, top:250, 2560×1600} → 1600×1000). Сравнивая финал с ним, проверяем:
-   1) граница вставки невидима (перо 32 px + согласование тона) — ΔE76 ≤ 6
-      в полосе 6 px сразу внутри проёма;
-   2) в проёме действительно ДРУГАЯ машина: содержимое совпадает с исходником
-      r12-gen/bay-*.jpg и НЕ совпадает с фасадом. */
-const SRCW = join(HERE, '../../docs/photos-source/r13-clean/master-clean.jpg');
-const R12 = join(HERE, '../../docs/photos-source/r12-gen');
+chk('вес about avif ≤ 80 КБ', statSync(join(IMG, 'about-service-1600.avif')).size / 1024 <= 80,
+  (statSync(join(IMG, 'about-service-1600.avif')).size / 1024).toFixed(1) + ' КБ', '≤ 80 КБ');
+/* без грейда и вставок: финал = кроп master-clean {380,80,3000×1875} → 1600×1000 */
+const SRC_CLEAN = join(HERE, '../../docs/photos-source/r13-clean/master-clean.jpg');
 const base = await (async () => {
-  const { data, info } = await sharp(SRCW).extract({ left: 600, top: 250, width: 2560, height: 1600 })
+  const { data, info } = await sharp(SRC_CLEAN).extract({ left: 380, top: 80, width: 3000, height: 1875 })
     .resize(1600, 1000).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   return { d: data, w: info.width, h: info.height };
 })();
-const dE76 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
-/* средний |Δ| по каналам между двумя кадрами в прямоугольнике (внутрь от пера) */
-const meanAbsDiff = (A, B, r, inset) => {
-  let s = 0, n = 0;
-  for (let y = r.y + inset; y < r.y + r.h - inset; y += 2)
-    for (let x = r.x + inset; x < r.x + r.w - inset; x += 2) {
+const meanAbsDiffFull = (A, B) => {
+  let s2 = 0, n = 0;
+  for (let y = 0; y < A.h; y += 2)
+    for (let x = 0; x < A.w; x += 2) {
       const a = (y * A.w + x) * 3, b = (y * B.w + x) * 3;
-      s += (Math.abs(A.d[a] - B.d[a]) + Math.abs(A.d[a + 1] - B.d[b + 1]) + Math.abs(A.d[a + 2] - B.d[b + 2])) / 3;
+      s2 += (Math.abs(A.d[a] - B.d[b]) + Math.abs(A.d[a + 1] - B.d[b + 1]) + Math.abs(A.d[a + 2] - B.d[b + 2])) / 3;
       n++;
     }
-  return n ? s / n : 0;
+  return s2 / n;
 };
-/* РАУНД 13: заказчик запретил вставки в проёмы («поперёк нарезали и вставили»).
-   Кадр «О компании» — чистый кроп оригинала: в проёмах НАСТОЯЩЕЕ содержимое сервиса.
-   Проверяем, что вставок нет: содержимое проёмов совпадает с оригиналом. */
-const baseAt = (left, top) => (async () => {
-  const { data, info } = await sharp(SRCW).extract({ left, top, width: 3000, height: 1875 })
-    .resize(1600, 1000).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  return { d: data, w: info.width, h: info.height };
-})();
-const baseCropped = await baseAt(380, 300);
+const dAll = meanAbsDiffFull(about, base);
+chk('кадр = чистый кроп master-clean (без грейда/вставок)', dAll <= 6, `средний |Δ| ${dAll.toFixed(2)} уровня`, '≤ 6');
 for (const [name, r] of [['левый проём', AL], ['правый проём', AR]]) {
-  const diff = meanAbsDiff(about, baseCropped, r, 8);
-  chk(`${name}: без вставок, содержимое из оригинала`, diff < 12,
-    `средний |Δ| ${diff.toFixed(1)} к кропу оригинала`, '< 12 (вставок нет)');
+  let s2 = 0, n = 0;
+  for (let y = r.y; y < r.y + r.h; y += 2)
+    for (let x = r.x; x < r.x + r.w; x += 2) {
+      const a = (y * about.w + x) * 3, b = (y * base.w + x) * 3;
+      s2 += (Math.abs(about.d[a] - base.d[b]) + Math.abs(about.d[a + 1] - base.d[b + 1]) + Math.abs(about.d[a + 2] - base.d[b + 2])) / 3;
+      n++;
+    }
+  chk(`${name}: без вставок (совпадает с фасадом)`, s2 / n <= 6, `средний |Δ| ${(s2 / n).toFixed(2)}`, '≤ 6');
 }
 
 console.log('\n§7 фон панели диагностики — cta-diag-960.webp / cta-diag-640.webp:');
