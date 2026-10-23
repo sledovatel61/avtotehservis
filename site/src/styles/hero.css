@@ -149,6 +149,31 @@
   .hero-ui .container{justify-content:flex-end}
   .hero-scroll{display:none}
 }
+/* РАУНД 14 / патч оркестратора: портретный планшет 641–1023.
+   Блок на 768×1024 — 737 px при кадре 16:9: cover показывает 1500 из 2560 px мастера
+   (28–87 %), правая часть вывески и корма Camry уходят за край, а текст ложится на
+   вывеску и на BMW. Поэтому в портрете — полоса фото 16:9 во всю ширину и текст под ней
+   на --night. Запрос сознательно НЕ начинается с «(min-width:641px) and (max-width:1023px)»:
+   чекер берёт планшетный блок по lastIndexOf и не должен находить этот. */
+@media (orientation:portrait) and (min-width:641px) and (max-width:1023px){
+  .hero{flex-direction:column;height:auto;min-height:0}
+  .hero-track{display:grid;flex:none;width:100%;position:relative}
+  .slide{position:relative;inset:auto;grid-area:1/1;display:block;align-items:stretch}
+  .slide-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9}
+  .slide-bg::before{content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(90deg,rgba(6,11,9,.55) 0%,rgba(6,11,9,.18) 45%,rgba(6,11,9,0) 75%)}
+  .slide-bg::after{content:none}
+  .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:62% 50%}
+  .slide-in{
+    max-width:none;margin:0;padding:26px 24px 30px;background:none;
+    border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;
+  }
+  .slide h1,.slide .h1{max-width:16em;font-size:clamp(1.7rem,3.6vw,2.2rem)}
+  .slide-sub{max-width:46ch;font-size:clamp(15px,1.7vw,17px)}
+  .slide-cta{flex-wrap:wrap}
+  .hero-ui{position:static;padding:8px 20px 14px;bottom:auto}
+  .hero-ui .container{justify-content:center}
+}
 /* ≤640: текст на гарантированно тёмной панели поверх фото (контраст ≥4,5) */
 @media (max-width:640px){
   .slide{align-items:flex-end}
