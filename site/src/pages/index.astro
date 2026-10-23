@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
-import { listCatalogServices } from '../server/services.ts';
+import { listCatalogServices, listHomeServices } from '../server/services.ts';
 import { listPublishedCases, listPublishedReviews, coverInfo } from '../server/content.ts';
 import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
-const services = listCatalogServices();
+const services = listHomeServices();
 const cases = listPublishedCases(6);
 const reviews = listPublishedReviews(8);
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
@@ -37,7 +37,24 @@ const jsonLd = {
 <section class="hero" id="hero" aria-roledescription="карусель" aria-label="Первый экран">
   <div class="hero-track">
       <div class="slide is-active" role="group" aria-roledescription="слайд" aria-label="Слайд 1 из 3">
-        <div class="slide-bg"><img src="/img/hero-1.svg" alt="" fetchpriority="high"></div>
+        <div class="slide-bg">
+          <picture>
+            <source type="image/avif" media="(max-width:640px)" srcset="/img/hero-service-m-640.avif 640w, /img/hero-service-m-960.avif 960w" sizes="100vw">
+            <source type="image/webp" media="(max-width:640px)" srcset="/img/hero-service-m-640.webp 640w, /img/hero-service-m-960.webp 960w" sizes="100vw">
+            <source type="image/avif" srcset="/img/hero-service-640.avif 640w, /img/hero-service-960.avif 960w, /img/hero-service-1600.avif 1600w, /img/hero-service-2560.avif 2560w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-service-640.webp 640w, /img/hero-service-960.webp 960w, /img/hero-service-1600.webp 1600w, /img/hero-service-2560.webp 2560w" sizes="100vw">
+            <img class="f16" src="/img/hero-service-1600.webp" width="1600" height="900" alt="Фасад «АвтоТехСервис» на Портовой, 439 в сумерках: вывеска с телефонами, два рабочих бокса и две машины перед фасадом" fetchpriority="high" decoding="async">
+          </picture>
+          {/* Неон вывески: отдельный RGBA-слой той же пропорции, что фото —
+              object-fit/object-position совпадают, слой встаёт пиксель в пиксель */}
+          <picture>
+            <source type="image/avif" media="(max-width:640px)" srcset="/img/hero-neon-m-640.avif 640w, /img/hero-neon-m-960.avif 960w" sizes="100vw">
+            <source type="image/webp" media="(max-width:640px)" srcset="/img/hero-neon-m-640.webp 640w, /img/hero-neon-m-960.webp 960w" sizes="100vw">
+            <source type="image/avif" srcset="/img/hero-neon-960.avif 960w, /img/hero-neon-1600.avif 1600w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-neon-960.webp 960w, /img/hero-neon-1600.webp 1600w" sizes="100vw">
+            <img class="neon f16" src="/img/hero-neon-1600.webp" width="1600" height="900" alt="" aria-hidden="true" decoding="async">
+          </picture>
+        </div>
         <div class="slide-in container">
           <span class="slide-eyebrow">Автосервис и шиномонтаж · Западный</span>
           <h1>Ремонт авто на Портовой — от колеса до двигателя</h1>
@@ -49,7 +66,13 @@ const jsonLd = {
         </div>
       </div>
       <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 2 из 3">
-        <div class="slide-bg"><img src="/img/hero-2.svg" alt="" fetchpriority="low"></div>
+        <div class="slide-bg">
+          <picture>
+            <source type="image/avif" srcset="/img/hero-tyre-640.avif 640w, /img/hero-tyre-960.avif 960w, /img/hero-tyre-1600.avif 1600w, /img/hero-tyre-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tyre-640.webp 640w, /img/hero-tyre-960.webp 960w, /img/hero-tyre-1600.webp 1600w, /img/hero-tyre-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tyre-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
+          </picture>
+        </div>
         <div class="slide-in container">
           <span class="slide-eyebrow">Правило сервиса</span>
           <p class="h1">Сначала смета — потом ремонт</p>
@@ -61,7 +84,13 @@ const jsonLd = {
         </div>
       </div>
       <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 3 из 3">
-        <div class="slide-bg"><img src="/img/hero-3.svg" alt="" fetchpriority="low"></div>
+        <div class="slide-bg">
+          <picture>
+            <source type="image/avif" srcset="/img/hero-tools-640.avif 640w, /img/hero-tools-960.avif 960w, /img/hero-tools-1600.avif 1600w, /img/hero-tools-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tools-640.webp 640w, /img/hero-tools-960.webp 960w, /img/hero-tools-1600.webp 1600w, /img/hero-tools-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tools-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
+          </picture>
+        </div>
         <div class="slide-in container">
           <span class="slide-eyebrow">Легковые и коммерческие</span>
           <p class="h1">Колёса, ходовая, двигатель, электрика</p>
@@ -78,9 +107,38 @@ const jsonLd = {
       <button class="hero-arrow" id="hero-prev" type="button" aria-label="Предыдущий слайд">←</button>
       <button class="hero-arrow" id="hero-next" type="button" aria-label="Следующий слайд">→</button>
       <span class="hero-note">Автопрокрутка · пауза при наведении · свайп</span>
-      <div class="hero-dots" id="hero-dots" role="tablist" aria-label="Слайды"></div>
+      <div class="hero-dots" id="hero-dots" aria-label="Слайды"></div>
     </div>
   </div>
+  <a class="hero-scroll" href="#strip" aria-label="Прокрутить к фото сервиса">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+  </a>
+</section>
+<section class="strip" id="strip" aria-label="Фотографии сервиса">
+  <figure class="strip-item reveal" data-d="0">
+    <picture>
+      <source type="image/avif" srcset="/img/strip-sign.avif">
+      <source type="image/webp" srcset="/img/strip-sign.webp">
+      <img src="/img/strip-sign.webp" width="1200" height="500" alt="Шиномонтаж: руки в перчатках ставят покрышку на диск под тёплой лампой" loading="lazy" decoding="async">
+    </picture>
+    <figcaption>Шиномонтаж и ремонт в одном месте</figcaption>
+  </figure>
+  <figure class="strip-item reveal" data-d="1">
+    <picture>
+      <source type="image/avif" srcset="/img/strip-bay.avif">
+      <source type="image/webp" srcset="/img/strip-bay.webp">
+      <img src="/img/strip-bay.webp" width="1200" height="500" alt="Бокс изнутри: автомобиль на подъёмнике, кирпичные стены и красные шкафы" loading="lazy" decoding="async">
+    </picture>
+    <figcaption>Портовая, 439 — два бокса</figcaption>
+  </figure>
+  <figure class="strip-item reveal" data-d="2">
+    <picture>
+      <source type="image/avif" srcset="/img/strip-gates.avif">
+      <source type="image/webp" srcset="/img/strip-gates.webp">
+      <img src="/img/strip-gates.webp" width="1200" height="500" alt="Двигатель под лампой и планшет диагностики: осмотр перед сметой" loading="lazy" decoding="async">
+    </picture>
+    <figcaption>Работаем ежедневно 9:00–19:00</figcaption>
+  </figure>
 </section>
 <section class="sec sec--deep" aria-labelledby="tri-h">
   <div class="container">
@@ -110,11 +168,14 @@ const jsonLd = {
     </div>
   </div>
 </section>
-<section class="sec" aria-labelledby="about-h">
-  <div class="container about-grid">
-    <div class="reveal">
+<section class="sec sec--narrow" aria-labelledby="about-h">
+  <div class="container">
+    <div class="sec-head sec-head--wide reveal">
       <span class="eyebrow">О компании</span>
       <h2 id="about-h">«АвтоТехСервис» на Западном: честно, по делу, с сметой до работ</h2>
+    </div>
+    <div class="about-grid">
+    <div class="reveal">
       <p class="lead">Мы — автосервис и шиномонтаж на улице Портовой, 439: рядом с остановкой «3-й Поселковый» и базой «Бум». Принимаем легковые и коммерческие автомобили ежедневно, с 9:00 до 19:00.</p>
       <p class="lead u-mt14">За одним визитом здесь закрывают и «переобуться», и стук в подвеске, и горящий «чек»: от балансировки до ремонта двигателя и АКПП. Правило одно для всех работ — сначала показываем проблему и называем стоимость, потом берёмся за инструмент.</p>
       <div class="facts">
@@ -125,8 +186,14 @@ const jsonLd = {
       </div>
       <p class="u-mt24"><a class="btn btn--ghost" href="/about">Подробнее о сервисе</a></p>
     </div>
-    <div class="about-media reveal" data-d="1">
-      <img src="/img/svc-1.svg" alt="фото рабочего бокса появится после съёмки" width="800" height="600">
+    <figure class="about-media reveal" data-d="1">
+      <picture>
+        <source type="image/avif" srcset="/img/about-service-640.avif 640w, /img/about-service-960.avif 960w, /img/about-service-1600.avif 1600w" sizes="(max-width:1024px) 92vw, 46vw">
+        <source type="image/webp" srcset="/img/about-service-640.webp 640w, /img/about-service-960.webp 960w, /img/about-service-1600.webp 1600w" sizes="(max-width:1024px) 92vw, 46vw">
+        <img src="/img/about-service-960.webp" width="1600" height="1000" alt="Левый бокс сервиса изнутри: автомобиль в ремзоне, инструмент на стене" loading="lazy" decoding="async">
+      </picture>
+      <figcaption>{S.address_full} — въезд со стороны Портовой</figcaption>
+    </figure>
     </div>
   </div>
   <div class="container">
@@ -155,10 +222,13 @@ const jsonLd = {
   </div>
 </section>
 <section class="sec sec--ivory" aria-labelledby="est-h">
-  <div class="container est-grid">
-    <div class="reveal">
+  <div class="container">
+    <div class="sec-head sec-head--wide reveal">
       <span class="eyebrow">Как мы работаем</span>
       <h2 id="est-h">Смета до ремонта: четыре шага без сюрпризов</h2>
+    </div>
+    <div class="est-grid">
+    <div class="reveal">
       <div class="est-steps">
         <div class="est-step"><span class="n" aria-hidden="true"></span><div><h3>Заявка или звонок</h3><p>Опишите задачу в форме записи или позвоните — выберем время визита, чтобы вы не сидели в живой очереди.</p></div></div>
         <div class="est-step"><span class="n" aria-hidden="true"></span><div><h3>Осмотр и диагностика</h3><p>Поднимаем, смотрим, при необходимости считываем ошибки. Показываем проблему вам — на детали, а не «на словах».</p></div></div>
@@ -172,6 +242,7 @@ const jsonLd = {
       <a class="btn btn--copper" href="/appointment?s=diagnostika">Записаться на диагностику</a>
       <p class="u-mt14-fs13">Или позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a></p>
     </aside>
+    </div>
   </div>
 </section>
 <section class="sec sec--deep slider-sec" aria-labelledby="svc-h">
@@ -191,14 +262,13 @@ const jsonLd = {
         <div class="carousel-track">
           {services.map((sv) => (
             <a class="svc-card" href={`/services/${sv.slug}`}>
-              <span class="svc-img"><img src={sv.icon ?? '/img/svc-1.svg'} alt={`${sv.title} — фото появится после съёмки`} width="800" height="600" loading="lazy"></span>
+              <span class="svc-img"><img src={sv.icon ?? '/img/svc-1.svg'} alt="" aria-hidden="true" width="800" height="600" loading="lazy" decoding="async"></span>
               <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
             </a>
           ))}
           </div>
       </div>
     </div>
-    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="gal-h">
@@ -217,21 +287,23 @@ const jsonLd = {
       <div class="carousel-win">
         <div class="carousel-track gal-track">
           {cases.map((c, ci) => {
-            const cov = coverInfo(c, '/img/case-1.svg', c.title, `${c.title} — фото «до/после» появится после съёмки`);
+            const cov = coverInfo(c, '/img/case-1.svg', c.title, '');
+            // Раунд 7: фраза-заглушка о съёмке остаётся только в одной заметке под секцией.
+            const sub = (c.description ?? '').replace(/\.?\s*Фото появится после съёмки в сервисе\./i, '').trim();
             return (
-              <button class="gal-card" type="button" data-gal={ci} data-img={cov.lg} data-title={c.title} data-sub={c.description ?? ''} aria-label={`Открыть кейс: ${c.title}`}>
-                <span class="gal-img"><img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cov.alt} width="800" height="600" loading="lazy"></span>
-                <span class="gal-cap"><span>{c.title}</span><span class="ba">до / после</span></span>
+              <button class="gal-card" type="button" data-gal={ci} data-img={cov.lg} data-title={c.title} data-sub={sub} aria-label={`Открыть кейс: ${c.title}`}>
+                <span class="gal-img"><img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cov.alt} width="800" height="600" loading="lazy" decoding="async"><span class="ba" aria-hidden="true">до / после</span></span>
+                <span class="gal-cap">{c.title}</span>
               </button>
             );
           })}
           </div>
       </div>
     </div>
-    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+    <p class="gal-note">Показываем только реальные работы — фото появятся после съёмки.</p>
   </div>
 </section>
-<section class="sec sec--deep" aria-labelledby="rev-h">
+<section class="sec sec--deep sec--narrow" aria-labelledby="rev-h">
   <div class="container">
     <div class="sec-head reveal">
       <div>
@@ -277,7 +349,7 @@ const jsonLd = {
         ))}
       </div>
     )}
-    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы).</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="brands-h">

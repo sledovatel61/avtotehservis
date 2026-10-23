@@ -88,6 +88,75 @@
   гасить и мерцать в CSS, а при `prefers-reduced-motion` оставлять статичным.
 - Буквы, телефоны и бренды на баннере остаются теми же — неон только добавляет свет, не перерисовывает текст.
 
+## Веса финальных файлов
+
+Таблица ниже **генерируется сборщиком** (`node site/scripts/build-images.mjs`) между маркерами
+`weights-auto` — руками её не править: после каждого запуска она соответствует фактическим файлам
+в `site/public/img/`. Колонка «лимит» — потолок из `CAPS` в сборщике (если файл тяжелее, сборщик
+снижает качество до соблюдения лимита).
+
+<!-- weights-auto:start -->
+| файл | px | КБ | лимит |
+|---|---|---|---|
+| hero-service-2560.avif | 2560×1440 | 122.9 | 200 |
+| hero-service-2560.webp | 2560×1440 | 179.5 | 200 |
+| hero-service-1600.avif | 1600×900 | 54.7 | 120 |
+| hero-service-1600.webp | 1600×900 | 80.5 | 160 |
+| hero-service-960.avif | 960×540 | 23.3 | 120 |
+| hero-service-960.webp | 960×540 | 36.7 | 120 |
+| hero-service-640.avif | 640×360 | 11.6 | 120 |
+| hero-service-640.webp | 640×360 | 18 | 120 |
+| hero-neon-1600.avif | 1600×900 | 35.1 | 60 |
+| hero-neon-1600.webp | 1600×900 | 41.5 | 60 |
+| hero-neon-960.avif | 960×540 | 16.7 | 25 |
+| hero-neon-960.webp | 960×540 | 20.5 | 25 |
+| strip-sign.avif | 1200×500 | 20.4 | 60 |
+| strip-sign.webp | 1200×500 | 38.3 | 60 |
+| strip-bay.avif | 1200×500 | 22.8 | 60 |
+| strip-bay.webp | 1200×500 | 32.2 | 60 |
+| strip-gates.avif | 1200×500 | 16.5 | 60 |
+| strip-gates.webp | 1200×500 | 24.9 | 60 |
+| about-service-1600.avif | 1600×1000 | 68.4 | 70 |
+| about-service-1600.webp | 1600×1000 | 66.2 | 70 |
+| about-service-960.avif | 960×600 | 40.9 | 70 |
+| about-service-960.webp | 960×600 | 68.8 | 70 |
+| about-service-640.avif | 640×400 | 21.9 | 70 |
+| about-service-640.webp | 640×400 | 40.2 | 70 |
+| cta-diag-960.avif | 960×540 | 6.4 | 45 |
+| cta-diag-960.webp | 960×540 | 8.3 | 45 |
+| cta-diag-640.avif | 640×360 | 3.4 | 45 |
+| cta-diag-640.webp | 640×360 | 3.9 | 45 |
+| hero-service-m-960.avif | 960×1200 | 47.1 | 120 |
+| hero-service-m-960.webp | 960×1200 | 69.3 | 120 |
+| hero-service-m-640.avif | 640×800 | 25.1 | 120 |
+| hero-service-m-640.webp | 640×800 | 39.8 | 120 |
+| hero-neon-m-960.avif | 960×1200 | 20.6 | 60 |
+| hero-neon-m-960.webp | 960×1200 | 25.4 | 60 |
+| hero-neon-m-640.avif | 640×800 | 13.1 | 25 |
+| hero-neon-m-640.webp | 640×800 | 14.4 | 25 |
+| hero-detail-1600.avif | 1600×900 | 43.5 | 120 |
+| hero-detail-1600.webp | 1600×900 | 56.1 | 120 |
+| hero-detail-960.avif | 960×540 | 21.9 | 120 |
+| hero-detail-960.webp | 960×540 | 31.9 | 120 |
+| hero-tyre-640.avif | 640×360 | 10.3 | 25 |
+| hero-tyre-640.webp | 640×360 | 17.3 | 25 |
+| hero-tyre-960.avif | 960×540 | 17.9 | 40 |
+| hero-tyre-960.webp | 960×540 | 29.5 | 40 |
+| hero-tyre-1600.avif | 1600×900 | 35.3 | 70 |
+| hero-tyre-1600.webp | 1600×900 | 52.6 | 70 |
+| hero-tyre-2032.avif | 2032×1143 | 49 | 120 |
+| hero-tyre-2032.webp | 2032×1143 | 70.7 | 120 |
+| hero-tools-640.avif | 640×360 | 9.8 | 25 |
+| hero-tools-640.webp | 640×360 | 17.5 | 25 |
+| hero-tools-960.avif | 960×540 | 18.3 | 40 |
+| hero-tools-960.webp | 960×540 | 32.8 | 40 |
+| hero-tools-1600.avif | 1600×900 | 40.7 | 70 |
+| hero-tools-1600.webp | 1600×900 | 64.4 | 70 |
+| hero-tools-2032.avif | 2032×1143 | 60.4 | 120 |
+| hero-tools-2032.webp | 2032×1143 | 89.2 | 120 |
+| texture-metal-1600.webp | — | 76.6 | 100 |
+<!-- weights-auto:end -->
+
 ## Как использовать
 
 Финальные версии — в `site/public/img/` (публичные, оптимизированные), исходники и промежуточные

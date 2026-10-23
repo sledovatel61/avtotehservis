@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -236,4 +236,70 @@ test('seed:demo помечает записи, seed:demo:clear удаляет т
   assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug='nastoyashchaya-novost'`), 1, 'реальная новость не тронута');
   db().prepare(`DELETE FROM reviews WHERE author='Настоящий Клиент'`).run();
   db().prepare(`DELETE FROM news WHERE slug='nastoyashchaya-novost'`).run();
+});
+
+/* ---------- Линтер порядка CSS (M2, раунд 9) ---------- */
+const { lintCssFile, lintStylesDir } = await import('../scripts/lint-css-order.mjs');
+
+test('lint-css-order: src/styles проходит без нарушений', () => {
+  const v = lintStylesDir(new URL('../src/styles', import.meta.url).pathname);
+  assert.deepEqual(v, [], `нарушения порядка: ${JSON.stringify(v)}`);
+});
+
+test('lint-css-order: ловит медиа-блок выше базового правила и молчит при правильном порядке', () => {
+  const bad = join(TMP, 'bad.css');
+  writeFileSync(bad, [
+    '/* x */',
+    '@media (max-width:1200px){',
+    '  .nav{display:none}',
+    '  .burger{display:block}',
+    '}',
+    '.nav{margin-left:auto}',
+    '.burger{display:none}',
+    '',
+  ].join('\n'));
+  const v = lintCssFile(bad);
+  assert.equal(v.length, 2, 'два нарушения: .nav и .burger');
+  assert.deepEqual(v.map((x: { selector: string }) => x.selector).sort(), ['.burger', '.nav']);
+  assert.equal(v[0].mediaLine, 2);
+  assert.ok(v[0].baseLine > v[0].mediaLine);
+
+  const good = join(TMP, 'good.css');
+  writeFileSync(good, [
+    '.nav{margin-left:auto}',
+    '.burger{display:none}',
+    '@media (max-width:1200px){',
+    '  .nav{display:none}',
+    '  .burger{display:block}',
+    '}',
+    '',
+  ].join('\n'));
+  assert.deepEqual(lintCssFile(good), [], 'правильный порядок — без нарушений');
+});
+
+/* ---------- safe-zone первого экрана (раунд 10) ---------- */
+const { safeZoneTable, safeZoneMobile } = await import('../scripts/build-images.mjs');
+const geom = JSON.parse(readFileSync(new URL('../scripts/safe-zone-geom.json', import.meta.url).pathname, 'utf8'));
+
+test('safe-zone: машины и название в видимой полосе на всех десктопных вьюпортах', () => {
+  const rows = safeZoneTable(geom.desk);
+  assert.ok(rows.length >= 9, 'таблица вьюпортов');
+  for (const r of rows) {
+    assert.equal(r.cars, 'ok', `${r.vp}: машины в полосе ${r.band}`);
+    assert.equal(r.title, 'ok', `${r.vp}: название в полосе`);
+    assert.equal(r.inter, 'нет', `${r.vp}: машины не пересекают название`);
+  }
+});
+
+test('safe-zone: мобильные вьюпорты — название внутри ширины кропа', () => {
+  for (const r of safeZoneMobile(geom.mob)) assert.equal(r.title, 'ok', r.vp);
+});
+
+test('safe-zone: ловит машину ниже видимой полосы (синтетика)', () => {
+  /* раунд 12: десктоп показывает фото целиком, поэтому «ниже полосы» = ниже кадра */
+  const bad = { ...geom.desk, cars: [30, 1500, 2274, 1730] };
+  const rows = safeZoneTable(bad);
+  const row = rows.find((r: { vp: string }) => r.vp === '1440×900');
+  assert.ok(row, 'строка 1440×900 есть');
+  assert.equal(row.cars, 'нет', 'машина ниже кадра падает');
 });
