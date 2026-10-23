@@ -134,3 +134,20 @@
 .dock-book{background:var(--copper);color:var(--night)}
 body.has-dock{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 
+/* ---------- Медиа-переопределения (база выше, медиа ниже — порядок чанков, M2 раунд 9) ----------
+   Файл попадает в общий чанк с admin/misc и грузится ПОСЛЕ Base.*: переопределения
+   этих селекторов нельзя держать в media.css, иначе их перебивает собственная база. */
+@media (max-width:1024px){
+  .svc-detail,.contacts-grid,.post-layout{grid-template-columns:1fr;gap:30px}
+  .svc-side,.post-side{position:static}
+  .news-grid{grid-template-columns:1fr}
+}
+@media (max-width:860px){
+  .dock{display:flex}
+  body.has-dock .ftr{padding-bottom:10px}
+}
+@media (max-width:640px){
+  .news-card{flex-direction:column}
+  .news-img{flex-basis:auto;aspect-ratio:16/9}
+  .news-body{padding:0 18px 18px}
+}

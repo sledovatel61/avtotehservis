@@ -7,6 +7,7 @@
 }
 .hdr-in{display:flex;align-items:center;gap:24px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
 .hdr.is-compact .hdr-in{padding-top:8px;padding-bottom:8px}
+.hdr.is-compact{background:rgba(11,20,16,.97);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .logo{display:flex;align-items:center;gap:12px;color:var(--ivory);flex-shrink:0}
 .logo:hover{color:var(--ivory)}
 .logo img{width:44px;height:44px;transition:transform var(--t-mid) var(--ease)}
@@ -18,7 +19,7 @@
 .nav a{
   display:block;padding:10px 13px;border-radius:8px;color:var(--mist);
   font-size:14.5px;font-weight:500;letter-spacing:.01em;min-height:44px;
-  display:flex;align-items:center;
+  display:flex;align-items:center;white-space:nowrap;
   transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
 }
 .nav a:hover{color:var(--ivory);background:rgba(224,169,109,.08)}
@@ -68,3 +69,24 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
 .m-menu-contacts a{font-weight:500;font-size:17px;min-height:44px;display:flex;align-items:center;gap:10px}
 .m-menu-contacts .tel{font-size:22px;font-weight:700;color:var(--ivory)}
 
+/* ---------- Медиа-переопределения (всегда ниже базовых правил — M2, раунд 9) ---------- */
+/* M2: 1201–1439 — компактное меню в одну строку, подпись логотипа скрыта, зазор 16 */
+@media (max-width:1439px){
+  .logo-t b{display:none}
+  .hdr-in{gap:16px}
+  .nav ul{gap:2px}
+  .nav a{padding:10px;font-size:13px}
+}
+/* M2: ≤1200 — бургер вместо меню, телефон иконкой, кнопка «Записаться» видна */
+@media (max-width:1200px){
+  .nav{display:none}
+  .burger{display:block;margin-left:auto}
+  .hdr-phone span{display:none}
+  .hdr-phone{min-width:44px;justify-content:center}
+}
+/* M2/minor-8: на 360 всё умещается без горизонтального скролла */
+@media (max-width:480px){
+  .logo-t{display:none}
+  .hdr-in{gap:10px}
+  .hdr-cta{gap:10px}
+}

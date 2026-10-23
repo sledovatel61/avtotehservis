@@ -21,7 +21,7 @@ const { page } = Astro.props as Props;
       </ul>
     </nav>
     <div class="hdr-cta">
-      <a class="hdr-phone" href={`tel:${S.phone_main_tel}`} data-track="call_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg><span>{S.phone_main}</span></a>
+      <a class="hdr-phone" href={`tel:${S.phone_main_tel}`} aria-label={`Позвонить: ${S.phone_main}`} data-track="call_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg><span>{S.phone_main}</span></a>
       <a class="btn btn--copper btn--sm" href="/appointment">Записаться</a>
     </div>
     <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="m-menu" aria-label="Открыть меню">
@@ -31,7 +31,7 @@ const { page } = Astro.props as Props;
 </header>
 <div class="m-menu" id="m-menu" aria-label="Меню (мобильное)">
   <div class="m-menu-top">
-    <a class="logo" href="/"><img src="/img/logo.svg" alt="" width="40" height="40"><span class="logo-t">{S.site_name}</span></a>
+    <a class="logo" href="/" aria-label={`${S.site_name} — на главную`}><img src="/img/logo.svg" alt="" width="40" height="40"><span class="logo-t">{S.site_name}</span></a>
     <button class="m-close" id="m-close" type="button" aria-label="Закрыть меню">✕</button>
   </div>
   <nav aria-label="Основное меню (мобильное)">

@@ -60,10 +60,6 @@ if (form) {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (document.body.dataset.preview === 'true') {
-      window.alert('Демонстрационная версия: отправка сообщений отключена.');
-      return;
-    }
     let bad: HTMLElement | null = null;
     setErr(cName, ''); setErr(cPhone, ''); setErr(cMsg, ''); setErr(cConsent, '');
     if ((cName?.value ?? '').trim().length < 2) { setErr(cName, 'Укажите имя'); bad = bad ?? cName; }
