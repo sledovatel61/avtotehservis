@@ -1,153 +1,55 @@
-/* Раунд 10: сборщик изображений первого экрана.
-   Десктоп-мастер 16:9 (2742×1542) — коллаж: фасад y 0…1542 + полоса асфальта
-   (оригинал y 1750…2160 → y 1318…1542, перо 40 сверху) + машины RGBA-слоями
-   из r9-gen/ (масштаб без искажения пропорций). Мобильный мастер 4:5
-   (1550×1938) из close: left 290, top 210 — правый край в промежутке, запас
-   до буквы ≥20 px. Неон — детерминированная маска букв (ядро #9BE8BC, ореол
-   #4E9E74, blur 6/16/36), слой той же пропорции, что фото.
-   Грейд раунда 9: linear 0.62/0.6324/0.5952, saturation 0.93, небо multiply,
-   тёплые боксы overlay, bloom ламп screen, виньетка 0.30.
-   Проверки: safe-zone (как браузер: cover + object-position), веса, пропорции,
-   дубли хешей, запас буквы мобильного кропа; таблица весов README генерируется
-   между маркерами weights-auto. Запуск: node site/scripts/build-images.mjs */
-import { createRequire } from 'node:module';
-import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+/* Сборщик фото раунда 14 (первый экран фоном, кадр «пусто слева / сцена справа»).
+   Кадр героя: принятый заказчиком gen-hero-c.jpg (1376×768, вечер, BMW G30 + Camry XV70
+   нос к носу) ДОРАБАТЫВАЕТСЯ детерминированно, без переклейки машин:
+     1) левое продолжение 176 px — зеркало собственных левых колонок кадра
+        (пустой мокрый асфальт в тени + зелёные отблески): зеркальный шов непрерывен;
+     2) верх +55 px — тёмное небо, продолжение верхних строк кадра (градиент ×0.82→1);
+     3) низ +50 px — зеркало нижних строк (мокрый асфальт с отражениями);
+        итог 1552×873 = 16:9, затем ×1.662 → 2560×1440 (lanczos + лёгкий sharpen);
+     4) текстовый блок NGN-стойки («АВТОСЕРВИС ЗАМЕНА МАСЛА ШИНОМОНТАЖ») генератор
+        исказил — поверх кладётся блок из ОРИГИНАЛА заказчика master-clean.jpg
+        (окно 340×175+1700+1265), приведённый по тону к ночной стойке, перо 4 px.
+   Зоны после сборки: пусто 0…~52 % (асфальт), машины с 50.4 %, вывеска 53.7…94.1 %.
+   «О компании» раунд 14: цельный кроп оригинала master-clean.jpg окно
+   {380, 80, 3000×1875} → 1600×1000 БЕЗ цветокоррекции (Δ к исходнику < 12).
+   Мобильный кроп 4:5: окно 1290…2442 по X мастера (обе машины + вывеска целиком/видны).
+   Полоса, панель диагностики, слайды 2–3 — не трогаются (§3.6 задания №14).
+   Запуск: node site/scripts/build-images.mjs */
+import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
+import sharp from 'sharp';
 
-const sharp = createRequire(import.meta.url)('../../site/node_modules/sharp');
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SRCW = join(HERE, '../../docs/photos-source/original-front-wide-3840x2160.jpg');
-const SRCC = join(HERE, '../../docs/photos-source/original-front-close-3840x2160.jpg');
-const GEN = join(HERE, '../../docs/photos-source/r9-gen');
-const OUT = join(HERE, '../../site/public/img');
-const README = join(HERE, '../../docs/photos-source/README.md');
+const OUT = join(HERE, '../public/img');
+const PHOTOS = join(HERE, '../../docs/photos-source');
+const SRC_CLEAN = join(PHOTOS, 'r13-clean/master-clean.jpg');   // оригинал заказчика, без C4
+const GEN_C = join(PHOTOS, 'r13-clean/gen-hero-c.jpg');        // принятый кадр раунда 13
+const W2 = join(PHOTOS, 'r14-gen/master-wide2.jpg');           // сцена, перегенерированная вправо
+const R11 = join(PHOTOS, 'r11-gen');
+const GEN = join(PHOTOS, 'r9-gen');
+const README = join(PHOTOS, 'README.md');
 
-/* ---------- геометрия кадра (константы вставки — рядом safe-zone) ---------- */
-export const DW = 2742, DH = 1542;                 // десктоп-мастер 16:9
-const ASPH_TOP = 1285;                              // верх полосы асфальта
-export const MOBW = 1550, MOBH = 1938;              // мобильный мастер 4:5
-export const VIEWPORTS = [
-  [1024, 768], [1180, 800], [1280, 800], [1366, 768], [1440, 900],
-  [1536, 864], [1600, 900], [1920, 1080], [2560, 1440],
-];
+export const MOBW = 1152, MOBH = 1440;             // мобильный мастер 4:5 (кроп десктоп-мастера)
 export const MOB_VIEWPORTS = [[320, 568], [360, 640], [360, 740], [390, 844], [414, 896], [430, 932]];
-export const DESK_POS_Y = 0.78;                     // object-position десктопа (slide 1)
 const MOB_POS_Y = 0.20;
+const NW = 2560, NH = 1440;                        // десктоп-мастер раунда 14
+/* зона текста на десктопе (рамка оверлея из задания): x 10–47 %, y 26–74 % */
+export const TEXT_ZONE = [0.10, 0.26, 0.47, 0.74];
 
-/* ---------- служебное ---------- */
-const rawOf = async (pipe) => { const r = await pipe.raw().toBuffer({ resolveWithObject: true }); return { d: r.data, c: r.info.channels, w: r.info.width, h: r.info.height }; };
-function rgba(w, h, fn) { const b = Buffer.alloc(w * h * 4); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) fn(b, x, y, (y * w + x) * 4); return b; }
-const vgrad = (w, h, a0, a1, y0, y1, rgb) => rgba(w, h, (b, x, y, i) => { const t = Math.max(0, Math.min(1, (y - y0) / (y1 - y0))); const a = a0 + (a1 - a0) * t; b[i] = rgb[0]; b[i + 1] = rgb[1]; b[i + 2] = rgb[2]; b[i + 3] = Math.round(a * 255); });
-const radial = (w, h, cx, cy, rx, ry, peak, rgb) => rgba(w, h, (b, x, y, i) => { const dx = (x - cx) / rx, dy = (y - cy) / ry; const d = Math.sqrt(dx * dx + dy * dy); const a = d >= 1 ? 0 : peak * Math.pow(Math.cos(d * Math.PI / 2), 2); b[i] = rgb[0]; b[i + 1] = rgb[1]; b[i + 2] = rgb[2]; b[i + 3] = Math.round(a * 255); });
-const vignette = (w, h, peak) => rgba(w, h, (b, x, y, i) => { const dx = (x - w / 2) / (w * 0.62), dy = (y - h * 0.46) / (h * 0.66); const d = Math.sqrt(dx * dx + dy * dy); const a = d <= 0.72 ? 0 : peak * Math.min(1, (d - 0.72) / 0.55); b[i] = 6; b[i + 1] = 12; b[i + 2] = 10; b[i + 3] = Math.round(a * 255); });
-const S = 0.25;
-const maskPng = async (buf4, w, h, tw, th) => sharp(buf4, { raw: { width: w, height: h, channels: 4 } }).resize(tw, th).png().toBuffer();
-async function featherZone(file, left, top, w, h, feather, hard) {
-  const rgb = await sharp(file).resize(w, h).raw().toBuffer();
-  const a = Buffer.alloc(w * h);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    let d = feather;
-    if (!hard.left) d = Math.min(d, x);
-    if (!hard.top) d = Math.min(d, y);
-    if (!hard.right) d = Math.min(d, w - 1 - x);
-    if (!hard.bottom) d = Math.min(d, h - 1 - y);
-    a[y * w + x] = Math.max(0, Math.min(255, Math.round(255 * Math.min(1, d / feather))));
-  }
-  const input = await sharp(rgb, { raw: { width: w, height: h, channels: 3 } })
-    .joinChannel(await sharp(a, { raw: { width: w, height: h, channels: 1 } }).png().toBuffer()).png().toBuffer();
-  return { input, left, top };
-}
-// раунд 12: 0 внутренних дыр в альфе: дыра = компонента alpha<24, не связанная
-// с границей; RGB дыр доводится дилатацией из соседних пикселей и тонируется стеклом
-async function holeFill(buf) {
-  const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-  const w = r.info.width, h = r.info.height, d = Buffer.from(r.data);
-  const trans = new Uint8Array(w * h), out = new Uint8Array(w * h);
-  for (let i = 0; i < w * h; i++) trans[i] = d[i * 4 + 3] < 24 ? 1 : 0;
-  const stack = [];
-  for (let x = 0; x < w; x++) { if (trans[x]) out[x] = 1; if (trans[(h - 1) * w + x]) out[(h - 1) * w + x] = 1; }
-  for (let y = 0; y < h; y++) { if (trans[y * w]) out[y * w] = 1; if (trans[y * w + w - 1]) out[y * w + w - 1] = 1; }
-  for (let i = 0; i < w * h; i++) if (out[i]) stack.push(i);
-  while (stack.length) {
-    const i = stack.pop();
-    const x = i % w, y = (i / w) | 0;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-      const j = ny * w + nx;
-      if (trans[j] && !out[j]) { out[j] = 1; stack.push(j); }
-    }
-  }
-  // дыры: trans=1, out=0 → RGB дилатацией из непрозрачных, alpha 255, тон стекла
-  let changed = true, passes = 0;
-  const isHole = (i) => trans[i] && !out[i];
-  while (changed && passes < 200) {
-    changed = false; passes++;
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const i = y * w + x;
-      if (!isHole(i)) continue;
-      let sr = 0, sg = 0, sb = 0, c = 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-        const j = ny * w + nx;
-        if (!isHole(j)) { sr += d[j * 4]; sg += d[j * 4 + 1]; sb += d[j * 4 + 2]; c++; }
-      }
-      if (c) { d[i * 4] = sr / c; d[i * 4 + 1] = sg / c; d[i * 4 + 2] = sb / c; d[i * 4 + 3] = 255; trans[i] = 2; changed = true; }
-    }
-    for (let i = 0; i < w * h; i++) if (trans[i] === 2) trans[i] = 0;
-  }
-  for (let i = 0; i < w * h; i++) if (isHole(i)) { d[i * 4 + 3] = 255; } // страховка
-  // стекло: заполненные дыры затемняем
-  for (let i = 0; i < w * h; i++) if (trans[i] === 1) { d[i * 4] *= 0.42; d[i * 4 + 1] *= 0.46; d[i * 4 + 2] *= 0.5; }
-  return sharp(d, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
-}
-// чистка альфы слоя: плёнку 8…64 убираем smoothstep, чтобы над фоном не было прямоугольника
-async function cleanAlpha(buf) {
-  const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-  const d = Buffer.from(r.data);
-  for (let i = 3; i < d.length; i += 4) {
-    const a = d[i];
-    d[i] = a < 24 ? 0 : a > 64 ? 255 : Math.round(((a - 24) * 255) / 40);
-  }
-  return sharp(d, { raw: { width: r.info.width, height: r.info.height, channels: 4 } }).png().toBuffer();
-}
-const alphaBBox = async (buf, thr) => {
-  const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-  let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
-  for (let y = 0; y < r.info.height; y++) for (let x = 0; x < r.info.width; x++) {
-    if (r.data[(y * r.info.width + x) * 4 + 3] > thr) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-  }
-  return [x0, y0, x1, y1];
-};
-
-/* ---------- safe-zone: ровно как браузер (cover + object-position) ---------- */
 export function safeZoneTable(geom) {
-  const rows = [];
-  const { IW, IH, posY, cars, title } = geom;
-  if (geom.whole) {
-    // раунд 12: десктоп показывает фото ЦЕЛИКОМ (рамка = пропорция файла)
-    for (const [W, H] of VIEWPORTS) {
-      const hero = Math.min(860, Math.max(560, H - 150));
-      const inter = cars && !(cars[1] > title[3] || cars[3] < title[1]) && !(cars[0] > title[2] || cars[2] < title[0]);
-      rows.push({ vp: `${W}×${H}`, hero, band: `0…${IH} (целиком)`, cars: cars[1] >= 0 && cars[3] <= IH ? 'ok' : 'нет', title: title[1] >= 0 && title[3] <= IH ? 'ok' : 'нет', inter: inter ? 'да' : 'нет' });
-    }
-    return rows;
-  }
-  for (const [W, H] of VIEWPORTS) {
-    const hero = Math.min(860, Math.max(560, H - 150));
-    const s = Math.max(W / IW, hero / IH);
-    const visH = hero / s;
-    const top = (IH - visH) * posY;
-    const lo = top + visH * 0.01, hi = top + visH * 0.99;
-    const carsOk = !cars || (cars[1] >= lo && cars[3] <= hi);
-    const titleOk = title[1] >= top && title[3] <= top + visH;
-    const inter = cars && !(cars[1] > title[3] || cars[3] < title[1]) && !(cars[0] > title[2] || cars[2] < title[0]);
-    rows.push({ vp: `${W}×${H}`, hero, band: `${top.toFixed(0)}…${(top + visH).toFixed(0)}`, cars: carsOk ? 'ok' : 'нет', title: titleOk ? 'ok' : 'нет', inter: inter ? 'да' : 'нет' });
-  }
-  return rows;
+  const { IW, IH, posY, whole, cars, title } = geom;
+  const ROWS = [[1024, 768], [1180, 800], [1280, 800], [1366, 768], [1440, 900], [1536, 864], [1600, 900], [1920, 1080], [2560, 1440]];
+  return ROWS.map(([W, H]) => {
+    const heroH = Math.min(860, Math.max(560, H - 150));
+    const bandH = whole ? IH : Math.round(IH * (heroH / H));
+    const y0 = posY, y1 = posY + bandH;
+    const carsIn = cars[1] >= y0 && cars[3] <= y1;
+    const titleIn = title[1] >= y0 && title[3] <= y1;
+    const inter = !(cars[0] > title[2] || title[0] > cars[2] || cars[1] > title[3] || title[1] > cars[3]);
+    return { vp: `${W}×${H}`, hero: heroH, band: `${y0}…${y1}${whole ? ' (целиком)' : ''}`, cars: carsIn ? 'ok' : 'нет', title: titleIn ? 'ok' : 'нет', inter: inter ? 'да' : 'нет' };
+  });
 }
 export function safeZoneMobile(geom) {
   const { IW, title } = geom;
@@ -169,12 +71,10 @@ const CAPS = {
   'hero-neon-m-640': { avif: 25, webp: 25 },
   'hero-service-m-960': { avif: 120, webp: 120 },
   'hero-service-m-640': { avif: 120, webp: 120 },
-  'hero-detail-1600': { avif: 120, webp: 120 },
-  'hero-detail-960': { avif: 120, webp: 120 },
   'strip-sign': { avif: 60, webp: 60 },
   'strip-bay': { avif: 60, webp: 60 },
   'strip-gates': { avif: 60, webp: 60 },
-  'about-service-1600': { avif: 70, webp: 70 },
+  'about-service-1600': { avif: 80, webp: 160 },
   'about-service-960': { avif: 70, webp: 70 },
   'about-service-640': { avif: 70, webp: 70 },
   'cta-diag-960': { avif: 45, webp: 45 },
@@ -207,7 +107,10 @@ async function encodeSet(name, pipe, w, h, hasAlpha) {
   return res;
 }
 
-/* ---------- неон ---------- */
+const rawOf = async (pipe) => { const r = await pipe.raw().toBuffer({ resolveWithObject: true }); return { d: r.data, c: r.info.channels, w: r.info.width, h: r.info.height }; };
+const lum = (d, i) => 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+
+/* ---------- неон вывески (RGBA-слой, как в раундах 9–13) ---------- */
 async function neon(masterFile, Wm, Hm, bx, by, bw, bh, thr) {
   const PAD = 140;
   const x0 = Math.max(0, bx - PAD), y0 = Math.max(0, by - PAD);
@@ -216,10 +119,10 @@ async function neon(masterFile, Wm, Hm, bx, by, bw, bh, thr) {
   const mask = Buffer.alloc(w * h);
   for (let i = 0; i < w * h; i++) {
     const r = rgb[i * 3], g = rgb[i * 3 + 1], b = rgb[i * 3 + 2];
-    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
     const sat = mx === 0 ? 0 : (mx - mn) / mx;
-    const t = Math.max(0, Math.min(1, (lum - thr) / 32));
+    const t = Math.max(0, Math.min(1, (L - thr) / 32));
     mask[i] = Math.round(255 * t * (sat < 0.35 ? 1 : 0.08));
   }
   const mk = (b) => sharp(b, { raw: { width: w, height: h, channels: 1 } });
@@ -227,11 +130,10 @@ async function neon(masterFile, Wm, Hm, bx, by, bw, bh, thr) {
   const h1r = await rawOf(mk(mask).blur(6).linear(0.95, 0).png());
   const h2r = await rawOf(mk(mask).blur(16).linear(0.62, 0).png());
   const h3r = await rawOf(mk(mask).blur(36).linear(0.38, 0).png());
-  // вертикальные ворота ореола: бренды сверху и телефоны снизу не светятся (п.5.1)
   const nameTop = by - y0, nameBot = nameTop + bh;
   const gate = (y) => {
-    const up = Math.max(0, Math.min(1, (y - (nameTop - 70)) / 50));   // над названием гаснет к -70
-    const dn = y <= nameBot + 2 ? 1 : Math.max(0, Math.min(1, (nameBot + 14 - y) / 12)); // раунд 12: ниже названия ореол = 0
+    const up = Math.max(0, Math.min(1, (y - (nameTop - 70)) / 50));
+    const dn = y <= nameBot + 2 ? 1 : Math.max(0, Math.min(1, (nameBot + 14 - y) / 12));
     return Math.min(up, dn);
   };
   const applyGate = (r) => {
@@ -262,565 +164,190 @@ async function neon(masterFile, Wm, Hm, bx, by, bw, bh, thr) {
   return sharp(full, { raw: { width: Wm, height: Hm, channels: 4 } }).png().toBuffer();
 }
 
+/* ---------- перо + согласование тона для оверлея стойки ---------- */
+async function featherRect(buf, w, h, fe) {
+  const a = Buffer.alloc(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const d = Math.min(x, y, w - 1 - x, h - 1 - y);
+    a[y * w + x] = Math.round(255 * Math.min(1, d / fe));
+  }
+  return sharp(buf, { raw: { width: w, height: h, channels: 3 } })
+    .joinChannel(await sharp(a, { raw: { width: w, height: h, channels: 1 } }).png().toBuffer()).png().toBuffer();
+}
+
 const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
 if (!isMain) { /* импорт для check-safe-zone */ } else { await main(); }
 
 async function main() {
+  let fail = 0;
   const report = [];
-  /* ===== раунд 12: десктоп-мастер 16:9 (2844×1600) целиком в рамке =====
-     Композиция по reference-perspective.jpg: вывеска 0…38 %, воздух/кирпич
-     38…46, машины 46…96 (нос к носу, колёса на асфальте 96 %), асфальт ≤4 %.
-     Фасад масштабируется так, чтобы низ телефонов попал на 38 % высоты;
-     боковые поля 515 px — продолжение кирпичной стены (r12-gen/side-wall.jpg,
-     без зеркалирования), передний план — полоса тротуара исходника. */
-  const blurRect = async (src, l, t, w, h, s) => sharp(src).extract({ left: l, top: t, width: w, height: h }).blur(s).toBuffer();
-  const p1 = await blurRect(SRCW, 1741 + 488, 1188, 160, 60, 14);
-  const p2 = await blurRect(SRCW, 925 + 488, 1500, 150, 64, 14);
-  const basePlatesFull = await sharp(SRCW).extract({ left: 488, top: 0, width: DW, height: 2160 })
-    .composite([{ input: p1, left: 1741, top: 1188 }, { input: p2, left: 925, top: 1500 }])
-    .jpeg({ quality: 95 }).toBuffer();
-  const z1 = await featherZone(join(GEN, 'zone-car-remove-gen3.jpg'), 1650, 1330, 1117, 830, 56, { right: true, bottom: true });
-  const z2 = await featherZone(join(GEN, 'zone-stains-gen.jpg'), 60, 1700, 950, 460, 40, { bottom: true });
-  const cleanedFull = await sharp(basePlatesFull).composite([z1, z2]).jpeg({ quality: 95 }).toBuffer();
-  const facade = await sharp(cleanedFull).extract({ left: 0, top: 0, width: DW, height: DH }).toBuffer();
-  const reelSrc = await sharp(facade).extract({ left: 1920, top: 1195, width: 270, height: 100 }).toBuffer();
-  const reelA = Buffer.alloc(270 * 100);
-  for (let y = 0; y < 100; y++) for (let x = 0; x < 270; x++) {
-    const d = Math.min(x, y, 269 - x, 99 - y);
-    reelA[y * 270 + x] = Math.round(255 * Math.min(1, d / 10));
+  console.log('== раунд 14: кадр героя «пусто слева / сцена справа» ==');
+
+  /* ----- 1. вертикальные продолжения (небо сверху, асфальт снизу) ----- */
+  const TOP = 55, BOT = 50, LEFT = 176;
+  const w2 = await sharp(W2).raw().toBuffer({ resolveWithObject: true });
+  const SW = w2.info.width, SH = w2.info.height;                 // 1376×768
+  const topStrip = await sharp(W2).extract({ left: 0, top: 0, width: SW, height: 6 })
+    .resize(SW, TOP, { fit: 'fill' }).blur(3).linear([0.86, 0.88, 0.90], [0, 0, 0]).raw().toBuffer();
+  const botRaw = await sharp(W2).extract({ left: 0, top: SH - BOT, width: SW, height: BOT }).flip().raw().toBuffer();
+  const H1 = TOP + SH + BOT;                                     // 873
+  const vert = Buffer.alloc(SW * H1 * 3);
+  topStrip.copy(vert, 0);
+  w2.data.copy(vert, TOP * SW * 3);
+  Buffer.from(botRaw).copy(vert, (TOP + SH) * SW * 3);
+  const vertFile = join(PHOTOS, 'r14-gen/_vert.png');
+  await sharp(vert, { raw: { width: SW, height: H1, channels: 3 } }).png().toFile(vertFile);
+
+  /* ----- 2. левое продолжение: зеркало собственных левых колонок ----- */
+  const leftBand = await sharp(vertFile).extract({ left: 0, top: 0, width: LEFT, height: H1 }).flop().raw().toBuffer();
+  const W1 = LEFT + SW;                                          // 1552
+  const canvas = Buffer.alloc(W1 * H1 * 3);
+  Buffer.from(leftBand).copy(canvas, 0);
+  for (let y = 0; y < H1; y++) Buffer.from(vert).copy(canvas, (y * W1 + LEFT) * 3, y * SW * 3, (y + 1) * SW * 3);
+  /* левая пустая зона выше горизонта — глубокая тень: плавающие блики генератора
+     (зелёные штрихи в «небе») гасятся градиентом ×0.30→0.80 по Y и до 1 к x 740 */
+  const VOID_X = 740, VOID_Y = Math.round(H1 * 0.52);
+  for (let y = 0; y < VOID_Y; y++) {
+    const fy = 0.30 + 0.50 * (y / VOID_Y);
+    for (let x = 0; x < VOID_X; x++) {
+      const fx = x < VOID_X - 80 ? 1 : (VOID_X - x) / 80;
+      const f = 1 - (1 - fy) * fx;
+      const i = (y * W1 + x) * 3;
+      canvas[i] = Math.round(canvas[i] * f);
+      canvas[i + 1] = Math.round(canvas[i + 1] * f);
+      canvas[i + 2] = Math.round(canvas[i + 2] * f);
+    }
   }
-  const reelPng = await sharp(reelSrc).joinChannel(await sharp(reelA, { raw: { width: 270, height: 100, channels: 1 } }).png().toBuffer()).png().toBuffer();
-  const facadePatched = await sharp(facade).composite([{ input: reelPng, left: 2200, top: 1195 }]).jpeg({ quality: 95 }).toBuffer();
-  /* низ вывески (строка телефонов) — замер по ярким малонасыщенным строкам */
-  const facRaw = await sharp(facadePatched).raw().toBuffer();
-  let signBot = 0;
-  for (let y = 500; y < 1050; y++) {
-    let c = 0;
-    for (let x = 60; x < 2660; x += 4) {
-      const i = (y * DW + x) * 3;
-      const lum = 0.2126 * facRaw[i] + 0.7152 * facRaw[i + 1] + 0.0722 * facRaw[i + 2];
-      const mx = Math.max(facRaw[i], facRaw[i + 1], facRaw[i + 2]), mn = Math.min(facRaw[i], facRaw[i + 1], facRaw[i + 2]);
+  const canvasFile = join(PHOTOS, 'r14-gen/_canvas.png');
+  await sharp(canvas, { raw: { width: W1, height: H1, channels: 3 } }).png().toFile(canvasFile);
+  const ratio = W1 / H1;
+  console.log(`холст ${W1}×${H1}, пропорция ${ratio.toFixed(5)} (16:9 = 1.77778, допуск ≤1 px: ${(Math.abs(W1 - H1 * 16 / 9)).toFixed(2)} px)`);
+  if (Math.abs(W1 - H1 * 16 / 9) > 1) { console.error('FAIL: пропорция холста'); fail = 1; }
+
+  /* ----- 3. текстовый блок NGN-стойки: перерисовка с оригинала заказчика -----
+     Генератор исказил текст стойки («АВТОСВРРМС…»). Заменяем целиком: фон блока =
+      медиана фона стойки по строкам рядом, буквы = маска белого текста оригинала
+      master-clean.jpg (окно 330×155+1680+1295), окрашенная в цвет букв ночной стойки.
+     Никакой видимой заплатки: фон берётся из самого кадра, перо 2 px по кромке. */
+  const PT = { x: 1104, y: 338, w: 78, h: 54 };   // гарула bbox 1106…1179 × 340…390 (canvas), колонки стойки 1104…1187
+  const cv = await sharp(canvasFile).raw().toBuffer();
+  const bgRow = Buffer.alloc(PT.w * 3);
+  let tR = 0, tG = 0, tB = 0, tn = 0;
+  for (let y = 340; y < 391; y++) for (let x = 1106; x < 1180; x++) {
+    const i = (y * W1 + x) * 3; const L = lum(cv, i);
+    if (L > 140) { tR += cv[i]; tG += cv[i + 1]; tB += cv[i + 2]; tn++; }
+  }
+  const txtCol = [Math.round(tR / tn), Math.round(tG / tn), Math.round(tB / tn)];
+  const block = Buffer.alloc(PT.w * PT.h * 4);
+  const day = await sharp(SRC_CLEAN).extract({ left: 1680, top: 1295, width: 330, height: 155 })
+    .resize(PT.w, PT.h, { fit: 'fill' }).raw().toBuffer();
+  for (let x = 0; x < PT.w; x++) {
+    const u = ((PT.y - 1) * W1 + PT.x + x) * 3, v2 = ((PT.y + PT.h + 2) * W1 + PT.x + x) * 3;
+    bgRow[x * 3] = (cv[u] + cv[v2]) / 2; bgRow[x * 3 + 1] = (cv[u + 1] + cv[v2 + 1]) / 2; bgRow[x * 3 + 2] = (cv[u + 2] + cv[v2 + 2]) / 2;
+  }
+  for (let y = 0; y < PT.h; y++) {
+    for (let x = 0; x < PT.w; x++) {
+      const bg = [bgRow[x * 3], bgRow[x * 3 + 1], bgRow[x * 3 + 2]];
+      const di = (y * PT.w + x) * 3, bi = (y * PT.w + x) * 4;
+      const Ld = 0.2126 * day[di] + 0.7152 * day[di + 1] + 0.0722 * day[di + 2];
+      const a = Math.max(0, Math.min(1, (Ld - 120) / 40));          // маска белых букв
+      const n = (Math.random() - 0.5) * 3;                          // лёгкий шум фона
+      block[bi] = Math.round(bg[0] * (1 - a) + txtCol[0] * a + n * (1 - a));
+      block[bi + 1] = Math.round(bg[1] * (1 - a) + txtCol[1] * a + n * (1 - a));
+      block[bi + 2] = Math.round(bg[2] * (1 - a) + txtCol[2] * a + n * (1 - a));
+      const ex = Math.min(x, PT.w - 1 - x), ey = Math.min(y, PT.h - 1 - y);
+      block[bi + 3] = Math.round(255 * Math.min(1, Math.min(ex, ey) / 2));
+    }
+  }
+  const postPng = await sharp(block, { raw: { width: PT.w, height: PT.h, channels: 4 } }).png().toBuffer();
+  const withPost = join(PHOTOS, 'r14-gen/_withpost.png');
+  await sharp(canvasFile).composite([{ input: postPng, left: PT.x, top: PT.y }]).png().toFile(withPost);
+  console.log(`стойка: блок ${PT.w}×${PT.h} в (${PT.x},${PT.y}), цвет букв ${txtCol.join(',')}`);
+
+  /* ----- 4. мастер 2560×1440 + резкость ----- */
+  const masterDeskFile = join(PHOTOS, 'r14-gen/master-desk-2560.jpg');
+  await sharp(withPost).resize(NW, NH, { fit: 'fill', kernel: 'lanczos3' })
+    .sharpen({ sigma: 0.8, m1: 0.4, m2: 1.6 }).jpeg({ quality: 95 }).toFile(masterDeskFile);
+
+  /* ----- 5. замеры зон на мастере ----- */
+  const M = await sharp(masterDeskFile).raw().toBuffer({ resolveWithObject: true });
+  let cx0 = 1e9, cx1 = -1, cy0 = 1e9, cy1 = -1;
+  for (let y = Math.round(NH * 0.30); y < Math.round(NH * 0.62); y += 2)
+    for (let x = 0; x < NW; x += 2) {
+      const i = (y * NW + x) * 3; const L = lum(M.data, i);
+      const mx = Math.max(M.data[i], M.data[i + 1], M.data[i + 2]), mn = Math.min(M.data[i], M.data[i + 1], M.data[i + 2]);
       const sat = mx === 0 ? 0 : (mx - mn) / mx;
-      if (lum > 100 && sat < 0.4) c++;
+      if (L > 95 && sat < 0.30) { if (x < cx0) cx0 = x; if (x > cx1) cx1 = x; if (y < cy0) cy0 = y; if (y > cy1) cy1 = y; }
     }
-    if (c > 300) signBot = y;
+  const carsBBox = [cx0, cy0, cx1, cy1];
+  console.log(`машины: x ${cx0}…${cx1} (${(cx0 / NW * 100).toFixed(1)}–${(cx1 / NW * 100).toFixed(1)} %), y ${cy0}…${cy1} (${(cy0 / NH * 100).toFixed(1)}–${(cy1 / NH * 100).toFixed(1)} %) — норма: старт не раньше 50 %`);
+  if (cx0 / NW < 0.50) { console.error('FAIL: машины начинаются раньше 50 %'); fail = 1; }
+  /* чистота зоны текста: ярких пикселей (вывеска/фары) и тёплых насыщенных (кузова) нет */
+  const Z = { x0: Math.round(NW * TEXT_ZONE[0]), y0: Math.round(NH * TEXT_ZONE[1]), x1: Math.round(NW * TEXT_ZONE[2]), y1: Math.round(NH * TEXT_ZONE[3]) };
+  let bright = 0, warm = 0, zn = 0, zmax = 0;
+  for (let y = Z.y0; y < Z.y1; y += 2) for (let x = Z.x0; x < Z.x1; x += 2) {
+    const i = (y * NW + x) * 3; const L = lum(M.data, i);
+    const r = M.data[i], g = M.data[i + 1], b = M.data[i + 2];
+    if (L > zmax) zmax = L;
+    if (L > 120) bright++;
+    if (r > g + 18 && r > b + 18 && L > 60) warm++;
+    zn++;
   }
-  const NW = 2844, NH = 1600;
-  const K = (0.38 * NH) / signBot;                       // масштаб фасада
-  const facW = Math.round(DW * K), facH = Math.round(DH * K);
-  const x0s = Math.round((NW - facW) / 2);              // боковые поля
-  const sideW = x0s;
-  const facadeS = await sharp(facadePatched).resize(facW, facH).png().toBuffer();
-  /* боковые простенки: два разных кропа стены (не зеркало), перо по шву 60 px */
-  const WALL = join(HERE, '../../docs/photos-source/r12-gen/side-wall.jpg');
-  const wallCrop = async (l, t, w, h) => {
-    const SH = Math.min(h, 600); // только кирпичная зона источника, без тёмного низа
-    const tile = await sharp(WALL).extract({ left: l, top: t, width: w, height: SH }).resize(sideW, SH).raw().toBuffer();
-    const b = Buffer.alloc(sideW * facH * 3);
-    for (let y = 0; y < facH; y++) {
-      const per = SH * 2; let yy = y % per; if (yy >= SH) yy = per - 1 - yy;
-      for (let x = 0; x < sideW; x++) { const si = (yy * sideW + x) * 3, di = (y * sideW + x) * 3; b[di] = tile[si]; b[di + 1] = tile[si + 1]; b[di + 2] = tile[si + 2]; }
-    }
-    const a = Buffer.alloc(sideW * facH, 255);
-    for (let y = 0; y < facH; y++) for (let x = 0; x < sideW; x++) {
-      const d = Math.min(y, facH - 1 - y);
-      a[y * sideW + x] = Math.round(255 * Math.min(1, d / 24));
-    }
-    return sharp(b, { raw: { width: sideW, height: facH, channels: 3 } })
-      .joinChannel(await sharp(a, { raw: { width: sideW, height: facH, channels: 1 } }).png().toBuffer()).png().toBuffer();
-  };
-  /* согласование яркости простенка с краем фасада по строкам: шов ≤3 уровней */
-  const facSRaw = await sharp(facadeS).raw().toBuffer();
-  const rowMatch = async (wallBuf, side) => {
-    const wr = await sharp(wallBuf).raw().toBuffer({ resolveWithObject: true });
-    const w = wr.info.width, h = wr.info.height, d = Buffer.from(wr.data);
-    for (let y = 0; y < h; y++) {
-      const fy = Math.min(facH - 1, Math.round(y * facH / h));
-      let fa = 0, wa = 0;
-      for (let t = 0; t < 40; t++) {
-        const fx = side === 'right' ? t : facW - 1 - t;
-        const i = (fy * facW + fx) * 3;
-        fa += 0.2126 * facSRaw[i] + 0.7152 * facSRaw[i + 1] + 0.0722 * facSRaw[i + 2];
-        const wx = side === 'right' ? w - 1 - t : t;
-        const j = (y * w + wx) * 4;
-        wa += 0.2126 * d[j] + 0.7152 * d[j + 1] + 0.0722 * d[j + 2];
-      }
-      fa /= 40; wa /= 40;
-      const g = Math.max(0.45, Math.min(2.2, (fa + 6) / (wa + 6)));
-      for (let x = 0; x < w; x++) {
-        const t = x / (w - 1);
-        const wgt = side === 'right' ? Math.pow(t, 1.5) : Math.pow(1 - t, 1.5);
-        const gg = 1 + (g - 1) * wgt;
-        const j = (y * w + x) * 4;
-        d[j] = Math.min(255, d[j] * gg); d[j + 1] = Math.min(255, d[j + 1] * gg); d[j + 2] = Math.min(255, d[j + 2] * gg);
-      }
-    }
-    return sharp(d, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
-  };
-  const wallL = await wallCrop(0, 120, 400, 792);
-  const wallR = await wallCrop(470, 60, 378, 752);
-  /* кромки фасада 18 px сглажены: скан шва видит гладкий переход с обеих сторон */
-  const edgeBlur = async (lx) => {
-    const w = 18;
-    const strip = await sharp(facadeS).extract({ left: lx, top: 0, width: w, height: facH }).blur(2.5).raw().toBuffer();
-    const a = Buffer.alloc(w * facH);
-    for (let y = 0; y < facH; y++) for (let x = 0; x < w; x++) {
-      const dEdge = lx === 0 ? x : w - 1 - x;
-      a[y * w + x] = Math.round(255 * Math.max(0, 1 - dEdge / 12));
-    }
-    return { input: await sharp(strip, { raw: { width: w, height: facH, channels: 3 } }).joinChannel(await sharp(a, { raw: { width: w, height: facH, channels: 1 } }).png().toBuffer()).png().toBuffer(), left: lx, top: 0 };
-  };
-  /* последние 6 колонок фасада = копия соседней: белая кромка баннера не даёт ступени */
-  const facRaw2 = await sharp(facadeS).raw().toBuffer();
-  for (let y = 0; y < facH; y++) {
-    for (let k = 0; k < 20; k++) {
-      const sr = (y * facW + 24) * 3, dl = (y * facW + k) * 3, dr = (y * facW + facW - 1 - k) * 3, srr = (y * facW + facW - 25) * 3;
-      for (let c = 0; c < 3; c++) { facRaw2[dl + c] = facRaw2[sr + c]; facRaw2[dr + c] = facRaw2[srr + c]; }
-    }
+  console.log(`зона текста x ${Z.x0}…${Z.x1}, y ${Z.y0}…${Z.y1}: ярких ${(bright / zn * 100).toFixed(3)} % (норма <0.1 %), тёплых ${(warm / zn * 100).toFixed(3)} % (норма <0.1 %), макс. яркость ${zmax}`);
+  if (bright / zn >= 0.001 || warm / zn >= 0.001) { console.error('FAIL: зона текста не пустая'); fail = 1; }
+  /* вывеска: bbox ярких бирюзовых пикселей верхней трети */
+  let sx0 = 1e9, sx1 = -1, sy0 = 1e9, sy1 = -1;
+  for (let y = 0; y < Math.round(NH * 0.40); y += 2) for (let x = Math.round(NW * 0.45); x < NW; x += 2) {
+    const i = (y * NW + x) * 3; const L = lum(M.data, i);
+    const r = M.data[i], g = M.data[i + 1], b = M.data[i + 2];
+    if (L > 140 && g > r - 10 && b > r) { if (x < sx0) sx0 = x; if (x > sx1) sx1 = x; if (y < sy0) sy0 = y; if (y > sy1) sy1 = y; }
   }
-  const facadeFe = await sharp(facRaw2, { raw: { width: facW, height: facH, channels: 3 } }).png().toBuffer();
-  /* передний план: тротуар исходника y1600…2160 во всю ширину кадра */
-  /* полоса асфальта: однородный кусок мокрого асфальта, растянутый на кадр +
-     теневая полоса у порога боксов, чтобы калибр теней сходился */
-  const bandH0 = NH - facH + 1;
-  /*_synthetic wet asphalt: value-noise, без тайлов и швов*/
-  let band = Buffer.alloc(NW * bandH0 * 3);
-  {
-    let seed = 7 >>> 0;
-    const rnd = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    const GN = 128; const g1 = [], g2 = [], g3 = [];
-    for (let i = 0; i < GN * GN; i++) { g1.push(rnd()); g2.push(rnd()); g3.push(rnd()); }
-    const sm = (t) => t * t * (3 - 2 * t);
-    const vn = (g, fx, fy) => { // периодический value-noise: u,v могут быть >1
-      const x = fx * GN, y = fy * GN;
-      const x0 = Math.floor(x), y0 = Math.floor(y), dx = sm(x - x0), dy = sm(y - y0);
-      const X0 = ((x0 % GN) + GN) % GN, Y0 = ((y0 % GN) + GN) % GN, X1 = (X0 + 1) % GN, Y1 = (Y0 + 1) % GN;
-      const a = g[Y0 * GN + X0], b = g[Y0 * GN + X1], c = g[Y1 * GN + X0], d = g[Y1 * GN + X1];
-      return a + (b - a) * dx + (c - a) * dy + (a - b - c + d) * dx * dy;
-    };
-    for (let y = 0; y < bandH0; y++) {
-      const L0 = 38 * (0.72 + 0.35 * (y / bandH0));
-      for (let x = 0; x < NW; x++) {
-        const m = 1 + 0.16 * (vn(g1, x / NW * 5, y / bandH0 * 3) - 0.5) * 2 + 0.09 * (vn(g2, x / NW * 18, y / bandH0 * 4) - 0.5) * 2 + 0.05 * (vn(g3, x / NW * 60, y / bandH0 * 6) - 0.5) * 2 + 0.05 * (rnd() - 0.5) * 2;
-        const L = L0 * m;
-        const i = (y * NW + x) * 3;
-        band[i] = Math.min(255, L * 0.90); band[i + 1] = Math.min(255, L * 0.96); band[i + 2] = Math.min(255, L * 1.12);
-      }
-    }
-  }
-  {
-    let mean = 0;
-    for (let i = 0; i < band.length; i += 3) mean += 0.2126 * band[i] + 0.7152 * band[i + 1] + 0.0722 * band[i + 2];
-    mean /= band.length / 3;
-    const g0 = 55 / Math.max(1, mean);
-    for (let y = 0; y < bandH0; y++) {
-      const rowG = g0 * (0.8 + 0.35 * (y / bandH0)) * (y < 50 ? 1.04 - 0.04 * (y / 50) : 1);
-      for (let x = 0; x < NW; x++) { const i = (y * NW + x) * 3; band[i] = Math.min(255, band[i] * rowG); band[i + 1] = Math.min(255, band[i + 1] * rowG); band[i + 2] = Math.min(255, band[i + 2] * rowG); }
-    }
-  }
-  const bandH = NH - facH + 1;
-  const bandA = Buffer.alloc(NW * bandH);
-  for (let y = 0; y < bandH; y++) for (let x = 0; x < NW; x++) bandA[y * NW + x] = Math.min(255, Math.round(255 * Math.min(1, y / 14)));
-  {
-    const colMean = new Float64Array(NW);
-    for (let x = 0; x < NW; x++) { let s2 = 0; for (let y = 20; y < bandH0; y += 4) { const i = (y * NW + x) * 3; s2 += 0.2126 * band[i] + 0.7152 * band[i + 1] + 0.0722 * band[i + 2]; } colMean[x] = s2 / Math.ceil((bandH0 - 20) / 4); }
-    const sorted = Array.from(colMean).sort((a, b) => a - b);
-    const target = sorted[Math.floor(NW / 2)];
-    const gain = new Float64Array(NW);
-    for (let x = 0; x < NW; x++) gain[x] = Math.max(0.8, Math.min(1.4, target / Math.max(1, colMean[x])));
-    for (let x = 1; x < NW - 1; x++) gain[x] = (gain[x - 1] + gain[x] * 2 + gain[x + 1]) / 4;
-    for (let x = 0; x < NW; x++) for (let y = 0; y < bandH0; y++) { const i = (y * NW + x) * 3; band[i] = Math.min(255, band[i] * gain[x]); band[i + 1] = Math.min(255, band[i + 1] * gain[x]); band[i + 2] = Math.min(255, band[i + 2] * gain[x]); }
-  }
-  const bandPng = await sharp(band, { raw: { width: NW, height: bandH0, channels: 3 } })
-    .joinChannel(await sharp(bandA, { raw: { width: NW, height: bandH, channels: 1 } }).png().toBuffer()).png().toBuffer();
-  const baseR12 = await sharp({ create: { width: NW, height: NH, channels: 3, background: { r: 8, g: 12, b: 10 } } })
-    .composite([
-      { input: wallL, left: 0, top: 0 },
-      { input: wallR, left: x0s + facW, top: 0 },
-      { input: facadeFe, left: x0s, top: 0 },
-    ]).jpeg({ quality: 95 }).toBuffer();
-  /* сглаживание текстуры в 90 px вокруг вертикальных швов: перепад ≤3 на 8 px */
-  const seamSmooth = async (bx) => {
-    const w = 90;
-    const strip = await sharp(baseR12).extract({ left: bx - 45, top: 0, width: w, height: NH }).blur(2.6).png().toBuffer();
-    const a = Buffer.alloc(w * NH);
-    for (let y = 0; y < NH; y++) for (let x = 0; x < w; x++) {
-      const d = Math.min(x, w - 1 - x);
-      a[y * w + x] = Math.round(255 * Math.min(1, d / 28));
-    }
-    return { input: await sharp(strip).joinChannel(await sharp(a, { raw: { width: w, height: NH, channels: 1 } }).png().toBuffer()).png().toBuffer(), left: bx - 45, top: 0 };
-  };
-  /* рампы 300 px: цвет простенка плавно приходит к цвету кромки фасада (≤3/8px) */
-  const baseRaw0 = await sharp(baseR12).raw().toBuffer();
-  const rowMean = (x0, x1, y) => {
-    let r = 0, g = 0, b = 0;
-    for (let x = x0; x < x1; x++) { const i = (y * NW + x) * 3; r += baseRaw0[i]; g += baseRaw0[i + 1]; b += baseRaw0[i + 2]; }
-    return [r / (x1 - x0), g / (x1 - x0), b / (x1 - x0)];
-  };
-  const ramp = async (seam, dir) => {
-    const RW = 300;
-    const buf = Buffer.alloc(RW * NH * 4);
-    for (let y = 0; y < NH; y++) {
-      if (y < Math.round(signBot * K) + 30) { for (let x = 0; x < RW; x++) buf[(y * RW + x) * 4 + 3] = 0; continue; }
-      const T = dir < 0 ? rowMean(seam + 2, seam + 10, y) : rowMean(seam - 10, seam - 2, y);
-      const Sb = dir < 0 ? rowMean(seam - RW - 10, seam - RW, y) : rowMean(seam + RW, seam + RW + 10, y);
-      const uRow = dir < 0 ? rowMean(seam - RW, seam, y) : rowMean(seam, seam + RW, y);
-      for (let x = 0; x < RW; x++) {
-        const t = dir < 0 ? (x + 1) / RW : (RW - x) / RW;
-        const e = t * t * (3 - 2 * t);
-        const i = (y * RW + x) * 4;
-        const gx = (dir < 0 ? seam - RW : seam) + x;
-        const ui = (y * NW + gx) * 3;
-        const uL = 0.2126 * baseRaw0[ui] + 0.7152 * baseRaw0[ui + 1] + 0.0722 * baseRaw0[ui + 2];
-        const uM = 0.2126 * uRow[0] + 0.7152 * uRow[1] + 0.0722 * uRow[2];
-        const ds = dir < 0 ? RW - 1 - x : x;
-        const tn = 1 + (Math.max(0.6, Math.min(1.4, uL / Math.max(1, uM))) - 1) * Math.min(1, ds / 200);
-        const ee = ds < 24 ? 1 : e, tnn = ds < 24 ? 1 : tn;
-        buf[i] = (Sb[0] + (T[0] - Sb[0]) * ee) * tnn; buf[i + 1] = (Sb[1] + (T[1] - Sb[1]) * ee) * tnn; buf[i + 2] = (Sb[2] + (T[2] - Sb[2]) * ee) * tnn;
-        const fe = Math.min(1, Math.min(x, RW - 1 - x) / 40);
-        buf[i + 3] = Math.round(255 * (dir < 0 ? Math.min(1, fe + t) : Math.min(1, fe + (1 - t) * 0 + t)));
-      }
-    }
-    // внешняя кромка рампа полупрозрачна (перо 40), внутренняя (у шва) непрозрачна
-    for (let y = 0; y < NH; y++) for (let x = 0; x < RW; x++) {
-      const i = (y * RW + x) * 4;
-      const outer = dir < 0 ? x : RW - 1 - x;
-      const aBase = y < Math.round(signBot * K) + 30 ? 0 : Math.min(1, outer / 26);
-      buf[i + 3] = Math.round(255 * aBase);
-    }
-    return { input: await sharp(buf, { raw: { width: RW, height: NH, channels: 4 } }).png().toBuffer(), left: dir < 0 ? seam - RW : seam, top: 0 };
-  };
-  const rampL = await ramp(x0s, -1), rampR = await ramp(x0s + facW, 1);
-  if (process.env.IMG_DEBUG) { await sharp(rampL.input).toFile(join(GEN, 'dbg-rampL.png')); writeFileSync(join(GEN, 'dbg-baseR12r.jpg'), await sharp(baseR12).composite([rampL, rampR]).jpeg({ quality: 95 }).toBuffer()); }
-  /* микро-полировка 32 px вокруг шва: снимает jpeg-шум ступеньки, градиент рампы сохраняет */
-  const baseRamped = await sharp(baseR12).composite([rampL, rampR]).png().toBuffer();
-  const seamPolish = async (bx) => {
-    const w = 32;
-    const strip = await sharp(baseRamped).extract({ left: bx - 16, top: 0, width: w, height: NH }).blur(1.2).png().toBuffer();
-    const a = Buffer.alloc(w * NH);
-    for (let y = 0; y < NH; y++) for (let x = 0; x < w; x++) a[y * w + x] = Math.round(255 * Math.min(1, Math.min(x, w - 1 - x) / 10));
-    return { input: await sharp(strip).joinChannel(await sharp(a, { raw: { width: w, height: NH, channels: 1 } }).png().toBuffer()).png().toBuffer(), left: bx - 16, top: 0 };
-  };
-  const baseR12r = await sharp(baseRamped).composite([await seamPolish(x0s), await seamPolish(x0s + facW)]).jpeg({ quality: 95 }).toBuffer();
-  const baseR12s = baseR12r;
-  /* грейд раунда 9 — единый свет на весь кадр (машины градятся тем же ниже) */
-  const sW = Math.round(NW * S), sH = Math.round(NH * S);
-  const sky = await maskPng(vgrad(sW, sH, 0.62, 0.0, 0, sH * 0.26, [70, 80, 100]), sW, sH, NW, NH);
-  const bayL = await maskPng(radial(sW, sH, sW * 0.30, sH * 0.60, sW * 0.17, sH * 0.26, 0.40, [255, 176, 105]), sW, sH, NW, NH);
-  const bayR = await maskPng(radial(sW, sH, sW * 0.70, sH * 0.58, sW * 0.16, sH * 0.26, 0.38, [255, 176, 105]), sW, sH, NW, NH);
-  const vig = await maskPng(vignette(sW, sH, 0.34), sW, sH, NW, NH);
-  /* dodatkowe затемнение боковых полей: стык стены читается как тень */
-  const sideDim = rgba(NW, NH, (b, x, y, i) => {
-    const dl = x / (sideW * 0.9), dr = (NW - 1 - x) / (sideW * 0.9);
-    const d = Math.min(dl, dr);
-    const a = d >= 1 ? 0 : 0.8 * Math.pow(1 - d, 1.35);
-    b[i] = 6; b[i + 1] = 10; b[i + 2] = 9; b[i + 3] = Math.round(a * 255);
-  });
-  const sideDimPng = await maskPng(sideDim, NW, NH, NW, NH);
-  const lamps = await sharp(baseR12s).extract({ left: 0, top: Math.round(NH * 0.38), width: NW, height: Math.round(NH * 0.52) })
-    .grayscale().threshold(240).blur(20).linear(0.8, 0).tint({ r: 255, g: 186, b: 112 }).png().toBuffer();
-  const graded = await sharp(baseR12s)
-    .linear([0.62, 0.6324, 0.5952], [2, 3, 2]).modulate({ saturation: 0.93 })
-    .composite([
-      { input: sky, blend: 'multiply' }, { input: bayL, blend: 'overlay' }, { input: bayR, blend: 'overlay' },
-      { input: lamps, blend: 'screen', left: 0, top: Math.round(NH * 0.38) },
-      { input: sideDimPng, blend: 'multiply' }, { input: vig, blend: 'multiply' },
-    ]).jpeg({ quality: 95 }).toBuffer();
-  if (process.env.IMG_DEBUG) writeFileSync(join(GEN, 'dbg-base.jpg'), baseR12);
-  if (process.env.IMG_DEBUG) writeFileSync(join(GEN, 'dbg-graded.jpg'), graded);
-  /* ===== машины: нос к носу, колёса на 96 %, ДХО ≥235 ===== */
-  /* krug12-ref 2.33:1: в 16:9 целиком помещается машина высотой ~40 % кадра;
-       крыша 56.5 %, колёса 96 % — максимум без обрезки кузовов */
-  const CAR_TOP = Math.round(NH * 0.96) - 615, CAR_BOT = Math.round(NH * 0.96);
-  const carTarget = CAR_BOT - CAR_TOP;
-  const gradeCar = (pipe) => pipe.linear([0.66, 0.672, 0.640], [6, 7, 6]).modulate({ saturation: 0.95 });
-  /* клип запекшейся полупрозрачной земли под колёсами: низ слоя = низ колеса */
-  /* чистка слоя: убираем кирпичную стенку слева и плиту земли ниже колёс
-     (оставляем 30 px бахромы как контактную тень); низ колеса = контактная линия */
-  const cleanupCar = async (buf) => {
-    const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-    const w = r.info.width, h = r.info.height, d = Buffer.from(r.data);
-    const lumAt = (x, y) => { const i = (y * w + x) * 4; return 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; };
-    const rgbAt = (x, y) => { const i = (y * w + x) * 4; return [d[i], d[i + 1], d[i + 2]]; };
-    const isCarDark = (x, y) => { const i = (y * w + x) * 4; const [r, g, b] = rgbAt(x, y); return d[i + 3] > 64 && lumAt(x, y) < 100 && (r - b) < 22; };
-    let rearX = w;
-    for (let y = Math.round(h * 0.3); y < Math.round(h * 0.8); y++) {
-      for (let x = 0; x < w; x++) if (isCarDark(x, y)) { if (x < rearX) rearX = x; break; }
-    }
-    /* плита земли: строки, где большинство непрозрачных пикселей светлые */
-    let slabTop = -1;
-    for (let y = Math.round(h * 0.6); y < h; y++) {
-      let op = 0, br = 0;
-      for (let x = 0; x < w; x += 2) { const i = (y * w + x) * 4; if (d[i + 3] > 64) { op++; if (lumAt(x, y) > 110) br++; } }
-      if (op > w * 0.25 && br / op > 0.6) { slabTop = y; break; }
-    }
-    const wb = slabTop > 0 ? slabTop - 1 : h - 31;
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      if (x < rearX + 2 || y > wb + 2) d[i + 3] = 0;
-    }
-    return sharp(d, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
-  };
-  const clipGround = async (buf) => {
-    const bb = await alphaBBox(buf, 64);
-    const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-    const w = r.info.width, h = r.info.height, d = Buffer.from(r.data);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      if (y > bb[3] + 4) d[i + 3] = 0;
-      else if (y > bb[3] - 10) d[i + 3] = Math.round(d[i + 3] * Math.max(0, (bb[3] + 4 - y) / 14));
-    }
-    return sharp(d, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
-  };
-  /* ночной ключ яркости: фон ген-слоя (светлая стена у BMW, тёмная улица у Camry)
-     уходит в тень, кузов остаётся; тарелка/ДХО доводятся позже */
-  const nightKey = async (buf, mode) => {
-    const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-    const w = r.info.width, h = r.info.height, d = Buffer.from(r.data);
-    for (let i = 0; i < w * h; i++) {
-      const l = 0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2];
-      const t = mode === 'hi' ? (l - 85) / 20 : (100 - l) / 10;
-      if (t > 0) {
-        const k = mode === 'hi' ? 1 - 0.85 * Math.min(1, t) : 1 - 0.35 * Math.min(1, t);
-        d[i * 4] *= k; d[i * 4 + 1] *= k; d[i * 4 + 2] *= k;
-      }
-    }
-    return sharp(d, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
-  };
-  const bmwSrc = await cleanAlpha(await holeFill(readFileSync(join(GEN, 'car-bmw.png'))));
-  const bmwL = await nightKey(await cleanupCar(await sharp(bmwSrc).extract({ left: 140, top: 260, width: 960, height: 560 }).png().toBuffer()), 'hi');
-  const camSrc = await cleanAlpha(await holeFill(readFileSync(join(GEN, 'car-camry.png'))));
-  const camL = await sharp(await nightKey(await cleanupCar(await sharp(camSrc).png().toBuffer()), 'lo')).flop().png().toBuffer(); // Camry смотрит ВЛЕВО
-  const bB = await alphaBBox(bmwL, 64); const cB = await alphaBBox(camL, 64);
-  const bS = carTarget / (bB[3] - bB[1]), cS = carTarget / (cB[3] - cB[1]); // carTarget = высота кузова в мастере
-  /* изотропный масштаб: родные пропорции кузова (≈2.16) сохраняются */
-  const bmwM = await sharp(bmwL).metadata(), camM = await sharp(camL).metadata();
-  const bmwScaled = await gradeCar(sharp(bmwL).resize(Math.round(bmwM.width * bS), Math.round(bmwM.height * bS))).sharpen({ sigma: 0.6, m1: 0.5, m2: 0.9, x1: 0.6, y1: 0.9 }).png().toBuffer();
-  const camScaled = await gradeCar(sharp(camL).resize(Math.round(camM.width * cS), Math.round(camM.height * cS))).sharpen({ sigma: 0.6, m1: 0.5, m2: 0.9, x1: 0.6, y1: 0.9 }).png().toBuffer();
-  const bB2 = await alphaBBox(bmwScaled, 64); const cB2 = await alphaBBox(camScaled, 64);
-  /* низ колеса, а не низ bbox: сплиттер передка свисает ниже контактной линии */
-  const wheelBot = async (buf, f0, f1) => {
-    const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-    const w = r.info.width, h = r.info.height;
-    let mx = -1;
-    for (let x = Math.round(w * f0); x < Math.round(w * f1); x++) {
-      for (let y = h - 1; y >= 0; y--) {
-        if (r.data[(y * w + x) * 4 + 3] > 64) { if (y > mx) mx = y; break; }
-      }
-    }
-    return mx;
-  };
-  const bNose = 1330, cNose = 1450;                                  // носы к центру, зазор 120
-  const bLeft = bNose - bB2[2], bTop = CAR_TOP - bB2[1];
-  const cLeft = cNose - cB2[0], cTop = CAR_TOP - cB2[1]; // после flop нос = левая кромка bbox
-  /* контактные тени: асфальт под кузовом ≤0.6 яркости в 300 px сбоку */
-  const shadow = (cx, rx) => rgba(NW, NH, (b, x, y, i) => {
-    const dx = (x - cx) / rx, dy = (y - (CAR_BOT + 4)) / 26;
-    const d = Math.sqrt(dx * dx + dy * dy);
-    const a = d >= 1 ? 0 : 0.65 * Math.pow(Math.cos(d * Math.PI / 2), 1.5);
-    b[i] = 10; b[i + 1] = 14; b[i + 2] = 24; b[i + 3] = Math.round(a * 255);
-  });
-  const bCx = (bB2[0] + bB2[2]) / 2 + bLeft, cCx = (cB2[0] + cB2[2]) / 2 + cLeft;
-  const shB = await maskPng(shadow(bCx, (bB2[2] - bB2[0]) * 0.46), NW, NH, NW, NH);
-  const shC = await maskPng(shadow(cCx, (cB2[2] - cB2[0]) * 0.46), NW, NH, NW, NH);
-  if (process.env.IMG_DEBUG) { await sharp(bmwScaled).flatten({ background: '#ff00ff' }).jpeg({ quality: 80 }).toFile(join(GEN, 'dbg-bmw.jpg')); await sharp(shB).flatten({ background: '#000000' }).jpeg({ quality: 80 }).toFile(join(GEN, 'dbg-shB.jpg')); }
-  /* слой не должен выходить за кадр: кроп по границам кадра */
-  const fitFrame = async (buf, left, top) => {
-    const m = await sharp(buf).metadata();
-    const cx0 = Math.max(0, -left), cy0 = Math.max(0, -top);
-    const cw = Math.min(m.width - cx0, NW - left - cx0), ch = Math.min(m.height - cy0, NH - top - cy0);
-    return { input: await sharp(buf).extract({ left: cx0, top: cy0, width: cw, height: ch }).png().toBuffer(), left: left + cx0, top: top + cy0 };
-  };
-  const carB = await fitFrame(bmwScaled, Math.round(bLeft), Math.round(bTop));
-  const carC = await fitFrame(camScaled, Math.round(cLeft), Math.round(cTop));
-  const withCars = await sharp(graded).composite([
-    { input: bandPng, left: 0, top: facH - 1 },
-    { input: shB, blend: 'multiply' }, { input: shC, blend: 'multiply' },
-    carB, carC,
-  ]).jpeg({ quality: 95 }).toBuffer();
-  /* ДХО: пик ≥235, ореол 8–16 px, дорожка света на мокром асфальте */
-  const drl = async (buf, left, top, nose, dir) => {
-    const r = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-    const w = r.info.width, h = r.info.height;
-    const mk = Buffer.alloc(NW * NH);
-    for (let y = Math.floor(h * 0.42); y < Math.floor(h * 0.78); y++) for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      if (r.data[i + 3] < 128) continue;
-      const lum = 0.2126 * r.data[i] + 0.7152 * r.data[i + 1] + 0.0722 * r.data[i + 2];
-      if (lum > 120) { const gx = left + x, gy = top + y; if (gx >= 0 && gy >= 0 && gx < NW && gy < NH) mk[gy * NW + gx] = 255; }
-    }
-    const halo = await sharp(mk, { raw: { width: NW, height: NH, channels: 1 } }).blur(11).linear(0.85, 0).raw().toBuffer();
-    const out = Buffer.alloc(NW * NH * 4);
-    for (let i = 0; i < NW * NH; i++) {
-      const core = mk[i] / 255, hl = halo[i] / 255;
-      const a = Math.min(1, core + hl * 0.8);
-      out[i * 4] = 255; out[i * 4 + 1] = 244; out[i * 4 + 2] = 214; out[i * 4 + 3] = Math.round(255 * a);
-    }
-    return sharp(out, { raw: { width: NW, height: NH, channels: 4 } }).png().toBuffer();
-  };
-  const path = (cx, dir) => rgba(NW, NH, (b, x, y, i) => {
-    const dx = (x - cx) / 190, dy = (y - (CAR_BOT + 34)) / 30;
-    const d = Math.sqrt(dx * dx + dy * dy);
-    const a = d >= 1 ? 0 : 0.30 * Math.pow(Math.cos(d * Math.PI / 2), 1.4);
-    b[i] = 255; b[i + 1] = 240; b[i + 2] = 200; b[i + 3] = Math.round(a * 255);
-  });
-  const drlB = await drl(bmwScaled, Math.round(bLeft), Math.round(bTop), bNose, 1);
-  const drlC = await drl(camScaled, Math.round(cLeft), Math.round(cTop), cNose, -1);
-  const pathB = await maskPng(path(cNose + 260, 1), NW, NH, NW, NH);
-  const pathC = await maskPng(path(cNose + 120, -1), NW, NH, NW, NH);
-  /* единое зерно поверх всего кадра: σ шума машин и фасада совпадает */
-  const masterDeskFile = join(GEN, 'master-desktop.jpg');
-  const grained = await sharp(withCars).composite([
-    { input: drlB, blend: 'screen' }, { input: drlC, blend: 'screen' },
-    { input: pathB, blend: 'screen' }, { input: pathC, blend: 'screen' },
-  ]).raw().toBuffer({ resolveWithObject: true });
-  {
-    let seed = 42 >>> 0;
-    const rnd = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 - 0.5; };
-    const chg = grained.info.channels;
-    for (let i = 0; i < NW * NH; i++) {
-      const ii = i * chg;
-      const l0 = 0.2126 * grained.data[ii] + 0.7152 * grained.data[ii + 1] + 0.0722 * grained.data[ii + 2];
-      const n = Math.max(-14, Math.min(14, rnd() * 0.16 * (l0 + 10) * (l0 < 50 ? 1 + 0.8 * (50 - l0) / 50 : 1))); // относительное зерно: σ/mean постоянно по кадру
-      grained.data[ii] = Math.max(0, Math.min(255, grained.data[ii] + n));
-      grained.data[ii + 1] = Math.max(0, Math.min(255, grained.data[ii + 1] + n));
-      grained.data[ii + 2] = Math.max(0, Math.min(255, grained.data[ii + 2] + n));
-    }
-  }
-  if (process.env.IMG_DEBUG) writeFileSync(join(GEN, 'dbg-withcars.jpg'), withCars);
-  if (process.env.IMG_DEBUG) writeFileSync(join(GEN, 'dbg-grainedraw.bin'), grained.data);
-  await sharp(grained.data, { raw: { width: NW, height: NH, channels: grained.info.channels } }).jpeg({ quality: 95 }).toFile(masterDeskFile);
-  const carsBBox = [Math.max(0, Math.round(bLeft + bB2[0])), CAR_TOP, Math.min(NW, Math.round(cLeft + cB2[2])), CAR_BOT];
-  /* bbox названия на новом мастере */
-  const TS = { x: 60, y: 330, w: NW - 120, h: 300 };
-  const tStrip = await sharp(masterDeskFile).extract({ left: TS.x, top: TS.y, width: TS.w, height: TS.h }).raw().toBuffer();
-  let tx0 = 1e9, ty0 = 1e9, tx1 = -1, ty1 = -1;
-  for (let y = 0; y < TS.h; y++) for (let x = 0; x < TS.w; x++) {
-    const i = (y * TS.w + x) * 3;
-    const lum = 0.2126 * tStrip[i] + 0.7152 * tStrip[i + 1] + 0.0722 * tStrip[i + 2];
-    const mx = Math.max(tStrip[i], tStrip[i + 1], tStrip[i + 2]), mn = Math.min(tStrip[i], tStrip[i + 1], tStrip[i + 2]);
-    const sat = mx === 0 ? 0 : (mx - mn) / mx;
-    if (lum > 125 && sat < 0.35) { if (x < tx0) tx0 = x; if (x > tx1) tx1 = x; if (y < ty0) ty0 = y; if (y > ty1) ty1 = y; }
-  }
-  const titleBBox = [TS.x + tx0, TS.y + ty0, TS.x + tx1, TS.y + ty1];
-  /* неон — ТОЛЬКО глифы названия: гейт гасит ореол ниже nameBot+2 (телефоны = 0) */
-  const NS = { x: 60, y: 330, w: NW - 120, h: 210 };
-  const nStrip = await sharp(masterDeskFile).extract({ left: NS.x, top: NS.y, width: NS.w, height: NS.h }).raw().toBuffer();
-  let nx0 = 1e9, ny0 = 1e9, nx1 = -1, ny1 = -1;
-  for (let y = 0; y < NS.h; y++) for (let x = 0; x < NS.w; x++) {
-    const i = (y * NS.w + x) * 3;
-    const lum = 0.2126 * nStrip[i] + 0.7152 * nStrip[i + 1] + 0.0722 * nStrip[i + 2];
-    const mx = Math.max(nStrip[i], nStrip[i + 1], nStrip[i + 2]), mn = Math.min(nStrip[i], nStrip[i + 1], nStrip[i + 2]);
-    const sat = mx === 0 ? 0 : (mx - mn) / mx;
-    if (lum > 125 && sat < 0.35) { if (x < nx0) nx0 = x; if (x > nx1) nx1 = x; if (y < ny0) ny0 = y; if (y > ny1) ny1 = y; }
-  }
-  const neonBBox = [NS.x + nx0, NS.y + ny0, NS.x + nx1, NS.y + ny1];
-  const neonDesk = await neon(masterDeskFile, NW, NH, neonBBox[0], neonBBox[1], neonBBox[2] - neonBBox[0], neonBBox[3] - neonBBox[1], 112);
+  console.log(`вывеска: x ${sx0}…${sx1} (${(sx0 / NW * 100).toFixed(1)}–${(sx1 / NW * 100).toFixed(1)} %), y ${sy0}…${sy1}`);
+  const titleBBox = [Z.x0, Z.y0, Z.x1, Z.y1];
 
-  /* ===== мобильный мастер 4:5 ===== */
-  const pc1 = await blurRect(SRCC, 1300, 1390, 175, 45, 12);
-  const pc2 = await blurRect(SRCC, 2080, 1025, 150, 50, 12);
-  const closeClean = await sharp(SRCC)
-    .composite([{ input: pc1, left: 1300, top: 1390 }, { input: pc2, left: 2080, top: 1025 }])
-    .jpeg({ quality: 95 }).toBuffer();
-  const mW = Math.round(MOBW * S), mH = Math.round(MOBH * S);
-  const mSky = await maskPng(vgrad(mW, mH, 0.62, 0.0, 0, mH * 0.34, [70, 80, 100]), mW, mH, MOBW, MOBH);
-  const mBay = await maskPng(radial(mW, mH, mW * 0.42, mH * 0.78, mW * 0.42, mH * 0.30, 0.40, [255, 176, 105]), mW, mH, MOBW, MOBH);
-  const mVig = await maskPng(vignette(mW, mH, 0.30), mW, mH, MOBW, MOBH);
-  const mLamps = await sharp(closeClean).extract({ left: 290, top: 210 + Math.round(MOBH * 0.42), width: MOBW, height: Math.round(MOBH * 0.58) })
-    .grayscale().threshold(240).blur(20).linear(0.8, 0).tint({ r: 255, g: 186, b: 112 }).png().toBuffer();
-  const masterMobFile = join(GEN, 'master-mobile.jpg');
-  await sharp(closeClean).extract({ left: 290, top: 210, width: MOBW, height: MOBH })
-    .linear([0.62, 0.6324, 0.5952], [2, 3, 2]).modulate({ saturation: 0.93 })
-    .composite([
-      { input: mSky, blend: 'multiply' }, { input: mBay, blend: 'overlay' },
-      { input: mLamps, blend: 'screen', left: 0, top: Math.round(MOBH * 0.42) }, { input: mVig, blend: 'multiply' },
-    ]).jpeg({ quality: 95 }).toFile(masterMobFile);
-  // запас буквы: крайний светлый пиксель названия от правого края
-  const mTitle = await sharp(masterMobFile).extract({ left: 0, top: 140, width: MOBW, height: 260 }).raw().toBuffer();
-  let mRight = -1, mLeft = 1e9;
-  for (let y = 0; y < 260; y++) for (let x = 0; x < MOBW; x++) {
-    const i = (y * MOBW + x) * 3;
-    const lum = 0.2126 * mTitle[i] + 0.7152 * mTitle[i + 1] + 0.0722 * mTitle[i + 2];
-    if (lum > 104) { if (x > mRight) mRight = x; if (x < mLeft) mLeft = x; }
-  }
-  const mobMargin = MOBW - 1 - mRight;
-  const neonMob = await neon(masterMobFile, MOBW, MOBH, 300, 163, 1250, 215, 96);
+  /* ----- 6. неон ----- */
+  const neonDesk = await neon(masterDeskFile, NW, NH, sx0, sy0, sx1 - sx0, sy1 - sy0, 112);
 
-  /* ===== hero-detail (реальный кроп close, грейд) ===== */
-  const dW = 1600, dH = 900;
-  const sDW = Math.round(dW * S), sDH = Math.round(dH * S);
-  const bayD = await maskPng(radial(sDW, sDH, sDW * 0.5, sDH * 0.7, sDW * 0.45, sDH * 0.4, 0.38, [255, 176, 105]), sDW, sDH, dW, dH);
-  const vigD = await maskPng(vignette(sDW, sDH, 0.26), sDW, sDH, dW, dH);
-  const detail = await sharp(closeClean).extract({ left: 500, top: 460, width: dW, height: dH })
-    .linear([0.62, 0.6324, 0.5952], [2, 3, 2]).modulate({ saturation: 0.93 })
-    .composite([{ input: bayD, blend: 'overlay' }, { input: vigD, blend: 'multiply' }])
-    .jpeg({ quality: 95 }).toBuffer();
+  /* ----- 7. мобильный кроп 4:5: обе машины + вывеска ----- */
+  const MX = 1290;
+  const masterMobFile = join(PHOTOS, 'r14-gen/master-mobile-4x5.jpg');
+  await sharp(masterDeskFile).extract({ left: MX, top: 0, width: MOBW, height: MOBH }).jpeg({ quality: 95 }).toFile(masterMobFile);
+  const neonMobBuf = await sharp(Buffer.from(neonDesk)).extract({ left: MX, top: 0, width: MOBW, height: MOBH }).png().toBuffer();
+  /* вывеска в мобильном кропе */
+  const mobTitle = [sx0 - MX, 0, sx1 - MX, MOBH];
+  console.log(`мобайл 4:5: окно x ${MX}…${MX + MOBW}; вывеска в кропе x ${mobTitle[0]}…${mobTitle[2]} из ${MOBW}; машины x ${cx0 - MX}…${cx1 - MX}`);
+  if (mobTitle[0] < 0 || mobTitle[2] > MOBW) { console.error('FAIL: вывеска не целиком в мобильном кропе'); fail = 1; }
+  if (cx0 - MX < 0) { console.error('FAIL: BMW не попадает в мобильный кроп'); fail = 1; }
 
-  /* ===== раунд 12: полоса, «О компании», фон панели диагностики ===== */
-  const R11 = join(HERE, '../../docs/photos-source/r11-gen');
-  const R12 = join(HERE, '../../docs/photos-source/r12-gen');
+  /* ----- 8. «О компании»: цельный кроп оригинала БЕЗ цветокоррекции ----- */
+  /* окно 3000×1875+380+80: низ = 1955 = низ проёмов; +520 из задания срезал бы
+     верх вывески (замер: верх баннера y≈115) — отклонение задокументировано. */
+  const aboutMaster = await sharp(SRC_CLEAN).extract({ left: 380, top: 80, width: 3000, height: 1875 })
+    .resize(1600, 1000, { fit: 'fill', kernel: 'lanczos3' }).jpeg({ quality: 95 }).toBuffer();
+
+  /* ----- 9. полоса / панель / слайды 2–3 — как в раундах 11–12 (§3.6: не трогать) ----- */
   const stripSrc = { 'strip-sign': 'strip-tyre.jpg', 'strip-bay': 'strip-lift.jpg', 'strip-gates': 'strip-diag.jpg' };
   const stripPipes = {};
   for (const [name, f] of Object.entries(stripSrc)) stripPipes[name] = sharp(join(R11, f)).resize(1200, 500, { fit: 'cover' });
-  /* «О компании»: кроп 16:10 с обоими проёмами + другие машины в проёмах */
-  const featherRect = async (buf, w, h, fe) => {
-    const a = Buffer.alloc(w * h);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const d = Math.min(x, y, w - 1 - x, h - 1 - y);
-      a[y * w + x] = Math.round(255 * Math.min(1, d / fe));
-    }
-    return sharp(buf, { raw: { width: w, height: h, channels: 3 } }).joinChannel(await sharp(a, { raw: { width: w, height: h, channels: 1 } }).png().toBuffer()).png().toBuffer();
-  };
-  const aboutBase = await sharp(SRCW).extract({ left: 600, top: 250, width: 2560, height: 1600 }).resize(1600, 1000).jpeg({ quality: 95 }).toBuffer();
-  const AL = { x: 280, y: 437, w: 482, h: 500 }, AR = { x: 1005, y: 437, w: 380, h: 500 };
-  const baseRaw = await sharp(aboutBase).raw().toBuffer();
-  const toneMatchRaw = (pr, pw, ph, rect) => {
-    let bi = 0, bn = 0, ii = 0, inn = 0;
-    for (let y = 0; y < ph; y += 2) for (let x = 0; x < pw; x += 2) {
-      const inEdge = x < 8 || y < 8 || x >= pw - 8 || y >= ph - 8;
-      const gx = rect.x + x, gy = rect.y + y;
-      if (inEdge) { const o = (y * pw + x) * 3; ii += 0.2126 * pr[o] + 0.7152 * pr[o + 1] + 0.0722 * pr[o + 2]; inn++; }
-      const ox = gx < 8 ? -8 : gx >= 1600 - 8 ? 8 : 0, oy = gy < 8 ? -8 : gy >= 1000 - 8 ? 8 : 0;
-      if (inEdge) { const o = ((gy + oy) * 1600 + gx + ox) * 3; bi += 0.2126 * baseRaw[o] + 0.7152 * baseRaw[o + 1] + 0.0722 * baseRaw[o + 2]; bn++; }
-    }
-    const g = Math.max(0.8, Math.min(1.25, (bi / Math.max(1, bn)) / Math.max(1, ii / Math.max(1, inn))));
-    const d = Buffer.from(pr);
-    for (let o = 0; o < pw * ph * 3; o++) d[o] = Math.min(255, d[o] * g);
-    return d;
-  };
-  const sedRaw = await sharp(join(R12, 'bay-sedan.jpg')).extract({ left: 115, top: 150, width: 785, height: 685 }).resize(AL.w, AL.h).raw().toBuffer();
-  /* перо 64 px: у седана светлый кузов у самой границы проёма, при пере 32 px
-     в 6-px полосе оставался ΔE76 6.76 к фасаду (check-about-panel.mjs) */
-  const sedP = await featherRect(toneMatchRaw(sedRaw, AL.w, AL.h, AL), AL.w, AL.h, 64);
-  /* эмблема кроссовера неразличима: решетка с размытым логотипом */
-  const croBuf = await sharp(join(R12, 'bay-crossover.jpg')).extract({ left: 200, top: 210, width: 520, height: 620 }).resize(AR.w, AR.h).png().toBuffer();
-  const emb = await sharp(croBuf).extract({ left: 120, top: 280, width: 80, height: 60 }).blur(7).png().toBuffer();
-  const croRaw = await sharp(await sharp(croBuf).composite([{ input: emb, left: 120, top: 280 }]).jpeg({ quality: 95 }).toBuffer()).raw().toBuffer();
-  const croP = await featherRect(toneMatchRaw(croRaw, AR.w, AR.h, AR), AR.w, AR.h, 48);
-  const aboutMaster = await sharp(aboutBase).composite([{ input: sedP, left: AL.x, top: AL.y }, { input: croP, left: AR.x, top: AR.y }]).jpeg({ quality: 95 }).toBuffer();
   const ctaSrc = join(R11, 'cta-diag.jpg');
-
-  /* ===== раунд 12, §2, патч #62: слайды 2–3 тоже ЦЕЛИКОМ =====
-     Рамка фото на ≥1024 ровно 16:9 (пропорция мастера), а исходники слайдов 2–3
-     gen-{tyre,tools}-2048.jpg — 2048×1143 (1.7918): object-fit:cover срезал
-     ~0,8 % ширины. Центральный кроп 16 px по ширине даёт 2032×1143 = 16:9 РОВНО
-     (2032/1143 = 1.77778) без единого пикселя растяжения; наборы ниже кратны
-     той же пропорции → кроп на десктопе 0 px на любой ширине. */
-  const PHOTOS = join(HERE, '../../docs/photos-source');
+  const PH = join(PHOTOS);
   const slide16 = {};
   for (const [name, f] of [['hero-tyre', 'gen-tyre-2048.jpg'], ['hero-tools', 'gen-tools-2048.jpg']]) {
-    slide16[name] = sharp(join(PHOTOS, f)).extract({ left: 8, top: 0, width: 2032, height: 1143 });
+    slide16[name] = sharp(join(PH, f)).extract({ left: 8, top: 0, width: 2032, height: 1143 });
   }
 
-  /* ===== наборы ===== */
+  /* ----- 10. наборы ----- */
   for (const r of [
     await encodeSet('hero-service-2560', sharp(masterDeskFile).resize(2560, 1440, { fit: 'cover' }), 2560, 1440, false),
     await encodeSet('hero-service-1600', sharp(masterDeskFile).resize(1600, 900, { fit: 'cover' }), 1600, 900, false),
     await encodeSet('hero-service-960', sharp(masterDeskFile).resize(960, 540, { fit: 'cover' }), 960, 540, false),
     await encodeSet('hero-service-640', sharp(masterDeskFile).resize(640, 360, { fit: 'cover' }), 640, 360, false),
-    await encodeSet('hero-neon-1600', sharp(neonDesk).resize(1600, 900), 1600, 900, true),
-    await encodeSet('hero-neon-960', sharp(neonDesk).resize(960, 540), 960, 540, true),
+    await encodeSet('hero-neon-1600', sharp(Buffer.from(neonDesk)).resize(1600, 900), 1600, 900, true),
+    await encodeSet('hero-neon-960', sharp(Buffer.from(neonDesk)).resize(960, 540), 960, 540, true),
+    await encodeSet('hero-service-m-960', sharp(masterMobFile).resize(960, 1200), 960, 1200, false),
+    await encodeSet('hero-service-m-640', sharp(masterMobFile).resize(640, 800), 640, 800, false),
+    await encodeSet('hero-neon-m-960', sharp(neonMobBuf).resize(960, 1200), 960, 1200, true),
+    await encodeSet('hero-neon-m-640', sharp(neonMobBuf).resize(640, 800), 640, 800, true),
     await encodeSet('strip-sign', stripPipes['strip-sign'], 1200, 500, false),
     await encodeSet('strip-bay', stripPipes['strip-bay'], 1200, 500, false),
     await encodeSet('strip-gates', stripPipes['strip-gates'], 1200, 500, false),
@@ -829,22 +356,14 @@ async function main() {
     await encodeSet('about-service-640', sharp(aboutMaster).resize(640, 400), 640, 400, false),
     await encodeSet('cta-diag-960', sharp(ctaSrc).resize(960, 540, { fit: 'cover' }).linear([0.45, 0.45, 0.45], [0, 0, 0]), 960, 540, false),
     await encodeSet('cta-diag-640', sharp(ctaSrc).resize(640, 360, { fit: 'cover' }).linear([0.45, 0.45, 0.45], [0, 0, 0]), 640, 360, false),
-    await encodeSet('hero-service-m-960', sharp(masterMobFile).resize(960, 1200), 960, 1200, false),
-    await encodeSet('hero-service-m-640', sharp(masterMobFile).resize(640, 800), 640, 800, false),
-    await encodeSet('hero-neon-m-960', sharp(neonMob).resize(960, 1200), 960, 1200, true),
-    await encodeSet('hero-neon-m-640', sharp(neonMob).resize(640, 800), 640, 800, true),
-    await encodeSet('hero-detail-1600', sharp(detail).resize(1600, 900), 1600, 900, false),
-    await encodeSet('hero-detail-960', sharp(detail).resize(960, 540), 960, 540, false),
   ]) report.push(...r);
-
-  /* патч #62: наборы слайдов 2–3 в 16:9 (старые -2560 удалены из public/img) */
   for (const name of ['hero-tyre', 'hero-tools']) {
     for (const [w, h] of [[640, 360], [960, 540], [1600, 900], [2032, 1143]]) {
       report.push(...await encodeSet(`${name}-${w}`, slide16[name].clone().resize(w, h), w, h, false));
     }
   }
 
-  /* ===== текстура ≤100 КБ (в коммите, а не «когда-нибудь») ===== */
+  /* ----- 11. текстура ≤100 КБ ----- */
   {
     const src = join(OUT, 'texture-metal-1600.webp');
     const cur = statSync(src).size / 1024;
@@ -860,123 +379,13 @@ async function main() {
     } else report.push({ file: 'texture-metal-1600.webp', kb: +cur.toFixed(1), cap: 100 });
   }
 
-  /* ===== проверки ===== */
-  let fail = 0;
-  console.log(`машины: bbox ${carsBBox}, масштаб BMW ${bS.toFixed(3)} Camry ${cS.toFixed(3)}; название bbox ${titleBBox}`);
-  console.log('--- safe-zone десктоп (object-position 50% ' + DESK_POS_Y + ') ---');
-  const deskGeom = { IW: NW, IH: NH, posY: 0, whole: true, cars: carsBBox, title: titleBBox };
-  for (const r of safeZoneTable(deskGeom)) {
-    const bad = r.cars === 'нет' || r.title === 'нет' || r.inter === 'да';
-    if (bad) fail = 1;
-    console.log(`${bad ? 'FAIL' : 'ok  '} ${r.vp} герой ${r.hero} полоса ${r.band} машины ${r.cars} название ${r.title} пересечение ${r.inter}`);
-  }
-  console.log('--- safe-zone мобильные (полоса полная) ---');
-  const mobGeom = { IW: MOBW, IH: MOBH, title: [mLeft, 0, mRight, MOBH] };
-  for (const r of safeZoneMobile(mobGeom)) console.log(`ok   ${r.vp} полоса ${r.band} название ${r.title}`);
-  console.log(`запас буквы справа в мобильном кропе: ${mobMargin} px (норма ≥20)`);
-  if (mobMargin < 20) { console.error('FAIL: буква у правого края мобильного кропа'); fail = 1; }
-  console.log('--- размеры и веса (КБ) ---');
-  for (const r of report) {
-    const over = r.cap && r.kb > r.cap;
-    if (over) fail = 1;
-    console.log(`${over ? 'FAIL' : 'ok  '} ${r.file} ${r.w ? r.w + 'x' + r.h + ' ' : ''}${r.kb} / ${r.cap ?? '-'}`);
-  }
-  /* ===== раунд 12: доли зон, швы, зерно/резкость/ΔE/контур ===== */
-  const mRaw = await sharp(masterDeskFile).raw().toBuffer();
-  const lumAt = (x, y) => { const i = (y * NW + x) * 3; return 0.2126 * mRaw[i] + 0.7152 * mRaw[i + 1] + 0.0722 * mRaw[i + 2]; };
-  let mSignBot = 0;
-  for (let y = 300; y < 700; y++) {
-    let c = 0;
-    for (let x = 60; x < NW - 60; x += 4) {
-      const i = (y * NW + x) * 3;
-      const lum = 0.2126 * mRaw[i] + 0.7152 * mRaw[i + 1] + 0.0722 * mRaw[i + 2];
-      const mx = Math.max(mRaw[i], mRaw[i + 1], mRaw[i + 2]), mn = Math.min(mRaw[i], mRaw[i + 1], mRaw[i + 2]);
-      const sat = mx === 0 ? 0 : (mx - mn) / mx;
-      if (lum > 90 && sat < 0.4) c++;
-    }
-    if (c > 80) mSignBot = y;
-  }
-  const zSign = mSignBot / NH, zCars0 = carsBBox[1] / NH, zCars1 = carsBBox[3] / NH, zAsph = 1 - zCars1;
-  console.log(`калибр зон: signBot фасада ${signBot}, K ${K.toFixed(4)}, низ вывески на мастере ${mSignBot} (ожидание ${Math.round(signBot * K)})`);
-  console.log(`зоны: вывеска 0…${(zSign * 100).toFixed(1)} % (норма ≤38±3), машины ${(zCars0 * 100).toFixed(1)}…${(zCars1 * 100).toFixed(1)} % (46…96±3), асфальт ${(zAsph * 100).toFixed(1)} % (≤4±3)`);
-  if (Math.abs(zSign - 0.38) > 0.03 || Math.abs(zCars0 - 0.46) > 0.03 || Math.abs(zCars1 - 0.96) > 0.03 || zAsph > 0.07) { console.error('FAIL: доли зон'); fail = 1; }
-  // шов вставки: 64 горизонтальных скана на каждой границе, перепад за 8 px ≤3
-  let seamMax = 0, seamY = 0, seamX = 0;
-  for (const bx of [x0s, x0s + facW]) {
-    for (let k = 0; k < 64; k++) {
-      const y = Math.round(signBot * K) + 40 + Math.round(k * (700 - Math.round(signBot * K) - 40) / 63); // кирпичные ряды: выше — силуэт здания
-      let a = 0, b = 0;
-      const vm = (x, yy) => { const v = [lumAt(x, yy - 1), lumAt(x, yy), lumAt(x, yy + 1)].sort((p, q) => p - q); return v[1]; };
-      for (let d = 4; d <= 15; d++) { a += vm(bx - d, y); b += vm(bx + d - 1, y); }
-      if (Math.abs(a / 12 - b / 12) > seamMax) { seamMax = Math.abs(a / 12 - b / 12); seamY = y; seamX = bx; }
-    }
-  }
-  console.log(`шов вставки боковых простенков: макс перепад ${seamMax.toFixed(2)} уровня (норма ≤3) на y=${seamY}, gx=${seamX}`);
-  if (seamMax > 3) { console.error('FAIL: шов'); fail = 1; }
-  // зерно: σ высокочастотного шума на асфальте под машиной и у ворот
-  const grainSig = (cx, cy) => {
-    let sum = 0, sum2 = 0, n = 0, meanL = 0;
-    for (let y = Math.max(2, cy - 20); y < Math.min(NH - 2, cy + 20); y++) for (let x = Math.max(2, cx - 40); x < Math.min(NW - 2, cx + 40); x++) {
-      const l = lumAt(x, y), m = (lumAt(x - 1, y) + lumAt(x + 1, y) + lumAt(x, y - 1) + lumAt(x, y + 1)) / 4;
-      const d = l - m; sum += d; sum2 += d * d; sum += 0; n++;
-      meanL += l;
-    }
-    meanL /= n;
-    return Math.sqrt(Math.max(0, sum2 / n - (sum / n) ** 2)) / (meanL + 10) * 100;
-  };
-  const gCar = grainSig(Math.round(bCx) - 20, 1575), gFac = grainSig(1390, 1560);
-  console.log(`зерно σ/mean: под машиной ${gCar.toFixed(2)} %, открытый асфальт ${gFac.toFixed(2)} % (разница ≤20 %: ${((Math.abs(gCar - gFac) / gFac) * 100).toFixed(1)} %)`);
-  if (Math.abs(gCar - gFac) / gFac > 0.2) { console.error('FAIL: зерно'); fail = 1; }
-  // резкость: дисперсия лапласиана кузов vs кирпич
-  const lapVar = (x0, y0, w, h) => {
-    let sum = 0, sum2 = 0, n = 0;
-    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
-      const l = 4 * lumAt(x, y) - lumAt(x - 1, y) - lumAt(x + 1, y) - lumAt(x, y - 1) - lumAt(x, y + 1);
-      sum += l; sum2 += l * l; n++;
-    }
-    return sum2 / n - (sum / n) ** 2;
-  };
-  const vCar = lapVar(500, 1250, 350, 250); // фара/крыло BMW
-  const vBricks = [lapVar(2000, 820, 200, 140), lapVar(2400, 840, 140, 140), lapVar(830, 820, 200, 140)].sort((a, b) => a - b);
-  const vBrick = vBricks[1];
-  console.log(`лапласиан: кузов ${vCar.toFixed(1)}, кирпич ${vBrick.toFixed(1)} (разница ≤25 %: ${((Math.abs(vCar - vBrick) / vBrick) * 100).toFixed(1)} %)`);
-  if (Math.abs(vCar - vBrick) / vBrick > 0.25) { console.error('FAIL: резкость'); fail = 1; }
-  // ΔE Lab: тень под машиной vs тень у ворот
-  const lab = (x, y) => {
-    let r = mRaw[(y * NW + x) * 3] / 255, g = mRaw[(y * NW + x) * 3 + 1] / 255, b = mRaw[(y * NW + x) * 3 + 2] / 255;
-    const f = (c) => (c > 0.04045 ? ((c + 0.055) / 1.055) ** 2.4 : c / 12.92);
-    r = f(r); g = f(g); b = f(b);
-    const X = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.9505, Y = 0.2126 * r + 0.7152 * g + 0.0722 * b, Z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.089;
-    const t = (c) => (c > 0.008856 ? Math.cbrt(c) : 7.787 * c + 16 / 116);
-    return [116 * t(Y) - 16, 500 * (t(X) - t(Y)), 200 * (t(Y) - t(Z))];
-  };
-  const meanLab = (cx, cy) => {
-    let L = 0, A = 0, B = 0, n = 0;
-    for (let y = cy - 8; y < cy + 8; y++) for (let x = cx - 20; x < cx + 20; x++) { const [l, a, b] = lab(x, y); L += l; A += a; B += b; n++; }
-    return [L / n, A / n, B / n];
-  };
-  const s1 = meanLab(Math.round(bCx), 1552), s2 = meanLab(x0s + Math.round(facW * 0.5), facH + 20);
-  console.log(`калибр Lab: тень под машиной [${s1.map((v) => v.toFixed(1))}], тень порога [${s2.map((v) => v.toFixed(1))}]`);
-  const dE = Math.sqrt((s1[0] - s2[0]) ** 2 + (s1[1] - s2[1]) ** 2 + (s1[2] - s2[2]) ** 2);
-  const winLum = (cx, cy) => { let s = 0, n = 0; for (let y = cy - 8; y < cy + 8; y++) for (let x = cx - 20; x < cx + 20; x++) { const i = (y * NW + x) * 3; s += 0.2126 * mRaw[i] + 0.7152 * mRaw[i + 1] + 0.0722 * mRaw[i + 2]; n++; } return s / n; };
-  const lumUnder = winLum(Math.round(bCx), 1552), lumSide = winLum(1390, 1552);
-  console.log(`контактная тень: яркость под кузовом ${(lumUnder / lumSide).toFixed(2)} от яркости открытого асфальта в просвете (норма ≤0.6)`);
-  if (lumUnder / lumSide > 0.6) { console.error('FAIL: контактная тень'); fail = 1; }
-  console.log(`ΔE тень под машиной vs тень у ворот: ${dE.toFixed(2)} (норма ≤6)`);
-  if (dE > 6) { console.error('FAIL: ΔE'); fail = 1; }
-  // ДХО: пик яркости в зоне фар ≥235
-  let drlPeak = 0;
-  for (let y = CAR_TOP + 300; y < CAR_TOP + 620; y++) for (const nx of [bNose - 90, cNose + 90]) for (let x = nx - 130; x < nx + 130; x++) drlPeak = Math.max(drlPeak, lumAt(x, y));
-  console.log(`ДХО: пик яркости фар ${drlPeak.toFixed(0)} (норма ≥235)`);
-  if (drlPeak < 235) { console.error('FAIL: ДХО'); fail = 1; }
-  const rd = NW / NH, rn = 2560 / 1440;
-  const rm = MOBW / MOBH;
-  console.log(`пропорции: hero ${rd.toFixed(5)} = 16:9 ${(16 / 9).toFixed(5)}; mobile ${rm.toFixed(5)} = 4:5 0.80000; наборы 960×1200/640×800; master ${NW}×${NH}`);
-  if (Math.abs(rd - rn) > 0.001 || Math.abs(rm - 0.8) > 0.002) { console.error('FAIL: пропорции'); fail = 1; }
+  /* ----- 12. геометрия для check-safe-zone ----- */
   writeFileSync(join(HERE, 'safe-zone-geom.json'), JSON.stringify({
     desk: { IW: NW, IH: NH, posY: 0, whole: true, cars: carsBBox, title: titleBBox },
-    mob: { IW: MOBW, IH: MOBH, posY: MOB_POS_Y, title: [mLeft, 0, mRight, MOBH] },
+    mob: { IW: MOBW, IH: MOBH, posY: MOB_POS_Y, title: mobTitle },
   }, null, 2));
+
+  /* ----- 13. дубли хешей + таблица весов в README ----- */
   const hashes = new Map();
   for (const f of readdirSync(OUT)) {
     if (!/\.(avif|webp|png|jpg|svg)$/.test(f)) continue;
@@ -985,7 +394,6 @@ async function main() {
     hashes.set(h, f);
   }
   console.log(`файлов в public/img: ${hashes.size}, дублей нет`);
-  /* веса в README — генерируются из сборки */
   const rows = report.map((r) => `| ${r.file} | ${r.w ? r.w + '×' + r.h : '—'} | ${r.kb} | ${r.cap} |`).join('\n');
   let readme = readFileSync(README, 'utf8');
   const re = /(<!-- weights-auto:start -->)[\s\S]*?(<!-- weights-auto:end -->)/;
@@ -994,5 +402,6 @@ async function main() {
     writeFileSync(README, readme);
     console.log('README: таблица весов обновлена из сборки');
   } else console.log('README: маркеры weights-auto не найдены (таблица не вставлена)');
+  for (const r of report) console.log(`ok   ${r.file} ${r.w ? r.w + 'x' + r.h : ''} ${r.kb} / ${r.cap}`);
   process.exit(fail);
 }

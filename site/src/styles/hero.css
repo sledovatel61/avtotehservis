@@ -44,6 +44,11 @@
 .slide .h1{font-family:var(--font-display);font-weight:600;font-size:clamp(1.9rem,4.6vw,3.15rem);line-height:1.14;letter-spacing:-.02em}
 .slide-sub{color:var(--mist);font-size:clamp(16px,2vw,19px);max-width:56ch;margin-bottom:30px}
 .slide-cta{display:flex;gap:14px;flex-wrap:wrap}
+/* раунд 14: подписи кнопок не переносятся ни на одной ширине */
+.slide-cta .btn{white-space:nowrap}
+/* раунд 14: на планшете телефонная кнопка сжимается до «Позвонить» */
+.btn-phone .btn-phone-num{display:inline}
+@media (min-width:641px) and (max-width:1023px){.btn-phone .btn-phone-num{display:none}}
 .hero-ui{position:absolute;z-index:5;left:0;right:0;bottom:26px}
 .hero-ui .container{display:flex;align-items:center;gap:18px}
 .hero-arrow{
@@ -83,60 +88,76 @@
    ширина следует из aspect-ratio → clientWidth/clientHeight = пропорция файла.
    Левый край текста = левый край контейнера (--cx, как логотип в шапке).
    hero-ui стоит под фото справа, в зазоре hp — пересечение с .slide-cta = 0. */
+/* РАУНД 13: фото снова ФОНОМ на весь блок (как просил заказчик), текст — в левой трети
+   на мягком затемнении. Кадр 16:9, пропорция блока держится через aspect-ratio,
+   поэтому cover не режет ни на одной ширине. */
 @media (min-width:1024px){
-  .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px)}
-  .hero-track{display:grid}
-  .slide{
-    position:relative;inset:auto;grid-area:1/1;display:grid;
-    grid-template-columns:minmax(300px,1fr) auto;align-items:center;
-    column-gap:clamp(32px,3vw,48px);padding-left:var(--cx);padding-right:var(--hp);
-  }
-  .slide-bg{
-    position:relative;inset:auto;grid-column:2;grid-row:1;justify-self:end;
-    height:min(calc(100% - var(--hp) - 72px),calc((100vw - var(--cx) - var(--hp) - 300px - clamp(32px,3vw,48px))*9/16));
-    aspect-ratio:16/9;border-radius:26px;overflow:hidden;
-    border:1px solid rgba(224,169,109,.18);box-shadow:0 30px 80px rgba(0,0,0,.55);
-  }
-  /* фото целиком: рамка ровно 16:9, cover не режет ни на одной ширине */
+  .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px);
+        min-height:0;aspect-ratio:16/9;max-height:calc(100svh - 96px)}
+  .hero-track{display:block}
+  .slide{position:absolute;inset:0;display:flex;align-items:center}
+  .slide-bg{position:absolute;inset:0;height:auto;aspect-ratio:auto;border-radius:0;border:none;box-shadow:none}
   .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
-  /* никаких подложек и scrim поверх фото: текст стоит на --night */
-  .slide-bg::before,.slide-bg::after{content:none}
-  .slide-in{background:none;padding:0;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;align-self:center}
-  .hero-ui{left:auto;right:var(--hp);bottom:max(6px,calc(var(--hp)/2 - 24px))}
+  /* затемнение только под текстом: слева плотно, к центру уходит в ноль, без кромок */
+  .slide-bg::before{
+    content:"";position:absolute;inset:0;z-index:1;
+    background:
+      linear-gradient(90deg,rgba(6,11,9,.94) 0%,rgba(6,11,9,.90) 26%,rgba(6,11,9,.74) 44%,rgba(6,11,9,.34) 52%,rgba(6,11,9,0) 60%),
+      linear-gradient(0deg,rgba(6,11,9,.55) 0%,rgba(6,11,9,0) 26%);
+  }
+  .slide-bg::after{content:none}
+  .slide-in{
+    position:relative;z-index:3;background:none;border-radius:0;backdrop-filter:none;
+    -webkit-backdrop-filter:none;padding:0 var(--hp) 0 var(--cx);
+    /* раунд 14: коробка слева (margin-right:auto), правый край ≤44 % — текст не на машинах */
+    max-width:44%;margin-left:0;margin-right:auto;align-self:center;
+  }
+  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.2vw,2.9rem);max-width:14em}
+  .slide-sub{font-size:clamp(15px,1.15vw,18px);max-width:44ch}
+  .hero-ui{left:auto;right:var(--hp);bottom:max(12px,calc(var(--hp)/2 - 20px))}
   .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
-  /* стрелка «вниз» — под текстовой колонкой, не поверх фото */
-  .hero-scroll{left:var(--cx);transform:none;bottom:max(6px,calc(var(--hp)/2 - 24px));animation:none}
+  /* стрелка «вниз» — внутри правой части, не под кнопками */
+  .hero-scroll{left:auto;right:calc(var(--hp) + 220px);transform:none;bottom:max(12px,calc(var(--hp)/2 - 20px));animation:none}
 }
 @media (min-width:1180px){
   .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
 }
-/* 641…1023: фото сверху целиком во всю ширину, текст под ним на --night */
+/* РАУНД 14: 641…1023 — фото ФОНОМ на весь блок (как на десктопе), scrim слева,
+   текст не шире 62 %, заголовок clamp(1.8rem,4vw,2.4rem), кнопки в одну строку.
+   object-position смещён к машинам (68 %), чтобы кадр не резал сцену справа. */
 @media (min-width:641px) and (max-width:1023px){
-  .hero{flex-direction:column;min-height:0}
-  .hero-track{display:grid;flex:none}
-  .slide{position:relative;inset:auto;grid-area:1/1;display:block}
-  .slide-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9}
-  .slide-bg::before,.slide-bg::after{content:none}
-  .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
-  .slide-in{background:none;padding:26px 24px 30px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
-  .hero-ui{position:static;padding:12px 0 16px}
-  .hero-ui .container{justify-content:center}
-}
-@media (max-width:1023px) and (min-width:641px){
-  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
+  .hero{flex-direction:row;min-height:0;height:clamp(480px,72svh,780px)}
+  .hero-track{display:block;flex:1;position:relative}
+  .slide{position:absolute;inset:0;display:flex;align-items:center}
+  .slide-bg{position:absolute;inset:0;aspect-ratio:auto}
+  .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:68% 50%}
+  .slide-bg::before{
+    content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(90deg,rgba(6,11,9,.94) 0%,rgba(6,11,9,.90) 26%,rgba(6,11,9,.74) 44%,rgba(6,11,9,.34) 52%,rgba(6,11,9,0) 60%);
+  }
+  .slide-bg::after{content:"";position:absolute;inset:0;z-index:2;background:linear-gradient(0deg,rgba(6,11,9,.62) 0%,rgba(6,11,9,0) 32%)}
+  .slide-in{background:none;padding:0 24px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;max-width:62%;margin-left:4%}
+  .slide h1,.slide .h1{font-size:clamp(1.8rem,4vw,2.4rem);max-width:9.5em}
+  .slide-sub{font-size:clamp(15px,1.6vw,17px);max-width:30ch}
+  .slide-cta{flex-wrap:nowrap}
+  .hero-ui{position:absolute;left:0;right:0;bottom:12px;padding:0 20px}
+  .hero-ui .container{justify-content:flex-end}
+  .hero-scroll{display:none}
 }
 /* ≤640: текст на гарантированно тёмной панели поверх фото (контраст ≥4,5) */
 @media (max-width:640px){
+  .slide{align-items:flex-end}
   .slide-in{
     background:rgba(6,11,9,.82);padding:22px;border-radius:18px;
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    margin:0 10px 10px;
   }
 }
 /* Блокер раунда 10: карусельные контролы в потоке ПОД кадром — физически не
    перекрывают кнопки панели; высота трека держит панель с запасом */
 @media (max-width:640px){
   .hero{flex-direction:column;min-height:0}
-  .hero-track{min-height:max(420px,58svh)}
+  .hero-track{min-height:max(460px,76svh)}
   .hero-ui{position:static;padding:10px 0 14px}
   .hero-ui .container{justify-content:center}
   .slide-sub{max-width:34ch}
@@ -148,6 +169,7 @@
 }
 @media (max-width:480px){
   .slide-in{margin-left:10px;margin-right:10px;padding:14px}
+  .slide-sub{font-size:15px}
   /* компактная панель: сумма высот заведомо меньше трека 420 px */
   .slide h1,.slide .h1{font-size:clamp(1.55rem,7.2vw,1.9rem)}
   .slide-sub{max-width:30ch;margin-bottom:16px}

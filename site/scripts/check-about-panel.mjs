@@ -24,10 +24,6 @@ import sharp from 'sharp';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const IMG = join(HERE, '../public/img');
-/* прямоугольники проёмов — те же, что в build-images.mjs (патч «О компании») */
-const AL = { x: 280, y: 437, w: 482, h: 500 };
-const AR = { x: 1005, y: 437, w: 380, h: 500 };
-const EMB = { x: AR.x + 120, y: AR.y + 280, w: 80, h: 60 };
 
 let fail = 0;
 const bad = (m) => { fail = 1; console.error('FAIL ' + m); };
@@ -81,89 +77,67 @@ const edgeFrac = ({ d, w, h }, x0, y0, ww, hh) => {
   return n ? e / n : 0;
 };
 
-console.log('§6 «О компании» — about-service-1600.webp:');
+console.log('§6 «О компании» — about-service-1600.webp (РАУНД 14: чистый кроп master-clean, без вставок и грейда):');
 const about = await raw('about-service-1600.webp');
 chk('размер кадра', about.w === 1600 && about.h === 1000, `${about.w}×${about.h}`, '1600×1000 (16:10)');
+/* проёмы в координатах кропа раунда 14 (окно {380,80,3000×1875} из master-clean):
+   прямоугольники раунда 12 {600,250,2560×1600}→orig→новое окно */
+const AL = { x: 356, y: 464, w: 411, h: 427 };
+const AR = { x: 975, y: 464, w: 324, h: 427 };
 for (const [name, r] of [['левый проём', AL], ['правый проём', AR]]) {
   const inside = r.x >= 0 && r.y >= 0 && r.x + r.w <= about.w && r.y + r.h <= about.h;
   chk(`${name} целиком в кадре`, inside,
     `x ${r.x}…${r.x + r.w}, y ${r.y}…${r.y + r.h}`, `внутри 0…${about.w} / 0…${about.h}`);
+  const inL = meanLum(about, r.x, r.y, r.w, r.h);
+  console.log(`     ${name}: средняя яркость содержимого ${inL.toFixed(1)}`);
 }
-chk('вес about ≤ 70 КБ', statSync(join(IMG, 'about-service-1600.webp')).size / 1024 <= 70,
-  (statSync(join(IMG, 'about-service-1600.webp')).size / 1024).toFixed(1) + ' КБ', '≤ 70 КБ');
-
-/* Эталон — тот же кроп фасада БЕЗ вставок (aboutBase из сборщика: SRCW, окно
-   {left:600, top:250, 2560×1600} → 1600×1000). Сравнивая финал с ним, проверяем:
-   1) граница вставки невидима (перо 32 px + согласование тона) — ΔE76 ≤ 6
-      в полосе 6 px сразу внутри проёма;
-   2) в проёме действительно ДРУГАЯ машина: содержимое совпадает с исходником
-      r12-gen/bay-*.jpg и НЕ совпадает с фасадом. */
-const SRCW = join(HERE, '../../docs/photos-source/original-front-wide-3840x2160.jpg');
-const R12 = join(HERE, '../../docs/photos-source/r12-gen');
+{
+  let y0 = -1, y1 = -1, x0 = about.w, x1 = 0;
+  for (let y = 0; y < about.h; y += 2) {
+    let c = 0, xa = about.w, xb = 0;
+    for (let x = 0; x < about.w; x += 2) {
+      const i2 = (y * about.w + x) * 3;
+      const r2 = about.d[i2], g2 = about.d[i2 + 1], b2 = about.d[i2 + 2];
+      if (g2 > r2 + 18 && b2 > r2 + 12 && g2 > 70) { c++; if (x < xa) xa = x; if (x > xb) xb = x; }
+    }
+    if (c > 200) { if (y0 < 0) y0 = y; y1 = y; if (xa < x0) x0 = xa; if (xb > x1) x1 = xb; }
+  }
+  chk('вывеска целиком в кадре', y0 >= 0 && y1 > y0 && x0 >= 0 && x1 <= about.w,
+    `x ${x0}…${x1}, y ${y0}…${y1}`, 'внутри 0…1600 / 0…1000');
+}
+chk('вес about webp ≤ 160 КБ', statSync(join(IMG, 'about-service-1600.webp')).size / 1024 <= 160,
+  (statSync(join(IMG, 'about-service-1600.webp')).size / 1024).toFixed(1) + ' КБ', '≤ 160 КБ');
+chk('вес about avif ≤ 80 КБ', statSync(join(IMG, 'about-service-1600.avif')).size / 1024 <= 80,
+  (statSync(join(IMG, 'about-service-1600.avif')).size / 1024).toFixed(1) + ' КБ', '≤ 80 КБ');
+/* без грейда и вставок: финал = кроп master-clean {380,80,3000×1875} → 1600×1000 */
+const SRC_CLEAN = join(HERE, '../../docs/photos-source/r13-clean/master-clean.jpg');
 const base = await (async () => {
-  const { data, info } = await sharp(SRCW).extract({ left: 600, top: 250, width: 2560, height: 1600 })
+  const { data, info } = await sharp(SRC_CLEAN).extract({ left: 380, top: 80, width: 3000, height: 1875 })
     .resize(1600, 1000).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   return { d: data, w: info.width, h: info.height };
 })();
-const dE76 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
-/* средний |Δ| по каналам между двумя кадрами в прямоугольнике (внутрь от пера) */
-const meanAbsDiff = (A, B, r, inset) => {
-  let s = 0, n = 0;
-  for (let y = r.y + inset; y < r.y + r.h - inset; y += 2)
-    for (let x = r.x + inset; x < r.x + r.w - inset; x += 2) {
+const meanAbsDiffFull = (A, B) => {
+  let s2 = 0, n = 0;
+  for (let y = 0; y < A.h; y += 2)
+    for (let x = 0; x < A.w; x += 2) {
       const a = (y * A.w + x) * 3, b = (y * B.w + x) * 3;
-      s += (Math.abs(A.d[a] - B.d[a]) + Math.abs(A.d[a + 1] - B.d[b + 1]) + Math.abs(A.d[a + 2] - B.d[b + 2])) / 3;
+      s2 += (Math.abs(A.d[a] - B.d[b]) + Math.abs(A.d[a + 1] - B.d[b + 1]) + Math.abs(A.d[a + 2] - B.d[b + 2])) / 3;
       n++;
     }
-  return n ? s / n : 0;
+  return s2 / n;
 };
-const INSERTS = [
-  ['левый проём (седан на подъёмнике)', AL, { file: 'bay-sedan.jpg', left: 115, top: 150, width: 785, height: 685 }],
-  ['правый проём (кроссовер)', AR, { file: 'bay-crossover.jpg', left: 200, top: 210, width: 520, height: 620 }],
-];
-for (const [name, r, src] of INSERTS) {
-  /* 1) невидимая граница вставки */
-  const ring = [];
-  for (let k = 0; k < 6; k++) {
-    const pts = [];
-    for (let x = r.x + k; x < r.x + r.w - k; x += 4) { pts.push([x, r.y + k], [x, r.y + r.h - 1 - k]); }
-    for (let y = r.y + k; y < r.y + r.h - k; y += 4) { pts.push([r.x + k, y], [r.x + r.w - 1 - k, y]); }
-    ring.push(pts);
-  }
-  let dE = 0, cnt = 0;
-  for (const pts of ring) for (const [x, y] of pts) {
-    const a = (y * about.w + x) * 3, b = (y * base.w + x) * 3;
-    dE += dE76(lab(about.d, a), lab(base.d, b)); cnt++;
-  }
-  dE /= Math.max(1, cnt);
-  chk(`${name}: граница вставки не видна`, dE <= 6, `ΔE76 ${dE.toFixed(2)} к фасаду в полосе 6 px`, '≤ 6');
-  /* 2) содержимое — другой кадр */
-  const ins = await (async () => {
-    const { data, info } = await sharp(join(R12, src.file))
-      .extract({ left: src.left, top: src.top, width: src.width, height: src.height })
-      .resize(r.w, r.h).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-    return { d: data, w: r.w, h: r.h };
-  })();
-  /* вставка в финале лежит в r.x/r.y — сдвинем исходник в те же координаты */
-  const shifted = { d: Buffer.alloc(base.d.length), w: base.w, h: base.h };
-  base.d.copy(shifted.d);
-  for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
-    const a = ((r.y + y) * shifted.w + (r.x + x)) * 3, b = (y * ins.w + x) * 3;
-    shifted.d[a] = ins.d[b]; shifted.d[a + 1] = ins.d[b + 1]; shifted.d[a + 2] = ins.d[b + 2];
-  }
-  const dSrc = meanAbsDiff(about, shifted, r, 40);   // против своего исходника
-  const dBase = meanAbsDiff(about, base, r, 40);     // против пустого проёма фасада
-  chk(`${name}: в проёме кадр из ${src.file}`, dSrc < 25, `средний |Δ| ${dSrc.toFixed(1)} уровня`, '< 25 (та же картинка)');
-  chk(`${name}: это НЕ исходный проём фасада`, dBase > 25, `средний |Δ| ${dBase.toFixed(1)} уровня к фасаду`, '> 25 (содержимое заменено)');
-  const eIn = edgeFrac(about, r.x + 20, r.y + 20, r.w - 40, r.h - 40);
-  chk(`${name}: содержимое читается`, eIn > 0.05, `доля перепадов ${(eIn * 100).toFixed(1)} %`, '> 5 % (машина, а не пустой проём)');
+const dAll = meanAbsDiffFull(about, base);
+chk('кадр = чистый кроп master-clean (без грейда/вставок)', dAll <= 6, `средний |Δ| ${dAll.toFixed(2)} уровня`, '≤ 6');
+for (const [name, r] of [['левый проём', AL], ['правый проём', AR]]) {
+  let s2 = 0, n = 0;
+  for (let y = r.y; y < r.y + r.h; y += 2)
+    for (let x = r.x; x < r.x + r.w; x += 2) {
+      const a = (y * about.w + x) * 3, b = (y * base.w + x) * 3;
+      s2 += (Math.abs(about.d[a] - base.d[b]) + Math.abs(about.d[a + 1] - base.d[b + 1]) + Math.abs(about.d[a + 2] - base.d[b + 2])) / 3;
+      n++;
+    }
+  chk(`${name}: без вставок (совпадает с фасадом)`, s2 / n <= 6, `средний |Δ| ${(s2 / n).toFixed(2)}`, '≤ 6');
 }
-/* эмблема кроссовера размыта: резкость внутри эмблемы ниже, чем на решётке рядом */
-const eEmb = edgeFrac(about, EMB.x, EMB.y, EMB.w, EMB.h);
-const eGrille = edgeFrac(about, EMB.x - 100, EMB.y, 80, EMB.h);
-chk('эмблема кроссовера неразличима (размыта)', eEmb < eGrille / 4,
-  `перепады ${(eEmb * 100).toFixed(1)} % в эмблеме против ${(eGrille * 100).toFixed(1)} % на решётке рядом`,
-  'эмблема ≥4× мягче окружения');
 
 console.log('\n§7 фон панели диагностики — cta-diag-960.webp / cta-diag-640.webp:');
 for (const f of ['cta-diag-960.webp', 'cta-diag-640.webp']) {
