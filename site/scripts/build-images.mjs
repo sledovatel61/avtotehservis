@@ -32,7 +32,7 @@ export const VIEWPORTS = [
   [1024, 768], [1180, 800], [1280, 800], [1366, 768], [1440, 900],
   [1536, 864], [1600, 900], [1920, 1080], [2560, 1440],
 ];
-export const MOB_VIEWPORTS = [[360, 640], [390, 844], [414, 896]];
+export const MOB_VIEWPORTS = [[320, 568], [360, 640], [360, 740], [390, 844], [414, 896], [430, 932]];
 export const DESK_POS_Y = 0.78;                     // object-position десктопа (slide 1)
 const MOB_POS_Y = 0.20;
 
@@ -179,6 +179,15 @@ const CAPS = {
   'about-service-640': { avif: 70, webp: 70 },
   'cta-diag-960': { avif: 45, webp: 45 },
   'cta-diag-640': { avif: 45, webp: 45 },
+  /* раунд 12, патч #62: слайды 2–3 в ровно 16:9 (кроп 0 px в рамке героя) */
+  'hero-tyre-2032': { avif: 120, webp: 120 },
+  'hero-tyre-1600': { avif: 70, webp: 70 },
+  'hero-tyre-960': { avif: 40, webp: 40 },
+  'hero-tyre-640': { avif: 25, webp: 25 },
+  'hero-tools-2032': { avif: 120, webp: 120 },
+  'hero-tools-1600': { avif: 70, webp: 70 },
+  'hero-tools-960': { avif: 40, webp: 40 },
+  'hero-tools-640': { avif: 25, webp: 25 },
 };
 async function encodeSet(name, pipe, w, h, hasAlpha) {
   const res = [];
@@ -781,14 +790,28 @@ async function main() {
     return d;
   };
   const sedRaw = await sharp(join(R12, 'bay-sedan.jpg')).extract({ left: 115, top: 150, width: 785, height: 685 }).resize(AL.w, AL.h).raw().toBuffer();
-  const sedP = await featherRect(toneMatchRaw(sedRaw, AL.w, AL.h, AL), AL.w, AL.h, 32);
+  /* перо 64 px: у седана светлый кузов у самой границы проёма, при пере 32 px
+     в 6-px полосе оставался ΔE76 6.76 к фасаду (check-about-panel.mjs) */
+  const sedP = await featherRect(toneMatchRaw(sedRaw, AL.w, AL.h, AL), AL.w, AL.h, 64);
   /* эмблема кроссовера неразличима: решетка с размытым логотипом */
   const croBuf = await sharp(join(R12, 'bay-crossover.jpg')).extract({ left: 200, top: 210, width: 520, height: 620 }).resize(AR.w, AR.h).png().toBuffer();
   const emb = await sharp(croBuf).extract({ left: 120, top: 280, width: 80, height: 60 }).blur(7).png().toBuffer();
   const croRaw = await sharp(await sharp(croBuf).composite([{ input: emb, left: 120, top: 280 }]).jpeg({ quality: 95 }).toBuffer()).raw().toBuffer();
-  const croP = await featherRect(toneMatchRaw(croRaw, AR.w, AR.h, AR), AR.w, AR.h, 32);
+  const croP = await featherRect(toneMatchRaw(croRaw, AR.w, AR.h, AR), AR.w, AR.h, 48);
   const aboutMaster = await sharp(aboutBase).composite([{ input: sedP, left: AL.x, top: AL.y }, { input: croP, left: AR.x, top: AR.y }]).jpeg({ quality: 95 }).toBuffer();
   const ctaSrc = join(R11, 'cta-diag.jpg');
+
+  /* ===== раунд 12, §2, патч #62: слайды 2–3 тоже ЦЕЛИКОМ =====
+     Рамка фото на ≥1024 ровно 16:9 (пропорция мастера), а исходники слайдов 2–3
+     gen-{tyre,tools}-2048.jpg — 2048×1143 (1.7918): object-fit:cover срезал
+     ~0,8 % ширины. Центральный кроп 16 px по ширине даёт 2032×1143 = 16:9 РОВНО
+     (2032/1143 = 1.77778) без единого пикселя растяжения; наборы ниже кратны
+     той же пропорции → кроп на десктопе 0 px на любой ширине. */
+  const PHOTOS = join(HERE, '../../docs/photos-source');
+  const slide16 = {};
+  for (const [name, f] of [['hero-tyre', 'gen-tyre-2048.jpg'], ['hero-tools', 'gen-tools-2048.jpg']]) {
+    slide16[name] = sharp(join(PHOTOS, f)).extract({ left: 8, top: 0, width: 2032, height: 1143 });
+  }
 
   /* ===== наборы ===== */
   for (const r of [
@@ -813,6 +836,13 @@ async function main() {
     await encodeSet('hero-detail-1600', sharp(detail).resize(1600, 900), 1600, 900, false),
     await encodeSet('hero-detail-960', sharp(detail).resize(960, 540), 960, 540, false),
   ]) report.push(...r);
+
+  /* патч #62: наборы слайдов 2–3 в 16:9 (старые -2560 удалены из public/img) */
+  for (const name of ['hero-tyre', 'hero-tools']) {
+    for (const [w, h] of [[640, 360], [960, 540], [1600, 900], [2032, 1143]]) {
+      report.push(...await encodeSet(`${name}-${w}`, slide16[name].clone().resize(w, h), w, h, false));
+    }
+  }
 
   /* ===== текстура ≤100 КБ (в коммите, а не «когда-нибудь») ===== */
   {
