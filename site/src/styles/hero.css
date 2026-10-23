@@ -1,5 +1,5 @@
 /* ---------- Слайдер-герой ---------- */
-.hero{position:relative;min-height:min(860px,calc(100svh - 60px));display:flex;align-items:stretch;background:var(--night);overflow:hidden}
+.hero{position:relative;min-height:clamp(560px,calc(100svh - 150px),860px);display:flex;align-items:stretch;background:var(--night);overflow:hidden}
 .hero-track{position:relative;flex:1}
 .slide{
   position:absolute;inset:0;display:flex;align-items:center;
@@ -7,10 +7,34 @@
 }
 .slide.is-active{opacity:1;visibility:visible;z-index:2}
 .slide-bg{position:absolute;inset:0;overflow:hidden}
-.slide-bg svg{width:100%;height:100%;object-fit:cover}
+.slide-bg picture,.slide-bg img{position:absolute;inset:0;width:100%;height:100%}
+.slide-bg img{object-fit:cover;object-position:50% 50%}
+/* Двухслойное затемнение: плотный градиент слева под текст + лёгкий общий дим. */
+.slide-bg::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(90deg,rgba(6,11,9,.94) 0%,rgba(6,11,9,.78) 34%,rgba(6,11,9,.42) 68%,rgba(6,11,9,.18) 100%);
+}
+.slide-bg::after{content:"";position:absolute;inset:0;z-index:2;background:rgba(6,11,9,.34)}
+/* Неон вывески: RGBA-слой той же пропорции, что фото (object-fit/position те же),
+   выше затемнения (::before=1, ::after=2), иначе screen съест свечение. */
+.slide-bg .neon{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;z-index:3;mix-blend-mode:screen;pointer-events:none;opacity:1}
+/* кадр первого экрана 16:9 (раунд 10): фото и неон смотрят на одну полосу */
+.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 78%}
+/* Мерцание: цикл 9 с, две короткие просадки в начале, дальше ровный свет;
+   просадки 81 и 108 мс, суммарно <12 % цикла, изменений яркости ≤2/с, минимум .46 */
+.slide.is-active .slide-bg .neon{animation:neon-flicker 9s linear infinite}
+@keyframes neon-flicker{
+  0%,100%{opacity:1}
+  3.5%{opacity:.52}
+  4.4%{opacity:1}
+  8%{opacity:.46}
+  9.2%{opacity:1}
+  55%{opacity:.93}
+  60%{opacity:1}
+}
 .slide.is-active .slide-in{animation:slide-up 550ms var(--ease) 120ms both}
 @keyframes slide-up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.slide-in{position:relative;z-index:2;width:100%}
+.slide-in{position:relative;z-index:3;width:100%}
 .slide-eyebrow{
   display:inline-flex;align-items:center;gap:10px;padding:7px 16px;border-radius:999px;
   border:1px solid rgba(224,169,109,.4);background:rgba(11,20,16,.55);
@@ -39,3 +63,95 @@
 .hero-dot:hover::before{background:var(--ivory)}
 .hero-note{color:var(--mist);font-size:13px;letter-spacing:.02em}
 
+/* Стрелка «вниз»: первый экран не заканчивается страницей */
+.hero-scroll{
+  position:absolute;z-index:5;left:50%;bottom:88px;transform:translateX(-50%);
+  width:42px;height:42px;border-radius:50%;border:1px solid rgba(224,169,109,.45);
+  background:rgba(11,20,16,.55);color:var(--brass);
+  display:flex;align-items:center;justify-content:center;
+  animation:hero-bob 2.2s var(--ease) infinite;
+  transition:background-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+}
+.hero-scroll svg{width:18px;height:18px}
+.hero-scroll:hover{background:var(--copper);color:var(--night);border-color:var(--copper)}
+@keyframes hero-bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
+@media (max-width:640px){.hero-scroll{display:none}}
+/* Раунд 12: сплит-компоновка первого экрана (схема hero-split-layout-mock.jpg).
+   ≥1024 — две колонки: текст слева на --night без подложек, фото 16:9 ЦЕЛИКОМ
+   справа в рамке (радиус 26, тонкий кант, тень); кропа нет по построению:
+   высота фото = min(трек − отступы, доступная ширина колонки × 9/16),
+   ширина следует из aspect-ratio → clientWidth/clientHeight = пропорция файла.
+   Левый край текста = левый край контейнера (--cx, как логотип в шапке).
+   hero-ui стоит под фото справа, в зазоре hp — пересечение с .slide-cta = 0. */
+@media (min-width:1024px){
+  .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px)}
+  .hero-track{display:grid}
+  .slide{
+    position:relative;inset:auto;grid-area:1/1;display:grid;
+    grid-template-columns:minmax(300px,1fr) auto;align-items:center;
+    column-gap:clamp(32px,3vw,48px);padding-left:var(--cx);padding-right:var(--hp);
+  }
+  .slide-bg{
+    position:relative;inset:auto;grid-column:2;grid-row:1;justify-self:end;
+    height:min(calc(100% - var(--hp) - 72px),calc((100vw - var(--cx) - var(--hp) - 300px - clamp(32px,3vw,48px))*9/16));
+    aspect-ratio:16/9;border-radius:26px;overflow:hidden;
+    border:1px solid rgba(224,169,109,.18);box-shadow:0 30px 80px rgba(0,0,0,.55);
+  }
+  /* фото целиком: рамка ровно 16:9, cover не режет ни на одной ширине */
+  .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
+  /* никаких подложек и scrim поверх фото: текст стоит на --night */
+  .slide-bg::before,.slide-bg::after{content:none}
+  .slide-in{background:none;padding:0;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;align-self:center}
+  .hero-ui{left:auto;right:var(--hp);bottom:max(6px,calc(var(--hp)/2 - 24px))}
+  .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
+  /* стрелка «вниз» — под текстовой колонкой, не поверх фото */
+  .hero-scroll{left:var(--cx);transform:none;bottom:max(6px,calc(var(--hp)/2 - 24px));animation:none}
+}
+@media (min-width:1180px){
+  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
+}
+/* 641…1023: фото сверху целиком во всю ширину, текст под ним на --night */
+@media (min-width:641px) and (max-width:1023px){
+  .hero{flex-direction:column;min-height:0}
+  .hero-track{display:grid;flex:none}
+  .slide{position:relative;inset:auto;grid-area:1/1;display:block}
+  .slide-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9}
+  .slide-bg::before,.slide-bg::after{content:none}
+  .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
+  .slide-in{background:none;padding:26px 24px 30px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+  .hero-ui{position:static;padding:12px 0 16px}
+  .hero-ui .container{justify-content:center}
+}
+@media (max-width:1023px) and (min-width:641px){
+  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
+}
+/* ≤640: текст на гарантированно тёмной панели поверх фото (контраст ≥4,5) */
+@media (max-width:640px){
+  .slide-in{
+    background:rgba(6,11,9,.82);padding:22px;border-radius:18px;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  }
+}
+/* Блокер раунда 10: карусельные контролы в потоке ПОД кадром — физически не
+   перекрывают кнопки панели; высота трека держит панель с запасом */
+@media (max-width:640px){
+  .hero{flex-direction:column;min-height:0}
+  .hero-track{min-height:max(420px,58svh)}
+  .hero-ui{position:static;padding:10px 0 14px}
+  .hero-ui .container{justify-content:center}
+  .slide-sub{max-width:34ch}
+  /* 6.5: одна позиция на фото и неон (мобильный кроп 4:5) */
+  .slide-bg img,.slide-bg img.f16,.slide-bg .neon,.slide-bg .neon.f16{object-position:50% 20%}
+}
+@media (prefers-reduced-motion:reduce){
+  .slide.is-active .slide-bg .neon{animation:none;opacity:.92}
+}
+@media (max-width:480px){
+  .slide-in{margin-left:10px;margin-right:10px;padding:14px}
+  /* компактная панель: сумма высот заведомо меньше трека 420 px */
+  .slide h1,.slide .h1{font-size:clamp(1.55rem,7.2vw,1.9rem)}
+  .slide-sub{max-width:30ch;margin-bottom:16px}
+  .slide-cta{flex-wrap:nowrap;gap:10px}
+  .slide-cta .btn{font-size:13.5px;padding:11px 18px;white-space:nowrap}
+  .slide-eyebrow{margin-bottom:12px;padding:6px 12px;font-size:11.5px}
+}
