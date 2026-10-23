@@ -1,20 +1,26 @@
-/* ---------- Медиазапросы ----------
-   Правило порядка (M2, раунд 9): переопределения селекторов, чьи базовые правила
-   живут в pages.css/admin.css, держатся ТАМ ЖЕ, в конце файла — иначе чанк
-   misc.* грузится после Base.* и база перебивает медиа. */
+/* ---------- Медиазапросы ---------- */
 @media (max-width:1024px){
   .tri{grid-template-columns:1fr;gap:14px}
   .tri-card{min-height:0}
-  .about-grid,.est-grid{grid-template-columns:1fr;gap:30px}
+  .about-grid,.est-grid,.svc-detail,.contacts-grid,.post-layout,.adm-grid{grid-template-columns:1fr;gap:30px}
+  .svc-side,.post-side{position:static}
   .feats{grid-template-columns:1fr 1fr}
   .svc-card,.gal-card,.rev-card{flex-basis:calc((100% - 18px)/2)}
   .ftr-grid{grid-template-columns:1fr 1fr;gap:30px}
+  .news-grid{grid-template-columns:1fr}
   .slots{grid-template-columns:repeat(4,1fr)}
   .hdr-phone span{display:none}
 }
 @media (max-width:860px){
+  .nav{display:none}
+  .burger{display:block;margin-left:auto}
+  .hdr-cta .btn{display:none}
+  .sec{padding:54px 0}
+  .dock{display:flex}
+  body.has-dock .ftr{padding-bottom:10px}
 }
 @media (max-width:640px){
+  body{font-size:16px}
   .fields{grid-template-columns:1fr}
   .feats{grid-template-columns:1fr}
   .facts{grid-template-columns:1fr}
@@ -27,16 +33,20 @@
   .wiz-foot{padding:16px 18px}
   .payload-btn{padding:13px 18px}
   .payload pre{padding:0 18px 18px}
+  .news-card{flex-direction:column}
+  .news-img{flex-basis:auto;aspect-ratio:16/9}
+  .news-body{padding:0 18px 18px}
   .sum-row{flex-wrap:wrap}
   .sum-row .k{flex-basis:100%}
   .lb-arrow{width:44px;height:44px}
   .lb-prev{left:8px}.lb-next{right:8px}
-  .hero{min-height:max(420px,58svh)} /* раунд 9: мобильный кроп 3:4 даёт ~62 % ширины на 390 */
+  .hero{min-height:calc(100svh - 54px)}
   .hero-ui .container{gap:12px}
   .hero-note{display:none}
   .cform{padding:20px 18px}
 }
 @media (max-width:380px){
+  .container{padding:0 14px}
   .slots{grid-template-columns:repeat(2,1fr)}
   .cal-day{flex-basis:68px}
   .logo-t{font-size:15px}
@@ -44,6 +54,7 @@
 
 /* ---------- prefers-reduced-motion ---------- */
 @media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   .marq-in{animation:none;transform:none}
   .marq{overflow-x:auto;-webkit-mask-image:none;mask-image:none}

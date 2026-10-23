@@ -76,20 +76,57 @@
 .hero-scroll:hover{background:var(--copper);color:var(--night);border-color:var(--copper)}
 @keyframes hero-bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
 @media (max-width:640px){.hero-scroll{display:none}}
-/* M1: на ≤1024 текст стоит на гарантированно тёмной панели (контраст ≥4,5) */
-/* Раунд 10, major: текст ниже светящегося названия — на тёмных воротах/асфальте,
-   полупрозрачный градиент-подложка (не плашка) держит контраст h1 ≥3:1 с неоном */
-@media (min-width:1025px){
-  .slide{align-items:flex-end}
-  .slide-in{
-    padding:44px 40px 40px;border-radius:26px;
-    background:linear-gradient(180deg,rgba(6,11,9,0) 0%,rgba(6,11,9,.68) 12%,rgba(6,11,9,.68) 86%,rgba(6,11,9,.30) 100%);
+/* Раунд 12: сплит-компоновка первого экрана (схема hero-split-layout-mock.jpg).
+   ≥1024 — две колонки: текст слева на --night без подложек, фото 16:9 ЦЕЛИКОМ
+   справа в рамке (радиус 26, тонкий кант, тень); кропа нет по построению:
+   высота фото = min(трек − отступы, доступная ширина колонки × 9/16),
+   ширина следует из aspect-ratio → clientWidth/clientHeight = пропорция файла.
+   Левый край текста = левый край контейнера (--cx, как логотип в шапке).
+   hero-ui стоит под фото справа, в зазоре hp — пересечение с .slide-cta = 0. */
+@media (min-width:1024px){
+  .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px)}
+  .hero-track{display:grid}
+  .slide{
+    position:relative;inset:auto;grid-area:1/1;display:grid;
+    grid-template-columns:minmax(300px,1fr) auto;align-items:center;
+    column-gap:clamp(32px,3vw,48px);padding-left:var(--cx);padding-right:var(--hp);
   }
+  .slide-bg{
+    position:relative;inset:auto;grid-column:2;grid-row:1;justify-self:end;
+    height:min(calc(100% - var(--hp) - 72px),calc((100vw - var(--cx) - var(--hp) - 300px - clamp(32px,3vw,48px))*9/16));
+    aspect-ratio:16/9;border-radius:26px;overflow:hidden;
+    border:1px solid rgba(224,169,109,.18);box-shadow:0 30px 80px rgba(0,0,0,.55);
+  }
+  /* фото целиком: рамка ровно 16:9, cover не режет ни на одной ширине */
+  .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
+  /* никаких подложек и scrim поверх фото: текст стоит на --night */
+  .slide-bg::before,.slide-bg::after{content:none}
+  .slide-in{background:none;padding:0;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;align-self:center}
+  .hero-ui{left:auto;right:var(--hp);bottom:max(6px,calc(var(--hp)/2 - 24px))}
+  .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
+  /* стрелка «вниз» — под текстовой колонкой, не поверх фото */
+  .hero-scroll{left:var(--cx);transform:none;bottom:max(6px,calc(var(--hp)/2 - 24px));animation:none}
 }
 @media (min-width:1180px){
   .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
 }
-@media (max-width:1024px){
+/* 641…1023: фото сверху целиком во всю ширину, текст под ним на --night */
+@media (min-width:641px) and (max-width:1023px){
+  .hero{flex-direction:column;min-height:0}
+  .hero-track{display:grid;flex:none}
+  .slide{position:relative;inset:auto;grid-area:1/1;display:block}
+  .slide-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9}
+  .slide-bg::before,.slide-bg::after{content:none}
+  .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
+  .slide-in{background:none;padding:26px 24px 30px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+  .hero-ui{position:static;padding:12px 0 16px}
+  .hero-ui .container{justify-content:center}
+}
+@media (max-width:1023px) and (min-width:641px){
+  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
+}
+/* ≤640: текст на гарантированно тёмной панели поверх фото (контраст ≥4,5) */
+@media (max-width:640px){
   .slide-in{
     background:rgba(6,11,9,.82);padding:22px;border-radius:18px;
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);

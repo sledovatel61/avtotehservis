@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
-import { listCatalogServices } from '../server/services.ts';
+import { listCatalogServices, listHomeServices } from '../server/services.ts';
 import { listPublishedCases, listPublishedReviews, coverInfo } from '../server/content.ts';
 import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
-const services = listCatalogServices();
+const services = listHomeServices();
 const cases = listPublishedCases(6);
 const reviews = listPublishedReviews(8);
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
@@ -68,9 +68,9 @@ const jsonLd = {
       <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 2 из 3">
         <div class="slide-bg">
           <picture>
-            <source type="image/avif" srcset="/img/hero-tyre-640.avif 640w, /img/hero-tyre-960.avif 960w, /img/hero-tyre-1600.avif 1600w, /img/hero-tyre-2560.avif 2560w" sizes="100vw">
-            <source type="image/webp" srcset="/img/hero-tyre-640.webp 640w, /img/hero-tyre-960.webp 960w, /img/hero-tyre-1600.webp 1600w, /img/hero-tyre-2560.webp 2560w" sizes="100vw">
-            <img src="/img/hero-tyre-1600.webp" width="1600" height="893" alt="" aria-hidden="true" loading="lazy" decoding="async">
+            <source type="image/avif" srcset="/img/hero-tyre-640.avif 640w, /img/hero-tyre-960.avif 960w, /img/hero-tyre-1600.avif 1600w, /img/hero-tyre-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tyre-640.webp 640w, /img/hero-tyre-960.webp 960w, /img/hero-tyre-1600.webp 1600w, /img/hero-tyre-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tyre-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
           </picture>
         </div>
         <div class="slide-in container">
@@ -86,9 +86,9 @@ const jsonLd = {
       <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 3 из 3">
         <div class="slide-bg">
           <picture>
-            <source type="image/avif" srcset="/img/hero-tools-640.avif 640w, /img/hero-tools-960.avif 960w, /img/hero-tools-1600.avif 1600w, /img/hero-tools-2560.avif 2560w" sizes="100vw">
-            <source type="image/webp" srcset="/img/hero-tools-640.webp 640w, /img/hero-tools-960.webp 960w, /img/hero-tools-1600.webp 1600w, /img/hero-tools-2560.webp 2560w" sizes="100vw">
-            <img src="/img/hero-tools-1600.webp" width="1600" height="893" alt="" aria-hidden="true" loading="lazy" decoding="async">
+            <source type="image/avif" srcset="/img/hero-tools-640.avif 640w, /img/hero-tools-960.avif 960w, /img/hero-tools-1600.avif 1600w, /img/hero-tools-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tools-640.webp 640w, /img/hero-tools-960.webp 960w, /img/hero-tools-1600.webp 1600w, /img/hero-tools-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tools-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
           </picture>
         </div>
         <div class="slide-in container">
@@ -119,23 +119,23 @@ const jsonLd = {
     <picture>
       <source type="image/avif" srcset="/img/strip-sign.avif">
       <source type="image/webp" srcset="/img/strip-sign.webp">
-      <img src="/img/strip-sign.webp" width="1200" height="500" alt="Вывеска «АвтоТехСервис» с телефонами и логотипами брендов над боксами" loading="lazy" decoding="async">
+      <img src="/img/strip-sign.webp" width="1200" height="500" alt="Шиномонтаж: руки в перчатках ставят покрышку на диск под тёплой лампой" loading="lazy" decoding="async">
     </picture>
-    <figcaption>Портовая, 439 — два бокса</figcaption>
+    <figcaption>Шиномонтаж и ремонт в одном месте</figcaption>
   </figure>
   <figure class="strip-item reveal" data-d="1">
     <picture>
       <source type="image/avif" srcset="/img/strip-bay.avif">
       <source type="image/webp" srcset="/img/strip-bay.webp">
-      <img src="/img/strip-bay.webp" width="1200" height="500" alt="Левый бокс изнутри: автомобиль в ремзоне и инструмент на стене" loading="lazy" decoding="async">
+      <img src="/img/strip-bay.webp" width="1200" height="500" alt="Бокс изнутри: автомобиль на подъёмнике, кирпичные стены и красные шкафы" loading="lazy" decoding="async">
     </picture>
-    <figcaption>Шиномонтаж и ремонт в одном месте</figcaption>
+    <figcaption>Портовая, 439 — два бокса</figcaption>
   </figure>
   <figure class="strip-item reveal" data-d="2">
     <picture>
       <source type="image/avif" srcset="/img/strip-gates.avif">
       <source type="image/webp" srcset="/img/strip-gates.webp">
-      <img src="/img/strip-gates.webp" width="1200" height="500" alt="Правый бокс: автомобиль на подъёмнике и тёплый свет ламп" loading="lazy" decoding="async">
+      <img src="/img/strip-gates.webp" width="1200" height="500" alt="Двигатель под лампой и планшет диагностики: осмотр перед сметой" loading="lazy" decoding="async">
     </picture>
     <figcaption>Работаем ежедневно 9:00–19:00</figcaption>
   </figure>

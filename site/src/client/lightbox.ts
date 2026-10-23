@@ -17,7 +17,7 @@ function lbRender(): void {
   const it = items[lbIdx];
   if (!it || !lb) return;
   const img = $('#lb-img', lb);
-  if (img) img.innerHTML = `<img src="${it.img}" alt="${it.title}">`;
+  if (img) img.innerHTML = `<img src="${it.img}" alt="${it.title} — фото появится после съёмки">`;
   const t = $('#lb-title', lb); if (t) t.textContent = it.title;
   const s = $('#lb-sub', lb); if (s) s.textContent = it.sub;
   const c = $('#lb-count', lb); if (c) c.textContent = `${lbIdx + 1} / ${items.length}`;
@@ -29,18 +29,7 @@ function lbOpen(i: number): void {
   lbRender();
   lb.classList.add('is-open');
   document.body.classList.add('no-scroll');
-  /* 7.2: фокус только когда visibility уже visible — на следующем кадре,
-     иначе браузер не focuses элемент внутри скрытого оверлея. */
-  // 6.3: visibility становится visible только после кадра + кадра перехода —
-  // двойной rAF, плюс страховка transitionend на самый долгий transition
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => { $('#lb-close', lb)?.focus(); });
-  });
-  const onVis = (): void => {
-    $('#lb-close', lb)?.focus();
-    lb?.removeEventListener('transitionend', onVis);
-  };
-  lb?.addEventListener('transitionend', onVis);
+  $('#lb-close', lb)?.focus();
   track('lightbox_open', { index: lbIdx });
 }
 function lbClose(): void {
@@ -66,9 +55,6 @@ if (lb && items.length) {
   lb.addEventListener('click', (e) => { if (e.target === lb) lbClose(); });
   lb.addEventListener('keydown', (e) => {
     if (e.key !== 'Tab') return;
-    if (!$('#lb-close', lb)?.closest('#lightbox')?.contains(document.activeElement)) {
-      e.preventDefault(); $('#lb-close', lb)?.focus(); return;
-    }
     const f = $$<HTMLElement>('button,a[href]', lb).filter((el) => el.offsetParent !== null);
     if (!f.length) return;
     if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }

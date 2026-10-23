@@ -296,9 +296,10 @@ test('safe-zone: мобильные вьюпорты — название вну
 });
 
 test('safe-zone: ловит машину ниже видимой полосы (синтетика)', () => {
-  const bad = { ...geom.desk, cars: [30, 1400, 2274, 1530] };
+  /* раунд 12: десктоп показывает фото целиком, поэтому «ниже полосы» = ниже кадра */
+  const bad = { ...geom.desk, cars: [30, 1500, 2274, 1730] };
   const rows = safeZoneTable(bad);
   const row = rows.find((r: { vp: string }) => r.vp === '1440×900');
   assert.ok(row, 'строка 1440×900 есть');
-  assert.equal(row.cars, 'нет', 'машина ниже полосы падает');
+  assert.equal(row.cars, 'нет', 'машина ниже кадра падает');
 });

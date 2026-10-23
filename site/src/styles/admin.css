@@ -71,8 +71,3 @@
 .hint{font-size:13px;color:var(--mist)}
 .adm-top-spacer{flex:1}
 .btn--block{display:block;width:100%}
-
-/* ---------- Медиа-переопределения (база выше, медиа ниже — M2, раунд 9) ---------- */
-@media (max-width:1024px){
-  .adm-grid{grid-template-columns:1fr;gap:30px}
-}

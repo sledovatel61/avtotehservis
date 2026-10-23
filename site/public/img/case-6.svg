@@ -4,4 +4,7 @@
 <path d="M400 0l120 600" stroke="#C87F45" stroke-width="4" fill="none"/>
 <g fill="none" stroke="#B7C4BB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" transform="translate(0,0)"><path d="M95 340q95-110 190 0" /><path d="M150 300l60 40" stroke="#C87F45" stroke-width="9"/><path d="M200 250l-40 60" stroke="#C87F45" stroke-width="9"/></g>
 <g fill="none" stroke="#4E9E74" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M485 340q95-110 190 0" stroke="#E0A96D"/><path d="M485 340h190" stroke="#E0A96D"/><path d="M640 262l26 24-14 30" stroke="#E0A96D"/></g>
+<g font-family="sans-serif" font-size="26" fill="#B7C4BB"><text x="60" y="80">ДО</text></g>
+<g font-family="sans-serif" font-size="26" fill="#E0A96D"><text x="640" y="80">ПОСЛЕ</text></g>
+<g fill="#B7C4BB" font-family="sans-serif" font-size="23"><text x="400" y="562" text-anchor="middle">Замена лобового стекла · заглушка</text></g>
 </svg>
