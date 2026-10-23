@@ -6,6 +6,7 @@
 | **Ветка A5** | `arena/c0d7d4ba-avtotehservis`, head **`b239c47`** (`f907ed4` + добавка `b239c47`) |
 | **Ревью A6** | `63b5c74` → `reviews/round12-review.md`: **REQUEST CHANGES**, 3 блокера, 4 major, 6 minor |
 | **Моя проверка** | worktree `/tmp/v12`, `npm ci`, `tsc` 0, build ok, **178/178 ok**, `npm run smoke` **14/14**, гейт `build-images.mjs` **EXIT 1** |
+| **Сравнение кадров** | `evaluation/assets/r12-vs-r10-hero.jpg` — раунд 10 против раунда 12 бок о бок; `evaluation/assets/r12-about-defect.jpg` — дефект стойки в «О компании» |
 | **Превью** | Pages обновлён: `preview/github-pages` = **`d026413`**, workflow `39955500407` success, deployment `7278486414` success |
 | **Решение** | **не принято**: три блокера A6 подтверждаю, и главного не случилось — **кадр первого слайда стал хуже**, чем в раунде 10 |
 
