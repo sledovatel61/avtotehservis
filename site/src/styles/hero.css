@@ -83,29 +83,35 @@
    ширина следует из aspect-ratio → clientWidth/clientHeight = пропорция файла.
    Левый край текста = левый край контейнера (--cx, как логотип в шапке).
    hero-ui стоит под фото справа, в зазоре hp — пересечение с .slide-cta = 0. */
+/* РАУНД 13: фото снова ФОНОМ на весь блок (как просил заказчик), текст — в левой трети
+   на мягком затемнении. Кадр 16:9, пропорция блока держится через aspect-ratio,
+   поэтому cover не режет ни на одной ширине. */
 @media (min-width:1024px){
-  .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px)}
-  .hero-track{display:grid}
-  .slide{
-    position:relative;inset:auto;grid-area:1/1;display:grid;
-    grid-template-columns:minmax(300px,1fr) auto;align-items:center;
-    column-gap:clamp(32px,3vw,48px);padding-left:var(--cx);padding-right:var(--hp);
-  }
-  .slide-bg{
-    position:relative;inset:auto;grid-column:2;grid-row:1;justify-self:end;
-    height:min(calc(100% - var(--hp) - 72px),calc((100vw - var(--cx) - var(--hp) - 300px - clamp(32px,3vw,48px))*9/16));
-    aspect-ratio:16/9;border-radius:26px;overflow:hidden;
-    border:1px solid rgba(224,169,109,.18);box-shadow:0 30px 80px rgba(0,0,0,.55);
-  }
-  /* фото целиком: рамка ровно 16:9, cover не режет ни на одной ширине */
+  .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px);
+        min-height:0;aspect-ratio:16/9;max-height:calc(100svh - 96px)}
+  .hero-track{display:block}
+  .slide{position:absolute;inset:0;display:flex;align-items:center}
+  .slide-bg{position:absolute;inset:0;height:auto;aspect-ratio:auto;border-radius:0;border:none;box-shadow:none}
   .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
-  /* никаких подложек и scrim поверх фото: текст стоит на --night */
-  .slide-bg::before,.slide-bg::after{content:none}
-  .slide-in{background:none;padding:0;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;align-self:center}
-  .hero-ui{left:auto;right:var(--hp);bottom:max(6px,calc(var(--hp)/2 - 24px))}
+  /* затемнение только под текстом: слева плотно, к центру уходит в ноль, без кромок */
+  .slide-bg::before{
+    content:"";position:absolute;inset:0;z-index:1;
+    background:
+      linear-gradient(90deg,rgba(6,11,9,.92) 0%,rgba(6,11,9,.82) 22%,rgba(6,11,9,.55) 40%,rgba(6,11,9,.18) 56%,rgba(6,11,9,0) 68%),
+      linear-gradient(0deg,rgba(6,11,9,.55) 0%,rgba(6,11,9,0) 26%);
+  }
+  .slide-bg::after{content:none}
+  .slide-in{
+    position:relative;z-index:3;background:none;border-radius:0;backdrop-filter:none;
+    -webkit-backdrop-filter:none;padding:0 var(--hp) 0 var(--cx);
+    max-width:min(46%,720px);align-self:center;
+  }
+  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.2vw,2.9rem);max-width:14em}
+  .slide-sub{font-size:clamp(15px,1.15vw,18px);max-width:44ch}
+  .hero-ui{left:auto;right:var(--hp);bottom:max(12px,calc(var(--hp)/2 - 20px))}
   .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
-  /* стрелка «вниз» — под текстовой колонкой, не поверх фото */
-  .hero-scroll{left:var(--cx);transform:none;bottom:max(6px,calc(var(--hp)/2 - 24px));animation:none}
+  /* стрелка «вниз» — внутри правой части, не под кнопками */
+  .hero-scroll{left:auto;right:calc(var(--hp) + 220px);transform:none;bottom:max(12px,calc(var(--hp)/2 - 20px));animation:none}
 }
 @media (min-width:1180px){
   .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
@@ -116,7 +122,8 @@
   .hero-track{display:grid;flex:none}
   .slide{position:relative;inset:auto;grid-area:1/1;display:block}
   .slide-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9}
-  .slide-bg::before,.slide-bg::after{content:none}
+  .slide-bg::after{content:none}
+  .slide-bg::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(6,11,9,.9) 0%,rgba(6,11,9,.5) 45%,rgba(6,11,9,.1) 100%)}
   .slide-bg img,.slide-bg .neon,.slide-bg img.f16,.slide-bg .neon.f16{object-position:50% 50%}
   .slide-in{background:none;padding:26px 24px 30px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
   .hero-ui{position:static;padding:12px 0 16px}

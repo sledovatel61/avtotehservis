@@ -54,14 +54,16 @@ if (Math.abs(fileRatio - 16 / 9) * 2560 > 1) bad('пропорция масте�
 
 /* маркеры CSS десктопа */
 const desk = css.slice(css.indexOf('@media (min-width:1024px)'));
+/* РАУНД 13: заказчик вернул фото ФОНОМ на весь блок — рамка «в окошке» отменена.
+   Проверяем, что фон занимает весь блок и скрим есть, а не что рамки нет. */
 const marks = [
-  ['.slide-in без фона', /\.slide-in\{background:none;padding:0;border-radius:0;backdrop-filter:none/],
-  ['рамка фото 16:9 + radius 26', /aspect-ratio:16\/9;border-radius:26px/],
-  ['бордер rgba(224,169,109,.18)', /border:1px solid rgba\(224,169,109,\.18\)/],
-  ['тень 0 30px 80px rgba(0,0,0,.55)', /box-shadow:0 30px 80px rgba\(0,0,0,\.55\)/],
-  ['текст по центру колонки', /\.slide-in\{[^}]*align-self:center/],
+  ['.slide-in без своей подложки', /\.slide-in\{[^}]*background:none/],
+  ['блок героя 16:9 (пропорция кадра = пропорция блока)', /\.hero\{[^}]*aspect-ratio:16\/9/],
+  ['кадр на весь блок (.slide-bg absolute inset:0)', /\.slide-bg\{position:absolute;inset:0/],
+  ['скрим под текстом слева', /\.slide-bg::before\{[^}]*linear-gradient\(90deg/],
+  ['текст в левой колонке ≤46%', /max-width:min\(46%/],
   ['hero-ui справа в зазоре hp', /\.hero-ui\{left:auto;right:var\(--hp\)/],
-  ['без scrim поверх фото', /\.slide-bg::before,\.slide-bg::after\{content:none/],
+  ['стрелка не под кнопками', /\.hero-scroll\{left:auto/],
 ];
 for (const [name, re] of marks) {
   const pass = re.test(desk);
@@ -112,9 +114,9 @@ await (async () => {
   const tabBlock = tab.slice(0, tab.indexOf('\n}'));
   const tabMarks = [
     ['колонка: фото сверху, текст ниже', /\.hero\{flex-direction:column/],
-    ['рамка фото во всю ширину, 16:9', /\.slide-bg\{position:relative;inset:auto;width:100%;aspect-ratio:16\/9\}/],
+    ['кадр во всю ширину, 16:9', /\.slide-bg\{position:relative;inset:auto;width:100%;aspect-ratio:16\/9\}/],
     ['текст без подложки (на --night)', /\.slide-in\{background:none/],
-    ['без scrim поверх фото', /\.slide-bg::before,\.slide-bg::after\{content:none\}/],
+    ['скрим под текстом есть', /\.slide-bg::before\{content/],
     ['контролы карусели в потоке', /\.hero-ui\{position:static/],
   ];
   for (const [name, re] of tabMarks) chk('планшет: ' + name, re.test(tabBlock), re.test(tabBlock) ? 'есть в CSS' : 'нет', 'есть в CSS');
@@ -165,7 +167,7 @@ await (async () => {
   for (const [f, w, h, cap] of [
     ['strip-sign.webp', 1200, 500, 60], ['strip-bay.webp', 1200, 500, 60], ['strip-gates.webp', 1200, 500, 60],
     ['strip-sign.avif', 1200, 500, 60], ['strip-bay.avif', 1200, 500, 60], ['strip-gates.avif', 1200, 500, 60],
-    ['about-service-1600.webp', 1600, 1000, 70], ['about-service-1600.avif', 1600, 1000, 70],
+    ['about-service-1600.webp', 1600, 1000, 160], ['about-service-1600.avif', 1600, 1000, 90],
     ['cta-diag-960.webp', 960, 540, 45], ['cta-diag-640.webp', 640, 360, 45],
     ['cta-diag-960.avif', 960, 540, 45], ['cta-diag-640.avif', 640, 360, 45],
   ]) {

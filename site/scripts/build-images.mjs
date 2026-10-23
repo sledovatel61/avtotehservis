@@ -174,7 +174,7 @@ const CAPS = {
   'strip-sign': { avif: 60, webp: 60 },
   'strip-bay': { avif: 60, webp: 60 },
   'strip-gates': { avif: 60, webp: 60 },
-  'about-service-1600': { avif: 70, webp: 70 },
+  'about-service-1600': { avif: 80, webp: 160 },
   'about-service-960': { avif: 70, webp: 70 },
   'about-service-640': { avif: 70, webp: 70 },
   'cta-diag-960': { avif: 45, webp: 45 },
