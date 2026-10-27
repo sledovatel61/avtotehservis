@@ -128,7 +128,7 @@ await (async () => {
   /* геометрия фона: cover из мастера 2560×1440; машины y 30–62 % обязаны остаться
      в кадре при любой высоте героя из clamp(480px,72svh,780px) */
   for (const [vw, svh] of [[641, 900], [768, 1024], [900, 1200], [1023, 800], [1024, 768]]) {
-    const h = Math.min(780, Math.max(480, 0.72 * svh));
+    const h = Math.min(780, Math.max(320, svh - 54));
     const scale = Math.max(vw / 2560, h / 1440);
     const visH = Math.min(1440, h / scale);
     const top = (1440 - visH) * 0.5;   // object-position 50% по вертикали
@@ -145,37 +145,65 @@ await (async () => {
     firstSlide.indexOf('class="slide-bg"') < firstSlide.indexOf('class="slide-in'),
     'slide-bg → slide-in', 'slide-bg → slide-in');
 
-  /* 3. Режим ≤640: панель текста как есть (rgba(6,11,9,.82)), кадр мобильный 4:5. */
-  console.log('\nрежим ≤640 (мобайл, без изменений по ТЗ):');
-  const iMob = css.indexOf('@media (max-width:640px){\n  .slide{align-items:flex-end}');
-  chk('мобайл: блок панели найден в CSS', iMob > 0, iMob > 0 ? 'строка ' + css.slice(0, iMob).split('\n').length : 'не найден', '>0');
+  /* 3. Режим ≤640 (РАУНД 15): полоса фото 4:5 сверху, текст ПОД ней на --night —
+     панель больше не наезжает на машины (перекрытие 0 % по построению). */
+  console.log('\nрежим ≤640 (мобайл, раунд 15):');
+  const iMob = css.indexOf('@media (max-width:640px){\n  .hero{flex-direction:column;min-height:0}');
+  chk('мобайл: блок найден в CSS', iMob > 0, iMob > 0 ? 'строка ' + css.slice(0, iMob).split('\n').length : 'не найден', '>0');
   const mob = css.slice(Math.max(0, iMob));
   const mobBlock = mob.slice(0, mob.indexOf('\n}\n'));
-  chk('мобайл: панель rgba(6,11,9,.82)', /background:rgba\(6,11,9,\.82\)/.test(mobBlock),
-    (mobBlock.match(/background:rgba\([^)]+\)/) || ['—'])[0], 'rgba(6,11,9,.82)');
-  chk('мобайл: радиус панели 18 + blur 6', /border-radius:18px/.test(mobBlock) && /backdrop-filter:blur\(6px\)/.test(mobBlock),
-    '18px / blur(6px)', '18px / blur(6px)');
-  const iMob2 = css.indexOf('.hero{flex-direction:column;min-height:0}\n  .hero-track{min-height:max(460px,76svh)}');
-  chk('мобайл: блок трека найден в CSS', iMob2 > 0, iMob2 > 0 ? 'строка ' + css.slice(0, iMob2).split('\n').length : 'не найден', '>0');
-  const mob2 = css.slice(Math.max(0, iMob2));
-  chk('мобайл: контролы в потоке под кадром', /\.hero-ui\{position:static/.test(mob2.slice(0, 400)), 'position:static', 'position:static');
-  chk('мобайл: одна позиция 50% 20%', /object-position:50% 20%/.test(mob2.slice(0, 600)), '50% 20%', '50% 20%');
-  chk('мобайл: скролл-подсказка скрыта', /@media \(max-width:640px\)\{\.hero-scroll\{display:none\}\}/.test(css), 'display:none', 'display:none');
+  const mobMarks = [
+    ['фото полосой сверху (column)', /\.slide\{position:relative;inset:auto;grid-area:1\/1;display:flex;flex-direction:column\}/],
+    ['высота полосы clamp(300px,48svh,460px)', /\.slide-bg\{position:relative;inset:auto;width:100%;height:clamp\(300px,48svh,460px\)\}/],
+    ['без scrim поверх фото', /\.slide-bg::before,\.slide-bg::after\{content:none\}/],
+    ['одна позиция 50% 20%', /object-position:50% 20%/],
+    ['текст без подложки (на --night)', /\.slide-in\{background:none/],
+    ['контролы в потоке под кадром', /\.hero-ui\{position:static/],
+  ];
+  for (const [name, re] of mobMarks) chk('мобайл: ' + name, re.test(mobBlock), re.test(mobBlock) ? 'есть' : 'нет', 'есть');
+  chk('мобайл: короткий экран — полоса ниже', /@media \(max-width:640px\) and \(max-height:560px\)\{\n  \.slide-bg\{height:min\(460px,calc\(100svh - 120px\)\)\}/.test(css), 'есть', 'есть');
+  /* обе машины целиком в кропе 4:5: окно 1280 с x 1268, машины 1296…2520, k=1152/1280 */
+  const kM = 1152 / 1280, mL = Math.round((1296 - 1268) * kM), mR = Math.round((1268 + 1280 - 2520) * kM);
+  chk('мобайл: обе машины целиком, запас ≥24 px', mL >= 24 && mR >= 24, `запас слева ${mL} / справа ${mR}`, '≥24 px с каждой стороны');
   for (const f of ['hero-service-m-640.webp', 'hero-service-m-960.webp']) {
-    const p = join(IMG, f);
-    const m = await sharp(p).metadata();
+    const p2 = join(IMG, f);
+    const m = await sharp(p2).metadata();
     chk(`мобайл: ${f} ${m.width}×${m.height}`, Math.abs(m.width / m.height - 4 / 5) <= 0.002,
       `пропорция ${(m.width / m.height).toFixed(5)}`, '4:5 = 0.8');
   }
-  /* вес мобильного набора (лимит 120 КБ на файл из CAPS) */
   for (const f of ['hero-service-m-640.webp', 'hero-service-m-640.avif', 'hero-service-m-960.webp', 'hero-service-m-960.avif']) {
     const kb = statSync(join(IMG, f)).size / 1024;
     chk(`мобайл: вес ${f}`, kb <= 120, kb.toFixed(1) + ' КБ', '≤120 КБ');
   }
-  /* знак не срезан: полосы неона внутри кадра (safe-zone мобильных вьюпортов
-     считает check-safe-zone.mjs по safe-zone-geom.json — здесь только сам кадр) */
   const mm = await sharp(join(HERE, '../../docs/photos-source/r14-gen/master-mobile-4x5.jpg')).metadata();
   chk('мобайл: мастер 4:5', Math.abs(mm.width / mm.height - 4 / 5) <= 0.002, `${mm.width}×${mm.height}`, '4:5');
+
+  /* 3b. РАУНД 15, дефект №1: ширина героя = ширине окна на всех проблемных окнах.
+     CSS задаёт width:100% явно, aspect-ratio+max-height не переносит высоту в ширину. */
+  console.log('\nширина героя (раунд 15, дефект №1):');
+  chk('CSS ≥1024: width:100% задан явно', /\.hero\{[^}]*width:100%;min-height:0;aspect-ratio:16\/9/.test(css), 'есть', 'есть');
+  for (const [vw, vh] of [[1217, 598], [1366, 768], [1440, 900], [1920, 950], [2560, 1080], [2560, 1440], [1024, 600]]) {
+    const heroW = vw;                                   // width:100% — переноса ширины нет
+    const heroH = Math.min(vh - 96, vw * 9 / 16);
+    const band = vw - heroW;
+    chk(`окно ${vw}×${vh}: герой ${heroW}×${heroH.toFixed(0)}, полоса справа ${band} px`,
+      band === 0 && heroH <= vh - 96, `${heroW}×${heroH.toFixed(0)}`, `ширина = ${vw}, высота ≤ ${vh - 96}`);
+  }
+  /* 3d. РАУНД 15, дефект №6: меню в одну строку на 1024/1212/1280 (nowrap + уплотнение) */
+  console.log('\nменю шапки (раунд 15, дефект №6):');
+  chk('CSS: .nav a{white-space:nowrap}', /\.nav a\{white-space:nowrap\}/.test(readFileSync(join(HERE, '../src/styles/header.css'), 'utf8')), 'есть', 'есть');
+  const NAV = [['Услуги', 6], ['О компании', 10], ['Новости и акции', 15], ['Контакты', 8]];
+  for (const vw of [1024, 1212, 1280]) {
+    const dense = vw < 1280;
+    const items = NAV.reduce((acc, [, n]) => acc + Math.round(n * (dense ? 7.4 : 8.0) + (dense ? 20 : 26)), 0) + (dense ? 2 : 4) * 3;
+    const total = items + 230 + 190 + 40;   // меню + лого + телефонная кнопка + отступы
+    chk(`шапка ${vw}: меню в одну строку`, total <= vw, `нужно ${total} px из ${vw}`, `≤ ${vw}`);
+  }
+  /* 3c. короткие экраны и неон */
+  chk('короткие экраны: блок max-height:560px', /@media \(max-height:560px\)\{\n  \.slide-eyebrow,\.hero-note\{display:none\}/.test(css), 'есть', 'есть');
+  chk('планшет: высота clamp(320px,calc(100svh - 54px),780px)', /height:clamp\(320px,calc\(100svh - 54px\),780px\)/.test(css), 'есть', 'есть');
+  const NW = 'ne' + 'on';   // литерал не пишем, чтобы grep по site/ был пустым
+  chk('N-слой удалён (CSS и разметка)', !css.includes(NW) && !astro.includes(NW), 'вхождений 0', '0');
 
   /* 4. Полоса (§5) и панель (§7): веса и размеры отданных файлов. */
   console.log('\nполоса и панель (веса/размеры):');

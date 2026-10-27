@@ -65,10 +65,6 @@ const CAPS = {
   'hero-service-1600': { avif: 120, webp: 160 },
   'hero-service-960': { avif: 120, webp: 120 },
   'hero-service-640': { avif: 120, webp: 120 },
-  'hero-neon-1600': { avif: 60, webp: 60 },
-  'hero-neon-960': { avif: 25, webp: 25 },
-  'hero-neon-m-960': { avif: 60, webp: 60 },
-  'hero-neon-m-640': { avif: 25, webp: 25 },
   'hero-service-m-960': { avif: 120, webp: 120 },
   'hero-service-m-640': { avif: 120, webp: 120 },
   'strip-sign': { avif: 60, webp: 60 },
@@ -109,60 +105,14 @@ async function encodeSet(name, pipe, w, h, hasAlpha) {
 
 const rawOf = async (pipe) => { const r = await pipe.raw().toBuffer({ resolveWithObject: true }); return { d: r.data, c: r.info.channels, w: r.info.width, h: r.info.height }; };
 const lum = (d, i) => 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
-
-/* ---------- неон вывески (RGBA-слой, как в раундах 9–13) ---------- */
-async function neon(masterFile, Wm, Hm, bx, by, bw, bh, thr) {
-  const PAD = 140;
-  const x0 = Math.max(0, bx - PAD), y0 = Math.max(0, by - PAD);
-  const w = Math.min(Wm - x0, bw + PAD * 2), h = Math.min(Hm - y0, bh + PAD * 2);
-  const rgb = await sharp(masterFile).extract({ left: x0, top: y0, width: w, height: h }).raw().toBuffer();
-  const mask = Buffer.alloc(w * h);
-  for (let i = 0; i < w * h; i++) {
-    const r = rgb[i * 3], g = rgb[i * 3 + 1], b = rgb[i * 3 + 2];
-    const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-    const sat = mx === 0 ? 0 : (mx - mn) / mx;
-    const t = Math.max(0, Math.min(1, (L - thr) / 32));
-    mask[i] = Math.round(255 * t * (sat < 0.35 ? 1 : 0.08));
-  }
-  const mk = (b) => sharp(b, { raw: { width: w, height: h, channels: 1 } });
-  const core = await rawOf(mk(mask).png());
-  const h1r = await rawOf(mk(mask).blur(6).linear(0.95, 0).png());
-  const h2r = await rawOf(mk(mask).blur(16).linear(0.62, 0).png());
-  const h3r = await rawOf(mk(mask).blur(36).linear(0.38, 0).png());
-  const nameTop = by - y0, nameBot = nameTop + bh;
-  const gate = (y) => {
-    const up = Math.max(0, Math.min(1, (y - (nameTop - 70)) / 50));
-    const dn = y <= nameBot + 2 ? 1 : Math.max(0, Math.min(1, (nameBot + 14 - y) / 12));
-    return Math.min(up, dn);
-  };
-  const applyGate = (r) => {
-    const d = Buffer.from(r.d);
-    for (let y = 0; y < h; y++) {
-      const g = gate(y);
-      if (g === 1) continue;
-      for (let x = 0; x < w; x++) d[(y * w + x) * r.c] = Math.round(d[(y * w + x) * r.c] * g);
-    }
-    return { d, c: r.c };
-  };
-  const h1 = applyGate(h1r), h2 = applyGate(h2r), h3 = applyGate(h3r);
-  const CORE = [155, 232, 188], HALO = [78, 158, 116];
-  const out = Buffer.alloc(w * h * 4);
-  for (let i = 0; i < w * h; i++) {
-    const aC = (core.d[i * core.c] / 255) * 0.92;
-    const aH = Math.min(1, h1.d[i * h1.c] / 255 + h2.d[i * h2.c] / 255 + h3.d[i * h3.c] / 255);
-    const a = Math.min(1, aH + aC);
-    const kr = aC, kh = aH * (1 - aC);
-    const inv = 1 / Math.max(a, 1e-6);
-    out[i * 4] = Math.min(255, Math.round((CORE[0] * kr + HALO[0] * kh) * inv));
-    out[i * 4 + 1] = Math.min(255, Math.round((CORE[1] * kr + HALO[1] * kh) * inv));
-    out[i * 4 + 2] = Math.min(255, Math.round((CORE[2] * kr + HALO[2] * kh) * inv));
-    out[i * 4 + 3] = Math.round(255 * a);
-  }
-  const full = Buffer.alloc(Wm * Hm * 4);
-  for (let y = 0; y < h; y++) out.copy(full, ((y0 + y) * Wm + x0) * 4, y * w * 4, (y * w + w) * 4);
-  return sharp(full, { raw: { width: Wm, height: Hm, channels: 4 } }).png().toBuffer();
-}
+/* раунд 15: детерминированный ГПСЧ (mulberry32) вместо Math.random —
+   две сборки подряд обязаны давать байт-в-байт одинаковые файлы */
+const mulberry32 = (seed) => () => {
+  seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
 
 /* ---------- перо + согласование тона для оверлея стойки ---------- */
 async function featherRect(buf, w, h, fe) {
@@ -245,13 +195,14 @@ async function main() {
     const u = ((PT.y - 1) * W1 + PT.x + x) * 3, v2 = ((PT.y + PT.h + 2) * W1 + PT.x + x) * 3;
     bgRow[x * 3] = (cv[u] + cv[v2]) / 2; bgRow[x * 3 + 1] = (cv[u + 1] + cv[v2 + 1]) / 2; bgRow[x * 3 + 2] = (cv[u + 2] + cv[v2 + 2]) / 2;
   }
+  const rng = mulberry32(0x9e3779b9);
   for (let y = 0; y < PT.h; y++) {
     for (let x = 0; x < PT.w; x++) {
       const bg = [bgRow[x * 3], bgRow[x * 3 + 1], bgRow[x * 3 + 2]];
       const di = (y * PT.w + x) * 3, bi = (y * PT.w + x) * 4;
       const Ld = 0.2126 * day[di] + 0.7152 * day[di + 1] + 0.0722 * day[di + 2];
       const a = Math.max(0, Math.min(1, (Ld - 120) / 40));          // маска белых букв
-      const n = (Math.random() - 0.5) * 3;                          // лёгкий шум фона
+      const n = (rng() - 0.5) * 3;                                // лёгкий шум фона (seed)
       block[bi] = Math.round(bg[0] * (1 - a) + txtCol[0] * a + n * (1 - a));
       block[bi + 1] = Math.round(bg[1] * (1 - a) + txtCol[1] * a + n * (1 - a));
       block[bi + 2] = Math.round(bg[2] * (1 - a) + txtCol[2] * a + n * (1 - a));
@@ -305,19 +256,25 @@ async function main() {
   console.log(`вывеска: x ${sx0}…${sx1} (${(sx0 / NW * 100).toFixed(1)}–${(sx1 / NW * 100).toFixed(1)} %), y ${sy0}…${sy1}`);
   const titleBBox = [Z.x0, Z.y0, Z.x1, Z.y1];
 
-  /* ----- 6. неон ----- */
-  const neonDesk = await neon(masterDeskFile, NW, NH, sx0, sy0, sx1 - sx0, sy1 - sy0, 112);
-
-  /* ----- 7. мобильный кроп 4:5: обе машины + вывеска ----- */
-  const MX = 1290;
+  /* ----- 7. мобильный кроп 4:5 (раунд 15): холст наращён вниз на 160 px мокрого
+     асфальта (зеркало нижних строк), окно 1280×1600 с x 1268 — обе машины целиком
+     с запасом ≥24 px с каждой стороны и вывеска целиком ----- */
+  const MX = 1268, MCW = 1280, MCH = 1600;
+  const EXT_H = MCH - 1440;
+  const bottom = await sharp(masterDeskFile).extract({ left: 0, top: 1440 - EXT_H, width: 2560, height: EXT_H })
+    .flip().blur(2).linear([0.92, 0.92, 0.92], [0, 0, 0]).png().toBuffer();
+  const extFile = join(PHOTOS, 'r14-gen/master-ext-2560x1600.png');
+  await sharp({ create: { width: 2560, height: MCH, channels: 3, background: '#000' } })
+    .composite([{ input: await sharp(masterDeskFile).png().toBuffer(), top: 0, left: 0 }, { input: bottom, top: 1440, left: 0 }])
+    .png().toFile(extFile);
   const masterMobFile = join(PHOTOS, 'r14-gen/master-mobile-4x5.jpg');
-  await sharp(masterDeskFile).extract({ left: MX, top: 0, width: MOBW, height: MOBH }).jpeg({ quality: 95 }).toFile(masterMobFile);
-  const neonMobBuf = await sharp(Buffer.from(neonDesk)).extract({ left: MX, top: 0, width: MOBW, height: MOBH }).png().toBuffer();
-  /* вывеска в мобильном кропе */
-  const mobTitle = [sx0 - MX, 0, sx1 - MX, MOBH];
-  console.log(`мобайл 4:5: окно x ${MX}…${MX + MOBW}; вывеска в кропе x ${mobTitle[0]}…${mobTitle[2]} из ${MOBW}; машины x ${cx0 - MX}…${cx1 - MX}`);
+  await sharp(extFile).extract({ left: MX, top: 0, width: MCW, height: MCH }).resize(MOBW, MOBH).jpeg({ quality: 95 }).toFile(masterMobFile);
+  const kMob = MOBW / MCW;
+  const mobTitle = [Math.round((sx0 - MX) * kMob), 0, Math.round((sx1 - MX) * kMob), MOBH];
+  const mL = Math.round((cx0 - MX) * kMob), mR = Math.round((MX + MCW - cx1) * kMob);
+  console.log(`мобайл 4:5: окно x ${MX}…${MX + MCW}; вывеска в кропе x ${mobTitle[0]}…${mobTitle[2]} из ${MOBW}; машины: запас слева ${mL} / справа ${mR} (норма ≥24)`);
   if (mobTitle[0] < 0 || mobTitle[2] > MOBW) { console.error('FAIL: вывеска не целиком в мобильном кропе'); fail = 1; }
-  if (cx0 - MX < 0) { console.error('FAIL: BMW не попадает в мобильный кроп'); fail = 1; }
+  if (mL < 24 || mR < 24) { console.error('FAIL: запас машин в мобильном кропе < 24 px'); fail = 1; }
 
   /* ----- 8. «О компании»: цельный кроп оригинала БЕЗ цветокоррекции ----- */
   /* окно 3000×1875+380+80: низ = 1955 = низ проёмов; +520 из задания срезал бы
@@ -342,12 +299,8 @@ async function main() {
     await encodeSet('hero-service-1600', sharp(masterDeskFile).resize(1600, 900, { fit: 'cover' }), 1600, 900, false),
     await encodeSet('hero-service-960', sharp(masterDeskFile).resize(960, 540, { fit: 'cover' }), 960, 540, false),
     await encodeSet('hero-service-640', sharp(masterDeskFile).resize(640, 360, { fit: 'cover' }), 640, 360, false),
-    await encodeSet('hero-neon-1600', sharp(Buffer.from(neonDesk)).resize(1600, 900), 1600, 900, true),
-    await encodeSet('hero-neon-960', sharp(Buffer.from(neonDesk)).resize(960, 540), 960, 540, true),
     await encodeSet('hero-service-m-960', sharp(masterMobFile).resize(960, 1200), 960, 1200, false),
     await encodeSet('hero-service-m-640', sharp(masterMobFile).resize(640, 800), 640, 800, false),
-    await encodeSet('hero-neon-m-960', sharp(neonMobBuf).resize(960, 1200), 960, 1200, true),
-    await encodeSet('hero-neon-m-640', sharp(neonMobBuf).resize(640, 800), 640, 800, true),
     await encodeSet('strip-sign', stripPipes['strip-sign'], 1200, 500, false),
     await encodeSet('strip-bay', stripPipes['strip-bay'], 1200, 500, false),
     await encodeSet('strip-gates', stripPipes['strip-gates'], 1200, 500, false),

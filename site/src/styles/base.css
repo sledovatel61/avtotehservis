@@ -46,3 +46,9 @@ section{position:relative}
 .lead{color:var(--mist);font-size:17.5px;max-width:62ch}
 .sec--ivory .lead{color:#3F4E47}
 
+
+/* раунд 15: демо-плашка превью — отдельная полоса над шапкой, не пересекается с меню */
+.demo-notice{
+  background:var(--deep,#08100C);color:var(--mist);font-size:13px;line-height:1.45;
+  padding-top:8px;padding-bottom:8px;margin:0 auto 8px;
+}

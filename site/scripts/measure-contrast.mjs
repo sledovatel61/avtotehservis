@@ -99,10 +99,9 @@ const tab = await worstInZone(join(IMG, 'hero-service-2560.webp'), [102, 244, 11
 row('641…1024 герой', `h1 ivory по худшему пикселю зоны (${tab.wx},${tab.wy})`, IVORY, tab.worst, 4.5);
 row('641…1024 герой', `sub mist по худшему пикселю зоны (${tab.wx},${tab.wy})`, MIST, tab.worst, 4.5);
 
-/* 2) мобильные: панель .82 поверх кадра 4:5 */
-const mobBg = await worstAfter(join(IMG, 'hero-service-m-640.webp'), () => 0.82);
-row('≤640 герой', 'h1 ivory по худшему пикселю панели', IVORY, mobBg, 3);
-row('≤640 герой', 'sub mist по худшему пикселю панели', MIST, mobBg, 4.5);
+/* 2) РАУНД 15: мобильные — текст ПОД полосой фото, на сплошном --night */
+row('≤640 герой', 'h1 ivory на --night (текст под фото)', IVORY, NIGHT, 4.5);
+row('≤640 герой', 'sub mist на --night (текст под фото)', MIST, NIGHT, 4.5);
 
 /* 3) панель диагностики: градиент .78→.86 поверх cta-diag-960 */
 const diagBg = await worstAfter(join(IMG, 'cta-diag-960.webp'), (t) => 0.78 + 0.08 * t, [11, 20, 16]);
