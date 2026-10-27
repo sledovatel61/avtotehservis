@@ -236,10 +236,12 @@ await (async () => {
   const hdr = readFileSync(join(HERE, '../src/styles/header.css'), 'utf8');
   for (const [name, re] of [
     ['.nav a{white-space:nowrap}', /\.nav a\{white-space:nowrap\}/],
-    ['уплотнение меню 1024–1279', /@media \(min-width:1024px\) and \(max-width:1279px\)\{\s*\.nav ul\{gap:2px\}\s*\.nav a\{padding:8px 7px;font-size:14px\}/],
-    ['номер в шапке — иконкой на 1025–1199', /@media \(min-width:1025px\) and \(max-width:1199px\)\{\s*\.hdr-phone span\{display:none\}/],
-    ['шапка плотнее на 1280–1439', /@media \(min-width:1280px\) and \(max-width:1439px\)\{\s*\.nav a\{padding:9px 9px;font-size:14px\}/],
-    ['ещё плотнее на 1024–1119', /@media \(min-width:1024px\) and \(max-width:1119px\)\{\s*\.nav a\{padding:8px 6px;font-size:13\.5px\}/],
+    ['1024–1199: подпись логотипа и цифры телефона скрыты', /@media \(min-width:1024px\) and \(max-width:1199px\)\{(?=[^}]*\})[\s\S]*?\.logo-t b\{display:none\}[\s\S]*?\.hdr-phone span\{display:none\}/],
+    ['1024–1199: меню уплотнено (8px 6px, 13.5px)', /@media \(min-width:1024px\) and \(max-width:1199px\)\{[\s\S]*?\.nav a\{padding:8px 6px;font-size:13\.5px\}/],
+    ['1200–1279: цифры скрыты, меню плотнее', /@media \(min-width:1200px\) and \(max-width:1279px\)\{[\s\S]*?\.hdr-phone span\{display:none\}[\s\S]*?\.nav a\{padding:8px 7px;font-size:14px\}/],
+    ['1280–1359: меню плотнее, цифры на месте', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.nav a\{padding:8px 7px;font-size:13\.5px\}/],
+    ['1280–1359: подпись логотипа скрыта', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.logo-t b\{display:none\}/],
+    ['1360–1439: шапка плотнее, цифры на месте', /@media \(min-width:1360px\) and \(max-width:1439px\)\{[\s\S]*?\.nav a\{padding:9px 9px;font-size:14px\}/],
   ]) chk('шапка: ' + name, re.test(hdr), re.test(hdr) ? 'есть' : 'нет', 'есть');
   /* 3c. короткие экраны и неон */
   chk('короткий ландшафт 641–1023: контролы в потоке (не поверх кнопок)',
