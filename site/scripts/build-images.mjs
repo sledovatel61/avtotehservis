@@ -16,7 +16,7 @@
    Полоса, панель диагностики, слайды 2–3 — не трогаются (§3.6 задания №14).
    Запуск: node site/scripts/build-images.mjs */
 import { tmpdir } from 'node:os';
-import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, renameSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,6 +101,18 @@ const CAPS = {
   'hero-tools-1600': { avif: 70, webp: 70 },
   'hero-tools-960': { avif: 40, webp: 40 },
   'hero-tools-640': { avif: 25, webp: 25 },
+  /* раунд 17 (задание №19): фоны «Трёх направлений» */
+  'tri-bg-2560':    { avif: 130, webp: 150 },
+  'tri-bg-m-900':   { avif: 80,  webp: 95  },
+  'tri-wheel-1600': { avif: 70,  webp: 80  },
+  'tri-wheel-960':  { avif: 45,  webp: 50  },
+  'tri-wheel-640':  { avif: 28,  webp: 32  },
+  'tri-serv-1600':  { avif: 70,  webp: 80  },
+  'tri-serv-960':   { avif: 45,  webp: 50  },
+  'tri-serv-640':   { avif: 28,  webp: 32  },
+  'tri-diag-1600':  { avif: 70,  webp: 80  },
+  'tri-diag-960':   { avif: 45,  webp: 50  },
+  'tri-diag-640':   { avif: 28,  webp: 32  },
 };
 async function encodeSet(name, pipe, w, h, hasAlpha) {
   const res = [];
@@ -340,6 +352,50 @@ async function main() {
       report.push(...await encodeSet(`${name}-${w}`, slide16[name].clone().resize(w, h), w, h, false));
     }
   }
+
+  /* ----- 10b. раунд 17: мастера и фоны «Трёх направлений» (задание №19) -----
+     Сырые кадры генератора (*-raw.jpg) нормализуются до заявленных размеров
+     мастеров (cover-кроп по центру + resize), затем кодируются avif/webp. */
+  const R18 = join(PHOTOS, 'r18-dirs');
+  const r18Masters = {
+    'sec-bg-2560':        { raw: 'sec-bg-2560-raw.jpg',    w: 2560, h: 1440 },
+    'sec-bg-m-900':       { raw: 'sec-bg-m-900-raw.jpg',   w: 900,  h: 1600 },
+    'card-1-wheels-2400': { raw: 'card-1-wheels-raw.jpg',  w: 2400, h: 1600 },
+    'card-2-service-2400': { raw: 'card-2-service-raw.jpg', w: 2400, h: 1600 },
+    'card-3-diag-2400':   { raw: 'card-3-diag-raw.jpg',    w: 2400, h: 1600 },
+  };
+  for (const [name, m] of Object.entries(r18Masters)) {
+    const rawPath = join(R18, m.raw), outPath = join(R18, name + '.jpg');
+    if (!existsSync(rawPath)) { console.error(`[r18] Input file is missing: ${rawPath}`); process.exit(1); }
+    const md = await sharp(rawPath).metadata();
+    const sc = Math.max(m.w / md.width, m.h / md.height);
+    const sw = Math.round(md.width * sc), sh = Math.round(md.height * sc);
+    await sharp(rawPath).resize(sw, sh)
+      .extract({ left: Math.round((sw - m.w) / 2), top: Math.round((sh - m.h) / 2), width: m.w, height: m.h })
+      .jpeg({ quality: 95 }).toFile(outPath + '.tmp');
+    renameSync(outPath + '.tmp', outPath);
+  }
+  /* РАУНД 17 / приёмка (замечание A6 §9.4): zones.json больше НЕ перезаписывается сборкой.
+     Это входные данные проверки (что именно считается сюжетом на кадре), а не её результат:
+     иначе гейт сравнивал число с самим собой, а ручная правка зоны не выживала пересборки.
+     Файл лежит в docs/photos-source/r18-dirs/zones.json и меняется только руками. */
+  const mSecD = join(R18, 'sec-bg-2560.jpg'), mSecM = join(R18, 'sec-bg-m-900.jpg');
+  const mWheel = join(R18, 'card-1-wheels-2400.jpg');
+  const mServ = join(R18, 'card-2-service-2400.jpg');
+  const mDiag = join(R18, 'card-3-diag-2400.jpg');
+  for (const r of await Promise.all([
+    encodeSet('tri-bg-2560', sharp(mSecD).resize(2560, 1440), 2560, 1440, false),
+    encodeSet('tri-bg-m-900', sharp(mSecM).resize(900, 1600), 900, 1600, false),
+    encodeSet('tri-wheel-1600', sharp(mWheel).resize(1600, 1067), 1600, 1067, false),
+    encodeSet('tri-wheel-960', sharp(mWheel).resize(960, 640), 960, 640, false),
+    encodeSet('tri-wheel-640', sharp(mWheel).resize(640, 427), 640, 427, false),
+    encodeSet('tri-serv-1600', sharp(mServ).resize(1600, 1067), 1600, 1067, false),
+    encodeSet('tri-serv-960', sharp(mServ).resize(960, 640), 960, 640, false),
+    encodeSet('tri-serv-640', sharp(mServ).resize(640, 427), 640, 427, false),
+    encodeSet('tri-diag-1600', sharp(mDiag).resize(1600, 1067), 1600, 1067, false),
+    encodeSet('tri-diag-960', sharp(mDiag).resize(960, 640), 960, 640, false),
+    encodeSet('tri-diag-640', sharp(mDiag).resize(640, 427), 640, 427, false),
+  ])) report.push(...r);
 
   /* ----- 11. текстура ≤100 КБ ----- */
   {

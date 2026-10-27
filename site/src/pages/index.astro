@@ -131,7 +131,21 @@ const jsonLd = {
     <figcaption>Работаем ежедневно 9:00–19:00</figcaption>
   </figure>
 </section>
-<section class="sec sec--deep" aria-labelledby="tri-h">
+<section class="sec sec--deep dirs" aria-labelledby="tri-h">
+  {/* РАУНД 17 / приёмка: фон секции — такой же слой <picture>, как у карточек, а не CSS
+      background-image. Причина: минцификатор сборки переписывает объявление внутри @supports
+      в голые строки image-set("/img/…" 1x type("image/avif")), а export-pages.mjs умел
+      префиксовать только url(…) — в итоге на Pages под /avtotehservis/ фон 404-ился.
+      Заодно <picture> даёт avif/webp и мобильный кадр без media-хаков в CSS. */}
+  <div class="dirs-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" type="image/avif" srcset="/img/tri-bg-m-900.avif">
+      <source media="(max-width:640px)" type="image/webp" srcset="/img/tri-bg-m-900.webp">
+      <source type="image/avif" srcset="/img/tri-bg-2560.avif">
+      <source type="image/webp" srcset="/img/tri-bg-2560.webp">
+      <img src="/img/tri-bg-2560.webp" width="2560" height="1440" alt="" loading="lazy" decoding="async">
+    </picture>
+  </div>
   <div class="container">
     <div class="sec-head reveal">
       <span class="eyebrow">Три направления</span>
@@ -139,18 +153,21 @@ const jsonLd = {
     </div>
     <div class="tri">
       <article class="tri-card reveal" data-d="0">
+        <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-wheel-1600.avif 1600w, /img/tri-wheel-960.avif 960w, /img/tri-wheel-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-wheel-1600.webp 1600w, /img/tri-wheel-960.webp 960w, /img/tri-wheel-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-wheel-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">01</span>
         <h3>Колёса</h3>
         <p>Шиномонтаж легковой и грузовой, балансировка, правка и прокатка дисков, ремонт порезов и грыж, вулканизация, сезонное хранение шин. То, с чем приезжают чаще всего — и что нужно сделать быстро и ровно.</p>
         <a class="link-more" href="/services/shinomontazh">Шиномонтаж и диски <span class="ar" aria-hidden="true">→</span></a>
       </article>
       <article class="tri-card tri-card--accent reveal" data-d="1">
+        <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-serv-1600.avif 1600w, /img/tri-serv-960.avif 960w, /img/tri-serv-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-serv-1600.webp 1600w, /img/tri-serv-960.webp 960w, /img/tri-serv-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-serv-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">02</span>
         <h3>Ремонт и ТО</h3>
         <p>ТО и аппаратная замена масла, ходовая и тормоза, рулевые рейки, развал-схождение, двигатели, АКПП и МКПП, дизельные форсунки, замена лобовых стёкол. Обслуживание, которое не допускает сюрпризов в дороге.</p>
         <a class="link-more" href="/services/to-maslo">Ремонт и обслуживание <span class="ar" aria-hidden="true">→</span></a>
       </article>
       <article class="tri-card reveal" data-d="2">
+        <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-diag-1600.avif 1600w, /img/tri-diag-960.avif 960w, /img/tri-diag-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-diag-1600.webp 1600w, /img/tri-diag-960.webp 960w, /img/tri-diag-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-diag-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">03</span>
         <h3>Диагностика</h3>
         <p>Компьютерная диагностика, автоэлектрика, ремонт и заправка кондиционеров. Начинаем с причины: находим неисправность, показываем её и согласуем смету — до начала работ.</p>

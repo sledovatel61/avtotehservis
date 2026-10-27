@@ -29,7 +29,35 @@ async function walk(dir) {
           links++;
         }
       }
+      for (const el of dom.window.document.querySelectorAll('[srcset]')) {
+        for (const part of (el.getAttribute('srcset') || '').split(',')) {
+          const value = part.trim().split(/\s+/)[0];
+          if (!value.startsWith('/') || value.startsWith('//')) continue;
+          assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed srcset URL: ${value} in ${file}`);
+          const path = join(root, decodeURIComponent(value.slice('/avtotehservis/'.length)));
+          assert.ok(await exists(path), `Broken srcset asset: ${value} in ${file}`);
+          links++;
+        }
+      }
       dom.window.close();
+    } else if (entry.name.endsWith('.css')) {
+      /* РАУНД 17 / приёмка: регресс на главный дефект круга — фон секции ссылался на /img/…
+         без префикса и на Pages отдавал 404. Проверяем ОБА вида ссылок: url(…) и
+         image-set("/img/…") — второй появляется после минцификации @supports. */
+      const css = await readFile(file, 'utf8');
+      const refs = [
+        ...[...css.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)].map((m) => m[1]),
+        ...[...css.matchAll(/image-set\(\s*["']([^"']+)["']/g)].map((m) => m[1]),
+        ...[...css.matchAll(/,\s*["']([^"']+\.(?:avif|webp|png|jpe?g|svg|woff2?))["']/g)].map((m) => m[1]),
+      ];
+      for (const value of refs) {
+        const rootRelative = value.startsWith('/') && !value.startsWith('//');
+        if (!rootRelative) continue;                  // data:, http(s):, относительные — не наши
+        assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed CSS asset: ${value} in ${file}`);
+        const path = join(root, decodeURIComponent(value.slice('/avtotehservis/'.length)));
+        assert.ok(await exists(path), `Broken CSS asset: ${value} in ${file}`);
+        links++;
+      }
     }
   }
 }

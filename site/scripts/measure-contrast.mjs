@@ -108,5 +108,83 @@ const diagBg = await worstAfter(join(IMG, 'cta-diag-960.webp'), (t) => 0.78 + 0.
 row('панель диагностики', 'h3 brass по худшему пикселю фона', BRASS, diagBg, 7);
 row('панель диагностики', 'p mist по худшему пикселю фона', MIST, diagBg, 7);
 
+
+/* 4) РАУНД 17 (задание №19): карточки «Три направления» — худший пиксель В ЗОНЕ
+   ТЕКСТА после скрима .tri-bg::after (стопы читаются из sections.css, единый
+   источник). Зона текста карточки 375×369 @1440: x27…348, y113…340 (§5 задания),
+   пересчёт в мастер 2400×1600 по кропу §3.1: видимая ширина 16,1…83,9 %.
+   Акцентная карточка поверх получает тонировку #1C3126 soft-light — только
+   темнее, в запас. Норма: h3/p/ссылка ≥4,5; заголовок секции — крупный, ≥3. */
+import { readFileSync as readCss } from 'node:fs';
+const R18 = join(HERE, '../../docs/photos-source/r18-dirs');
+const cssTri = readCss(join(HERE, '../src/styles/sections.css'), 'utf8');
+const mStops = cssTri.match(/\.tri-bg::after\{[^}]*rgba\(11,20,16,var\(--sc1,([\d.]+)\)\) 0%,rgba\(11,20,16,var\(--sc2,([\d.]+)\)\) 38%,rgba\(11,20,16,var\(--sc3,([\d.]+)\)\) 100%/);
+const triStops = mStops ? [[0, +mStops[1]], [.38, +mStops[2]], [1, +mStops[3]]] : [[0, .55], [.38, .72], [1, .86]];
+console.log(`скрим карточек из sections.css: ${triStops.map(s => s[1]).join(' / ')}`);
+/* РАУНД 17 / приёмка (замечание A6 §9.6): проверяем ВСЕ пять окон карточки, а не одно.
+   Окно мастера считается тем же правилом, что в CSS (cover + object-position 50% 50%);
+   полоса текста по Y — по фактическим габаритам блоков в рендере Chromium
+   (1440/1280: 113…352 из 369; 1024: 113…240 из 269; 768: 113…247 из 287;
+    390/360: 113…358 из 387). Если вёрстка сдвинет текст, полоса пересчитывается. */
+const CARD_MASTER = { W: 2400, H: 1600 };
+const COVER_WINDOWS = [
+  { vp: '375×369', cw: 375, ch: 369, band: [113 / 369, 352 / 369] },
+  { vp: '984×269', cw: 984, ch: 269, band: [113 / 269, 240 / 269] },
+  { vp: '728×287', cw: 728, ch: 287, band: [113 / 287, 247 / 287] },
+  { vp: '350×387', cw: 350, ch: 387, band: [113 / 387, 358 / 387] },
+  { vp: '332×387', cw: 332, ch: 387, band: [113 / 387, 358 / 387] },
+];
+function coverWindow(cw, ch, px = 0.5, py = 0.5) {
+  const { W, H } = CARD_MASTER;
+  const s = Math.max(cw / W, ch / H);
+  const dw = W * s, dh = H * s;
+  const ox = (dw - cw) * px, oy = (dh - ch) * py;
+  return { x0: ox / s, x1: (ox + cw) / s, y0: oy / s, y1: (oy + ch) / s };
+}
+async function worstInWindow(file, win, band, stops) {
+  const r = await sharp(file).raw().toBuffer({ resolveWithObject: true });
+  const w = r.info.width, h = r.info.height, ch = r.info.channels;
+  const y0 = Math.max(0, Math.round(win.y0 + (win.y1 - win.y0) * band[0]));
+  const y1 = Math.min(h, Math.round(win.y0 + (win.y1 - win.y0) * band[1]));
+  const x0 = Math.max(0, Math.round(win.x0)), x1 = Math.min(w, Math.round(win.x1));
+  let worst = null, wl = -1, wx = 0, wy = 0;
+  for (let y = y0; y < y1; y += 2) {
+    const a = stopA(stops, (y - win.y0) / (win.y1 - win.y0));
+    for (let x = x0; x < x1; x += 2) {
+      const i = (y * w + x) * ch;
+      const px = over([r.data[i], r.data[i + 1], r.data[i + 2]], a, OVER);
+      const l = lum(px);
+      if (l > wl) { wl = l; worst = px; wx = x; wy = y; }
+    }
+  }
+  return { worst, wx, wy };
+}
+const triCards2 = [['01 Колёса', 'card-1-wheels-2400.jpg'], ['02 Ремонт и ТО', 'card-2-service-2400.jpg'], ['03 Диагностика', 'card-3-diag-2400.jpg']];
+let bandBad = 0;
+for (const win of COVER_WINDOWS) if (!(win.band[0] > 0 && win.band[1] < 1)) bandBad++;
+if (bandBad) { fail = 1; console.log(`FAIL полоса текста выходит за карточку в ${bandBad} окнах`); }
+for (const [label, f] of triCards2) {
+  for (const win of COVER_WINDOWS) {
+    const z = await worstInWindow(join(R18, f), coverWindow(win.cw, win.ch), win.band, triStops);
+    row(`карточка ${label} ${win.vp}`, `ссылка brass по худшему пикселю (${z.wx},${z.wy})`, BRASS, z.worst, 4.5);
+    row(`карточка ${label} ${win.vp}`, `p mist по худшему пикселю (${z.wx},${z.wy})`, MIST, z.worst, 4.5);
+  }
+}
+/* заголовок секции: крупный текст (36,8 px), норма 3:1, фон — фото секции без скрима;
+   зона = верх кадра 1440×680 (css y 90…270 → мастер y 90…543), вся ширина */
+const mSec = cssTri.match(/\.dirs::before\{[^}]*linear-gradient\(180deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 40%,rgba\(11,20,16,([\d.]+)\) 62%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+const secStops = mSec ? [[0, +mSec[1]], [.4, +mSec[2]], [.62, +mSec[3]], [1, +mSec[4]]] : [[0, 0], [1, 0]];
+console.log(`скрим секции из sections.css: ${secStops.map(s => s[1]).join(' / ')}`);
+const secZ = await worstInZone(join(IMG, 'tri-bg-2560.webp'), [0, 90, 2560, 543], [[0, 0], [1, 0]], (t) => stopA(secStops, t));
+row('секция «Три направления»', `h2 ivory (крупный) по худшему пикселю зоны заголовка (${secZ.wx},${secZ.wy})`, IVORY, secZ.worst, 3);
+/* мутант: убрать скрим карточек — гейт обязан упасть на brass */
+{
+  const win = COVER_WINDOWS[0];
+  const z = await worstInWindow(join(R18, 'card-2-service-2400.jpg'), coverWindow(win.cw, win.ch), win.band, [[0, 0], [1, 0]]);
+  const r = ratio(BRASS, z.worst);
+  const fell = r < 4.5;
+  if (!fell) fail = 1;
+  console.log(`${fell ? 'ok  ' : 'FAIL'} мутант «скрим снят»: brass ${r.toFixed(2)}:1 — гейт ${fell ? 'упал, как должен' : 'НЕ УПАЛ'}`);
+}
 console.log(fail ? 'КОНТРАСТ: ПРОВАЛ' : 'КОНТРАСТ: все нормы выполнены');
 process.exit(fail);
