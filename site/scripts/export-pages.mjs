@@ -81,7 +81,14 @@ try {
       if (entry.isDirectory()) await fixCss(path);
       else if (entry.name.endsWith('.css')) {
         const css = await readFile(path, 'utf8');
-        await writeFile(path, css.replace(/url\((["']?)\/(?!\/)/g, `url($1${base}/`));
+        /* РАУНД 17 / приёмка: минцификатор переписывает declaration внутри @supports в
+           image-set("/img/x.avif" 1x type("image/avif")) — без url(), поэтому прежняя
+           замена промахивалась и фон секции 404-ился на Pages. Префиксуем оба вида. */
+        const fixed = css
+          .replace(/url\((["']?)\/(?!\/)/g, `url($1${base}/`)
+          .replace(/(image-set\(\s*)(["'])\/(?!\/)/g, `$1$2${base}/`)
+          .replace(/(,\s*)(["'])\/(?!\/)(?=[^"']*\.(?:avif|webp|png|jpe?g|svg|woff2?)["'])/g, `$1$2${base}/`);
+        await writeFile(path, fixed);
       }
     }
   }
