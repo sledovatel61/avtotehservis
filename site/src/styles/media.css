@@ -11,7 +11,9 @@
   .slots{grid-template-columns:repeat(4,1fr)}
   .hdr-phone span{display:none}
 }
-@media (max-width:860px){
+/* раунд 15: порог опущен с 860 до 1023 — в рендере шапка на 926 px была шириной 1146 px
+   (меню + телефон + CTA не помещались, .burger уходил за правый край) */
+@media (max-width:1023px){
   .nav{display:none}
   .burger{display:block;margin-left:auto}
   .hdr-cta .btn{display:none}

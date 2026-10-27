@@ -15,6 +15,7 @@
    Мобильный кроп 4:5: окно 1290…2442 по X мастера (обе машины + вывеска целиком/видны).
    Полоса, панель диагностики, слайды 2–3 — не трогаются (§3.6 задания №14).
    Запуск: node site/scripts/build-images.mjs */
+import { tmpdir } from 'node:os';
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
@@ -168,7 +169,12 @@ async function main() {
   const leftBand = await sharp(vertFile).extract({ left: 0, top: 0, width: LEFT, height: H1 }).flop().raw().toBuffer();
   const W1 = LEFT + SW;                                          // 1552
   const canvas = Buffer.alloc(W1 * H1 * 3);
-  Buffer.from(leftBand).copy(canvas, 0);
+  /* РАУНД 15 / правка приёмки: полосу 176×873 нельзя копировать в холст одним куском —
+     сплошное копирование «кирпичом» кладёт её в первые ~99 строк холста, а ниже оставляет
+     чёрный столбец (в рендере 768×1024 видна кромка x≈86 из 768). Копируем построчно. */
+  for (let y = 0; y < H1; y++) {
+    Buffer.from(leftBand).copy(canvas, y * W1 * 3, y * LEFT * 3, (y + 1) * LEFT * 3);
+  }
   for (let y = 0; y < H1; y++) Buffer.from(vert).copy(canvas, (y * W1 + LEFT) * 3, y * SW * 3, (y + 1) * SW * 3);
   /* левая пустая зона выше горизонта — глубокая тень: плавающие блики генератора
      (зелёные штрихи в «небе») гасятся градиентом ×0.30→0.80 по Y и до 1 к x 740 */
@@ -279,7 +285,8 @@ async function main() {
   const EXT_H = MCH - 1440;
   const bottom = await sharp(masterDeskFile).extract({ left: 0, top: 1440 - EXT_H, width: 2560, height: EXT_H })
     .flip().blur(2).linear([0.92, 0.92, 0.92], [0, 0, 0]).png().toBuffer();
-  const extFile = join(PHOTOS, 'r14-gen/master-ext-2560x1600.png');
+  /* промежуточный холст 4,7 МБ — во временную папку, в репозиторий не тащим */
+  const extFile = join(tmpdir(), 'ats-master-ext-2560x1600.png');
   await sharp({ create: { width: 2560, height: MCH, channels: 3, background: '#000' } })
     .composite([{ input: await sharp(masterDeskFile).png().toBuffer(), top: 0, left: 0 }, { input: bottom, top: 1440, left: 0 }])
     .png().toFile(extFile);

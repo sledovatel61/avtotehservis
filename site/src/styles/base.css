@@ -2,11 +2,16 @@
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{
+  /* РАУНД 15 / приёмка: высота шапки — одна переменная. В превью над шапкой стоит
+     демо-плашка (35 px), и первый экран вылезал за окно на 20 px (рендер 1217×598:
+     hero.bottom 618 при innerHeight 598). Теперь герой считает высоту от факта. */
+  --hdr:96px;
   margin:0;background:var(--night);color:var(--ivory);
   font-family:var(--font-text);font-size:17px;line-height:1.6;font-weight:400;
   overflow-x:hidden;
 }
 body.no-scroll{overflow:hidden}
+body[data-preview="true"]{--hdr:116px}
 img,svg{max-width:100%;height:auto;display:block}
 a{color:var(--brass);text-decoration:none;transition:color var(--t-fast) var(--ease)}
 a:hover{color:var(--ivory)}

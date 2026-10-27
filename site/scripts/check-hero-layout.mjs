@@ -157,14 +157,15 @@ await (async () => {
   const mobBlock = mob.slice(0, mob.indexOf('\n}\n'));
   const mobMarks = [
     ['фото полосой сверху (column)', /\.slide\{position:relative;inset:auto;grid-area:1\/1;display:flex;flex-direction:column\}/],
-    ['высота полосы clamp(300px,48svh,460px)', /\.slide-bg\{position:relative;inset:auto;width:100%;height:clamp\(300px,48svh,460px\)\}/],
+    ['высота полосы clamp(240px,40svh,400px)', /\.slide-bg\{position:relative;inset:auto;width:100%;height:clamp\(240px,40svh,400px\)\}/],
     ['без scrim поверх фото', /\.slide-bg::before,\.slide-bg::after\{content:none\}/],
     ['одна позиция 50% 20%', /object-position:50% 20%/],
     ['текст без подложки (на --night)', /\.slide-in\{background:none/],
     ['контролы в потоке под кадром', /\.hero-ui\{position:static/],
   ];
   for (const [name, re] of mobMarks) chk('мобайл: ' + name, re.test(mobBlock), re.test(mobBlock) ? 'есть' : 'нет', 'есть');
-  chk('мобайл: короткий экран — полоса ниже', /@media \(max-width:640px\) and \(max-height:560px\)\{\n  \.slide-bg\{height:min\(460px,calc\(100svh - 120px\)\)\}/.test(css), 'есть', 'есть');
+  chk('мобайл: короткий экран — полоса ниже', /@media \(max-width:640px\) and \(max-height:560px\)\{\n  \.slide-bg\{height:min\(400px,calc\(100svh - 120px\)\)\}/.test(css), 'есть', 'есть');
+  chk('мобайл: невысокий телефон 320×640 — CTA в первом экране', /@media \(max-width:640px\) and \(max-height:740px\)\{\n  \.slide-eyebrow\{display:none\}/.test(css), 'есть', 'есть');
   /* обе машины целиком в кропе 4:5: окно 1280 с x 1268, машины 1296…2520, k=1152/1280 */
   const kM = 1152 / 1280, mL = Math.round((1296 - 1268) * kM), mR = Math.round((1268 + 1280 - 2520) * kM);
   chk('мобайл: обе машины целиком, запас ≥24 px', mL >= 24 && mR >= 24, `запас слева ${mL} / справа ${mR}`, '≥24 px с каждой стороны');
@@ -203,7 +204,7 @@ await (async () => {
     if (!/width:100%/.test(body)) return 'нет width:100%';
     if (/max-width:/.test(body)) return 'на .hero стоит max-width — ширина может стать меньше окна';
     if (!/aspect-ratio:16\/9/.test(body)) return 'потерян кадр 16:9';
-    if (!/max-height:calc\(100svh - 96px\)/.test(body)) return 'нет ограничения по высоте окна';
+    if (!/max-height:calc\(100svh - var\(--hdr\)\)/.test(body)) return 'нет ограничения по высоте окна';
     const dup = (src.match(/@media \(min-width:1024px\)\{/g) || []).length;
     if (dup !== 1) return `блоков @media (min-width:1024px) — ${dup}, нужен 1 (дубли перебивают друг друга)`;
     const mob = (src.match(/@media \(max-width:640px\)\{/g) || []).length;
@@ -244,9 +245,16 @@ await (async () => {
     ['1360–1439: шапка плотнее, цифры на месте', /@media \(min-width:1360px\) and \(max-width:1439px\)\{[\s\S]*?\.nav a\{padding:9px 9px;font-size:14px\}/],
   ]) chk('шапка: ' + name, re.test(hdr), re.test(hdr) ? 'есть' : 'нет', 'есть');
   /* 3c. короткие экраны и неон */
-  chk('короткий ландшафт 641–1023: контролы в потоке (не поверх кнопок)',
-    /@media \(min-width:641px\) and \(max-width:1023px\) and \(max-height:560px\)\{[^}]*\}[^@]*\.hero-ui\{position:static/.test(css.replace(/\n/g, ' ')),
-    'есть', 'есть');
+  /* раунд 15 / приёмка: на коротком ландшафте контролы больше не в потоке, а в правом
+     нижнем углу поверх фото — но текстовая колонка там ≤60 %, поэтому по горизонтали
+     они не встречаются. Проверяем оба условия. */
+  const land = (() => {
+    const i = css.indexOf('@media (min-width:641px) and (max-width:1023px) and (max-height:560px){');
+    return i < 0 ? '' : css.slice(i, css.indexOf('\n}\n', i));
+  })();
+  chk('короткий ландшафт: контролы справа внизу, текст ≤70 %',
+    /\.slide-in\{max-width:70%/.test(land) && /\.hero-ui\{position:absolute;left:auto;right:12px/.test(land) && /\.hero\{flex-direction:row/.test(land),
+    land ? 'есть' : 'блока нет', 'есть');
   chk('короткие экраны: блок max-height:560px', /@media \(max-height:560px\)\{\n  \.slide-eyebrow,\.hero-note\{display:none\}/.test(css), 'есть', 'есть');
   chk('планшет: высота clamp(320px,calc(100svh - 54px),780px)', /height:clamp\(320px,calc\(100svh - 54px\),780px\)/.test(css), 'есть', 'есть');
   const NW = 'ne' + 'on';   // литерал не пишем, чтобы grep по site/ был пустым

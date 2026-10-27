@@ -104,3 +104,26 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
   .nav ul{gap:4px}
   .nav a{padding:9px 9px;font-size:14px}
 }
+
+/* РАУНД 15 / патч оркестратора: на телефоне шапка была шире окна (рендер: .burger
+   x 363…411 при clientWidth 360, scrollWidth 411). Подпись под логотипом — 196 px,
+   на ≤560 убираем её и поджимаем блоки; на ≤380 — ещё компактнее. */
+@media (max-width:560px){
+  .logo-t b{display:none}
+  .hdr-in{gap:14px}
+  .logo{gap:10px}
+  .logo img{width:40px;height:40px}
+  .logo-t{font-size:16px}
+  .burger{width:44px;height:44px}
+  .burger span{left:11px;right:11px}
+  .burger span:nth-child(1){top:14px}
+  .burger span:nth-child(2){top:21px}
+  .burger span:nth-child(3){top:28px}
+  body.menu-open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  body.menu-open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+}
+@media (max-width:380px){
+  .hdr-in{gap:10px}
+  .logo-t{font-size:15px}
+  .logo img{width:36px;height:36px}
+}
