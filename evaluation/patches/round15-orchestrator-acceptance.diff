@@ -736,7 +736,7 @@ index 6b95f22..9774739 100644
 +  .logo img{width:36px;height:36px}
  }
 diff --git a/site/src/styles/hero.css b/site/src/styles/hero.css
-index c6f1384..a6b41cf 100644
+index c6f1384..2dd6a48 100644
 --- a/site/src/styles/hero.css
 +++ b/site/src/styles/hero.css
 @@ -89,7 +89,7 @@
@@ -748,7 +748,7 @@ index c6f1384..a6b41cf 100644
    .hero-track{display:block}
    .slide{position:absolute;inset:0;display:flex;align-items:center}
    .slide-bg{position:absolute;inset:0;height:auto;aspect-ratio:auto;border-radius:0;border:none;box-shadow:none}
-@@ -112,12 +112,25 @@
+@@ -112,12 +112,28 @@
    .slide-sub{font-size:clamp(15px,1.15vw,18px);max-width:44ch}
    .hero-ui{left:auto;right:var(--hp);bottom:max(12px,calc(var(--hp)/2 - 20px))}
    .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
@@ -769,14 +769,17 @@ index c6f1384..a6b41cf 100644
 +     при 600, пересечение с .hero-ui 45 px²). Ужимаем типографику и отступы. */
 +  .slide-eyebrow{margin-bottom:14px;padding:6px 14px;font-size:11.5px}
 +  .slide h1,.slide .h1{font-size:clamp(1.5rem,2.4vw,2.1rem)}
++  /* 4 строки, а не 3: на 1217×598 подзаголовок обрывался многоточием посреди фразы
++     («…без живой…» → «без…») — выглядело как недописанный текст. Место есть: CTA ниже
++     на 24 px, до низа окна остаётся запас (проверено рендером). */
 +  .slide-sub{font-size:14.5px;max-width:38ch;margin-bottom:16px;
-+             display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
++             display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 +  .slide-cta .btn{padding:10px 20px;min-height:44px;font-size:14px}
 +}
  /* РАУНД 14: 641…1023 — фото ФОНОМ на весь блок (как на десктопе), scrim слева,
     текст не шире 62 %, заголовок clamp(1.8rem,4vw,2.4rem), кнопки в одну строку.
     object-position смещён к машинам (68 %), чтобы кадр не резал сцену справа. */
-@@ -173,150 +186,68 @@
+@@ -173,150 +189,68 @@
    .slide-sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:14px}
    .slide-cta{flex-wrap:nowrap}
  }
