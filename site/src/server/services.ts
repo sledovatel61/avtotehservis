@@ -12,6 +12,14 @@ export function listCatalogServices(): Service[] {
 export function getService(slug: string): Service | undefined {
   return db().prepare('SELECT * FROM services WHERE slug=? AND hidden=0').get(slug) as Service | undefined;
 }
+/** Главный экран: первыми — представители групп «Колёса», «Ремонт и ТО»,
+    «Диагностика», чтобы бейджи трёх карточек не дублировались (круг 12, п.8.1). */
+export function listHomeServices(): Service[] {
+  const all = db().prepare('SELECT * FROM services WHERE hidden=0 ORDER BY sort').all() as Service[];
+  const reps = ['shinomontazh', 'to-maslo', 'elektrika'];
+  const head = reps.map((slug) => all.find((s) => s.slug === slug)).filter((s): s is Service => !!s);
+  return [...head, ...all.filter((s) => !reps.includes(s.slug))];
+}
 export function listChipServices(): Service[] {
   return db().prepare('SELECT * FROM services WHERE chip=1 ORDER BY grp, sort').all() as Service[];
 }

@@ -16,10 +16,11 @@
     "seed:demo": "node scripts/seed-demo.ts",
     "seed:demo:clear": "node scripts/seed-demo.ts clear",
     "admin:create": "node scripts/create-admin.ts",
-    "test": "npm run build && node --test tests/unit.test.ts tests/integration.test.ts tests/e2e-form.test.ts tests/admin.test.ts",
+    "test": "npm run build && node --test tests/unit.test.ts tests/integration.test.ts tests/e2e-form.test.ts tests/admin.test.ts && node scripts/check-cascade.mjs && node scripts/check-safe-zone.mjs && node scripts/check-hero-layout.mjs && node scripts/measure-contrast.mjs && node scripts/check-about-panel.mjs",
     "typecheck": "tsc --noEmit",
     "audit": "npm audit --omit=dev",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "build:pages": "node scripts/export-pages.mjs"
   },
   "dependencies": {
     "@astrojs/node": "11.1.9",
