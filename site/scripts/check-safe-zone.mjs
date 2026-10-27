@@ -18,7 +18,24 @@ for (const r of safeZoneTable(geom.desk)) {
 }
 console.log('safe-zone мобильные:');
 for (const r of safeZoneMobile(geom.mob)) {
-  if (r.title === 'нет') fail = 1;
-  console.log(`${r.title === 'нет' ? 'FAIL' : 'ok  '} ${r.vp} полоса ${r.band} название ${r.title}`);
+  /* раунд 15: проверка снова может упасть — машины, вывеска и пересечение считаются по числам */
+  const bad = r.cars === 'нет' || r.title === 'нет';
+  if (bad) fail = 1;
+  console.log(`${bad ? 'FAIL' : 'ok  '} ${r.vp} полоса ${r.band} машины ${r.cars} вывеска ${r.title} (пересечение ${r.inter}: текст под кадром)`);
 }
+/* раунд 15: самопроверка гейта на мутантах — проверка обязана падать, если машины
+   или вывеска вылезли за кадр (иначе она снова станет «всегда ok», как было в круге 14) */
+const mutants = [
+  ['машины уехали за левый край', { ...geom.mob, cars: [-60, 389, 1127, 803] }],
+  ['вывеска выше кадра', { ...geom.mob, title: [101, -40, 1031, 517] }],
+  ['машины ниже кадра', { ...geom.mob, cars: [25, 389, 1127, 2000] }],
+];
+let caught = 0;
+for (const [name, g] of mutants) {
+  const rows = safeZoneMobile(g);
+  const bad = rows.some((r) => r.cars === 'нет' || r.title === 'нет');
+  if (bad) caught++;
+  console.log(`${bad ? 'ok  ' : 'FAIL'} мутант «${name}» ${bad ? 'поймана' : 'ПРОПУЩЕНА'}`);
+}
+if (caught !== mutants.length) fail = 1;
 process.exit(fail);

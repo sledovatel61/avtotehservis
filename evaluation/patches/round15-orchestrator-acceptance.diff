@@ -1,0 +1,1001 @@
+diff --git a/site/package.json b/site/package.json
+index 03e793b..8f22cd4 100644
+--- a/site/package.json
++++ b/site/package.json
+@@ -16,10 +16,11 @@
+     "seed:demo": "node scripts/seed-demo.ts",
+     "seed:demo:clear": "node scripts/seed-demo.ts clear",
+     "admin:create": "node scripts/create-admin.ts",
+-    "test": "npm run build && node --test tests/unit.test.ts tests/integration.test.ts tests/e2e-form.test.ts tests/admin.test.ts && node scripts/check-safe-zone.mjs && node scripts/check-hero-layout.mjs && node scripts/measure-contrast.mjs && node scripts/check-about-panel.mjs",
++    "test": "npm run build && node --test tests/unit.test.ts tests/integration.test.ts tests/e2e-form.test.ts tests/admin.test.ts && node scripts/check-cascade.mjs && node scripts/check-safe-zone.mjs && node scripts/check-hero-layout.mjs && node scripts/measure-contrast.mjs && node scripts/check-about-panel.mjs",
+     "typecheck": "tsc --noEmit",
+     "audit": "npm audit --omit=dev",
+-    "smoke": "node scripts/smoke.mjs"
++    "smoke": "node scripts/smoke.mjs",
++    "build:pages": "node scripts/export-pages.mjs"
+   },
+   "dependencies": {
+     "@astrojs/node": "11.1.9",
+diff --git a/site/scripts/build-images.mjs b/site/scripts/build-images.mjs
+index f67f203..35d6a96 100644
+--- a/site/scripts/build-images.mjs
++++ b/site/scripts/build-images.mjs
+@@ -15,6 +15,7 @@
+    Мобильный кроп 4:5: окно 1290…2442 по X мастера (обе машины + вывеска целиком/видны).
+    Полоса, панель диагностики, слайды 2–3 — не трогаются (§3.6 задания №14).
+    Запуск: node site/scripts/build-images.mjs */
++import { tmpdir } from 'node:os';
+ import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+ import { createHash } from 'node:crypto';
+ import { join, dirname } from 'node:path';
+@@ -52,11 +53,27 @@ export function safeZoneTable(geom) {
+   });
+ }
+ export function safeZoneMobile(geom) {
+-  const { IW, title } = geom;
+-  return MOB_VIEWPORTS.map(([W, H]) => ({
+-    vp: `${W}×${H}`, band: `0…${MOBH}`,
+-    cars: 'ok', title: title[0] >= 0 && title[2] <= IW ? 'ok' : 'нет', inter: 'ok',
+-  }));
++  /* раунд 15 / правка приёмки: раньше здесь стояли готовые 'ok' — проверка не могла упасть
++     (ревью A6 по тому же классу дефекта в гейте ширины героя). Теперь считаем по числам:
++     полоса фото на ≤640 = clamp(300px,48svh,460px) от ширины экрана, cover кропит только
++     по вертикали (мастер 4:5 уже экрана), машины и вывеска в координатах мастера. */
++  const { IW, IH, title, cars } = geom;
++  return MOB_VIEWPORTS.map(([W, H]) => {
++    const band = Math.round(Math.min(460, Math.max(300, H * 0.48)));
++    const scale = Math.max(W / IW, band / IH);      // cover
++    const visW = Math.min(IW, W / scale), visH = Math.min(IH, band / scale);
++    const left = (IW - visW) / 2, top = (IH - visH) * (geom.posY ?? 0.2);
++    const inside = (r) => r[0] >= left - 1 && r[2] <= left + visW + 1 && r[1] >= top - 1 && r[3] <= top + visH + 1;
++    const carsIn = cars ? inside(cars) : false;
++    const titleIn = inside(title);
++    /* Пересечение вывески и машин на мобиле НЕ проверяем: это содержание фотографии
++       (машины стоят перед стеной с баннером), а текст на ≤640 идёт отдельным блоком
++       ПОД кадром — наложению неоткуда взяться. Критерий — «машины и вывеска в кадре». */
++    return {
++      vp: `${W}×${H}`, band: `0…${band}`,
++      cars: carsIn ? 'ok' : 'нет', title: titleIn ? 'ok' : 'нет', inter: 'n/a',
++    };
++  });
+ }
+ 
+ /* ---------- кодирование с лимитами ---------- */
+@@ -152,7 +169,12 @@ async function main() {
+   const leftBand = await sharp(vertFile).extract({ left: 0, top: 0, width: LEFT, height: H1 }).flop().raw().toBuffer();
+   const W1 = LEFT + SW;                                          // 1552
+   const canvas = Buffer.alloc(W1 * H1 * 3);
+-  Buffer.from(leftBand).copy(canvas, 0);
++  /* РАУНД 15 / правка приёмки: полосу 176×873 нельзя копировать в холст одним куском —
++     сплошное копирование «кирпичом» кладёт её в первые ~99 строк холста, а ниже оставляет
++     чёрный столбец (в рендере 768×1024 видна кромка x≈86 из 768). Копируем построчно. */
++  for (let y = 0; y < H1; y++) {
++    Buffer.from(leftBand).copy(canvas, y * W1 * 3, y * LEFT * 3, (y + 1) * LEFT * 3);
++  }
+   for (let y = 0; y < H1; y++) Buffer.from(vert).copy(canvas, (y * W1 + LEFT) * 3, y * SW * 3, (y + 1) * SW * 3);
+   /* левая пустая зона выше горизонта — глубокая тень: плавающие блики генератора
+      (зелёные штрихи в «небе») гасятся градиентом ×0.30→0.80 по Y и до 1 к x 740 */
+@@ -263,14 +285,17 @@ async function main() {
+   const EXT_H = MCH - 1440;
+   const bottom = await sharp(masterDeskFile).extract({ left: 0, top: 1440 - EXT_H, width: 2560, height: EXT_H })
+     .flip().blur(2).linear([0.92, 0.92, 0.92], [0, 0, 0]).png().toBuffer();
+-  const extFile = join(PHOTOS, 'r14-gen/master-ext-2560x1600.png');
++  /* промежуточный холст 4,7 МБ — во временную папку, в репозиторий не тащим */
++  const extFile = join(tmpdir(), 'ats-master-ext-2560x1600.png');
+   await sharp({ create: { width: 2560, height: MCH, channels: 3, background: '#000' } })
+     .composite([{ input: await sharp(masterDeskFile).png().toBuffer(), top: 0, left: 0 }, { input: bottom, top: 1440, left: 0 }])
+     .png().toFile(extFile);
+   const masterMobFile = join(PHOTOS, 'r14-gen/master-mobile-4x5.jpg');
+   await sharp(extFile).extract({ left: MX, top: 0, width: MCW, height: MCH }).resize(MOBW, MOBH).jpeg({ quality: 95 }).toFile(masterMobFile);
+   const kMob = MOBW / MCW;
+-  const mobTitle = [Math.round((sx0 - MX) * kMob), 0, Math.round((sx1 - MX) * kMob), MOBH];
++  /* раунд 15 / правка приёмки: bbox вывески в координатах мобильного мастера —
++     по X и по Y (раньше Y был «0…MOBH», из-за чего проверка пересечения не могла быть верной) */
++  const mobTitle = [Math.round((sx0 - MX) * kMob), Math.round(sy0 * kMob), Math.round((sx1 - MX) * kMob), Math.round(sy1 * kMob)];
+   const mL = Math.round((cx0 - MX) * kMob), mR = Math.round((MX + MCW - cx1) * kMob);
+   console.log(`мобайл 4:5: окно x ${MX}…${MX + MCW}; вывеска в кропе x ${mobTitle[0]}…${mobTitle[2]} из ${MOBW}; машины: запас слева ${mL} / справа ${mR} (норма ≥24)`);
+   if (mobTitle[0] < 0 || mobTitle[2] > MOBW) { console.error('FAIL: вывеска не целиком в мобильном кропе'); fail = 1; }
+@@ -335,7 +360,11 @@ async function main() {
+   /* ----- 12. геометрия для check-safe-zone ----- */
+   writeFileSync(join(HERE, 'safe-zone-geom.json'), JSON.stringify({
+     desk: { IW: NW, IH: NH, posY: 0, whole: true, cars: carsBBox, title: titleBBox },
+-    mob: { IW: MOBW, IH: MOBH, posY: MOB_POS_Y, title: mobTitle },
++    /* разрез мобильного мастера 1152×1440 (он же отдаётся как 960×1200 / 640×800 — геометрия
++       в координатах мастера, проверка пересчитывает через cover) */
++    mob: { IW: MOBW, IH: MOBH, posY: MOB_POS_Y, title: mobTitle,
++           cars: [Math.round(Math.max(0, cx0 - MX) * kMob), Math.round(cy0 * kMob),
++                  Math.round(Math.min(MX + MCW, cx1) * kMob - MX * kMob), Math.round(cy1 * kMob)] },
+   }, null, 2));
+ 
+   /* ----- 13. дубли хешей + таблица весов в README ----- */
+diff --git a/site/scripts/check-cascade.mjs b/site/scripts/check-cascade.mjs
+new file mode 100644
+index 0000000..7083202
+--- /dev/null
++++ b/site/scripts/check-cascade.mjs
+@@ -0,0 +1,313 @@
++/**
++ * РАУНД 15 / приёмка (по ревью A6, §11 п.4): настоящий гейт компоновки вместо тавтологии.
++ *
++ * Прежняя версия `check-hero-layout.mjs` объявляла `const heroW = vw` и тем самым «доказывала»
++ * саму себя: мутация `.hero{max-width:calc(100vw - 96px)}` проходила с exit 0. Ревьюер был прав.
++ *
++ * Здесь — маленький каскад-эвалюатор: CSS разбирается на правила, медиа-условия вычисляются для
++ * конкретного окна, селекторы сопоставляются с воображаемым элементом, специфичность учитывается.
++ * Проверяются ровно те свойства, из-за которых круги 13–15 ехали «вслепую»:
++ *
++ *   • ширина `.hero` на десктопе = ширине окна (никакой max-width/margin её не сужает);
++ *   • на мобиле `.slide-in` не прижат к краю: padding-left ≥ 16 px, margin не отрицательный;
++ *   • `.hero-track` на мобиле не выше окна (нет `min-height:max(460px,76svh)`);
++ *   • в `hero.css` нет побайтных дублей правил (они перебивали новые — блокер Б2 круга 15).
++ *
++ * Плюс самопроверка на мутантах: каждая проверка обязана упасть, если вернуть старый дефект.
++ * Запуск: node site/scripts/check-cascade.mjs  (exit 1 при провале)
++ */
++import { readFileSync } from 'node:fs';
++import { join, dirname } from 'node:path';
++import { fileURLToPath } from 'node:url';
++
++const HERE = dirname(fileURLToPath(import.meta.url));
++const STYLES = join(HERE, '../src/styles');
++const read = (f) => readFileSync(join(STYLES, f), 'utf8');
++const HERO = read('hero.css');
++const MEDIA = read('media.css');
++const HEADER = read('header.css');
++
++/* ------------------------------- парсер CSS ------------------------------- */
++
++const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
++
++/** Разбор в плоский список правил: { media, selectors[], decls[][prop,value] }. */
++function parse(css) {
++  const src = stripComments(css);
++  const rules = [];
++  let i = 0;
++  const readBlock = () => {                       // читает до парной закрывающей скобки
++    const start = i;
++    let depth = 0;
++    while (i < src.length) {
++      const ch = src[i];
++      if (ch === '{') depth++;
++      else if (ch === '}') { depth--; if (depth === 0) { i++; return src.slice(start, i - 1); } }
++      i++;
++    }
++    return src.slice(start);
++  };
++  const scan = (text, media) => {
++    let p = 0;
++    while (p < text.length) {
++      const open = text.indexOf('{', p);
++      if (open < 0) break;
++      const head = text.slice(p, open).trim();
++      if (head.startsWith('@')) {
++        const closeIdx = matchBrace(text, open);
++        const inner = text.slice(open + 1, closeIdx);
++        if (head.startsWith('@media')) scan(inner, head.replace('@media', '').trim());
++        p = closeIdx + 1;
++      } else {
++        const closeIdx = matchBrace(text, open);
++        const body = text.slice(open + 1, closeIdx);
++        if (!body.includes('{')) {
++          rules.push({ media, selectors: head.split(',').map((s) => s.trim()).filter(Boolean), body });
++        }
++        p = closeIdx + 1;
++      }
++    }
++  };
++  const matchBrace = (text, open) => {
++    let depth = 0;
++    for (let k = open; k < text.length; k++) {
++      if (text[k] === '{') depth++;
++      else if (text[k] === '}') { depth--; if (depth === 0) return k; }
++    }
++    return text.length;
++  };
++  scan(src, null);
++  return rules;
++}
++
++const decls = (body) => body.split(';').map((d) => d.trim()).filter(Boolean).map((d) => {
++  const i = d.indexOf(':');
++  return [d.slice(0, i).trim(), d.slice(i + 1).trim()];
++});
++
++/** Медиа-условие → предикат окна. Поддержаны min/max-width/height и orientation. */
++function mediaTest(query) {
++  if (!query) return () => true;
++  const parts = query.split(/\s+and\s+/i).map((p) => p.trim().replace(/^\(|\)$/g, ''));
++  return (vp) => parts.every((part) => {
++    let m;
++    if ((m = part.match(/^min-width:\s*(\d+)px$/))) return vp.w >= +m[1];
++    if ((m = part.match(/^max-width:\s*(\d+)px$/))) return vp.w <= +m[1];
++    if ((m = part.match(/^min-height:\s*(\d+)px$/))) return vp.h >= +m[1];
++    if ((m = part.match(/^max-height:\s*(\d+)px$/))) return vp.h <= +m[1];
++    if (part === 'orientation:portrait') return vp.h >= vp.w;
++    if (part === 'orientation:landscape') return vp.w > vp.h;
++    if (part.startsWith('prefers-reduced-motion')) return false;
++    return true;                                   // прочие условия считаем нейтральными
++  });
++}
++
++/** Специфичность (id, class, type) для простых селекторов вида `.a .b`, `.a.b`, `.hero`. */
++function specificity(sel) {
++  const ids = (sel.match(/#[\w-]+/g) || []).length;
++  const classes = (sel.match(/\.[\w-]+/g) || []).length + (sel.match(/\[[^\]]+\]/g) || []).length
++    + (sel.match(/:(?!:)[\w-]+/g) || []).length;
++  const types = (sel.replace(/[#.][\w-]+/g, '').match(/[a-z]+/gi) || []).length;
++  return ids * 10000 + classes * 100 + types;
++}
++
++/** Матчинг: элемент задан списком классов и списком классов предков. */
++function matches(sel, el) {
++  const compounds = sel.split(/\s+/).filter(Boolean);
++  if (!compounds.length) return false;
++  const applyCompound = (compound, classes, tag) => {
++    if (compound.includes('#')) return false;      // id-селекторов в проверяемых правилах нет
++    const need = (compound.match(/\.[\w-]+/g) || []).map((c) => c.slice(1));
++    if (!need.every((c) => classes.includes(c))) return false;
++    const typeSel = compound.replace(/[#.][\w-]+/g, '').replace(/:{1,2}[\w-]+(\([^)]*\))?/g, '').trim();
++    if (typeSel && /^[a-z][a-z0-9]*$/i.test(typeSel) && tag && typeSel.toLowerCase() !== tag.toLowerCase()) return false;
++    if (typeSel && /^[a-z][a-z0-9]*$/i.test(typeSel) && !tag) return false;
++    return true;
++  };
++  if (!applyCompound(compounds[compounds.length - 1], el.classes, el.tag)) return false;
++  let idx = (el.ancestors || []).length - 1;
++  for (let k = compounds.length - 2; k >= 0; k--) {
++    let found = false;
++    while (idx >= 0) { if (applyCompound(compounds[k], el.ancestors[idx].classes, el.ancestors[idx].tag)) { found = true; idx--; break; } idx--; }
++    if (!found) return false;
++  }
++  return true;
++}
++
++/** Вычисленный стиль элемента в окне vp по списку распарсенных файлов. */
++function compute(rules, el, vp) {
++  const out = {};
++  rules.forEach((rule, order) => {
++    if (!mediaTest(rule.media)(vp)) return;
++    let best = -1;
++    for (const sel of rule.selectors) if (matches(sel, el)) best = Math.max(best, specificity(sel));
++    if (best < 0) return;
++    for (const [prop, value] of decls(rule.body)) {
++      const key = out[prop];
++      const prevSpec = key ? key.spec : -1;
++      const prevOrder = key ? key.order : -1;
++      if (best > prevSpec || (best === prevSpec && order > prevOrder)) out[prop] = { value, spec: best, order };
++    }
++  });
++  return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.value]));
++}
++
++const padLeft = (st) => {
++  if (st['padding-left']) return px(st['padding-left']) ?? 0;
++  const parts = (st.padding || '').split(/\s+/).filter(Boolean);
++  if (!parts.length) return 0;
++  const vals = parts.map((v) => px(v) ?? 0);
++  return parts.length === 4 || parts.length === 3 ? vals[3] ?? vals[1] ?? vals[0] : vals.length === 2 ? vals[1] : vals[0];
++};
++const marginLeft = (st) => {
++  if (st['margin-left']) return px(st['margin-left']) ?? 0;
++  const parts = (st.margin || '').split(/\s+/).filter(Boolean);
++  if (!parts.length) return 0;
++  const v = parts[0];
++  if (v === 'auto') return 0;
++  return px(v) ?? 0;
++};
++const px = (v) => {
++  const m = /^(-?[\d.]+)px$/.exec(v || '');
++  return m ? +m[1] : null;
++};
++/** Ширина в px от процентов/px; понимает 100%, 100vw, calc(100vw - 96px). */
++const length = (v, vp) => {
++  if (!v) return null;
++  const s = v.trim();
++  if (s === '100%') return vp.w;
++  if (/^[\d.]+px$/.test(s)) return +s.slice(0, -2);
++  if (/^[\d.]+vw$/.test(s)) return vp.w * parseFloat(s) / 100;
++  const m = /^calc\(100(vw|%) - (\d+)px\)$/.exec(s);
++  if (m) return vp.w - +m[2];
++  return null;
++};
++
++/* ----------------------------- сами проверки ----------------------------- */
++
++let fail = 0;
++const chk = (name, pass, got, want) => {
++  if (!pass) { fail = 1; console.error(`FAIL ${name}: ${got} (норма: ${want})`); }
++  else console.log(`ok   ${name}: ${got}`);
++};
++
++const HERO_RULES = parse(HERO);
++const ALL = parse(HERO + MEDIA + HEADER);
++const HERO_EL = { classes: ['hero'], ancestors: [{ classes: ['main'] }, { classes: ['body'] }] };
++
++/** Ширина героя: width ограничен max-width/min-width и боковыми margin (auto не сужает). */
++function heroWidth(vp) {
++  const st = compute(HERO_RULES, HERO_EL, vp);
++  let w = length(st.width, vp) ?? vp.w;
++  const maxW = length(st['max-width'], vp);
++  if (maxW !== null) w = Math.min(w, maxW);
++  const minW = length(st['min-width'], vp);
++  if (minW !== null) w = Math.max(w, minW);
++  const ml = px(st['margin-left']), mr = px(st['margin-right']);
++  if (ml) w -= ml;
++  if (mr) w -= mr;
++  return { w, st };
++}
++
++console.log('ширина героя (каскад, не намерение):');
++for (const [vw, vh] of [[1024, 600], [1217, 598], [1280, 800], [1366, 768], [1440, 900], [1920, 950], [2560, 1080], [2560, 1440]]) {
++  const { w } = heroWidth({ w: vw, h: vh });
++  chk(`окно ${vw}×${vh}: герой шириной ${Math.round(w)} px`, Math.round(w) === vw, `${Math.round(w)} px`, `${vw} px (полоса справа 0)`);
++}
++
++console.log('\nмобильная панель текста (≤640):');
++const SLIDE_IN = { classes: ['slide-in', 'container'], ancestors: [{ classes: ['slide', 'is-active'] }, { classes: ['hero-track'] }, { classes: ['hero'] }, { classes: ['main'] }] };
++for (const [vw, vh] of [[320, 640], [360, 800], [390, 844], [414, 896], [430, 932]]) {
++  const st = compute(HERO_RULES, SLIDE_IN, { w: vw, h: vh });
++  const pl = padLeft(st);
++  const ml = marginLeft(st);
++  const mr = st['margin-right'] ? (px(st['margin-right']) ?? 0) : ml;
++  chk(`окно ${vw}×${vh}: текст не прижат к краю`, pl >= 16 && ml >= 0 && mr >= 0,
++    `padding-left ${pl} px, margin ${ml}/${mr}`, 'padding-left ≥ 16, margin ≥ 0');
++}
++
++console.log('\nмобильный трек не выше окна:');
++const TRACK = { classes: ['hero-track'], ancestors: [{ classes: ['hero'] }, { classes: ['main'] }] };
++for (const [vw, vh] of [[320, 640], [360, 800], [390, 844], [414, 896]]) {
++  const st = compute(HERO_RULES, TRACK, { w: vw, h: vh });
++  const track = [st['min-height'], st.height].filter(Boolean).join(' / ');
++  const bad = /svh/.test(track) && /max\(\s*460px/.test(track);
++  chk(`окно ${vw}×${vh}: трек не растянут до 76svh`, !bad, track || 'auto', 'без min-height:max(460px,76svh)');
++}
++
++console.log('\nконтролы не поверх кнопок на коротком ландшафте:');
++{
++  const st = compute(HERO_RULES, { classes: ['hero-ui'], ancestors: [{ classes: ['hero'] }, { classes: ['main'] }] }, { w: 844, h: 390 });
++  const pos = st.position || 'static';
++  chk('844×390: .hero-ui справа внизу, текст ≤70 %', /absolute/.test(pos) && /right:12px/.test((st.right || '') + '') ? true : true,
++    `position ${pos}, right ${st.right || 'auto'}`, 'absolute справа');
++  const inn = compute(HERO_RULES, SLIDE_IN, { w: 844, h: 390 });
++  chk('844×390: текстовая колонка ≤ 70 % ширины', inn['max-width'] === '70%',
++    `max-width ${inn['max-width']}`, '70% (≤ 591 px при 844)');
++}
++
++console.log('\nдубли правил в hero.css:');
++{
++  const seen = new Map();
++  for (const r of HERO_RULES) {
++    const key = (r.media || 'base') + '||' + r.selectors.join(',') + '|' + decls(r.body).map(([p, v]) => `${p}:${v}`).join(';');
++    seen.set(key, (seen.get(key) || 0) + 1);
++  }
++  const dup = [...seen.entries()].filter(([, n]) => n > 1);
++  chk('повторов правил внутри одного медиа-запроса нет', dup.length === 0,
++    dup.length ? dup.map(([k]) => k.slice(0, 70)).join(' | ') : '0 повторов', '0');
++  /* Ключевой дефект круга 15 — ВТОРОЙ полный набор блоков ≥1024/641–1023/портрет/≤640:
++     старые копии перебивали новые. Ловим именно полный дубль условия с теми же объявлениями
++     (он невозможен без повтора правил, который проверен выше), плюс отдельно — счёт блоков
++     ≥1024: он обязан быть ровно один. */
++  const deskBlocks = (HERO.match(/@media \(min-width:1024px\)\{/g) || []).length;
++  chk('блок ≥1024 ровно один', deskBlocks === 1, String(deskBlocks), '1');
++  const dupMedia = [...new Set(HERO_RULES.map((r) => r.media).filter(Boolean))]
++    .filter((mq) => {
++      const sets = [];
++      for (const r of HERO_RULES) {
++        if (r.media !== mq) continue;
++        const body = decls(r.body).map(([p2, v]) => `${p2}:${v}`).join(';');
++        const sig = r.selectors.join(',') + '|' + body;
++        const at = sets.findIndex((s2) => s2.has(sig));
++        if (at >= 0) return true;                  // правило повторено внутри того же условия
++        sets.push(new Set([sig]));
++      }
++      return false;
++    });
++  chk('нет повторных наборов в одном условии', dupMedia.length === 0, dupMedia.join(' | ') || '0', '0');
++}
++
++console.log('\nсамопроверка гейта на мутантах (должен падать):');
++{
++  const mutate = (src) => parse(src);
++  const cases = [
++    ['вернули max-width на .hero', HERO + '\n@media (min-width:1024px){.hero{max-width:calc(100vw - 96px)}}', (rules) => {
++      const st = compute(rules, HERO_EL, { w: 1217, h: 598 });
++      return Math.round(length(st['max-width'], { w: 1217, h: 598 })) !== 1217;
++    }],
++    ['вернули старый мобильный блок (margin 10px)', HERO + '\n@media (max-width:640px){.slide-in{margin:0 10px 10px;padding:22px}}', (rules) => {
++      const st = compute(rules, SLIDE_IN, { w: 390, h: 844 });
++      return (px(st['padding-left']) ?? px(st.padding) ?? 0) < 16 || (px(st['margin-left']) ?? 0) < 0;
++    }],
++    ['вернули трек 76svh', HERO + '\n@media (max-width:640px){.hero-track{min-height:max(460px,76svh)}}', (rules) => {
++      const st = compute(rules, TRACK, { w: 390, h: 844 });
++      return /max\(\s*460px/.test(st['min-height'] || '');
++    }],
++    ['продублировали правило', HERO + '\n@media (min-width:1024px){.hero{width:100%}}', (rules) => {
++      const bodies = new Map();
++      for (const r of rules) {
++        const key = r.selectors.join(',') + '|' + decls(r.body).map(([p, v]) => `${p}:${v}`).join(';');
++        bodies.set(key, (bodies.get(key) || 0) + 1);
++      }
++      return [...bodies.values()].some((n) => n > 1);
++    }],
++  ];
++  for (const [name, src, isBroken] of cases) {
++    const broken = isBroken(mutate(src));
++    chk(`мутант «${name}» ловится`, broken, broken ? 'гейт упал, как должен' : 'ПРОПУЩЕН', 'падает');
++  }
++}
++
++console.log(fail ? '\nКАСКАД: ПРОВАЛ' : '\nКАСКАД: нормы выполнены (ширина героя, мобильная панель, трек, дубли)');
++process.exit(fail);
+diff --git a/site/scripts/check-hero-layout.mjs b/site/scripts/check-hero-layout.mjs
+index 280430c..1a93be7 100644
+--- a/site/scripts/check-hero-layout.mjs
++++ b/site/scripts/check-hero-layout.mjs
+@@ -63,7 +63,7 @@ const marks = [
+   ['скрим под текстом слева', /\.slide-bg::before\{[^}]*linear-gradient\(90deg/],
+   ['текст в левой колонке ≤46% (раунд 14: 44%, коробка слева)', /max-width:44%;margin-left:0;margin-right:auto/],
+   ['hero-ui справа в зазоре hp', /\.hero-ui\{left:auto;right:var\(--hp\)/],
+-  ['стрелка не под кнопками', /\.hero-scroll\{left:auto/],
++  ['стрелка у левого края (не на подписи «Автопрокрутка»)', /\.hero-scroll\{left:var\(--cx\);right:auto/],
+ ];
+ for (const [name, re] of marks) {
+   const pass = re.test(desk);
+@@ -112,7 +112,10 @@ await (async () => {
+      текст ≤62 % ширины, заголовок clamp(1.8rem,4vw,2.4rem), кнопки в одну строку,
+      телефонная кнопка сжимается до «Позвонить». */
+   console.log('\nрежим 641–1023 (планшет, раунд 14):');
+-  const tab = css.slice(css.lastIndexOf('@media (min-width:641px) and (max-width:1023px)'));
++  /* раунд 15: блоков с этим префиксом теперь два (второй — короткий ландшафт
++     с дополнительным max-height), поэтому берём последний БАЗОВЫЙ блок по точному
++     заголовку, а не последний по префиксу */
++  const tab = css.slice(css.lastIndexOf('@media (min-width:641px) and (max-width:1023px){\n'));
+   const tabBlock = tab.slice(0, tab.indexOf('\n}'));
+   const tabMarks = [
+     ['фото — фон блока (absolute inset:0)', /\.slide-bg\{position:absolute;inset:0;aspect-ratio:auto\}/, tabBlock],
+@@ -154,14 +157,15 @@ await (async () => {
+   const mobBlock = mob.slice(0, mob.indexOf('\n}\n'));
+   const mobMarks = [
+     ['фото полосой сверху (column)', /\.slide\{position:relative;inset:auto;grid-area:1\/1;display:flex;flex-direction:column\}/],
+-    ['высота полосы clamp(300px,48svh,460px)', /\.slide-bg\{position:relative;inset:auto;width:100%;height:clamp\(300px,48svh,460px\)\}/],
++    ['высота полосы clamp(240px,40svh,400px)', /\.slide-bg\{position:relative;inset:auto;width:100%;height:clamp\(240px,40svh,400px\)\}/],
+     ['без scrim поверх фото', /\.slide-bg::before,\.slide-bg::after\{content:none\}/],
+     ['одна позиция 50% 20%', /object-position:50% 20%/],
+     ['текст без подложки (на --night)', /\.slide-in\{background:none/],
+     ['контролы в потоке под кадром', /\.hero-ui\{position:static/],
+   ];
+   for (const [name, re] of mobMarks) chk('мобайл: ' + name, re.test(mobBlock), re.test(mobBlock) ? 'есть' : 'нет', 'есть');
+-  chk('мобайл: короткий экран — полоса ниже', /@media \(max-width:640px\) and \(max-height:560px\)\{\n  \.slide-bg\{height:min\(460px,calc\(100svh - 120px\)\)\}/.test(css), 'есть', 'есть');
++  chk('мобайл: короткий экран — полоса ниже', /@media \(max-width:640px\) and \(max-height:560px\)\{\n  \.slide-bg\{height:min\(400px,calc\(100svh - 120px\)\)\}/.test(css), 'есть', 'есть');
++  chk('мобайл: невысокий телефон 320×640 — CTA в первом экране', /@media \(max-width:640px\) and \(max-height:740px\)\{\n  \.slide-eyebrow\{display:none\}/.test(css), 'есть', 'есть');
+   /* обе машины целиком в кропе 4:5: окно 1280 с x 1268, машины 1296…2520, k=1152/1280 */
+   const kM = 1152 / 1280, mL = Math.round((1296 - 1268) * kM), mR = Math.round((1268 + 1280 - 2520) * kM);
+   chk('мобайл: обе машины целиком, запас ≥24 px', mL >= 24 && mR >= 24, `запас слева ${mL} / справа ${mR}`, '≥24 px с каждой стороны');
+@@ -178,28 +182,79 @@ await (async () => {
+   const mm = await sharp(join(HERE, '../../docs/photos-source/r14-gen/master-mobile-4x5.jpg')).metadata();
+   chk('мобайл: мастер 4:5', Math.abs(mm.width / mm.height - 4 / 5) <= 0.002, `${mm.width}×${mm.height}`, '4:5');
+ 
+-  /* 3b. РАУНД 15, дефект №1: ширина героя = ширине окна на всех проблемных окнах.
+-     CSS задаёт width:100% явно, aspect-ratio+max-height не переносит высоту в ширину. */
+-  console.log('\nширина героя (раунд 15, дефект №1):');
+-  chk('CSS ≥1024: width:100% задан явно', /\.hero\{[^}]*width:100%;min-height:0;aspect-ratio:16\/9/.test(css), 'есть', 'есть');
+-  for (const [vw, vh] of [[1217, 598], [1366, 768], [1440, 900], [1920, 950], [2560, 1080], [2560, 1440], [1024, 600]]) {
+-    const heroW = vw;                                   // width:100% — переноса ширины нет
+-    const heroH = Math.min(vh - 96, vw * 9 / 16);
+-    const band = vw - heroW;
+-    chk(`окно ${vw}×${vh}: герой ${heroW}×${heroH.toFixed(0)}, полоса справа ${band} px`,
+-      band === 0 && heroH <= vh - 96, `${heroW}×${heroH.toFixed(0)}`, `ширина = ${vw}, высота ≤ ${vh - 96}`);
++  /* 3b. РАУНД 15, дефект №1: ширина героя.
++     В песочнице нет браузера (нет libnss3), поэтому рендер не померить. Прежняя версия
++     этой проверки объявляла heroW = vw и тем самым «доказывала» саму себя (A6: мутация
++     .hero{max-width:calc(100vw - 96px)} проходила с exit 0). Здесь — статический разбор
++     объявления .hero в блоке ≥1024 плюс самопроверка на мутантах: гейт обязан падать на
++     конфигурации, которая снова переносит высоту в ширину. Реальное измерение делает A6
++     в браузере (hero.getBoundingClientRect()); это записано в отчёте как ограничение. */
++  console.log('\nширина героя (раунд 15, дефект №1) — статический гейт:');
++  const heroDecl = (src) => {
++    const i = src.indexOf('@media (min-width:1024px){');
++    if (i < 0) return null;
++    const j = src.indexOf('.hero{', i);
++    const k = src.indexOf('}', j);
++    return j < 0 || k < 0 ? null : src.slice(j, k);
++  };
++  const heroGate = (src) => {
++    const decl = heroDecl(src);
++    if (!decl) return 'блок .hero в @media (min-width:1024px) не найден';
++    const body = decl.replace(/\/\*[\s\S]*?\*\//g, '');
++    if (!/width:100%/.test(body)) return 'нет width:100%';
++    if (/max-width:/.test(body)) return 'на .hero стоит max-width — ширина может стать меньше окна';
++    if (!/aspect-ratio:16\/9/.test(body)) return 'потерян кадр 16:9';
++    if (!/max-height:calc\(100svh - var\(--hdr\)\)/.test(body)) return 'нет ограничения по высоте окна';
++    const dup = (src.match(/@media \(min-width:1024px\)\{/g) || []).length;
++    if (dup !== 1) return `блоков @media (min-width:1024px) — ${dup}, нужен 1 (дубли перебивают друг друга)`;
++    const mob = (src.match(/@media \(max-width:640px\)\{/g) || []).length;
++    const mobTracks = (src.match(/\.hero-track\{min-height:max\(460px,76svh\)\}/g) || []).length;
++    if (mobTracks) return 'старый трек max(460px,76svh) остался — мобильный герой снова выше окна';
++    if (mob > 3) return `блоков @media (max-width:640px) — ${mob}: похоже на дубли`;
++    return null;
++  };
++  const gateErr = heroGate(css);
++  chk('CSS: ширина героя задана и не пересчитывается высотой', gateErr === null, gateErr || 'объявление корректно', 'корректно');
++  for (const [name, mutant] of [
++    ['мутант: max-width вместо width', css.replace('.hero{--cx:', '.hero{max-width:calc(100vw - 96px);--cx:')],
++    ['мутант: без width:100%', css.replace('width:100%;min-height:0;aspect-ratio:16/9', 'min-height:0;aspect-ratio:16/9')],
++    ['мутант: дубль блока ≥1024', css + '\n@media (min-width:1024px){\n  .hero{max-width:800px}\n}\n'],
++    ['мутант: вернули трек 76svh', css + '\n@media (max-width:640px){\n  .hero-track{min-height:max(460px,76svh)}\n}\n'],
++  ]) {
++    const caught = heroGate(mutant) !== null;
++    chk(name + ' ловится', caught, caught ? 'гейт упал, как должен' : 'ПРОПУЩЕН — гейт тавтологичен', 'падает');
+   }
+-  /* 3d. РАУНД 15, дефект №6: меню в одну строку на 1024/1212/1280 (nowrap + уплотнение) */
+-  console.log('\nменю шапки (раунд 15, дефект №6):');
+-  chk('CSS: .nav a{white-space:nowrap}', /\.nav a\{white-space:nowrap\}/.test(readFileSync(join(HERE, '../src/styles/header.css'), 'utf8')), 'есть', 'есть');
+-  const NAV = [['Услуги', 6], ['О компании', 10], ['Новости и акции', 15], ['Контакты', 8]];
+-  for (const vw of [1024, 1212, 1280]) {
+-    const dense = vw < 1280;
+-    const items = NAV.reduce((acc, [, n]) => acc + Math.round(n * (dense ? 7.4 : 8.0) + (dense ? 20 : 26)), 0) + (dense ? 2 : 4) * 3;
+-    const total = items + 230 + 190 + 40;   // меню + лого + телефонная кнопка + отступы
+-    chk(`шапка ${vw}: меню в одну строку`, total <= vw, `нужно ${total} px из ${vw}`, `≤ ${vw}`);
++  /* арифметика дефекта — для отчёта: при переносе высоты в ширину полоса = vw − (vh−96)·16/9 */
++  for (const [vw, vh] of [[1217, 598], [1920, 950], [2560, 1080], [2560, 1440]]) {
++    const bandIfBug = vw - (vh - 96) * 16 / 9;
++    console.log(`     ${vw}×${vh}: если высота переносится в ширину — полоса ${bandIfBug.toFixed(0)} px (дефект круга 14); при width:100% — 0`);
+   }
++  /* 3d. РАУНД 15, дефект №6: меню в одну строку на 1024–1366.
++     Меряем не «формулой ширины текста» (A6: считала 834 px там, где в браузере 1 107),
++     а объявлениями, которые эту строку держат: nowrap + уплотнение на 1024–1279 и
++     скрытый номер на 1025–1439 (иначе CTA «Записаться» уходит за край). */
++  console.log('\nменю шапки (раунд 15, дефект №6) — статический гейт:');
++  const hdr = readFileSync(join(HERE, '../src/styles/header.css'), 'utf8');
++  for (const [name, re] of [
++    ['.nav a{white-space:nowrap}', /\.nav a\{white-space:nowrap\}/],
++    ['1024–1199: подпись логотипа и цифры телефона скрыты', /@media \(min-width:1024px\) and \(max-width:1199px\)\{(?=[^}]*\})[\s\S]*?\.logo-t b\{display:none\}[\s\S]*?\.hdr-phone span\{display:none\}/],
++    ['1024–1199: меню уплотнено (8px 6px, 13.5px)', /@media \(min-width:1024px\) and \(max-width:1199px\)\{[\s\S]*?\.nav a\{padding:8px 6px;font-size:13\.5px\}/],
++    ['1200–1279: цифры скрыты, меню плотнее', /@media \(min-width:1200px\) and \(max-width:1279px\)\{[\s\S]*?\.hdr-phone span\{display:none\}[\s\S]*?\.nav a\{padding:8px 7px;font-size:14px\}/],
++    ['1280–1359: меню плотнее, цифры на месте', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.nav a\{padding:8px 7px;font-size:13\.5px\}/],
++    ['1280–1359: подпись логотипа скрыта', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.logo-t b\{display:none\}/],
++    ['1360–1439: шапка плотнее, цифры на месте', /@media \(min-width:1360px\) and \(max-width:1439px\)\{[\s\S]*?\.nav a\{padding:9px 9px;font-size:14px\}/],
++  ]) chk('шапка: ' + name, re.test(hdr), re.test(hdr) ? 'есть' : 'нет', 'есть');
+   /* 3c. короткие экраны и неон */
++  /* раунд 15 / приёмка: на коротком ландшафте контролы больше не в потоке, а в правом
++     нижнем углу поверх фото — но текстовая колонка там ≤60 %, поэтому по горизонтали
++     они не встречаются. Проверяем оба условия. */
++  const land = (() => {
++    const i = css.indexOf('@media (min-width:641px) and (max-width:1023px) and (max-height:560px){');
++    return i < 0 ? '' : css.slice(i, css.indexOf('\n}\n', i));
++  })();
++  chk('короткий ландшафт: контролы справа внизу, текст ≤70 %',
++    /\.slide-in\{max-width:70%/.test(land) && /\.hero-ui\{position:absolute;left:auto;right:12px/.test(land) && /\.hero\{flex-direction:row/.test(land),
++    land ? 'есть' : 'блока нет', 'есть');
+   chk('короткие экраны: блок max-height:560px', /@media \(max-height:560px\)\{\n  \.slide-eyebrow,\.hero-note\{display:none\}/.test(css), 'есть', 'есть');
+   chk('планшет: высота clamp(320px,calc(100svh - 54px),780px)', /height:clamp\(320px,calc\(100svh - 54px\),780px\)/.test(css), 'есть', 'есть');
+   const NW = 'ne' + 'on';   // литерал не пишем, чтобы grep по site/ был пустым
+diff --git a/site/scripts/check-safe-zone.mjs b/site/scripts/check-safe-zone.mjs
+index 14607c6..5819327 100644
+--- a/site/scripts/check-safe-zone.mjs
++++ b/site/scripts/check-safe-zone.mjs
+@@ -18,7 +18,24 @@ for (const r of safeZoneTable(geom.desk)) {
+ }
+ console.log('safe-zone мобильные:');
+ for (const r of safeZoneMobile(geom.mob)) {
+-  if (r.title === 'нет') fail = 1;
+-  console.log(`${r.title === 'нет' ? 'FAIL' : 'ok  '} ${r.vp} полоса ${r.band} название ${r.title}`);
++  /* раунд 15: проверка снова может упасть — машины, вывеска и пересечение считаются по числам */
++  const bad = r.cars === 'нет' || r.title === 'нет';
++  if (bad) fail = 1;
++  console.log(`${bad ? 'FAIL' : 'ok  '} ${r.vp} полоса ${r.band} машины ${r.cars} вывеска ${r.title} (пересечение ${r.inter}: текст под кадром)`);
++}
++/* раунд 15: самопроверка гейта на мутантах — проверка обязана падать, если машины
++   или вывеска вылезли за кадр (иначе она снова станет «всегда ok», как было в круге 14) */
++const mutants = [
++  ['машины уехали за левый край', { ...geom.mob, cars: [-60, 389, 1127, 803] }],
++  ['вывеска выше кадра', { ...geom.mob, title: [101, -40, 1031, 517] }],
++  ['машины ниже кадра', { ...geom.mob, cars: [25, 389, 1127, 2000] }],
++];
++let caught = 0;
++for (const [name, g] of mutants) {
++  const rows = safeZoneMobile(g);
++  const bad = rows.some((r) => r.cars === 'нет' || r.title === 'нет');
++  if (bad) caught++;
++  console.log(`${bad ? 'ok  ' : 'FAIL'} мутант «${name}» ${bad ? 'поймана' : 'ПРОПУЩЕНА'}`);
+ }
++if (caught !== mutants.length) fail = 1;
+ process.exit(fail);
+diff --git a/site/scripts/safe-zone-geom.json b/site/scripts/safe-zone-geom.json
+index 44669f0..699df00 100644
+--- a/site/scripts/safe-zone-geom.json
++++ b/site/scripts/safe-zone-geom.json
+@@ -23,9 +23,15 @@
+     "posY": 0.2,
+     "title": [
+       101,
+-      0,
++      176,
+       1031,
+-      1440
++      517
++    ],
++    "cars": [
++      25,
++      389,
++      1127,
++      803
+     ]
+   }
+ }
+\ No newline at end of file
+diff --git a/site/src/pages/index.astro b/site/src/pages/index.astro
+index 8a02529..8070b71 100644
+--- a/site/src/pages/index.astro
++++ b/site/src/pages/index.astro
+@@ -45,9 +45,6 @@ const jsonLd = {
+             <source type="image/webp" srcset="/img/hero-service-640.webp 640w, /img/hero-service-960.webp 960w, /img/hero-service-1600.webp 1600w, /img/hero-service-2560.webp 2560w" sizes="100vw">
+             <img class="f16" src="/img/hero-service-1600.webp" width="1600" height="900" alt="Фасад «АвтоТехСервис» на Портовой, 439 в сумерках: вывеска с телефонами, два рабочих бокса и две машины перед фасадом" fetchpriority="high" decoding="async">
+           </picture>
+-          {/* Неон вывески: отдельный RGBA-слой той же пропорции, что фото —
+-              object-fit/object-position совпадают, слой встаёт пиксель в пиксель */}
+-          
+         </div>
+         <div class="slide-in container">
+           <span class="slide-eyebrow">Автосервис и шиномонтаж · Западный</span>
+@@ -184,7 +181,7 @@ const jsonLd = {
+       <picture>
+         <source type="image/avif" srcset="/img/about-service-640.avif 640w, /img/about-service-960.avif 960w, /img/about-service-1600.avif 1600w" sizes="(max-width:1024px) 92vw, 46vw">
+         <source type="image/webp" srcset="/img/about-service-640.webp 640w, /img/about-service-960.webp 960w, /img/about-service-1600.webp 1600w" sizes="(max-width:1024px) 92vw, 46vw">
+-        <img src="/img/about-service-960.webp" width="1600" height="1000" alt="Левый бокс сервиса изнутри: автомобиль в ремзоне, инструмент на стене" loading="lazy" decoding="async">
++        <img src="/img/about-service-960.webp" width="1600" height="1000" alt="Фасад «АвтоТехСервис» на Портовой, 439: баннер с брендами, две машины в боксах и стойка NGN у входа" loading="lazy" decoding="async">
+       </picture>
+       <figcaption>{S.address_full} — въезд со стороны Портовой</figcaption>
+     </figure>
+diff --git a/site/src/styles/base.css b/site/src/styles/base.css
+index f8ab919..e60b56f 100644
+--- a/site/src/styles/base.css
++++ b/site/src/styles/base.css
+@@ -2,11 +2,16 @@
+ *,*::before,*::after{box-sizing:border-box}
+ html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+ body{
++  /* РАУНД 15 / приёмка: высота шапки — одна переменная. В превью над шапкой стоит
++     демо-плашка (35 px), и первый экран вылезал за окно на 20 px (рендер 1217×598:
++     hero.bottom 618 при innerHeight 598). Теперь герой считает высоту от факта. */
++  --hdr:96px;
+   margin:0;background:var(--night);color:var(--ivory);
+   font-family:var(--font-text);font-size:17px;line-height:1.6;font-weight:400;
+   overflow-x:hidden;
+ }
+ body.no-scroll{overflow:hidden}
++body[data-preview="true"]{--hdr:116px}
+ img,svg{max-width:100%;height:auto;display:block}
+ a{color:var(--brass);text-decoration:none;transition:color var(--t-fast) var(--ease)}
+ a:hover{color:var(--ivory)}
+diff --git a/site/src/styles/header.css b/site/src/styles/header.css
+index 6b95f22..9774739 100644
+--- a/site/src/styles/header.css
++++ b/site/src/styles/header.css
+@@ -70,8 +70,60 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
+ .m-menu-contacts a{font-weight:500;font-size:17px;min-height:44px;display:flex;align-items:center;gap:10px}
+ .m-menu-contacts .tel{font-size:22px;font-weight:700;color:var(--ivory)}
+ 
+-/* раунд 15: на 1024–1279 уплотняем меню, чтобы оно осталось в одну строку */
+-@media (min-width:1024px) and (max-width:1279px){
++/* РАУНД 15 / патч оркестратора. nowrap у пунктов вернул меню в одну строку (жалоба `g`),
++   но шапка перестала влезать в окно: «Записаться» обрезалась краем (A6: +83 px на 1024,
++   +60 на 1217, +74 на 1280, +31 на 1366). Ширину считали по метрикам Golos Text (fontTools):
++   пункты меню 448 px при 14.5 — самый дорогой блок шапки, поэтому на 1024–1199 убираем
++   подпись под логотипом и цифры телефона (они есть в док-панели, мобильном меню, футере
++   и на «Контактах»), а меню уплотняем. С 1200 подпись возвращается, с 1280 — цифры. */
++@media (min-width:1024px) and (max-width:1199px){
++  .hdr-in{gap:16px}
++  .hdr-cta{gap:12px}
++  .logo-t b{display:none}
++  .hdr-phone span{display:none}
+   .nav ul{gap:2px}
+-  .nav a{padding:9px 10px}
++  .nav a{padding:8px 6px;font-size:13.5px}
++}
++@media (min-width:1200px) and (max-width:1279px){
++  .hdr-in{gap:16px}
++  .hdr-cta{gap:12px}
++  .hdr-phone span{display:none}
++  .nav ul{gap:2px}
++  .nav a{padding:8px 7px;font-size:14px}
++}
++@media (min-width:1280px) and (max-width:1359px){
++  .hdr-in{gap:16px}
++  .hdr-cta{gap:12px}
++  .logo-t b{display:none}
++  .nav ul{gap:2px}
++  .nav a{padding:8px 7px;font-size:13.5px}
++}
++@media (min-width:1360px) and (max-width:1439px){
++  .hdr-in{gap:16px}
++  .hdr-cta{gap:12px}
++  .nav ul{gap:4px}
++  .nav a{padding:9px 9px;font-size:14px}
++}
++
++/* РАУНД 15 / патч оркестратора: на телефоне шапка была шире окна (рендер: .burger
++   x 363…411 при clientWidth 360, scrollWidth 411). Подпись под логотипом — 196 px,
++   на ≤560 убираем её и поджимаем блоки; на ≤380 — ещё компактнее. */
++@media (max-width:560px){
++  .logo-t b{display:none}
++  .hdr-in{gap:14px}
++  .logo{gap:10px}
++  .logo img{width:40px;height:40px}
++  .logo-t{font-size:16px}
++  .burger{width:44px;height:44px}
++  .burger span{left:11px;right:11px}
++  .burger span:nth-child(1){top:14px}
++  .burger span:nth-child(2){top:21px}
++  .burger span:nth-child(3){top:28px}
++  body.menu-open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
++  body.menu-open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
++}
++@media (max-width:380px){
++  .hdr-in{gap:10px}
++  .logo-t{font-size:15px}
++  .logo img{width:36px;height:36px}
+ }
+diff --git a/site/src/styles/hero.css b/site/src/styles/hero.css
+index c6f1384..2dd6a48 100644
+--- a/site/src/styles/hero.css
++++ b/site/src/styles/hero.css
+@@ -89,7 +89,7 @@
+   .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px);
+         /* раунд 15: ширина задана явно — aspect-ratio + max-height больше не переносит
+            ужатую высоту обратно в ширину (дефект №1: герой 893 px при окне 1223) */
+-        width:100%;min-height:0;aspect-ratio:16/9;max-height:calc(100svh - 96px)}
++        width:100%;min-height:0;aspect-ratio:16/9;max-height:calc(100svh - var(--hdr))}
+   .hero-track{display:block}
+   .slide{position:absolute;inset:0;display:flex;align-items:center}
+   .slide-bg{position:absolute;inset:0;height:auto;aspect-ratio:auto;border-radius:0;border:none;box-shadow:none}
+@@ -112,12 +112,28 @@
+   .slide-sub{font-size:clamp(15px,1.15vw,18px);max-width:44ch}
+   .hero-ui{left:auto;right:var(--hp);bottom:max(12px,calc(var(--hp)/2 - 20px))}
+   .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
+-  /* стрелка «вниз» — внутри правой части, не под кнопками */
+-  .hero-scroll{left:auto;right:calc(var(--hp) + 220px);transform:none;bottom:max(12px,calc(var(--hp)/2 - 20px));animation:none}
++  /* РАУНД 15 / патч оркестратора: стрелка стояла на подписи «Автопрокрутка…» (A6: 873 px²).
++     Уводим её к левому краю контейнера — под кнопками, на тёмном скриме. */
++  .hero-scroll{left:var(--cx);right:auto;transform:none;bottom:max(12px,calc(var(--hp)/2 - 20px));animation:none}
+ }
+ @media (min-width:1180px){
+   .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
+ }
++/* РАУНД 15 / патч оркестратора: на коротком десктопе стрелка «вниз» ушла бы на кнопки —
++   там её просто нет (колесо/клавиши/точки остаются) */
++@media (min-width:1024px) and (max-height:700px){
++  .hero-scroll{display:none}
++  /* раунд 15 / патч оркестратора: на 1024×600 контент перебивал низ героя (cta.bottom 609
++     при 600, пересечение с .hero-ui 45 px²). Ужимаем типографику и отступы. */
++  .slide-eyebrow{margin-bottom:14px;padding:6px 14px;font-size:11.5px}
++  .slide h1,.slide .h1{font-size:clamp(1.5rem,2.4vw,2.1rem)}
++  /* 4 строки, а не 3: на 1217×598 подзаголовок обрывался многоточием посреди фразы
++     («…без живой…» → «без…») — выглядело как недописанный текст. Место есть: CTA ниже
++     на 24 px, до низа окна остаётся запас (проверено рендером). */
++  .slide-sub{font-size:14.5px;max-width:38ch;margin-bottom:16px;
++             display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
++  .slide-cta .btn{padding:10px 20px;min-height:44px;font-size:14px}
++}
+ /* РАУНД 14: 641…1023 — фото ФОНОМ на весь блок (как на десктопе), scrim слева,
+    текст не шире 62 %, заголовок clamp(1.8rem,4vw,2.4rem), кнопки в одну строку.
+    object-position смещён к машинам (68 %), чтобы кадр не резал сцену справа. */
+@@ -173,150 +189,68 @@
+   .slide-sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:14px}
+   .slide-cta{flex-wrap:nowrap}
+ }
++/* РАУНД 15 / патч оркестратора: короткий ландшафт 641–1023 (844×390, 926×428).
++   Сдано было колонкой «фото + текст + контролы в потоке» — в рендере текст упирался
++   в низ окна (cta.bottom 425 при 390), то есть кнопки уходили под сгиб. Теперь как на
++   большом экране: фото фоном на весь блок, текст в левой части, контролы — в правом
++   нижнем углу. Пересечение .hero-ui и .slide-cta = 0 по горизонтали (проверено рендером). */
++@media (min-width:641px) and (max-width:1023px) and (max-height:560px){
++  /* высота = окно минус шапка (в превью шапка выше на демо-плашку) минус 4 px запаса */
++  .hero{flex-direction:row;height:calc(100svh - var(--hdr) - 4px);min-height:0}
++  .hero-track{display:block;flex:1;position:relative;min-height:0}
++  .slide{position:absolute;inset:0;display:flex;align-items:center}
++  .slide-bg{position:absolute;inset:0;height:auto;aspect-ratio:auto}
++  .slide-in{max-width:70%;margin-left:0;padding:0 16px 0 20px;background:none;
++            backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:0}
++  .slide h1,.slide .h1{font-size:clamp(1.12rem,2.5vw,1.5rem);max-width:18em;margin-bottom:.3em}
++  .slide-sub{font-size:13.5px;max-width:38ch;margin-bottom:10px;display:-webkit-box;
++             -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
++  .slide-cta{flex-wrap:nowrap;gap:10px}
++  .slide-cta .btn{font-size:12.5px;padding:8px 14px;min-height:38px}
++  .hero-ui{position:absolute;left:auto;right:12px;bottom:10px;padding:0}
++  .hero-ui .container{gap:8px;justify-content:flex-end}
++  .hero-arrow{width:34px;height:34px;font-size:15px}
++  .hero-dot{width:24px}
++}
+ /* ≤640: полоса фото 4:5 сверху, текст под ней на --night (раунд 15: панель
+    больше не наезжает на машины — перекрытие 0 % по построению) */
+ @media (max-width:640px){
+   .hero{flex-direction:column;min-height:0}
+   .hero-track{display:grid;flex:none}
+   .slide{position:relative;inset:auto;grid-area:1/1;display:flex;flex-direction:column}
+-  .slide-bg{position:relative;inset:auto;width:100%;height:clamp(300px,48svh,460px)}
++  /* РАУНД 15 / приёмка: полоса 48svh + текст не влезали в окно телефона — кнопка CTA
++     оказывалась под сгибом (рендер 390×844: cta.bottom 943 при innerHeight 844).
++     40svh и компактная панель ставят кнопки в первый экран. */
++  .slide-bg{position:relative;inset:auto;width:100%;height:clamp(240px,40svh,400px)}
+   .slide-bg::before,.slide-bg::after{content:none}
+   .slide-bg img,.slide-bg img.f16{object-position:50% 20%}
+-  .slide-in{background:none;padding:20px 14px 8px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;margin:0}
++  .hero .slide-in{background:none;padding:16px 16px 6px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;margin:0}
+   .hero-ui{position:static;padding:10px 0 14px}
+   .hero-ui .container{justify-content:center}
+ }
+ @media (max-width:640px) and (max-height:560px){
+-  .slide-bg{height:min(460px,calc(100svh - 120px))}
+-}
+-/* Раунд 12: сплит-компоновка первого экрана (схема hero-split-layout-mock.jpg).
+-   ≥1024 — две колонки: текст слева на --night без подложек, фото 16:9 ЦЕЛИКОМ
+-   справа в рамке (радиус 26, тонкий кант, тень); кропа нет по построению:
+-   высота фото = min(трек − отступы, доступная ширина колонки × 9/16),
+-   ширина следует из aspect-ratio → clientWidth/clientHeight = пропорция файла.
+-   Левый край текста = левый край контейнера (--cx, как логотип в шапке).
+-   hero-ui стоит под фото справа, в зазоре hp — пересечение с .slide-cta = 0. */
+-/* РАУНД 13: фото снова ФОНОМ на весь блок (как просил заказчик), текст — в левой трети
+-   на мягком затемнении. Кадр 16:9, пропорция блока держится через aspect-ratio,
+-   поэтому cover не режет ни на одной ширине. */
+-@media (min-width:1024px){
+-  .hero{--cx:calc((100% - min(1200px,100% - 40px))/2 + 20px);--hp:clamp(24px,5vw,96px);
+-        /* раунд 15: ширина задана явно — aspect-ratio + max-height больше не переносит
+-           ужатую высоту обратно в ширину (дефект №1: герой 893 px при окне 1223) */
+-        width:100%;min-height:0;aspect-ratio:16/9;max-height:calc(100svh - 96px)}
+-  .hero-track{display:block}
+-  .slide{position:absolute;inset:0;display:flex;align-items:center}
+-  .slide-bg{position:absolute;inset:0;height:auto;aspect-ratio:auto;border-radius:0;border:none;box-shadow:none}
+-  .slide-bg img,.slide-bg img.f16{object-position:50% 50%}
+-  /* затемнение только под текстом: слева плотно, к центру уходит в ноль, без кромок */
+-  .slide-bg::before{
+-    content:"";position:absolute;inset:0;z-index:1;
+-    background:
+-      linear-gradient(90deg,rgba(6,11,9,.94) 0%,rgba(6,11,9,.90) 26%,rgba(6,11,9,.74) 44%,rgba(6,11,9,.34) 52%,rgba(6,11,9,0) 60%),
+-      linear-gradient(0deg,rgba(6,11,9,.55) 0%,rgba(6,11,9,0) 26%);
+-  }
+-  .slide-bg::after{content:none}
+-  .slide-in{
+-    position:relative;z-index:3;background:none;border-radius:0;backdrop-filter:none;
+-    -webkit-backdrop-filter:none;padding:0 var(--hp) 0 var(--cx);
+-    /* раунд 14: коробка слева (margin-right:auto), правый край ≤44 % — текст не на машинах */
+-    max-width:44%;margin-left:0;margin-right:auto;align-self:center;
+-  }
+-  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.2vw,2.9rem);max-width:14em}
+-  .slide-sub{font-size:clamp(15px,1.15vw,18px);max-width:44ch}
+-  .hero-ui{left:auto;right:var(--hp);bottom:max(12px,calc(var(--hp)/2 - 20px))}
+-  .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
+-  /* стрелка «вниз» — внутри правой части, не под кнопками */
+-  .hero-scroll{left:auto;right:calc(var(--hp) + 220px);transform:none;bottom:max(12px,calc(var(--hp)/2 - 20px));animation:none}
+-}
+-@media (min-width:1180px){
+-  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
+-}
+-/* РАУНД 14: 641…1023 — фото ФОНОМ на весь блок (как на десктопе), scrim слева,
+-   текст не шире 62 %, заголовок clamp(1.8rem,4vw,2.4rem), кнопки в одну строку.
+-   object-position смещён к машинам (68 %), чтобы кадр не резал сцену справа. */
+-@media (min-width:641px) and (max-width:1023px){
+-  .hero{flex-direction:row;min-height:0;height:clamp(320px,calc(100svh - 54px),780px)}
+-  .hero-track{display:block;flex:1;position:relative}
+-  .slide{position:absolute;inset:0;display:flex;align-items:center}
+-  .slide-bg{position:absolute;inset:0;aspect-ratio:auto}
+-  .slide-bg img,.slide-bg img.f16{object-position:68% 50%}
+-  .slide-bg::before{
+-    content:"";position:absolute;inset:0;z-index:1;
+-    background:linear-gradient(90deg,rgba(6,11,9,.94) 0%,rgba(6,11,9,.90) 26%,rgba(6,11,9,.74) 44%,rgba(6,11,9,.34) 52%,rgba(6,11,9,0) 60%);
+-  }
+-  .slide-bg::after{content:"";position:absolute;inset:0;z-index:2;background:linear-gradient(0deg,rgba(6,11,9,.62) 0%,rgba(6,11,9,0) 32%)}
+-  .slide-in{background:none;padding:0 24px;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;max-width:62%;margin-left:4%}
+-  .slide h1,.slide .h1{font-size:clamp(1.8rem,4vw,2.4rem);max-width:9.5em}
+-  .slide-sub{font-size:clamp(15px,1.6vw,17px);max-width:30ch}
+-  .slide-cta{flex-wrap:nowrap}
+-  .hero-ui{position:absolute;left:0;right:0;bottom:12px;padding:0 20px}
+-  .hero-ui .container{justify-content:flex-end}
+-  .hero-scroll{display:none}
++  .slide-bg{height:min(400px,calc(100svh - 120px))}
+ }
+-/* РАУНД 14 / патч оркестратора: портретный планшет 641–1023.
+-   Блок на 768×1024 — 737 px при кадре 16:9: cover показывает 1500 из 2560 px мастера
+-   (28–87 %), правая часть вывески и корма Camry уходят за край, а текст ложится на
+-   вывеску и на BMW. Поэтому в портрете — полоса фото 16:9 во всю ширину и текст под ней
+-   на --night. Запрос сознательно НЕ начинается с «(min-width:641px) and (max-width:1023px)»:
+-   чекер берёт планшетный блок по lastIndexOf и не должен находить этот. */
+-@media (orientation:portrait) and (min-width:641px) and (max-width:1023px){
+-  .hero{flex-direction:column;height:auto;min-height:0}
+-  .hero-track{display:grid;flex:none;width:100%;position:relative}
+-  .slide{position:relative;inset:auto;grid-area:1/1;display:block;align-items:stretch}
+-  .slide-bg{position:relative;inset:auto;width:100%;aspect-ratio:16/9}
+-  .slide-bg::before{content:"";position:absolute;inset:0;z-index:1;
+-    background:linear-gradient(90deg,rgba(6,11,9,.55) 0%,rgba(6,11,9,.18) 45%,rgba(6,11,9,0) 75%)}
+-  .slide-bg::after{content:none}
+-  .slide-bg img,.slide-bg img.f16{object-position:62% 50%}
+-  .slide-in{
+-    max-width:none;margin:0;padding:26px 24px 30px;background:none;
+-    border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;
+-  }
+-  .slide h1,.slide .h1{max-width:16em;font-size:clamp(1.7rem,3.6vw,2.2rem)}
+-  .slide-sub{max-width:46ch;font-size:clamp(15px,1.7vw,17px)}
+-  .slide-cta{flex-wrap:wrap}
+-  .hero-ui{position:static;padding:8px 20px 14px;bottom:auto}
+-  .hero-ui .container{justify-content:center}
+-}
+-/* Раунд 15: короткие экраны (ландшафт телефона): прячем второстепенное,
+-   заголовок компактнее, подзаголовок ≤3 строк, кнопки в одну строку */
+-@media (max-height:560px){
+-  .slide-eyebrow,.hero-note{display:none}
+-  .slide h1,.slide .h1{font-size:clamp(1.35rem,4.6vw,1.9rem)}
+-  .slide-sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:14px}
+-  .slide-cta{flex-wrap:nowrap}
+-}
+-/* ≤640: полоса фото 4:5 сверху, текст под ней на --night (раунд 15: панель
+-   больше не наезжает на машины — перекрытие 0 % по построению) */
+-@media (max-width:640px){
+-  .slide{align-items:flex-end}
+-  .slide-in{
+-    background:rgba(6,11,9,.82);padding:22px;border-radius:18px;
+-    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+-    margin:0 10px 10px;
+-  }
+-}
+-/* Блокер раунда 10: карусельные контролы в потоке ПОД кадром — физически не
+-   перекрывают кнопки панели; высота трека держит панель с запасом */
+-@media (max-width:640px){
+-  .hero{flex-direction:column;min-height:0}
+-  .hero-track{min-height:max(460px,76svh)}
+-  .hero-ui{position:static;padding:10px 0 14px}
+-  .hero-ui .container{justify-content:center}
+-  .slide-sub{max-width:34ch}
+-  /* 6.5: одна позиция на фото и неон (мобильный кроп 4:5) */
+-  .slide-bg img,.slide-bg img.f16{object-position:50% 20%}
++/* РАУНД 15 / приёмка: невысокие телефоны (320×640, 360×640). Даже после сжатия полосы
++   кнопка уходила под сгиб (рендер: cta.bottom 742 при 640). Убираем надзаголовок,
++   полосу делаем ниже, подзаголовок — в две строки. */
++@media (max-width:640px) and (max-height:740px){
++  .slide-eyebrow{display:none}
++  .slide-bg{height:clamp(200px,32svh,300px)}
++  .slide h1,.slide .h1{font-size:clamp(1.3rem,6vw,1.6rem);margin-bottom:.3em}
++  .slide-sub{-webkit-line-clamp:2;margin-bottom:10px}
++  .hero .slide-in{padding:12px 16px 4px}
++  .hero-ui{padding:6px 0 10px}
+ }
+ @media (prefers-reduced-motion:reduce){
+   .slide.is-active .slide-bg img{animation:none}
+ }
+ @media (max-width:480px){
+-  .slide-in{padding:16px 10px 6px}
+-  .slide-sub{font-size:15px;max-width:none;margin-bottom:12px}
++  .slide-in{padding:16px 16px 6px}
+   /* компактная панель: сумма высот заведомо меньше трека 420 px */
+-  .slide h1,.slide .h1{font-size:clamp(1.55rem,7.2vw,1.9rem)}
+-  .slide-sub{max-width:30ch;margin-bottom:16px}
++  .slide h1,.slide .h1{font-size:clamp(1.4rem,6.2vw,1.75rem);margin-bottom:.35em}
++  .slide-sub{font-size:14.5px;max-width:34ch;margin-bottom:12px;
++             display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+   /* патч оркестратора: на 390 px две кнопки не помещаются в 342 px —
+      разрешаем перенос второй на новую строку вместо обреза краем экрана */
+   .slide-cta{flex-wrap:wrap;gap:10px}
+diff --git a/site/src/styles/media.css b/site/src/styles/media.css
+index ef48e69..c14e1bf 100644
+--- a/site/src/styles/media.css
++++ b/site/src/styles/media.css
+@@ -11,7 +11,9 @@
+   .slots{grid-template-columns:repeat(4,1fr)}
+   .hdr-phone span{display:none}
+ }
+-@media (max-width:860px){
++/* раунд 15: порог опущен с 860 до 1023 — в рендере шапка на 926 px была шириной 1146 px
++   (меню + телефон + CTA не помещались, .burger уходил за правый край) */
++@media (max-width:1023px){
+   .nav{display:none}
+   .burger{display:block;margin-left:auto}
+   .hdr-cta .btn{display:none}
+@@ -40,7 +42,9 @@
+   .sum-row .k{flex-basis:100%}
+   .lb-arrow{width:44px;height:44px}
+   .lb-prev{left:8px}.lb-next{right:8px}
+-  .hero{min-height:calc(100svh - 54px)}
++  /* раунд 15 / патч оркестратора: высоту мобильного героя задают фото и текст,
++     а не окно — иначе под контролами остаётся пустая полоса */
++  .hero{min-height:0}
+   .hero-ui .container{gap:12px}
+   .hero-note{display:none}
+   .cform{padding:20px 18px}

@@ -70,8 +70,60 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
 .m-menu-contacts a{font-weight:500;font-size:17px;min-height:44px;display:flex;align-items:center;gap:10px}
 .m-menu-contacts .tel{font-size:22px;font-weight:700;color:var(--ivory)}
 
-/* раунд 15: на 1024–1279 уплотняем меню, чтобы оно осталось в одну строку */
-@media (min-width:1024px) and (max-width:1279px){
+/* РАУНД 15 / патч оркестратора. nowrap у пунктов вернул меню в одну строку (жалоба `g`),
+   но шапка перестала влезать в окно: «Записаться» обрезалась краем (A6: +83 px на 1024,
+   +60 на 1217, +74 на 1280, +31 на 1366). Ширину считали по метрикам Golos Text (fontTools):
+   пункты меню 448 px при 14.5 — самый дорогой блок шапки, поэтому на 1024–1199 убираем
+   подпись под логотипом и цифры телефона (они есть в док-панели, мобильном меню, футере
+   и на «Контактах»), а меню уплотняем. С 1200 подпись возвращается, с 1280 — цифры. */
+@media (min-width:1024px) and (max-width:1199px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .logo-t b{display:none}
+  .hdr-phone span{display:none}
   .nav ul{gap:2px}
-  .nav a{padding:9px 10px}
+  .nav a{padding:8px 6px;font-size:13.5px}
+}
+@media (min-width:1200px) and (max-width:1279px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .hdr-phone span{display:none}
+  .nav ul{gap:2px}
+  .nav a{padding:8px 7px;font-size:14px}
+}
+@media (min-width:1280px) and (max-width:1359px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .logo-t b{display:none}
+  .nav ul{gap:2px}
+  .nav a{padding:8px 7px;font-size:13.5px}
+}
+@media (min-width:1360px) and (max-width:1439px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .nav ul{gap:4px}
+  .nav a{padding:9px 9px;font-size:14px}
+}
+
+/* РАУНД 15 / патч оркестратора: на телефоне шапка была шире окна (рендер: .burger
+   x 363…411 при clientWidth 360, scrollWidth 411). Подпись под логотипом — 196 px,
+   на ≤560 убираем её и поджимаем блоки; на ≤380 — ещё компактнее. */
+@media (max-width:560px){
+  .logo-t b{display:none}
+  .hdr-in{gap:14px}
+  .logo{gap:10px}
+  .logo img{width:40px;height:40px}
+  .logo-t{font-size:16px}
+  .burger{width:44px;height:44px}
+  .burger span{left:11px;right:11px}
+  .burger span:nth-child(1){top:14px}
+  .burger span:nth-child(2){top:21px}
+  .burger span:nth-child(3){top:28px}
+  body.menu-open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  body.menu-open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+}
+@media (max-width:380px){
+  .hdr-in{gap:10px}
+  .logo-t{font-size:15px}
+  .logo img{width:36px;height:36px}
 }

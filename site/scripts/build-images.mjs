@@ -15,6 +15,7 @@
    Мобильный кроп 4:5: окно 1290…2442 по X мастера (обе машины + вывеска целиком/видны).
    Полоса, панель диагностики, слайды 2–3 — не трогаются (§3.6 задания №14).
    Запуск: node site/scripts/build-images.mjs */
+import { tmpdir } from 'node:os';
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
@@ -52,11 +53,27 @@ export function safeZoneTable(geom) {
   });
 }
 export function safeZoneMobile(geom) {
-  const { IW, title } = geom;
-  return MOB_VIEWPORTS.map(([W, H]) => ({
-    vp: `${W}×${H}`, band: `0…${MOBH}`,
-    cars: 'ok', title: title[0] >= 0 && title[2] <= IW ? 'ok' : 'нет', inter: 'ok',
-  }));
+  /* раунд 15 / правка приёмки: раньше здесь стояли готовые 'ok' — проверка не могла упасть
+     (ревью A6 по тому же классу дефекта в гейте ширины героя). Теперь считаем по числам:
+     полоса фото на ≤640 = clamp(300px,48svh,460px) от ширины экрана, cover кропит только
+     по вертикали (мастер 4:5 уже экрана), машины и вывеска в координатах мастера. */
+  const { IW, IH, title, cars } = geom;
+  return MOB_VIEWPORTS.map(([W, H]) => {
+    const band = Math.round(Math.min(460, Math.max(300, H * 0.48)));
+    const scale = Math.max(W / IW, band / IH);      // cover
+    const visW = Math.min(IW, W / scale), visH = Math.min(IH, band / scale);
+    const left = (IW - visW) / 2, top = (IH - visH) * (geom.posY ?? 0.2);
+    const inside = (r) => r[0] >= left - 1 && r[2] <= left + visW + 1 && r[1] >= top - 1 && r[3] <= top + visH + 1;
+    const carsIn = cars ? inside(cars) : false;
+    const titleIn = inside(title);
+    /* Пересечение вывески и машин на мобиле НЕ проверяем: это содержание фотографии
+       (машины стоят перед стеной с баннером), а текст на ≤640 идёт отдельным блоком
+       ПОД кадром — наложению неоткуда взяться. Критерий — «машины и вывеска в кадре». */
+    return {
+      vp: `${W}×${H}`, band: `0…${band}`,
+      cars: carsIn ? 'ok' : 'нет', title: titleIn ? 'ok' : 'нет', inter: 'n/a',
+    };
+  });
 }
 
 /* ---------- кодирование с лимитами ---------- */
@@ -152,7 +169,12 @@ async function main() {
   const leftBand = await sharp(vertFile).extract({ left: 0, top: 0, width: LEFT, height: H1 }).flop().raw().toBuffer();
   const W1 = LEFT + SW;                                          // 1552
   const canvas = Buffer.alloc(W1 * H1 * 3);
-  Buffer.from(leftBand).copy(canvas, 0);
+  /* РАУНД 15 / правка приёмки: полосу 176×873 нельзя копировать в холст одним куском —
+     сплошное копирование «кирпичом» кладёт её в первые ~99 строк холста, а ниже оставляет
+     чёрный столбец (в рендере 768×1024 видна кромка x≈86 из 768). Копируем построчно. */
+  for (let y = 0; y < H1; y++) {
+    Buffer.from(leftBand).copy(canvas, y * W1 * 3, y * LEFT * 3, (y + 1) * LEFT * 3);
+  }
   for (let y = 0; y < H1; y++) Buffer.from(vert).copy(canvas, (y * W1 + LEFT) * 3, y * SW * 3, (y + 1) * SW * 3);
   /* левая пустая зона выше горизонта — глубокая тень: плавающие блики генератора
      (зелёные штрихи в «небе») гасятся градиентом ×0.30→0.80 по Y и до 1 к x 740 */
@@ -263,14 +285,17 @@ async function main() {
   const EXT_H = MCH - 1440;
   const bottom = await sharp(masterDeskFile).extract({ left: 0, top: 1440 - EXT_H, width: 2560, height: EXT_H })
     .flip().blur(2).linear([0.92, 0.92, 0.92], [0, 0, 0]).png().toBuffer();
-  const extFile = join(PHOTOS, 'r14-gen/master-ext-2560x1600.png');
+  /* промежуточный холст 4,7 МБ — во временную папку, в репозиторий не тащим */
+  const extFile = join(tmpdir(), 'ats-master-ext-2560x1600.png');
   await sharp({ create: { width: 2560, height: MCH, channels: 3, background: '#000' } })
     .composite([{ input: await sharp(masterDeskFile).png().toBuffer(), top: 0, left: 0 }, { input: bottom, top: 1440, left: 0 }])
     .png().toFile(extFile);
   const masterMobFile = join(PHOTOS, 'r14-gen/master-mobile-4x5.jpg');
   await sharp(extFile).extract({ left: MX, top: 0, width: MCW, height: MCH }).resize(MOBW, MOBH).jpeg({ quality: 95 }).toFile(masterMobFile);
   const kMob = MOBW / MCW;
-  const mobTitle = [Math.round((sx0 - MX) * kMob), 0, Math.round((sx1 - MX) * kMob), MOBH];
+  /* раунд 15 / правка приёмки: bbox вывески в координатах мобильного мастера —
+     по X и по Y (раньше Y был «0…MOBH», из-за чего проверка пересечения не могла быть верной) */
+  const mobTitle = [Math.round((sx0 - MX) * kMob), Math.round(sy0 * kMob), Math.round((sx1 - MX) * kMob), Math.round(sy1 * kMob)];
   const mL = Math.round((cx0 - MX) * kMob), mR = Math.round((MX + MCW - cx1) * kMob);
   console.log(`мобайл 4:5: окно x ${MX}…${MX + MCW}; вывеска в кропе x ${mobTitle[0]}…${mobTitle[2]} из ${MOBW}; машины: запас слева ${mL} / справа ${mR} (норма ≥24)`);
   if (mobTitle[0] < 0 || mobTitle[2] > MOBW) { console.error('FAIL: вывеска не целиком в мобильном кропе'); fail = 1; }
@@ -335,7 +360,11 @@ async function main() {
   /* ----- 12. геометрия для check-safe-zone ----- */
   writeFileSync(join(HERE, 'safe-zone-geom.json'), JSON.stringify({
     desk: { IW: NW, IH: NH, posY: 0, whole: true, cars: carsBBox, title: titleBBox },
-    mob: { IW: MOBW, IH: MOBH, posY: MOB_POS_Y, title: mobTitle },
+    /* разрез мобильного мастера 1152×1440 (он же отдаётся как 960×1200 / 640×800 — геометрия
+       в координатах мастера, проверка пересчитывает через cover) */
+    mob: { IW: MOBW, IH: MOBH, posY: MOB_POS_Y, title: mobTitle,
+           cars: [Math.round(Math.max(0, cx0 - MX) * kMob), Math.round(cy0 * kMob),
+                  Math.round(Math.min(MX + MCW, cx1) * kMob - MX * kMob), Math.round(cy1 * kMob)] },
   }, null, 2));
 
   /* ----- 13. дубли хешей + таблица весов в README ----- */

@@ -63,7 +63,7 @@ const marks = [
   ['скрим под текстом слева', /\.slide-bg::before\{[^}]*linear-gradient\(90deg/],
   ['текст в левой колонке ≤46% (раунд 14: 44%, коробка слева)', /max-width:44%;margin-left:0;margin-right:auto/],
   ['hero-ui справа в зазоре hp', /\.hero-ui\{left:auto;right:var\(--hp\)/],
-  ['стрелка не под кнопками', /\.hero-scroll\{left:auto/],
+  ['стрелка у левого края (не на подписи «Автопрокрутка»)', /\.hero-scroll\{left:var\(--cx\);right:auto/],
 ];
 for (const [name, re] of marks) {
   const pass = re.test(desk);
@@ -112,7 +112,10 @@ await (async () => {
      текст ≤62 % ширины, заголовок clamp(1.8rem,4vw,2.4rem), кнопки в одну строку,
      телефонная кнопка сжимается до «Позвонить». */
   console.log('\nрежим 641–1023 (планшет, раунд 14):');
-  const tab = css.slice(css.lastIndexOf('@media (min-width:641px) and (max-width:1023px)'));
+  /* раунд 15: блоков с этим префиксом теперь два (второй — короткий ландшафт
+     с дополнительным max-height), поэтому берём последний БАЗОВЫЙ блок по точному
+     заголовку, а не последний по префиксу */
+  const tab = css.slice(css.lastIndexOf('@media (min-width:641px) and (max-width:1023px){\n'));
   const tabBlock = tab.slice(0, tab.indexOf('\n}'));
   const tabMarks = [
     ['фото — фон блока (absolute inset:0)', /\.slide-bg\{position:absolute;inset:0;aspect-ratio:auto\}/, tabBlock],
@@ -154,14 +157,15 @@ await (async () => {
   const mobBlock = mob.slice(0, mob.indexOf('\n}\n'));
   const mobMarks = [
     ['фото полосой сверху (column)', /\.slide\{position:relative;inset:auto;grid-area:1\/1;display:flex;flex-direction:column\}/],
-    ['высота полосы clamp(300px,48svh,460px)', /\.slide-bg\{position:relative;inset:auto;width:100%;height:clamp\(300px,48svh,460px\)\}/],
+    ['высота полосы clamp(240px,40svh,400px)', /\.slide-bg\{position:relative;inset:auto;width:100%;height:clamp\(240px,40svh,400px\)\}/],
     ['без scrim поверх фото', /\.slide-bg::before,\.slide-bg::after\{content:none\}/],
     ['одна позиция 50% 20%', /object-position:50% 20%/],
     ['текст без подложки (на --night)', /\.slide-in\{background:none/],
     ['контролы в потоке под кадром', /\.hero-ui\{position:static/],
   ];
   for (const [name, re] of mobMarks) chk('мобайл: ' + name, re.test(mobBlock), re.test(mobBlock) ? 'есть' : 'нет', 'есть');
-  chk('мобайл: короткий экран — полоса ниже', /@media \(max-width:640px\) and \(max-height:560px\)\{\n  \.slide-bg\{height:min\(460px,calc\(100svh - 120px\)\)\}/.test(css), 'есть', 'есть');
+  chk('мобайл: короткий экран — полоса ниже', /@media \(max-width:640px\) and \(max-height:560px\)\{\n  \.slide-bg\{height:min\(400px,calc\(100svh - 120px\)\)\}/.test(css), 'есть', 'есть');
+  chk('мобайл: невысокий телефон 320×640 — CTA в первом экране', /@media \(max-width:640px\) and \(max-height:740px\)\{\n  \.slide-eyebrow\{display:none\}/.test(css), 'есть', 'есть');
   /* обе машины целиком в кропе 4:5: окно 1280 с x 1268, машины 1296…2520, k=1152/1280 */
   const kM = 1152 / 1280, mL = Math.round((1296 - 1268) * kM), mR = Math.round((1268 + 1280 - 2520) * kM);
   chk('мобайл: обе машины целиком, запас ≥24 px', mL >= 24 && mR >= 24, `запас слева ${mL} / справа ${mR}`, '≥24 px с каждой стороны');
@@ -178,28 +182,79 @@ await (async () => {
   const mm = await sharp(join(HERE, '../../docs/photos-source/r14-gen/master-mobile-4x5.jpg')).metadata();
   chk('мобайл: мастер 4:5', Math.abs(mm.width / mm.height - 4 / 5) <= 0.002, `${mm.width}×${mm.height}`, '4:5');
 
-  /* 3b. РАУНД 15, дефект №1: ширина героя = ширине окна на всех проблемных окнах.
-     CSS задаёт width:100% явно, aspect-ratio+max-height не переносит высоту в ширину. */
-  console.log('\nширина героя (раунд 15, дефект №1):');
-  chk('CSS ≥1024: width:100% задан явно', /\.hero\{[^}]*width:100%;min-height:0;aspect-ratio:16\/9/.test(css), 'есть', 'есть');
-  for (const [vw, vh] of [[1217, 598], [1366, 768], [1440, 900], [1920, 950], [2560, 1080], [2560, 1440], [1024, 600]]) {
-    const heroW = vw;                                   // width:100% — переноса ширины нет
-    const heroH = Math.min(vh - 96, vw * 9 / 16);
-    const band = vw - heroW;
-    chk(`окно ${vw}×${vh}: герой ${heroW}×${heroH.toFixed(0)}, полоса справа ${band} px`,
-      band === 0 && heroH <= vh - 96, `${heroW}×${heroH.toFixed(0)}`, `ширина = ${vw}, высота ≤ ${vh - 96}`);
+  /* 3b. РАУНД 15, дефект №1: ширина героя.
+     В песочнице нет браузера (нет libnss3), поэтому рендер не померить. Прежняя версия
+     этой проверки объявляла heroW = vw и тем самым «доказывала» саму себя (A6: мутация
+     .hero{max-width:calc(100vw - 96px)} проходила с exit 0). Здесь — статический разбор
+     объявления .hero в блоке ≥1024 плюс самопроверка на мутантах: гейт обязан падать на
+     конфигурации, которая снова переносит высоту в ширину. Реальное измерение делает A6
+     в браузере (hero.getBoundingClientRect()); это записано в отчёте как ограничение. */
+  console.log('\nширина героя (раунд 15, дефект №1) — статический гейт:');
+  const heroDecl = (src) => {
+    const i = src.indexOf('@media (min-width:1024px){');
+    if (i < 0) return null;
+    const j = src.indexOf('.hero{', i);
+    const k = src.indexOf('}', j);
+    return j < 0 || k < 0 ? null : src.slice(j, k);
+  };
+  const heroGate = (src) => {
+    const decl = heroDecl(src);
+    if (!decl) return 'блок .hero в @media (min-width:1024px) не найден';
+    const body = decl.replace(/\/\*[\s\S]*?\*\//g, '');
+    if (!/width:100%/.test(body)) return 'нет width:100%';
+    if (/max-width:/.test(body)) return 'на .hero стоит max-width — ширина может стать меньше окна';
+    if (!/aspect-ratio:16\/9/.test(body)) return 'потерян кадр 16:9';
+    if (!/max-height:calc\(100svh - var\(--hdr\)\)/.test(body)) return 'нет ограничения по высоте окна';
+    const dup = (src.match(/@media \(min-width:1024px\)\{/g) || []).length;
+    if (dup !== 1) return `блоков @media (min-width:1024px) — ${dup}, нужен 1 (дубли перебивают друг друга)`;
+    const mob = (src.match(/@media \(max-width:640px\)\{/g) || []).length;
+    const mobTracks = (src.match(/\.hero-track\{min-height:max\(460px,76svh\)\}/g) || []).length;
+    if (mobTracks) return 'старый трек max(460px,76svh) остался — мобильный герой снова выше окна';
+    if (mob > 3) return `блоков @media (max-width:640px) — ${mob}: похоже на дубли`;
+    return null;
+  };
+  const gateErr = heroGate(css);
+  chk('CSS: ширина героя задана и не пересчитывается высотой', gateErr === null, gateErr || 'объявление корректно', 'корректно');
+  for (const [name, mutant] of [
+    ['мутант: max-width вместо width', css.replace('.hero{--cx:', '.hero{max-width:calc(100vw - 96px);--cx:')],
+    ['мутант: без width:100%', css.replace('width:100%;min-height:0;aspect-ratio:16/9', 'min-height:0;aspect-ratio:16/9')],
+    ['мутант: дубль блока ≥1024', css + '\n@media (min-width:1024px){\n  .hero{max-width:800px}\n}\n'],
+    ['мутант: вернули трек 76svh', css + '\n@media (max-width:640px){\n  .hero-track{min-height:max(460px,76svh)}\n}\n'],
+  ]) {
+    const caught = heroGate(mutant) !== null;
+    chk(name + ' ловится', caught, caught ? 'гейт упал, как должен' : 'ПРОПУЩЕН — гейт тавтологичен', 'падает');
   }
-  /* 3d. РАУНД 15, дефект №6: меню в одну строку на 1024/1212/1280 (nowrap + уплотнение) */
-  console.log('\nменю шапки (раунд 15, дефект №6):');
-  chk('CSS: .nav a{white-space:nowrap}', /\.nav a\{white-space:nowrap\}/.test(readFileSync(join(HERE, '../src/styles/header.css'), 'utf8')), 'есть', 'есть');
-  const NAV = [['Услуги', 6], ['О компании', 10], ['Новости и акции', 15], ['Контакты', 8]];
-  for (const vw of [1024, 1212, 1280]) {
-    const dense = vw < 1280;
-    const items = NAV.reduce((acc, [, n]) => acc + Math.round(n * (dense ? 7.4 : 8.0) + (dense ? 20 : 26)), 0) + (dense ? 2 : 4) * 3;
-    const total = items + 230 + 190 + 40;   // меню + лого + телефонная кнопка + отступы
-    chk(`шапка ${vw}: меню в одну строку`, total <= vw, `нужно ${total} px из ${vw}`, `≤ ${vw}`);
+  /* арифметика дефекта — для отчёта: при переносе высоты в ширину полоса = vw − (vh−96)·16/9 */
+  for (const [vw, vh] of [[1217, 598], [1920, 950], [2560, 1080], [2560, 1440]]) {
+    const bandIfBug = vw - (vh - 96) * 16 / 9;
+    console.log(`     ${vw}×${vh}: если высота переносится в ширину — полоса ${bandIfBug.toFixed(0)} px (дефект круга 14); при width:100% — 0`);
   }
+  /* 3d. РАУНД 15, дефект №6: меню в одну строку на 1024–1366.
+     Меряем не «формулой ширины текста» (A6: считала 834 px там, где в браузере 1 107),
+     а объявлениями, которые эту строку держат: nowrap + уплотнение на 1024–1279 и
+     скрытый номер на 1025–1439 (иначе CTA «Записаться» уходит за край). */
+  console.log('\nменю шапки (раунд 15, дефект №6) — статический гейт:');
+  const hdr = readFileSync(join(HERE, '../src/styles/header.css'), 'utf8');
+  for (const [name, re] of [
+    ['.nav a{white-space:nowrap}', /\.nav a\{white-space:nowrap\}/],
+    ['1024–1199: подпись логотипа и цифры телефона скрыты', /@media \(min-width:1024px\) and \(max-width:1199px\)\{(?=[^}]*\})[\s\S]*?\.logo-t b\{display:none\}[\s\S]*?\.hdr-phone span\{display:none\}/],
+    ['1024–1199: меню уплотнено (8px 6px, 13.5px)', /@media \(min-width:1024px\) and \(max-width:1199px\)\{[\s\S]*?\.nav a\{padding:8px 6px;font-size:13\.5px\}/],
+    ['1200–1279: цифры скрыты, меню плотнее', /@media \(min-width:1200px\) and \(max-width:1279px\)\{[\s\S]*?\.hdr-phone span\{display:none\}[\s\S]*?\.nav a\{padding:8px 7px;font-size:14px\}/],
+    ['1280–1359: меню плотнее, цифры на месте', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.nav a\{padding:8px 7px;font-size:13\.5px\}/],
+    ['1280–1359: подпись логотипа скрыта', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.logo-t b\{display:none\}/],
+    ['1360–1439: шапка плотнее, цифры на месте', /@media \(min-width:1360px\) and \(max-width:1439px\)\{[\s\S]*?\.nav a\{padding:9px 9px;font-size:14px\}/],
+  ]) chk('шапка: ' + name, re.test(hdr), re.test(hdr) ? 'есть' : 'нет', 'есть');
   /* 3c. короткие экраны и неон */
+  /* раунд 15 / приёмка: на коротком ландшафте контролы больше не в потоке, а в правом
+     нижнем углу поверх фото — но текстовая колонка там ≤60 %, поэтому по горизонтали
+     они не встречаются. Проверяем оба условия. */
+  const land = (() => {
+    const i = css.indexOf('@media (min-width:641px) and (max-width:1023px) and (max-height:560px){');
+    return i < 0 ? '' : css.slice(i, css.indexOf('\n}\n', i));
+  })();
+  chk('короткий ландшафт: контролы справа внизу, текст ≤70 %',
+    /\.slide-in\{max-width:70%/.test(land) && /\.hero-ui\{position:absolute;left:auto;right:12px/.test(land) && /\.hero\{flex-direction:row/.test(land),
+    land ? 'есть' : 'блока нет', 'есть');
   chk('короткие экраны: блок max-height:560px', /@media \(max-height:560px\)\{\n  \.slide-eyebrow,\.hero-note\{display:none\}/.test(css), 'есть', 'есть');
   chk('планшет: высота clamp(320px,calc(100svh - 54px),780px)', /height:clamp\(320px,calc\(100svh - 54px\),780px\)/.test(css), 'есть', 'есть');
   const NW = 'ne' + 'on';   // литерал не пишем, чтобы grep по site/ был пустым

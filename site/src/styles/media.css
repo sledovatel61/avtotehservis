@@ -11,7 +11,9 @@
   .slots{grid-template-columns:repeat(4,1fr)}
   .hdr-phone span{display:none}
 }
-@media (max-width:860px){
+/* раунд 15: порог опущен с 860 до 1023 — в рендере шапка на 926 px была шириной 1146 px
+   (меню + телефон + CTA не помещались, .burger уходил за правый край) */
+@media (max-width:1023px){
   .nav{display:none}
   .burger{display:block;margin-left:auto}
   .hdr-cta .btn{display:none}
@@ -40,7 +42,9 @@
   .sum-row .k{flex-basis:100%}
   .lb-arrow{width:44px;height:44px}
   .lb-prev{left:8px}.lb-next{right:8px}
-  .hero{min-height:calc(100svh - 54px)}
+  /* раунд 15 / патч оркестратора: высоту мобильного героя задают фото и текст,
+     а не окно — иначе под контролами остаётся пустая полоса */
+  .hero{min-height:0}
   .hero-ui .container{gap:12px}
   .hero-note{display:none}
   .cform{padding:20px 18px}
