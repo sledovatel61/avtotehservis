@@ -128,6 +128,27 @@ const meanAbsDiffFull = (A, B) => {
 };
 const dAll = meanAbsDiffFull(about, base);
 chk('кадр = чистый кроп master-clean (без грейда/вставок)', dAll <= 6, `средний |Δ| ${dAll.toFixed(2)} уровня`, '≤ 6');
+/* раунд 15: в небе над кровлей ничего не торчит (спицы забора и проволока удалены
+   ретушью master-clean до кропа): прямоугольники улики из скрина f — ровное небо */
+for (const [name, r, sy] of [['спицы над кровлью', { x: 1503, y: 165, w: 39, h: 20 }, 140],
+  ['проволока правее кровли', { x: 1570, y: 187, w: 30, h: 14 }, 160]]) {
+  let s2 = 0, n = 0;
+  for (let y = r.y; y < r.y + r.h; y++) {
+    const med = [0, 1, 2].map((c) => {
+      const col = [];
+      for (let x = r.x; x < r.x + r.w; x++) col.push(about.d[((sy + ((y - r.y) % 8)) * about.w + x) * 3 + c]);
+      col.sort((a, b) => a - b); return col[col.length >> 1];
+    });
+    for (let x = r.x; x < r.x + r.w; x++) {
+      const a = (y * about.w + x) * 3;
+      s2 += (Math.abs(about.d[a] - med[0]) + Math.abs(about.d[a + 1] - med[1]) + Math.abs(about.d[a + 2] - med[2])) / 3;
+      n++;
+    }
+  }
+  const eF = edgeFrac(about, r.x, r.y, r.w, r.h);
+  chk(`небо над кровлей: ${name} — чисто`, s2 / n <= 6 && eF <= 0.02,
+    `|Δ| к небу ${(s2 / n).toFixed(2)}, перепады ${(eF * 100).toFixed(2)} %`, '|Δ| ≤ 6 и перепады ≤ 2 %');
+}
 for (const [name, r] of [['левый проём', AL], ['правый проём', AR]]) {
   let s2 = 0, n = 0;
   for (let y = r.y; y < r.y + r.h; y += 2)

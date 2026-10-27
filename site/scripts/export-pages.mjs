@@ -64,9 +64,12 @@ try {
     doc.querySelectorAll('a[href*="/admin"]').forEach((el) => el.remove());
     doc.querySelectorAll('input[type="file"]').forEach((el) => { el.disabled = true; });
     const notice = doc.createElement('p');
-    notice.className = 'container';
+    /* раунд 15: плашка — отдельной полосой НАД шапкой (фон --deep, свой отступ),
+       иначе её вторая строка наезжает на меню на 1024–1279 px */
+    notice.className = 'demo-notice container';
     notice.textContent = 'Демонстрационная версия для согласования. Заявки и сообщения не отправляются. Время записи — пример.';
-    doc.querySelector('main')?.prepend(notice);
+    const header = doc.querySelector('header');
+    if (header) header.parentNode?.insertBefore(notice, header); else doc.querySelector('main')?.prepend(notice);
     const file = route === '/404' ? join(output, '404.html') : join(output, route.slice(1), 'index.html');
     await mkdir(dirname(file), { recursive: true });
     await writeFile(file, dom.serialize());

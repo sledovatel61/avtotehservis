@@ -40,7 +40,9 @@
   .sum-row .k{flex-basis:100%}
   .lb-arrow{width:44px;height:44px}
   .lb-prev{left:8px}.lb-next{right:8px}
-  .hero{min-height:calc(100svh - 54px)}
+  /* раунд 15 / патч оркестратора: высоту мобильного героя задают фото и текст,
+     а не окно — иначе под контролами остаётся пустая полоса */
+  .hero{min-height:0}
   .hero-ui .container{gap:12px}
   .hero-note{display:none}
   .cform{padding:20px 18px}
