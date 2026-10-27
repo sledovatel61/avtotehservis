@@ -127,8 +127,11 @@
      при 600, пересечение с .hero-ui 45 px²). Ужимаем типографику и отступы. */
   .slide-eyebrow{margin-bottom:14px;padding:6px 14px;font-size:11.5px}
   .slide h1,.slide .h1{font-size:clamp(1.5rem,2.4vw,2.1rem)}
+  /* 4 строки, а не 3: на 1217×598 подзаголовок обрывался многоточием посреди фразы
+     («…без живой…» → «без…») — выглядело как недописанный текст. Место есть: CTA ниже
+     на 24 px, до низа окна остаётся запас (проверено рендером). */
   .slide-sub{font-size:14.5px;max-width:38ch;margin-bottom:16px;
-             display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+             display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
   .slide-cta .btn{padding:10px 20px;min-height:44px;font-size:14px}
 }
 /* РАУНД 14: 641…1023 — фото ФОНОМ на весь блок (как на десктопе), scrim слева,
