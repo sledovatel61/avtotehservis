@@ -16,6 +16,7 @@ const sharp = require('../../site/node_modules/sharp');
 import { readFileSync, statSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { coverWindow as libCover, commonWindow as libCommon, insideZone } from './lib/cover.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const R18 = join(HERE, '../../docs/photos-source/r18-dirs');
@@ -48,18 +49,11 @@ const VIEW = {
   sec:   { W: 2560, H: 1440, px: 0.5, py: 0.45, list: [[1440, 680], [1280, 800], [1024, 1142], [768, 1111]] },
   secM:  { W: 900,  H: 1600, px: 0.5, py: 0.40, list: [[390, 1434], [360, 1434]] },
 };
-/* видимое окно мастера для блока cw×ch при cover + объектной позиции px/py (0…1) */
-function coverWindow({ W, H, px, py }, cw, ch) {
-  const s = Math.max(cw / W, ch / H);
-  const dw = W * s, dh = H * s;
-  const ox = (dw - cw) * px, oy = (dh - ch) * py;
-  return { x0: ox / s, x1: (ox + cw) / s, y0: oy / s, y1: (oy + ch) / s };
-}
+/* раунд 18 (§5.1): кроп-математика живёт в lib/cover.mjs, здесь — тонкие обёртки
+   поверх VIEW-таблицы, чтобы не дублировать формулы между чекерами */
+const coverWindow = (view, cw, ch) => libCover({ W: view.W, H: view.H, px: view.px, py: view.py }, cw, ch);
 const TOL = 1;   // px: допуск на округление долей
-function commonWindow(view) {
-  return view.list.map(([w, h]) => coverWindow(view, w, h))
-    .reduce((a, b) => ({ x0: Math.max(a.x0, b.x0), x1: Math.min(a.x1, b.x1), y0: Math.max(a.y0, b.y0), y1: Math.min(a.y1, b.y1) }));
-}
+const commonWindow = (view) => libCommon(view.list.map(([w, h]) => coverWindow(view, w, h)));
 
 const zones = JSON.parse(readFileSync(join(R18, 'zones.json'), 'utf8'));
 
