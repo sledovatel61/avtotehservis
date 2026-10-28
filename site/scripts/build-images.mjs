@@ -103,7 +103,6 @@ const CAPS = {
   'hero-tools-640': { avif: 25, webp: 25 },
   /* раунд 17 (задание №19): фоны «Трёх направлений» */
   'tri-bg-2560':    { avif: 130, webp: 150 },
-  'tri-bg-960':     { avif: 70,  webp: 80  },
   'tri-bg-m-900':   { avif: 80,  webp: 95  },
   'tri-wheel-1600': { avif: 70,  webp: 80  },
   'tri-wheel-960':  { avif: 45,  webp: 50  },
@@ -376,18 +375,16 @@ async function main() {
       .jpeg({ quality: 95 }).toFile(outPath + '.tmp');
     renameSync(outPath + '.tmp', outPath);
   }
-  writeFileSync(join(R18, 'zones.json'), JSON.stringify({
-    card2400:    { x: 514, y: 472, w: 1372, h: 656 },
-    secDesk2560: { x: 784, y: 116, w: 992,  h: 1208 },
-    secMob900:   { x: 249, y: 0,   w: 402,  h: 1600 },
-  }, null, 2) + '\n');
+  /* РАУНД 17 / приёмка (замечание A6 §9.4): zones.json больше НЕ перезаписывается сборкой.
+     Это входные данные проверки (что именно считается сюжетом на кадре), а не её результат:
+     иначе гейт сравнивал число с самим собой, а ручная правка зоны не выживала пересборки.
+     Файл лежит в docs/photos-source/r18-dirs/zones.json и меняется только руками. */
   const mSecD = join(R18, 'sec-bg-2560.jpg'), mSecM = join(R18, 'sec-bg-m-900.jpg');
   const mWheel = join(R18, 'card-1-wheels-2400.jpg');
   const mServ = join(R18, 'card-2-service-2400.jpg');
   const mDiag = join(R18, 'card-3-diag-2400.jpg');
   for (const r of await Promise.all([
     encodeSet('tri-bg-2560', sharp(mSecD).resize(2560, 1440), 2560, 1440, false),
-    encodeSet('tri-bg-960', sharp(mSecD).resize(960, 540), 960, 540, false),
     encodeSet('tri-bg-m-900', sharp(mSecM).resize(900, 1600), 900, 1600, false),
     encodeSet('tri-wheel-1600', sharp(mWheel).resize(1600, 1067), 1600, 1067, false),
     encodeSet('tri-wheel-960', sharp(mWheel).resize(960, 640), 960, 640, false),

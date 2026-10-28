@@ -24,7 +24,7 @@ const CSS = readFileSync(join(HERE, '../src/styles/sections.css'), 'utf8');
 const ASTRO = readFileSync(join(HERE, '../src/pages/index.astro'), 'utf8');
 
 const CAPS = {
-  'tri-bg-2560': { avif: 130, webp: 150 }, 'tri-bg-960': { avif: 70, webp: 80 },
+  'tri-bg-2560': { avif: 130, webp: 150 },
   'tri-bg-m-900': { avif: 80, webp: 95 },
   'tri-wheel-1600': { avif: 70, webp: 80 }, 'tri-wheel-960': { avif: 45, webp: 50 }, 'tri-wheel-640': { avif: 28, webp: 32 },
   'tri-serv-1600': { avif: 70, webp: 80 }, 'tri-serv-960': { avif: 45, webp: 50 }, 'tri-serv-640': { avif: 28, webp: 32 },
@@ -35,20 +35,31 @@ const MASTERS = {
   'card-1-wheels-2400.jpg': [2400, 1600], 'card-2-service-2400.jpg': [2400, 1600], 'card-3-diag-2400.jpg': [2400, 1600],
 };
 const DERIV = {
-  'tri-bg-2560': [2560, 1440], 'tri-bg-960': [960, 540], 'tri-bg-m-900': [900, 1600],
+  'tri-bg-2560': [2560, 1440], 'tri-bg-m-900': [900, 1600],
   'tri-wheel-1600': [1600, 1067], 'tri-wheel-960': [960, 640], 'tri-wheel-640': [640, 427],
   'tri-serv-1600': [1600, 1067], 'tri-serv-960': [960, 640], 'tri-serv-640': [640, 427],
   'tri-diag-1600': [1600, 1067], 'tri-diag-960': [960, 640], 'tri-diag-640': [640, 427],
 };
-/* кропы §3.1: доля мастера, видимая в карточке/секции на каждой ширине */
-const CARD_CROPS = [ /* [w, h, x0%, x1%, y0%, y1%] */
-  [375, 369, .161, .839, 0, 1], [984, 269, 0, 1, .295, .705], [728, 287, 0, 1, .204, .796],
-  [350, 386, .198, .802, 0, 1], [332, 387, .214, .786, 0, 1],
-];
-const SEC_CROPS = [
-  [1440, 680, 0, 1, .08, .92], [1024, 1142, .248, .752, 0, 1], [768, 1111, .306, .694, 0, 1],
-];
-const SEC_M_CROPS = [[390, 1434, .258, .742, 0, 1]];
+/* Кропы считаются ТЕМ ЖЕ правилом, что в CSS (object-fit:cover + object-position), а не
+   берутся из вставленных процентов. Раньше здесь лежали готовые числа, совпадающие с
+   zones.json, — гейт сравнивал источник сам с собой (ревью A6 §9.4–9.5). */
+const VIEW = {
+  card:  { W: 2400, H: 1600, px: 0.5, py: 0.5,  list: [[375, 369], [984, 269], [728, 287], [350, 386], [332, 387]] },
+  sec:   { W: 2560, H: 1440, px: 0.5, py: 0.45, list: [[1440, 680], [1280, 800], [1024, 1142], [768, 1111]] },
+  secM:  { W: 900,  H: 1600, px: 0.5, py: 0.40, list: [[390, 1434], [360, 1434]] },
+};
+/* видимое окно мастера для блока cw×ch при cover + объектной позиции px/py (0…1) */
+function coverWindow({ W, H, px, py }, cw, ch) {
+  const s = Math.max(cw / W, ch / H);
+  const dw = W * s, dh = H * s;
+  const ox = (dw - cw) * px, oy = (dh - ch) * py;
+  return { x0: ox / s, x1: (ox + cw) / s, y0: oy / s, y1: (oy + ch) / s };
+}
+const TOL = 1;   // px: допуск на округление долей
+function commonWindow(view) {
+  return view.list.map(([w, h]) => coverWindow(view, w, h))
+    .reduce((a, b) => ({ x0: Math.max(a.x0, b.x0), x1: Math.min(a.x1, b.x1), y0: Math.max(a.y0, b.y0), y1: Math.min(a.y1, b.y1) }));
+}
 
 const zones = JSON.parse(readFileSync(join(R18, 'zones.json'), 'utf8'));
 
@@ -56,7 +67,7 @@ let fail = 0;
 const row = (ok, msg) => { if (!ok) fail = 1; console.log(`${ok ? 'ok  ' : 'FAIL'} ${msg}`); };
 
 /* ---- базовые проверки (функция гейта over данные, чтобы мутанты гонялись ей же) ---- */
-function gate({ css, astro, zones: z, files }) {
+function gate({ css, astro, zones: z, files, view = VIEW }) {
   const bad = [];
   for (const [f, [w, h]] of Object.entries(MASTERS)) {
     const m = files.master[f];
@@ -71,24 +82,17 @@ function gate({ css, astro, zones: z, files }) {
       if (d.kb > CAPS[name][fmt]) bad.push(`${name}.${fmt}: ${d.kb} КБ > лимит ${CAPS[name][fmt]}`);
     }
   }
-  /* зона внутри пересечения кропов */
-  const inCard = z.card2400, inSec = z.secDesk2560, inMob = z.secMob900;
-  let ix0 = 0, iy0 = 0, ix1 = 2400, iy1 = 1600;
-  for (const [, , x0, x1, y0, y1] of CARD_CROPS) {
-    ix0 = Math.max(ix0, x0 * 2400); ix1 = Math.min(ix1, x1 * 2400);
-    iy0 = Math.max(iy0, y0 * 1600); iy1 = Math.min(iy1, y1 * 1600);
-  }
-  if (!(inCard.x >= ix0 && inCard.x + inCard.w <= ix1 && inCard.y >= iy0 && inCard.y + inCard.h <= iy1))
-    bad.push(`zones.json card2400 вне пересечения кропов [${ix0.toFixed(0)},${iy0.toFixed(0)},${ix1.toFixed(0)},${iy1.toFixed(0)}]`);
-  let sx0 = 0, sx1 = 2560, sy0 = 0, sy1 = 1440;
-  for (const [, , x0, x1, y0, y1] of SEC_CROPS) {
-    sx0 = Math.max(sx0, x0 * 2560); sx1 = Math.min(sx1, x1 * 2560);
-    sy0 = Math.max(sy0, y0 * 1440); sy1 = Math.min(sy1, y1 * 1440);
-  }
-  if (!(inSec.x >= sx0 && inSec.x + inSec.w <= sx1 && inSec.y >= sy0 && inSec.y + inSec.h <= sy1))
-    bad.push(`zones.json secDesk2560 вне пересечения кропов [${sx0.toFixed(0)},${sy0.toFixed(0)},${sx1.toFixed(0)},${sy1.toFixed(0)}]`);
-  const mx0 = .258 * 900, mx1 = .742 * 900;
-  if (!(inMob.x >= mx0 && inMob.x + inMob.w <= mx1)) bad.push('zones.json secMob900 вне мобильного кропа');
+  /* зона внутри ПЕРЕСЕЧЕНИЯ окон, посчитанного из CSS-геометрии */
+  const inside = (z, win, name) => {
+    const okx = z.x >= win.x0 - TOL && z.x + z.w <= win.x1 + TOL;
+    const oky = z.y >= win.y0 - TOL && z.y + z.h <= win.y1 + TOL;
+    if (!okx || !oky) {
+      bad.push(`zones.json ${name} [${z.x}…${z.x + z.w} × ${z.y}…${z.y + z.h}] вне окна [${win.x0.toFixed(0)}…${win.x1.toFixed(0)} × ${win.y0.toFixed(0)}…${win.y1.toFixed(0)}]`);
+    }
+  };
+  inside(z.card2400, commonWindow(view.card), 'card2400');
+  inside(z.secDesk2560, commonWindow(view.sec), 'secDesk2560');
+  inside(z.secMob900, commonWindow(view.secM), 'secMob900');
   /* CSS */
   if (!/\.tri-bg\{[^}]*position:absolute/.test(css)) bad.push('CSS: нет слоя .tri-bg');
   if (!/\.tri-bg img\{[^}]*object-fit:cover/.test(css)) bad.push('CSS: .tri-bg img без object-fit:cover');
@@ -105,9 +109,19 @@ function gate({ css, astro, zones: z, files }) {
   }
   if (!/\.dirs\{[^}]*background-color:var\(--deep\)/.test(css)) bad.push('CSS: .dirs без сплошного --deep под фото');
   if (!/\.dirs::before\{[^}]*linear-gradient\(180deg/.test(css)) bad.push('CSS: нет затемняющего слоя .dirs::before под заголовком');
+  /* РАУНД 17 / приёмка: фон секции обязан быть СЛОЕМ <picture> (иначе минцификатор ломает
+     image-set и на Pages под /avtotehservis/ фон 404-ится — см. export-pages/check-pages) */
+  if (!/\.dirs-bg\{[^}]*position:absolute/.test(css)) bad.push('CSS: нет слоя .dirs-bg');
+  if (!/\.dirs-bg img\{[^}]*object-fit:cover/.test(css)) bad.push('CSS: .dirs-bg img без object-fit:cover');
+  if (!/\.dirs-bg img\{[^}]*object-position:50% 45%/.test(css)) bad.push('CSS: .dirs-bg img не 50% 45%');
+  if (/\.dirs\{[^}]*background-image/.test(css)) bad.push('CSS: фон секции через background-image (сломается на префиксе)');
   /* разметка: фон — слой <picture>, не background-image на карточке */
   const pics = (astro.match(/<div class="tri-bg"[^>]*><picture>/g) || []).length;
   if (pics !== 3) bad.push(`разметка: слоёв .tri-bg c <picture> ${pics} ≠ 3`);
+  const bgPics = (astro.match(/<div class="dirs-bg"[^>]*>[\s\S]{0,900}?<picture>/g) || []).length;
+  if (bgPics !== 1) bad.push(`разметка: слоя .dirs-bg c <picture> ${bgPics} ≠ 1`);
+  if (!/class="dirs-bg"[\s\S]{0,900}?loading="lazy" decoding="async"/.test(astro))
+    bad.push('разметка: фон секции без loading=lazy decoding=async');
   if (/\.tri-card\{[^}]*background-image/.test(css)) bad.push('CSS: фон карточки через background-image (нужен слой)');
   if (!/loading="lazy" decoding="async"/.test(astro) || (astro.match(/class="tri-bg"[\s\S]{0,700}?loading="lazy" decoding="async"/g) || []).length !== 3)
     bad.push('разметка: фоны карточек без loading=lazy decoding=async');
@@ -119,15 +133,27 @@ async function collectFiles() {
   for (const f of Object.keys(MASTERS)) {
     const p = join(R18, f);
     if (!existsSync(p)) continue;
-    const m = await sharp(p).metadata();
+    let m;
+    try { m = await sharp(p).metadata(); } catch (e) {
+      console.log(`FAIL мастер ${f}: не читается как изображение (${e.message.split('\n')[0]})`);
+      process.exitCode = 1;
+      fail = 1;
+      continue;
+    }
     files.master[f] = { width: m.width, height: m.height };
   }
   for (const name of Object.keys(DERIV)) {
     for (const fmt of ['avif', 'webp']) {
       const p = join(IMG, `${name}.${fmt}`);
       if (!existsSync(p)) continue;
-      const [m, st] = [await sharp(p).metadata(), statSync(p)];
-      files.deriv[`${name}.${fmt}`] = { width: m.width, height: m.height, kb: +(st.size / 1024).toFixed(1) };
+      let m;
+      try { m = await sharp(p).metadata(); } catch (e) {
+        console.log(`FAIL ${name}.${fmt}: не читается как изображение (${e.message.split('\n')[0]})`);
+        process.exitCode = 1;
+        fail = 1;
+        continue;
+      }
+      files.deriv[`${name}.${fmt}`] = { width: m.width, height: m.height, kb: +(statSync(p).size / 1024).toFixed(1) };
     }
   }
   return files;
@@ -147,10 +173,13 @@ for (const [name, [w, h]] of Object.entries(DERIV)) {
 /* ---- самопроверка на мутантах ---- */
 console.log('--- мутанты (гейт обязан упасть) ---');
 const mutants = [
+  ['object-position секции 50% 45% → 50% 20%', () => gate({ css: CSS.replace('object-position:50% 45%', 'object-position:50% 20%'), astro: ASTRO, zones, files, view: { ...VIEW, sec: { ...VIEW.sec, py: 0.2 } } })],
   ['зона сдвинута за край кропа', () => gate({ css: CSS, astro: ASTRO, files, zones: { ...zones, card2400: { x: zones.card2400.x + 400, y: zones.card2400.y, w: zones.card2400.w, h: zones.card2400.h } } })],
   ['object-position: 0 0', () => gate({ css: CSS.replace('object-position:50% 50%', 'object-position:0 0'), astro: ASTRO, zones, files })],
   ['скрим ослаблен до 0,4', () => gate({ css: CSS.replace(/rgba\(11,20,16,var\(--sc1,[\d.]+\)\) 0%,rgba\(11,20,16,var\(--sc2,[\d.]+\)\) 38%,rgba\(11,20,16,var\(--sc3,[\d.]+\)\) 100%/, 'rgba(11,20,16,var(--sc1,.4)) 0%,rgba(11,20,16,var(--sc2,.4)) 38%,rgba(11,20,16,var(--sc3,.4)) 100%'), astro: ASTRO, zones, files })],
   ['плоский фон без <picture>', () => gate({ css: CSS, astro: ASTRO.replace(/<div class="tri-bg"[\s\S]*?<\/picture><\/div>/g, ''), zones, files })],
+  ['фон секции через background-image', () => gate({ css: CSS.replace('.dirs{position:relative;background-color:var(--deep)}', '.dirs{position:relative;background-color:var(--deep);background-image:url(/img/tri-bg-2560.webp)}'), astro: ASTRO, zones, files })],
+  ['слой .dirs-bg удалён', () => gate({ css: CSS, astro: ASTRO.replace(/<div class="dirs-bg"[\s\S]*?<\/picture>[\s\S]*?<\/div>/, ''), zones, files })],
 ];
 let mOk = 0;
 for (const [name, fn] of mutants) {

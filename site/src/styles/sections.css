@@ -17,28 +17,18 @@
 .tri-card .link-more{font-size:14.5px}
 .tri-card--accent{background:linear-gradient(150deg,#1C3126 0%,var(--deep) 70%)}
 /* ---------- раунд 17 (задание №19): фото-фоны секции и карточек ---------- */
-.dirs{
-  position:relative;
-  background-color:var(--deep);
-  background-image:url('/img/tri-bg-2560.webp');
-  background-size:cover;background-position:50% 45%;background-repeat:no-repeat;
+.dirs{position:relative;background-color:var(--deep)}
+.dirs-bg{
+  position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
 }
+.dirs-bg picture,.dirs-bg img{display:block;width:100%;height:100%}
+.dirs-bg img{object-fit:cover;object-position:50% 45%}
+@media (max-width:640px){.dirs-bg img{object-position:50% 40%}}
 .dirs::before{
-  content:'';position:absolute;inset:0;pointer-events:none;
+  content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
   background:linear-gradient(180deg,rgba(11,20,16,.8) 0%,rgba(11,20,16,.72) 40%,rgba(11,20,16,.28) 62%,rgba(11,20,16,.12) 100%);
 }
-.dirs>.container{position:relative;z-index:1}
-@supports (background-image:image-set(url('/img/tri-bg-2560.avif') type('image/avif'))){
-  .dirs{background-image:image-set(url('/img/tri-bg-2560.avif') type('image/avif'),url('/img/tri-bg-2560.webp') type('image/webp'))}
-}
-@media (max-width:640px){
-  .dirs{background-image:url('/img/tri-bg-m-900.webp');background-position:50% 40%}
-}
-@supports (background-image:image-set(url('/img/tri-bg-m-900.avif') type('image/avif'))){
-  @media (max-width:640px){
-    .dirs{background-image:image-set(url('/img/tri-bg-m-900.avif') type('image/avif'),url('/img/tri-bg-m-900.webp') type('image/webp'))}
-  }
-}
+.dirs>.container{position:relative;z-index:2}
 .tri-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;border-radius:inherit}
 .tri-bg picture,.tri-bg img{display:block;width:100%;height:100%}
 .tri-bg img{
@@ -56,9 +46,9 @@
 .tri-card:hover{--sc1:.8;--sc2:.88;--sc3:.96}
 .tri-card:hover .tri-bg img{transform:scale(1.03)}
 @media (prefers-reduced-motion:reduce){.tri-card:hover .tri-bg img{transform:none}}
-@media (prefers-reduced-data:reduce){.tri-bg{display:none}}
+@media (prefers-reduced-data:reduce){.tri-bg,.dirs-bg{display:none}}
 @media print{
-  .dirs{background-image:none}
+  .dirs-bg{display:none}
   .tri-bg{display:none}
   .tri-card,.tri-card--accent{background:#fff;border-color:#000}
   .tri-card h3,.tri-card p,.tri-card .link-more,.tri-num{color:#000;-webkit-text-stroke:0}

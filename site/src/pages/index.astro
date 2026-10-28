@@ -132,6 +132,20 @@ const jsonLd = {
   </figure>
 </section>
 <section class="sec sec--deep dirs" aria-labelledby="tri-h">
+  {/* РАУНД 17 / приёмка: фон секции — такой же слой <picture>, как у карточек, а не CSS
+      background-image. Причина: минцификатор сборки переписывает объявление внутри @supports
+      в голые строки image-set("/img/…" 1x type("image/avif")), а export-pages.mjs умел
+      префиксовать только url(…) — в итоге на Pages под /avtotehservis/ фон 404-ился.
+      Заодно <picture> даёт avif/webp и мобильный кадр без media-хаков в CSS. */}
+  <div class="dirs-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" type="image/avif" srcset="/img/tri-bg-m-900.avif">
+      <source media="(max-width:640px)" type="image/webp" srcset="/img/tri-bg-m-900.webp">
+      <source type="image/avif" srcset="/img/tri-bg-2560.avif">
+      <source type="image/webp" srcset="/img/tri-bg-2560.webp">
+      <img src="/img/tri-bg-2560.webp" width="2560" height="1440" alt="" loading="lazy" decoding="async">
+    </picture>
+  </div>
   <div class="container">
     <div class="sec-head reveal">
       <span class="eyebrow">Три направления</span>
