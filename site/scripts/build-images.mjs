@@ -113,6 +113,21 @@ const CAPS = {
   'tri-diag-1600':  { avif: 70,  webp: 80  },
   'tri-diag-960':   { avif: 45,  webp: 50  },
   'tri-diag-640':   { avif: 28,  webp: 32  },
+  /* раунд 18 (задание №20): фоны «О компании» — A секция, B карточки, C плашки, D кнопка */
+  'about-bg-2560':   { avif: 130, webp: 150 },
+  'about-bg-1600':   { avif: 80,  webp: 95  },
+  'about-bg-960':    { avif: 40,  webp: 48  },
+  'about-bg-m-1200': { avif: 110, webp: 130 },
+  'about-bg-m-640':  { avif: 55,  webp: 65  },
+  'about-c1-1080': { avif: 50, webp: 58 }, 'about-c1-720': { avif: 30, webp: 35 }, 'about-c1-480': { avif: 18, webp: 22 },
+  'about-c2-1080': { avif: 50, webp: 58 }, 'about-c2-720': { avif: 30, webp: 35 }, 'about-c2-480': { avif: 18, webp: 22 },
+  'about-c3-1080': { avif: 50, webp: 58 }, 'about-c3-720': { avif: 30, webp: 35 }, 'about-c3-480': { avif: 18, webp: 22 },
+  'about-c4-1080': { avif: 50, webp: 58 }, 'about-c4-720': { avif: 30, webp: 35 }, 'about-c4-480': { avif: 18, webp: 22 },
+  'about-f1-1280': { avif: 34, webp: 40 }, 'about-f1-640': { avif: 14, webp: 17 },
+  'about-f2-1280': { avif: 34, webp: 40 }, 'about-f2-640': { avif: 14, webp: 17 },
+  'about-f3-1280': { avif: 34, webp: 40 }, 'about-f3-640': { avif: 14, webp: 17 },
+  'about-f4-1280': { avif: 34, webp: 40 }, 'about-f4-640': { avif: 14, webp: 17 },
+  'about-btn-640': { avif: 14, webp: 17 }, 'about-btn-320': { avif: 7, webp: 9 },
 };
 async function encodeSet(name, pipe, w, h, hasAlpha) {
   const res = [];
@@ -395,6 +410,57 @@ async function main() {
     encodeSet('tri-diag-1600', sharp(mDiag).resize(1600, 1067), 1600, 1067, false),
     encodeSet('tri-diag-960', sharp(mDiag).resize(960, 640), 960, 640, false),
     encodeSet('tri-diag-640', sharp(mDiag).resize(640, 427), 640, 427, false),
+  ])) report.push(...r);
+
+  /* ----- 10c. раунд 18: мастера и фоны «О компании» (задание №20) -----
+     11 мастеров: A секция (2560×1440 + портрет 1200×2700), B 4 карточки 2400×1600,
+     C 4 плашки 1600×533, D кнопка 1200×400. Нормализация — cover-кроп по центру. */
+  const R19 = join(PHOTOS, 'r19-about');
+  const r19Masters = {
+    'sec-bg-2560':        { raw: 'sec-bg-2560-raw.jpg',        w: 2560, h: 1440 },
+    'sec-bg-m-1200':      { raw: 'sec-bg-m-1200-raw.jpg',      w: 1200, h: 2700 },
+    'card-1-estimate-2400': { raw: 'card-1-estimate-2400-raw.jpg', w: 2400, h: 1600 },
+    'card-2-warranty-2400': { raw: 'card-2-warranty-2400-raw.jpg', w: 2400, h: 1600 },
+    'card-3-schedule-2400': { raw: 'card-3-schedule-2400-raw.jpg', w: 2400, h: 1600 },
+    'card-4-fleet-2400':    { raw: 'card-4-fleet-2400-raw.jpg',    w: 2400, h: 1600 },
+    'fact-1-address-1600':  { raw: 'fact-1-address-1600-raw.jpg',  w: 1600, h: 533 },
+    'fact-2-hours-1600':    { raw: 'fact-2-hours-1600-raw.jpg',    w: 1600, h: 533 },
+    'fact-3-warranty-1600': { raw: 'fact-3-warranty-1600-raw.jpg', w: 1600, h: 533 },
+    'fact-4-fleet-1600':    { raw: 'fact-4-fleet-1600-raw.jpg',    w: 1600, h: 533 },
+    'btn-cta-1200':         { raw: 'btn-cta-1200-raw.jpg',         w: 1200, h: 400 },
+  };
+  for (const [name, m] of Object.entries(r19Masters)) {
+    const rawPath = join(R19, m.raw), outPath = join(R19, name + '.jpg');
+    if (!existsSync(rawPath)) { console.error(`[r19] Input file is missing: ${rawPath}`); process.exit(1); }
+    const md = await sharp(rawPath).metadata();
+    const sc = Math.max(m.w / md.width, m.h / md.height);
+    const sw = Math.round(md.width * sc), sh = Math.round(md.height * sc);
+    await sharp(rawPath).resize(sw, sh)
+      .extract({ left: Math.round((sw - m.w) / 2), top: Math.round((sh - m.h) / 2), width: m.w, height: m.h })
+      .jpeg({ quality: 95 }).toFile(outPath + '.tmp');
+    renameSync(outPath + '.tmp', outPath);
+  }
+  const A2560 = join(R19, 'sec-bg-2560.jpg'), AM = join(R19, 'sec-bg-m-1200.jpg');
+  const C = [1, 2, 3, 4].map(i => join(R19, `card-${i}-${['estimate', 'warranty', 'schedule', 'fleet'][i - 1]}-2400.jpg`));
+  const F = [1, 2, 3, 4].map(i => join(R19, `fact-${i}-${['address', 'hours', 'warranty', 'fleet'][i - 1]}-1600.jpg`));
+  const BTN = join(R19, 'btn-cta-1200.jpg');
+  for (const r of await Promise.all([
+    encodeSet('about-bg-2560', sharp(A2560).resize(2560, 1440), 2560, 1440, false),
+    encodeSet('about-bg-1600', sharp(A2560).resize(1600, 900), 1600, 900, false),
+    encodeSet('about-bg-960', sharp(A2560).resize(960, 540), 960, 540, false),
+    encodeSet('about-bg-m-1200', sharp(AM).resize(1200, 2700), 1200, 2700, false),
+    encodeSet('about-bg-m-640', sharp(AM).resize(640, 1440), 640, 1440, false),
+    ...[1, 2, 3, 4].flatMap(i => [
+      encodeSet(`about-c${i}-1080`, sharp(C[i - 1]).resize(1080, 720), 1080, 720, false),
+      encodeSet(`about-c${i}-720`, sharp(C[i - 1]).resize(720, 480), 720, 480, false),
+      encodeSet(`about-c${i}-480`, sharp(C[i - 1]).resize(480, 320), 480, 320, false),
+    ]),
+    ...[1, 2, 3, 4].flatMap(i => [
+      encodeSet(`about-f${i}-1280`, sharp(F[i - 1]).resize(1280, 427), 1280, 427, false),
+      encodeSet(`about-f${i}-640`, sharp(F[i - 1]).resize(640, 213), 640, 213, false),
+    ]),
+    encodeSet('about-btn-640', sharp(BTN).resize(640, 213), 640, 213, false),
+    encodeSet('about-btn-320', sharp(BTN).resize(320, 107), 320, 107, false),
   ])) report.push(...r);
 
   /* ----- 11. текстура ≤100 КБ ----- */

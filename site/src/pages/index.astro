@@ -176,7 +176,16 @@ const jsonLd = {
     </div>
   </div>
 </section>
-<section class="sec sec--narrow" aria-labelledby="about-h">
+<section class="sec sec--narrow about" aria-labelledby="about-h">
+  <div class="about-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:1024px)" type="image/avif" srcset="/img/about-bg-m-640.avif 640w, /img/about-bg-m-1200.avif 1200w" sizes="100vw">
+      <source media="(max-width:1024px)" type="image/webp" srcset="/img/about-bg-m-640.webp 640w, /img/about-bg-m-1200.webp 1200w" sizes="100vw">
+      <source type="image/avif" srcset="/img/about-bg-960.avif 960w, /img/about-bg-1600.avif 1600w, /img/about-bg-2560.avif 2560w" sizes="100vw">
+      <source type="image/webp" srcset="/img/about-bg-960.webp 960w, /img/about-bg-1600.webp 1600w, /img/about-bg-2560.webp 2560w" sizes="100vw">
+      <img src="/img/about-bg-1600.webp" width="2560" height="1440" alt="" loading="lazy" decoding="async">
+    </picture>
+  </div>
   <div class="container">
     <div class="sec-head sec-head--wide reveal">
       <span class="eyebrow">О компании</span>
@@ -187,12 +196,12 @@ const jsonLd = {
       <p class="lead">Мы — автосервис и шиномонтаж на улице Портовой, 439: рядом с остановкой «3-й Поселковый» и базой «Бум». Принимаем легковые и коммерческие автомобили ежедневно, с 9:00 до 19:00.</p>
       <p class="lead u-mt14">За одним визитом здесь закрывают и «переобуться», и стук в подвеске, и горящий «чек»: от балансировки до ремонта двигателя и АКПП. Правило одно для всех работ — сначала показываем проблему и называем стоимость, потом берёмся за инструмент.</p>
       <div class="facts">
-        <div class="fact"><b>{S.address_full}</b><span>ост. «3-й Поселковый» ~330 м</span></div>
+        <div class="fact"><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f4-640.avif 640w, /img/about-f4-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f4-640.webp 640w, /img/about-f4-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f4-640.webp" alt="" loading="lazy" decoding="async"></picture></div><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f3-640.avif 640w, /img/about-f3-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f3-640.webp 640w, /img/about-f3-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f3-640.webp" alt="" loading="lazy" decoding="async"></picture></div><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f2-640.avif 640w, /img/about-f2-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f2-640.webp 640w, /img/about-f2-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f2-640.webp" alt="" loading="lazy" decoding="async"></picture></div><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f1-640.avif 640w, /img/about-f1-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f1-640.webp 640w, /img/about-f1-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f1-640.webp" alt="" loading="lazy" decoding="async"></picture></div><b>{S.address_full}</b><span>ост. «3-й Поселковый» ~330 м</span></div>
         <div class="fact"><b>{S.hours}</b><span>без выходных</span></div>
         <div class="fact"><b>Гарантия на работы</b><span>условия фиксируем в заказ-наряде</span></div>
         <div class="fact"><b>Легковые и грузовые</b><span>включая коммерческий транспорт</span></div>
       </div>
-      <p class="u-mt24"><a class="btn btn--ghost" href="/about">Подробнее о сервисе</a></p>
+      <p class="u-mt24"><a class="btn btn--ghost" href="/about"><span class="btn-bg" aria-hidden="true"><picture><source srcset="/img/about-btn-320.avif 320w, /img/about-btn-640.avif 640w" sizes="252px" type="image/avif"><source srcset="/img/about-btn-320.webp 320w, /img/about-btn-640.webp 640w" sizes="252px" type="image/webp"><img src="/img/about-btn-320.webp" alt="" loading="lazy" decoding="async"></picture></span>Подробнее о сервисе</a></p>
     </div>
     <figure class="about-media reveal" data-d="1">
       <picture>
@@ -207,21 +216,25 @@ const jsonLd = {
   <div class="container">
     <div class="feats">
       <div class="feat reveal" data-d="0">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c1-480.avif 480w, /img/about-c1-720.avif 720w, /img/about-c1-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c1-480.webp 480w, /img/about-c1-720.webp 720w, /img/about-c1-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c1-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
         <h3>Смета до начала работ</h3>
         <p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p>
       </div>
       <div class="feat reveal" data-d="1">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c2-480.avif 480w, /img/about-c2-720.avif 720w, /img/about-c2-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c2-480.webp 480w, /img/about-c2-720.webp 720w, /img/about-c2-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c2-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
         <h3>Гарантия на работы</h3>
         <p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p>
       </div>
       <div class="feat reveal" data-d="2">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c3-480.avif 480w, /img/about-c3-720.avif 720w, /img/about-c3-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c3-480.webp 480w, /img/about-c3-720.webp 720w, /img/about-c3-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c3-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
         <h3>{S.hours}</h3>
         <p>Один график всю неделю — удобно планировать визит до или после работы.</p>
       </div>
       <div class="feat reveal" data-d="3">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c4-480.avif 480w, /img/about-c4-720.avif 720w, /img/about-c4-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c4-480.webp 480w, /img/about-c4-720.webp 720w, /img/about-c4-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c4-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span>
         <h3>Легковые и коммерческие</h3>
         <p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p>

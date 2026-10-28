@@ -186,5 +186,68 @@ row('секция «Три направления»', `h2 ivory (крупный)
   if (!fell) fail = 1;
   console.log(`${fell ? 'ok  ' : 'FAIL'} мутант «скрим снят»: brass ${r.toFixed(2)}:1 — гейт ${fell ? 'упал, как должен' : 'НЕ УПАЛ'}`);
 }
+
+/* 5) РАУНД 18 (задание №20): секция «О компании» — A фон секции, B карточки,
+   C плашки, D кнопка. Худший пиксель по прямоугольникам текста из geometry.json
+   (union по всем ширинам) и по сюжетным зонам zones.json; скримы — из §3.4
+   (стопы читаются из sections.css/buttons.css, единый источник). */
+const R19 = join(HERE, '../../docs/photos-source/r19-about');
+const GEOM19 = JSON.parse(readCss(join(HERE, '../../evaluation/assets/r19-about-current/geometry.json'), 'utf8'));
+const Z19 = JSON.parse(readCss(join(R19, 'zones.json'), 'utf8'));
+const css19 = readCss(join(HERE, '../src/styles/sections.css'), 'utf8') + readCss(join(HERE, '../src/styles/buttons.css'), 'utf8');
+const mA = css19.match(/\.about::before\{[^}]*rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 12%,rgba\(11,20,16,([\d.]+)\) 45%,rgba\(11,20,16,([\d.]+)\) 75%,rgba\(11,20,16,([\d.]+)\) 100%/);
+const A_STOPS = mA ? [[0, +mA[1]], [.12, +mA[2]], [.45, +mA[3]], [.75, +mA[4]], [1, +mA[5]]] : [[0, .88], [.12, .86], [.45, .8], [.75, .62], [1, .45]];
+const mF = css19.match(/\.feat-bg::after\{[^}]*var\(--fc1,([\d.]+)\)[^,]*,rgba\(11,20,16,var\(--fc2,([\d.]+)\)[^,]*,rgba\(11,20,16,var\(--fc3,([\d.]+)\)/);
+const F_STOPS = mF ? [[0, +mF[1]], [.38, +mF[2]], [1, +mF[3]]] : [[0, .76], [.38, .84], [1, .92]];
+const FLAT = () => 0.9;                                   /* плашки и кнопка: сплошной .9 */
+console.log(`скримы раунда 18: секция ${A_STOPS.map(x => x[1]).join('/')} (5 стопов), карточки ${F_STOPS.map(x => x[1]).join('/')}, плашки/кнопка 0.9`);
+const rect = (r) => [r.x0, r.y0, r.x1, r.y1];
+/* A: надзаголовок (медь, 12,5 px — узкое место) и весь текст колонки */
+for (const [key, file, H] of [['section_desktop', join(R19, 'sec-bg-2560.jpg'), 1440], ['section_portrait', join(R19, 'sec-bg-m-1200.jpg'), 2700]]) {
+  const u = GEOM19[key], lab = key === 'section_desktop' ? 'A десктоп' : 'A портрет';
+  const e = await worstInZone(file, rect(u.eyebrow_union_master), [[0, 0], [1, 0]], (t) => stopA(A_STOPS, t));
+  row(`секция ${lab}`, `надзаголовок copper по худшему пикселю union (${e.wx},${e.wy})`, [0xc8, 0x7f, 0x45], e.worst, 4.5);
+  const t = await worstInZone(file, rect(u.text_union_master), [[0, 0], [1, 0]], (tt) => stopA(A_STOPS, tt));
+  row(`секция ${lab}`, `lead mist по худшему пикселю union текста (${t.wx},${t.wy})`, MIST, t.worst, 4.5);
+  row(`секция ${lab}`, `h2 ivory (крупный) по худшему пикселю union текста (${t.wx},${t.wy})`, IVORY, t.worst, 3);
+}
+/* B: четыре карточки — полоса текста h3+p (y 791…1147 мастера) и иконка */
+const cardFiles = ['card-1-estimate-2400.jpg', 'card-2-warranty-2400.jpg', 'card-3-schedule-2400.jpg', 'card-4-fleet-2400.jpg'];
+const cardNames = ['B1 Смета', 'B2 Гарантия', 'B3 График', 'B4 Парк'];
+for (let i = 0; i < 4; i++) {
+  const f = join(R19, cardFiles[i]);
+  const band = await worstInZone(f, [Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1], [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
+  row(`карточка ${cardNames[i]}`, `h3 ivory по худшему пикселю полосы текста (${band.wx},${band.wy})`, IVORY, band.worst, 4.5);
+  row(`карточка ${cardNames[i]}`, `p mist по худшему пикселю полосы текста (${band.wx},${band.wy})`, MIST, band.worst, 4.5);
+  const ic = await worstInZone(f, [335, 181, 726, 571], [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
+  row(`карточка ${cardNames[i]}`, `штрих иконки brass по худшему пикселю зоны иконки (${ic.wx},${ic.wy})`, BRASS, ic.worst, 3);
+}
+/* C: четыре плашки — зона x221…1379 y151…382, сплошной скрим .9 */
+const factFiles = ['fact-1-address-1600.jpg', 'fact-2-hours-1600.jpg', 'fact-3-warranty-1600.jpg', 'fact-4-fleet-1600.jpg'];
+for (let i = 0; i < 4; i++) {
+  const z = await worstInZone(join(R19, factFiles[i]), [Z19.fact1600.x, Z19.fact1600.y, Z19.fact1600.x + Z19.fact1600.w, Z19.fact1600.y + Z19.fact1600.h], [[0, 0], [1, 0]], FLAT);
+  row(`плашка C${i + 1}`, `b ivory по худшему пикселю зоны (${z.wx},${z.wy})`, IVORY, z.worst, 4.5);
+  row(`плашка C${i + 1}`, `span mist по худшему пикселю зоны (${z.wx},${z.wy})`, MIST, z.worst, 4.5);
+}
+/* D: кнопка — полоса y81…319; текст ivory 15 px и рамка ghost .55 на 3:1 */
+{
+  const z = await worstInZone(join(R19, 'btn-cta-1200.jpg'), [0, 81, 1200, 319], [[0, 0], [1, 0]], FLAT);
+  row('кнопка D', `текст ivory по худшему пикселю пилюли (${z.wx},${z.wy})`, IVORY, z.worst, 4.5);
+  const border = over(z.worst, 0.55, BRASS);
+  const r = ratio(border, z.worst);
+  const badB = r < 3; if (badB) fail = 1;
+  console.log(`${badB ? 'FAIL' : 'ok  '} кнопка D: рамка ghost rgba(224,169,109,.55) на худшем фоне ${r.toFixed(2)}:1 (норма ≥3)`);
+}
+/* мутант: снять все скримы раунда 18 — гейт обязан упасть хотя бы по одной
+   из узких точек: медь надзаголовка на секции и mist полосы текста карточки B1 */
+{
+  const e = await worstInZone(join(R19, 'sec-bg-2560.jpg'), rect(GEOM19.section_desktop.eyebrow_union_master), [[0, 0], [1, 0]], () => 0);
+  const rE = ratio([0xc8, 0x7f, 0x45], e.worst);
+  const b = await worstInZone(join(R19, cardFiles[0]), [Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1], [[0, 0], [1, 0]], () => 0);
+  const rB = ratio(MIST, b.worst);
+  const fell = rE < 4.5 || rB < 4.5; if (!fell) fail = 1;
+  console.log(`${fell ? 'ok  ' : 'FAIL'} мутант «скримы раунда 18 сняты»: copper ${rE.toFixed(2)}:1, mist карточки ${rB.toFixed(2)}:1 — гейт ${fell ? 'упал' : 'НЕ УПАЛ'}`);
+}
+
 console.log(fail ? 'КОНТРАСТ: ПРОВАЛ' : 'КОНТРАСТ: все нормы выполнены');
 process.exit(fail);
