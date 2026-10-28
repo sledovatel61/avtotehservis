@@ -67,7 +67,12 @@
 .fact-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;border-radius:inherit;background-color:#0B1410}
 .fact-bg picture,.fact-bg img{display:block;width:100%;height:100%}
 .fact-bg img{object-fit:cover;object-position:50% 50%}
-.fact-bg::after{content:'';position:absolute;inset:0;background:rgba(11,20,16,.9)}
+.fact-bg::after{
+  content:'';position:absolute;inset:0;
+  /* раунд 19 (§2.1): сплошной .9 убивал фактуру; ред. приёмки — 0,72…0,74, чтобы
+     разброс деталей плашек держался ≥40 */
+  background:linear-gradient(95deg,rgba(11,20,16,.74) 0%,rgba(11,20,16,.72) 45%,rgba(11,20,16,.74) 100%);
+}
 .fact>*:not(.fact-bg){position:relative;z-index:1}
 .fact b{display:block;font-size:16px;color:var(--ivory);font-weight:700}
 .fact span{font-size:13.5px;color:var(--mist)}
@@ -83,10 +88,10 @@
 .feat-bg img{object-fit:cover;object-position:50% 50%;transition:transform 600ms var(--ease)}
 .feat-bg::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(11,20,16,var(--fc1,.76)) 0%,rgba(11,20,16,var(--fc2,.84)) 38%,rgba(11,20,16,var(--fc3,.92)) 100%);
+  background:linear-gradient(180deg,rgba(11,20,16,var(--fc1,.52)) 0%,rgba(11,20,16,var(--fc2,.66)) 42%,rgba(11,20,16,var(--fc3,.81)) 100%);
 }
 .feat>*:not(.feat-bg){position:relative;z-index:1}
-.feat:hover{--fc1:.8;--fc2:.88;--fc3:.96}
+.feat:hover{--fc1:.60;--fc2:.70;--fc3:.86}
 .feat:hover .feat-bg img{transform:scale(1.02)}
 @media (prefers-reduced-motion:reduce){.feat:hover .feat-bg img{transform:none}}
 /* раунд 18: фон секции «О компании» — слой .about-bg (НЕ background-image: image-set
@@ -101,6 +106,15 @@
   background:linear-gradient(180deg,rgba(11,20,16,.88) 0%,rgba(11,20,16,.86) 12%,rgba(11,20,16,.8) 45%,rgba(11,20,16,.62) 75%,rgba(11,20,16,.45) 100%);
 }
 .about>.container{position:relative;z-index:2}
+/* раунд 19 (§2.2): заголовок в две строки без сироты — 820 px вместо 760 */
+.about .sec-head{max-width:820px}
+.about h2{text-wrap:balance}   /* раунд 19: сирота «работ» на 390 (последняя строка 26 %) */
+/* раунд 19 (§2.3): плашка адреса без сироты «439» */
+.about .fact b{text-wrap:balance}
+/* раунд 19 (§2.4): плашки полосой под сеткой — дыра под фото исчезает */
+.facts--strip{grid-template-columns:repeat(4,1fr);gap:8px;margin-top:26px}
+@media (max-width:1024px){.facts--strip{grid-template-columns:1fr 1fr;gap:14px}}
+@media (max-width:640px){.facts--strip{grid-template-columns:1fr}}
 /* раунд 18, приёмка: пилюля с фактурой и повышенная рамка — только внутри «О компании»,
    чтобы первый экран, /appointment, /contacts и /404 остались пиксельно нетронутыми */
 .about .btn{position:relative;isolation:isolate;overflow:hidden}

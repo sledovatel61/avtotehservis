@@ -199,8 +199,14 @@ const mA = css19.match(/\.about::before\{[^}]*rgba\(11,20,16,([\d.]+)\) 0%,rgba\
 const A_STOPS = mA ? [[0, +mA[1]], [.12, +mA[2]], [.45, +mA[3]], [.75, +mA[4]], [1, +mA[5]]] : [[0, .88], [.12, .86], [.45, .8], [.75, .62], [1, .45]];
 const mF = css19.match(/\.feat-bg::after\{[^}]*var\(--fc1,([\d.]+)\)[^,]*,rgba\(11,20,16,var\(--fc2,([\d.]+)\)[^,]*,rgba\(11,20,16,var\(--fc3,([\d.]+)\)/);
 const F_STOPS = mF ? [[0, +mF[1]], [.38, +mF[2]], [1, +mF[3]]] : [[0, .76], [.38, .84], [1, .92]];
-const FLAT = () => 0.9;                                   /* плашки и кнопка: сплошной .9 */
-console.log(`скримы раунда 18: секция ${A_STOPS.map(x => x[1]).join('/')} (5 стопов), карточки ${F_STOPS.map(x => x[1]).join('/')}, плашки/кнопка 0.9`);
+/* раунд 19 (§2.1): плашки и кнопка — горизонтальные градиенты, парсятся из CSS */
+const mC = css19.match(/\.fact-bg::after\{[^}]*linear-gradient\(95deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 45%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+if (!mC) { console.log('FAIL: в CSS нет градиента скрима плашек (95deg, 3 стопа)'); process.exit(1); }
+const C_STOPS = [[0, +mC[1]], [.45, +mC[2]], [1, +mC[3]]];
+const mD = css19.match(/\.btn-bg::after\{[^}]*linear-gradient\(90deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 50%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+if (!mD) { console.log('FAIL: в CSS нет градиента скрима кнопки (90deg, 3 стопа)'); process.exit(1); }
+const D_STOPS = [[0, +mD[1]], [.5, +mD[2]], [1, +mD[3]]];
+console.log(`скримы: секция ${A_STOPS.map(x => x[1]).join('/')} (5 стопов), карточки ${F_STOPS.map(x => x[1]).join('/')}, плашки ${C_STOPS.map(x => x[1]).join('/')} (95deg по X), кнопка ${D_STOPS.map(x => x[1]).join('/')} (90deg по X)`);
 const rect = (r) => [r.x0, r.y0, r.x1, r.y1];
 /* A: надзаголовок (медь, 12,5 px — узкое место) и весь текст колонки */
 for (const [key, file, H] of [['section_desktop', join(R19, 'sec-bg-2560.jpg'), 1440], ['section_portrait', join(R19, 'sec-bg-m-1200.jpg'), 2700]]) {
@@ -222,16 +228,16 @@ for (let i = 0; i < 4; i++) {
   const ic = await worstInZone(f, [335, 181, 726, 571], [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
   row(`карточка ${cardNames[i]}`, `штрих иконки brass по худшему пикселю зоны иконки (${ic.wx},${ic.wy})`, BRASS, ic.worst, 3);
 }
-/* C: четыре плашки — зона x221…1379 y151…382, сплошной скрим .9 */
+/* C: четыре плашки — зона x221…1379 y151…382, градиент 95deg по X */
 const factFiles = ['fact-1-address-1600.jpg', 'fact-2-hours-1600.jpg', 'fact-3-warranty-1600.jpg', 'fact-4-fleet-1600.jpg'];
 for (let i = 0; i < 4; i++) {
-  const z = await worstInZone(join(R19, factFiles[i]), [Z19.fact1600.x, Z19.fact1600.y, Z19.fact1600.x + Z19.fact1600.w, Z19.fact1600.y + Z19.fact1600.h], [[0, 0], [1, 0]], FLAT);
+  const z = await worstInZone(join(R19, factFiles[i]), [Z19.fact1600.x, Z19.fact1600.y, Z19.fact1600.x + Z19.fact1600.w, Z19.fact1600.y + Z19.fact1600.h], C_STOPS, () => 0);
   row(`плашка C${i + 1}`, `b ivory по худшему пикселю зоны (${z.wx},${z.wy})`, IVORY, z.worst, 4.5);
   row(`плашка C${i + 1}`, `span mist по худшему пикселю зоны (${z.wx},${z.wy})`, MIST, z.worst, 4.5);
 }
 /* D: кнопка — полоса y81…319; текст ivory 15 px и рамка ghost .55 на 3:1 */
 {
-  const z = await worstInZone(join(R19, 'btn-cta-1200.jpg'), [0, 81, 1200, 319], [[0, 0], [1, 0]], FLAT);
+  const z = await worstInZone(join(R19, 'btn-cta-1200.jpg'), [0, 81, 1200, 319], D_STOPS, () => 0);
   row('кнопка D', `текст ivory по худшему пикселю пилюли (${z.wx},${z.wy})`, IVORY, z.worst, 4.5);
   const border = over(z.worst, 0.55, BRASS);
   const r = ratio(border, z.worst);
