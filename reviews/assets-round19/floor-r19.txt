@@ -1,0 +1,36 @@
+
+=== 1440x900 (DPR2) секция 1082px ===
+  A фон секции со скримом (вся секция) mean  26.8 (+9 над базой) spread  225.4 sd 23.4 p5/p95 17/44  ok
+  B1 .feat-bg                        mean  25.2 (+7.4 над базой) spread   60.3 sd 10.8 p5/p95 15/54  ok
+  B2 .feat-bg                        mean  24.3 (+6.5 над базой) spread     55 sd  6.4 p5/p95 19/36  ok
+  B3 .feat-bg                        mean  23.7 (+5.9 над базой) spread   66.6 sd  6.7 p5/p95 17/37  ok
+  B4 .feat-bg                        mean  24.8 (+7 над базой) spread   59.2 sd  8.5 p5/p95 19/44  ok
+  C1 .fact-bg                        mean  31.2 (+13.4 над базой) spread   55.8 sd 11.4 p5/p95 21/57  ok
+  C2 .fact-bg                        mean  30.5 (+12.7 над базой) spread   57.4 sd 11.8 p5/p95 20/58  ok
+  C3 .fact-bg                        mean  30.3 (+12.5 над базой) spread   55.1 sd 13.7 p5/p95 18/58  ok
+  C4 .fact-bg                        mean  31.6 (+13.8 над базой) spread   57.4 sd 14.9 p5/p95 18/64  ok
+  D .btn-bg                          mean  32.9 (+15.1 над базой) spread   87.3 sd  9.7 p5/p95 23/45  ok
+
+=== 1024x600 (DPR2) секция 1933px ===
+  A фон секции со скримом (вся секция) mean  26.9 (+9.1 над базой) spread  225.4 sd 21.2 p5/p95 18/52  ok
+  B1 .feat-bg                        mean  25.9 (+8.1 над базой) spread   59.9 sd 12.1 p5/p95 15/57  ok
+  B2 .feat-bg                        mean  25.1 (+7.3 над базой) spread   58.5 sd  6.3 p5/p95 19/36  ok
+  B3 .feat-bg                        mean  23.8 (+6 над базой) spread   53.5 sd  7.4 p5/p95 17/39  ok
+  B4 .feat-bg                        mean  25.5 (+7.7 над базой) spread   60.3 sd  8.7 p5/p95 19/45  ok
+  C1 .fact-bg                        mean  36.7 (+18.9 над базой) spread     57 sd 12.7 p5/p95 21/61  ok
+  C2 .fact-bg                        mean  36.2 (+18.4 над базой) spread   58.3 sd 13.8 p5/p95 20/64  ok
+  C3 .fact-bg                        mean  38.9 (+21.1 над базой) spread   55.4 sd   15 p5/p95 19/62  ok
+  C4 .fact-bg                        mean  38.5 (+20.7 над базой) spread   58.1 sd 16.6 p5/p95 19/66  ok
+  D .btn-bg                          mean  32.9 (+15.1 над базой) spread   93.2 sd  9.8 p5/p95 23/45  ok
+
+=== 390x844 (DPR2) секция 2392px ===
+  A фон секции со скримом (вся секция) mean  27.4 (+9.6 над базой) spread  225.4 sd 27.1 p5/p95 18/52  ok
+  B1 .feat-bg                        mean  24.6 (+6.8 над базой) spread   60.1 sd   10 p5/p95 15/54  ok
+  B2 .feat-bg                        mean  24.2 (+6.4 над базой) spread   57.4 sd  6.3 p5/p95 19/36  ok
+  B3 .feat-bg                        mean  23.7 (+5.9 над базой) spread   47.5 sd  6.8 p5/p95 17/37  ok
+  B4 .feat-bg                        mean  24.6 (+6.8 над базой) spread   60.1 sd  8.3 p5/p95 19/44  ok
+  C1 .fact-bg                        mean  33.3 (+15.5 над базой) spread   56.4 sd 12.3 p5/p95 21/59  ok
+  C2 .fact-bg                        mean  33.1 (+15.3 над базой) spread   58.1 sd 13.2 p5/p95 20/62  ok
+  C3 .fact-bg                        mean  34.4 (+16.6 над базой) spread     55 sd 15.1 p5/p95 18/61  ok
+  C4 .fact-bg                        mean  34.2 (+16.4 над базой) spread   57.9 sd 16.2 p5/p95 18/66  ok
+  D .btn-bg                          mean    33 (+15.2 над базой) spread   91.1 sd  9.7 p5/p95 23/45  ok
