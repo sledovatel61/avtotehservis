@@ -439,6 +439,91 @@ async function main() {
       .jpeg({ quality: 95 }).toFile(outPath + '.tmp');
     renameSync(outPath + '.tmp', outPath);
   }
+  /* раунд 19 (§2.5): мастер B1 «Смета» — полоса текста (y 791…1147) обязана быть
+     темнее верха кадра на рендере; осветлённый лист планшета приглушается
+     детерминированным ramp ×0.68 с феерингом 140 px (без Math.random). */
+  {
+    const f = join(R19, 'card-1-estimate-2400.jpg');
+    const im = await sharp(f).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    const y0 = 791, y1 = 1147, fe = 140;
+    for (let y = 0; y < h; y++) {
+      let k = 1;
+      if (y >= y0 && y <= y1) k = 0.68;
+      else if (y > y0 - fe && y < y0) k = 1 - 0.32 * (y - (y0 - fe)) / fe;
+      else if (y > y1 && y < y1 + fe) k = 0.68 + 0.32 * (y - y1) / fe;
+      if (k < 1) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+        for (let q = 0; q < 3; q++) d[i + q] = Math.round(d[i + q] * k); }
+    }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(f + '.tmp');
+    renameSync(f + '.tmp', f);
+  }
+  /* раунд 19 (§3 пол видимости): мастера растягиваются аффинно до целевых
+     средней/разброса, чтобы слой ПОД скримом читался: mean−17,8 ≥ 3 и разброс ≥ 40.
+     Цели из рабочей точки оркестратора (плашки 29,7/54 при скриме 0,78). */
+  const STRETCH = {
+    'sec-bg-2560.jpg': [37, 170], 'sec-bg-m-1200.jpg': [37, 170],
+    'card-1-estimate-2400.jpg': [82, 260], 'card-2-warranty-2400.jpg': [58, 260],
+    'card-3-schedule-2400.jpg': [58, 260], 'card-4-fleet-2400.jpg': [58, 260],
+    'fact-1-address-1600.jpg': [72, 245], 'fact-2-hours-1600.jpg': [72, 245],
+    'fact-3-warranty-1600.jpg': [72, 245], 'fact-4-fleet-1600.jpg': [72, 245],
+    'btn-cta-1200.jpg': [63, 150],
+  };
+  for (const [f, [tMean, tSpread]] of Object.entries(STRETCH)) {
+    const fp = join(R19, f);
+    for (let pass = 0; pass < 2; pass++) {
+      const im = await sharp(fp).raw().toBuffer({ resolveWithObject: true });
+      const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+      let sum = 0, n = 0, mn = 255, mx = 0;
+      for (let i = 0; i < d.length; i += c * 7) { const v = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+        sum += v; n++; if (v < mn) mn = v; if (v > mx) mx = v; }
+      const mean = sum / n, spread = Math.max(1, mx - mn);
+      const a = tSpread / spread, b = tMean - a * mean;
+      if (Math.abs(a - 1) < 0.02 && Math.abs(b) < 2) break;
+      for (let i = 0; i < d.length; i += c) for (let k = 0; k < 3; k++)
+        d[i + k] = Math.max(0, Math.min(255, Math.round(d[i + k] * a + b)));
+      await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(fp + '.tmp');
+      renameSync(fp + '.tmp', fp);
+    }
+  }
+  /* §2.5: полоса текста B1 — темнее верха И низа ≥3 на рендере: доводка после стретча */
+  {
+    const f = join(R19, 'card-1-estimate-2400.jpg');
+    const F_A = 0.85, B_A = 0.92;   /* средние альфы скрима карточки по полосе и низу */
+    for (let pass = 0; pass < 6; pass++) {
+      const im = await sharp(f).raw().toBuffer({ resolveWithObject: true });
+      const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+      const stat = (y0, y1) => { let s = 0, n = 0; for (let y = y0; y < y1; y += 3) for (let x = 0; x < w; x += 3) {
+        const i = (y * w + x) * c; s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; n++; } return s / n; };
+      const mb = stat(791, 1147), mt = stat(0, 791), mo = stat(1147, 1600);
+      const rBand = mb * (1 - F_A) + 17.8 * F_A, rTop = mt * (1 - F_A) + 17.8 * F_A, rBot = mo * (1 - B_A) + 17.8 * B_A;
+      const target = Math.min(rTop, rBot) - 4;
+      if (rBand <= target) break;
+      const k = Math.max(0.15, (target - 17.8 * F_A) / Math.max(1, mb * (1 - F_A)));
+      for (let y = 791; y < 1147; y++) { const fe = Math.min(y - 791, 1146 - y, 120) / 120; const kk = 1 - (1 - k) * fe;
+        for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+          for (let q = 0; q < 3; q++) d[i + q] = Math.round(d[i + q] * kk); } }
+      await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(f + '.tmp');
+      renameSync(f + '.tmp', f);
+    }
+  }
+  const BTN0 = join(R19, 'btn-cta-1200.jpg');
+  /* §2.1/§3 кнопка: стекло — блик в полосе текста (y81…319) ограничен плечом
+     (рамка ghost .55 обязана держать ≥3:1 на худшем пикселе фона), а отражённый
+     свет у верхнего/нижнего края пилюли сохраняет разброс деталей ≥40 на рендере */
+  {
+    const f = BTN0;
+    const im = await sharp(f).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+      const fe = y < 81 ? Math.min(1, (81 - y) / 80) : y > 319 ? Math.min(1, (y - 319) / 80) : 0;
+      for (let q = 0; q < 3; q++) { let v = d[i + q];
+        if (y >= 81 && y <= 319) { if (v > 112) v = 112 + (v - 112) * 0.14; }
+        else { v = v + fe * (140 + v * 0.9); }   /* отражённый свет к краям пилюли, feather — без стыка */
+        d[i + q] = Math.max(0, Math.min(255, Math.round(v))); } }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(f + '.tmp');
+    renameSync(f + '.tmp', f);
+  }
   const A2560 = join(R19, 'sec-bg-2560.jpg'), AM = join(R19, 'sec-bg-m-1200.jpg');
   const C = [1, 2, 3, 4].map(i => join(R19, `card-${i}-${['estimate', 'warranty', 'schedule', 'fleet'][i - 1]}-2400.jpg`));
   const F = [1, 2, 3, 4].map(i => join(R19, `fact-${i}-${['address', 'hours', 'warranty', 'fleet'][i - 1]}-1600.jpg`));
