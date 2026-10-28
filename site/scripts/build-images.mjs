@@ -116,7 +116,6 @@ const CAPS = {
   /* раунд 18 (задание №20): фоны «О компании» — A секция, B карточки, C плашки, D кнопка */
   'about-bg-2560':   { avif: 130, webp: 150 },
   'about-bg-1600':   { avif: 80,  webp: 95  },
-  'about-bg-960':    { avif: 40,  webp: 48  },
   'about-bg-m-1200': { avif: 110, webp: 130 },
   'about-bg-m-640':  { avif: 55,  webp: 65  },
   'about-c1-1080': { avif: 50, webp: 58 }, 'about-c1-720': { avif: 30, webp: 35 }, 'about-c1-480': { avif: 18, webp: 22 },
@@ -447,7 +446,6 @@ async function main() {
   for (const r of await Promise.all([
     encodeSet('about-bg-2560', sharp(A2560).resize(2560, 1440), 2560, 1440, false),
     encodeSet('about-bg-1600', sharp(A2560).resize(1600, 900), 1600, 900, false),
-    encodeSet('about-bg-960', sharp(A2560).resize(960, 540), 960, 540, false),
     encodeSet('about-bg-m-1200', sharp(AM).resize(1200, 2700), 1200, 2700, false),
     encodeSet('about-bg-m-640', sharp(AM).resize(640, 1440), 640, 1440, false),
     ...[1, 2, 3, 4].flatMap(i => [

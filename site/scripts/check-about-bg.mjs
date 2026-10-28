@@ -15,7 +15,7 @@
  *     у .btn и .fact нет background-image;
  *  7) разметка: 1 .about-bg + 4 .feat-bg + 4 .fact-bg + 1 .btn-bg, все <picture>,
  *     loading="lazy", alt="", aria-hidden="true";
- *  8) самопроверка: 8 мутантов, все обязаны уронить гейт.
+ *  8) самопроверка: 10 мутантов, все обязаны уронить гейт.
  * Запуск: node site/scripts/check-about-bg.mjs (exit 1 при провале).
  */
 import { createRequire } from 'node:module';
@@ -36,7 +36,7 @@ const ASTRO = readFileSync(join(HERE, '../src/pages/index.astro'), 'utf8');
 const css = CSS_SEC + '\n' + CSS_BTN;
 
 const CAPS = {
-  'about-bg-2560': { avif: 130, webp: 150 }, 'about-bg-1600': { avif: 80, webp: 95 }, 'about-bg-960': { avif: 40, webp: 48 },
+  'about-bg-2560': { avif: 130, webp: 150 }, 'about-bg-1600': { avif: 80, webp: 95 },
   'about-bg-m-1200': { avif: 110, webp: 130 }, 'about-bg-m-640': { avif: 55, webp: 65 },
   ...Object.fromEntries([1, 2, 3, 4].flatMap(i => [
     [`about-c${i}-1080`, { avif: 50, webp: 58 }], [`about-c${i}-720`, { avif: 30, webp: 35 }], [`about-c${i}-480`, { avif: 18, webp: 22 }]])),
@@ -45,7 +45,7 @@ const CAPS = {
   'about-btn-640': { avif: 14, webp: 17 }, 'about-btn-320': { avif: 7, webp: 9 },
 };
 const DERIV = {
-  'about-bg-2560': [2560, 1440], 'about-bg-1600': [1600, 900], 'about-bg-960': [960, 540],
+  'about-bg-2560': [2560, 1440], 'about-bg-1600': [1600, 900],
   'about-bg-m-1200': [1200, 2700], 'about-bg-m-640': [640, 1440],
   ...Object.fromEntries([1, 2, 3, 4].flatMap(i => [
     [`about-c${i}-1080`, [1080, 720]], [`about-c${i}-720`, [720, 480]], [`about-c${i}-480`, [480, 320]]])),
@@ -137,12 +137,27 @@ function gate({ css: C, astro: A, zones: z, files, geom }) {
   if (/\.btn\{[^}]*background-image/.test(C)) bad.push('CSS: у .btn появился background-image (запрещено §3.3)');
   if (/\.fact\{[^}]*background-image/.test(C)) bad.push('CSS: у .fact появился background-image (запрещено §3.3)');
   if (/\.about\{[^}]*background-image/.test(C)) bad.push('CSS: у .about появился background-image (запрещено §3.3)');
-  if (!/\.btn\{[^}]*position:relative;isolation:isolate;overflow:hidden/.test(C)) bad.push('CSS: .btn без position:relative;isolation:isolate;overflow:hidden');
+  if (!/\.about \.btn\{[^}]*position:relative;isolation:isolate;overflow:hidden/.test(C)) bad.push('CSS: .about .btn без position:relative;isolation:isolate;overflow:hidden');
+  if (!/\.about \.btn--ghost\{border-color:rgba\(224,169,109,\.55\)\}/.test(C)) bad.push('CSS: .about .btn--ghost без рамки .55');
+  if (/(?<!\.about )\.btn--ghost\{border-color:rgba\(224,169,109,\.55\)/.test(C)) bad.push('CSS: правка рамки .55 вышла за пределы .about (регресс первого экрана и 3 страниц)');
   /* разметка */
   const cnt = (re) => (A.match(re) || []).length;
   if (cnt(/<div class="about-bg" aria-hidden="true">\s*<picture>/g) !== 1) bad.push('разметка: .about-bg c <picture> ≠ 1');
   if (cnt(/<div class="feat-bg" aria-hidden="true"><picture>/g) !== 4) bad.push('разметка: .feat-bg c <picture> ≠ 4');
   if (cnt(/<div class="fact-bg" aria-hidden="true"><picture>/g) !== 4) bad.push('разметка: .fact-bg c <picture> ≠ 4');
+  /* вложенность, а не счёт по документу: ровно один слой в КАЖДОЙ карточке и КАЖДОЙ плашке.
+     Урок круга 18: четыре .fact-bg подряд лежали в первой плашке, а гейт считал их по документу
+     и был зелёным. */
+  for (const [cls, n] of [['feat', 4], ['fact', 4]]) {
+    const open = new RegExp(`<div class="${cls}[ "][^>]*>`, 'g');
+    const seg = A.split(open).slice(1);
+    if (seg.length !== n) { bad.push(`разметка: .${cls} найдено ${seg.length}, ожидалось ${n}`); continue; }
+    seg.forEach((chunk, i) => {
+      const body = chunk.split(new RegExp(`<div class="${cls}[ "]`))[0];
+      const got = (body.match(new RegExp(`class="${cls}-bg"`, 'g')) || []).length;
+      if (got !== 1) bad.push(`разметка: в .${cls} №${i + 1} слоёв ${cls}-bg = ${got}, ожидался ровно 1`);
+    });
+  }
   if (cnt(/<span class="btn-bg" aria-hidden="true"><picture>/g) !== 1) bad.push('разметка: .btn-bg c <picture> ≠ 1');
   for (const sel of ['about-bg', 'feat-bg', 'fact-bg', 'btn-bg']) {
     const blocks = A.match(new RegExp(`class="${sel}"[\\s\\S]{0,900}?</picture>`, 'g')) || [];
@@ -207,6 +222,15 @@ const mutants = [
   ['удалён .about-bg', () => gate({ css, astro: ASTRO.replace(/<div class="about-bg"[\s\S]*?<\/picture>\s*<\/div>/, ''), zones, files })],
   ['полоса текста карточки выведена за карточку', () => gate({ css, astro: ASTRO, zones: { ...zones, cardTextBand: { y0: zones.cardTextBand.y0 + 900, y1: zones.cardTextBand.y1 + 900 } }, files })],
   ['у .btn-bg убран border-radius:inherit', () => gate({ css: css.replace('.btn-bg{position:absolute;inset:0;z-index:-1;border-radius:inherit;', '.btn-bg{position:absolute;inset:0;z-index:-1;'), astro: ASTRO, zones, files })],
+  ['все 4 .fact-bg свалены в первую плашку (блокер круга 18)', () => {
+    const m = ASTRO.match(/<div class="fact-bg"[\s\S]*?<\/picture><\/div>/g) || [];
+    if (m.length !== 4) return ['мутант не собрался'];
+    let a = ASTRO;
+    for (const blk of m) a = a.replace(blk, '');
+    a = a.replace('<div class="fact"><b>{S.address_full}</b>', '<div class="fact">' + m.join('') + '<b>{S.address_full}</b>');
+    return gate({ css, astro: a, zones, files });
+  }],
+  ['рамка .55 вынесена из .about в глобальный .btn--ghost', () => gate({ css: css + '\n.btn--ghost{border-color:rgba(224,169,109,.55)}', astro: ASTRO, zones, files })],
   ['у .fact-bg скрим 0,5', () => gate({ css: css.replace('.fact-bg::after{content:\'\';position:absolute;inset:0;background:rgba(11,20,16,.9)}', '.fact-bg::after{content:\'\';position:absolute;inset:0;background:rgba(11,20,16,.5)}'), astro: ASTRO, zones, files })],
 ];
 let mOk = 0;

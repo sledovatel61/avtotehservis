@@ -7,7 +7,6 @@
   transition:transform var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease),
     border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
   will-change:transform;
-  position:relative;isolation:isolate;overflow:hidden;
 }
 /* раунд 18 (задание №20): фактура в пилюле — слой .btn-bg под текстом и рамкой */
 .btn-bg{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}
@@ -17,7 +16,7 @@
 .btn:active{transform:translateY(1px)}
 .btn--copper{background:var(--copper);color:var(--night);box-shadow:0 6px 24px rgba(200,127,69,.28)}
 .btn--copper:hover{background:var(--brass);color:var(--night);transform:translateY(-2px)}
-.btn--ghost{border-color:rgba(224,169,109,.55);color:var(--ivory);background:transparent}
+.btn--ghost{border-color:rgba(224,169,109,.45);color:var(--ivory);background:transparent}
 .btn--ghost:hover{border-color:var(--brass);background:rgba(224,169,109,.1);color:var(--ivory);transform:translateY(-2px)}
 .btn--ivory{background:var(--ivory);color:var(--night)}
 .btn--ivory:hover{background:#fff;color:var(--night);transform:translateY(-2px)}

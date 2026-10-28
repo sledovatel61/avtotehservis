@@ -101,6 +101,10 @@
   background:linear-gradient(180deg,rgba(11,20,16,.88) 0%,rgba(11,20,16,.86) 12%,rgba(11,20,16,.8) 45%,rgba(11,20,16,.62) 75%,rgba(11,20,16,.45) 100%);
 }
 .about>.container{position:relative;z-index:2}
+/* раунд 18, приёмка: пилюля с фактурой и повышенная рамка — только внутри «О компании»,
+   чтобы первый экран, /appointment, /contacts и /404 остались пиксельно нетронутыми */
+.about .btn{position:relative;isolation:isolate;overflow:hidden}
+.about .btn--ghost{border-color:rgba(224,169,109,.55)}
 .feat:hover{transform:translateY(-3px);border-color:rgba(224,169,109,.45)}
 .feat-ic{
   width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;
@@ -271,6 +275,10 @@
 @media (prefers-reduced-data:reduce){.about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}}
 @media print{
   .about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}
+  .about{background:#fff}
+  .about::before{display:none}
   .feat,.fact{background:#fff;border-color:#000}
   .feat h3,.feat p,.fact b,.fact span{color:#000}
+  .about .lead,.about .eyebrow,.about h2,.about .fact b,.about .fact span{color:#000}
+  .about .btn{color:#000;border-color:#000}
 }
