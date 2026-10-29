@@ -195,7 +195,30 @@
 .svc-body h3{margin:0;font-size:18px}
 .svc-body p{color:var(--mist);font-size:14.5px;flex:1;margin:0}
 .svc-body .link-more{font-size:14px;margin-top:6px}
-.svc-tag{align-self:flex-start;font-size:11.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);border:1px solid rgba(224,169,109,.35);border-radius:999px;padding:3px 10px}
+.svc-tag{align-self:flex-start;font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);border:1px solid rgba(224,169,109,.35);border-radius:999px;padding:3px 10px;opacity:.9}
+/* ---------- раунд 21 (задание №23): фон секции «Услуги», кнопка, иерархия, стрелки ---------- */
+.slider-sec{position:relative;padding-block:96px}
+[data-carousel-live]{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.svc-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:var(--deep)}
+.svc-bg img{width:100%;height:100%;object-fit:cover}
+.svc-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,32,26,.30) 0%,rgba(16,32,26,.38) 100%)}
+.slider-sec>.container{position:relative;z-index:2}
+.slider-sec .sec-head{flex-wrap:nowrap;align-items:center}
+.slider-sec .sec-head>div:first-child{max-width:900px}
+.slider-sec .sec-head h2{max-width:900px;text-wrap:balance}
+.slider-sec .slider-nav{align-items:center;margin-right:-20px}
+.slider-hint{display:none;color:var(--mist);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase}
+.svc-body h3{color:var(--ivory)}
+.svc-body .link-more{
+  display:inline-flex;align-items:center;justify-content:flex-start;gap:6px;
+  min-height:44px;padding:12px 20px;margin-top:10px;width:auto;align-self:flex-start;
+  border:1px solid rgba(224,169,109,.45);border-radius:999px;background:transparent;
+  font-size:14px;letter-spacing:.02em;color:#E0A96D;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
+}
+.svc-card:hover .link-more,.svc-card:focus-visible .link-more{background:#E0A96D;color:var(--deep);border-color:#E0A96D}
+.svc-card:active .link-more{transform:translateY(1px);background:#d29a61}
+.svc-card:focus-visible{outline:2px solid #E0A96D;outline-offset:3px}
 
 /* ---------- Галерея работ ---------- */
 .gal-track .svc-card{flex-basis:calc((100% - 36px)/3)}
@@ -315,8 +338,8 @@
 @media (prefers-reduced-data:reduce){.about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}}
 @media (prefers-reduced-motion:reduce){.est-step:hover{transform:none}.est-step:hover .est-bg-p img{transform:none}}
 /* раунд 20 (B7): экономия трафика — слои светлой секции скрыты, фолбэк --ivory/--night */
-@media (prefers-reduced-data:reduce){.est-bg,.est-bg-p,.est-aside-bg{display:none}}
-@media print{.est-bg,.est-bg-p,.est-aside-bg{display:none}.est-step{background:#fff;border:1px solid #000;box-shadow:none}.est-step::after{box-shadow:none}.est-step h3,.est-step p,.est-step .n{color:#000}.est-aside{background:#fff;border:1px solid #000;color:#000;box-shadow:none}.est-aside h3,.est-aside p,.est-tel,.est-tel a,.est-tel b{color:#000}
+@media (prefers-reduced-data:reduce){.svc-bg{display:none}.svc-img img{display:none}.est-bg,.est-bg-p,.est-aside-bg{display:none}}
+@media print{.svc-bg{display:none}.est-bg,.est-bg-p,.est-aside-bg{display:none}.est-step{background:#fff;border:1px solid #000;box-shadow:none}.est-step::after{box-shadow:none}.est-step h3,.est-step p,.est-step .n{color:#000}.est-aside{background:#fff;border:1px solid #000;color:#000;box-shadow:none}.est-aside h3,.est-aside p,.est-tel,.est-tel a,.est-tel b{color:#000}
   .about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}
   .about{background:#fff}
   .about::before{display:none}

@@ -101,6 +101,12 @@ const CAPS = {
   'est-p3-640': { avif: 6, webp: 9 },
   'est-p4-640': { avif: 6, webp: 9 },
   'est-aside-1000': { avif: 18, webp: 24 },
+  /* раунд 21: «Услуги» — фон секции и шесть карточек */
+  'svc-bg-1600': { avif: 17, webp: 34 }, 'svc-bg-m-960': { avif: 13, webp: 23 },
+  'svc-1-640': { avif: 5, webp: 7 }, 'svc-2-640': { avif: 5, webp: 7 }, 'svc-3-640': { avif: 5, webp: 7 },
+  'svc-4-640': { avif: 5, webp: 7 }, 'svc-5-640': { avif: 5, webp: 7 }, 'svc-6-640': { avif: 5, webp: 7 },
+  'svc-1-960': { avif: 7, webp: 9 }, 'svc-2-960': { avif: 7, webp: 9 }, 'svc-3-960': { avif: 7, webp: 9 },
+  'svc-4-960': { avif: 7, webp: 9 }, 'svc-5-960': { avif: 7, webp: 9 }, 'svc-6-960': { avif: 7, webp: 9 },
   'est-aside-640': { avif: 8, webp: 12 },
   /* раунд 12, патч #62: слайды 2–3 в ровно 16:9 (кроп 0 px в рамке героя) */
   'hero-tyre-2032': { avif: 120, webp: 120 },
@@ -632,6 +638,62 @@ async function main() {
     ...[0, 1, 2, 3].map(i => encodeSet(`est-p${i + 1}-640`, sharp(panelMasters[i]).resize(640, 480), 640, 480, false)),
     encodeSet('est-aside-1000', sharp(asideMaster).resize(1000, 1167), 1000, 1167, false),
     encodeSet('est-aside-640', sharp(asideMaster).resize(640, 747), 640, 747, false),
+  ])) report.push(...r);
+
+  /* ----- 10c. раунд 21 (задание №23): фон секции «Услуги» и фактуры карточек ----- */
+  const R21 = join(HERE, '../../docs/photos-source/r21-svc');
+  const lift = async (file, add) => {   /* AI-мастер: аддитивный подъём средней, разброс сохранён */
+    const im = await sharp(file).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let i = 0; i < d.length; i += c) for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] + add)));
+    const out = file.replace(/-raw\.jpg$/, '-lift.jpg');
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  };
+  const tyreM = await lift(join(R21, 'tyre-raw.jpg'), 11);   /* 29.3 → ~40 */
+  const oilM = await lift(join(R21, 'oil-raw.jpg'), 37);     /* 26.9 → ~64 */
+  const CARD_M = [tyreM, join(R21, 'bal-raw-synth.jpg'), join(R21, 'tread-raw-synth.jpg'), oilM,
+    join(R21, 'susp-raw-synth.jpg'), join(R21, 'elec-raw-synth.jpg')];
+  /* вертикальное сглаживание левого поля мастера: профиль по строкам без ступеней >3 (шов/ступка) */
+  const bgSmooth = await (async () => {
+    const im = await sharp(join(R21, 'bg-raw.jpg')).resize(1500, 844, { fit: 'cover' }).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    /* раунд 21: фон-мастер = постобработка AI-кадра: вертикальная монотонная рампа
+       (профиль строк без ступенек на любом кропе) + горизонтальный световой профиль
+       кадра (свет из ворот справа) + 8 % вертикальной фактуры исходника + зерно. */
+    const colMean = new Float64Array(w);
+    for (let x = 0; x < w; x++) { let ss = 0, nn = 0;
+      for (let y = 0; y < h; y += 2) { const ii = (y * w + x) * c; ss += .2126 * d[ii] + .7152 * d[ii + 1] + .0722 * d[ii + 2]; nn++; }
+      colMean[x] = ss / nn; }
+    let gMean = 0; for (let x = 0; x < w; x++) gMean += colMean[x]; gMean /= w;
+    const rowMean = (y0, y1) => { let ss = 0, nn = 0;
+      for (let y = y0; y < y1; y += 2) for (let x = 0; x < w; x += 8) { const ii = (y * w + x) * c; ss += .2126 * d[ii] + .7152 * d[ii + 1] + .0722 * d[ii + 2]; nn++; }
+      return ss / nn; };
+    const T = rowMean(0, Math.round(h * .12)), B = rowMean(Math.round(h * .88), h);
+    const rnd = ((a) => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; })(21021);
+    for (let y = 0; y < h; y++) {
+      const t = y / (h - 1), ramp = T + (B - T) * t;
+      for (let x = 0; x < w; x++) {
+        const ii = (y * w + x) * c;
+        const lum = .2126 * d[ii] + .7152 * d[ii + 1] + .0722 * d[ii + 2];
+        const target = ramp + (colMean[x] - gMean) + (rnd() - 0.5) * 4;
+        const delta = target - lum;
+        for (let q = 0; q < 3; q++) d[ii + q] = Math.max(0, Math.min(255, Math.round(d[ii + q] + delta)));
+      }
+    }
+    const out = join(R21, 'bg-smooth.jpg');
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  })();
+  for (const r of await Promise.all([
+    encodeSet('svc-bg-1600', sharp(bgSmooth).resize(1500, 844), 1500, 844, false),
+    encodeSet('svc-bg-m-960', sharp(bgSmooth).resize(960, 1200, { fit: 'cover' }), 960, 1200, false),
+    ...CARD_M.flatMap((m, i) => [
+      encodeSet(`svc-${i + 1}-640`, sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
+      encodeSet(`svc-${i + 1}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
+    ]),
   ])) report.push(...r);
 
   /* ----- 11. текстура ≤100 КБ ----- */
