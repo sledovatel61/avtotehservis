@@ -90,8 +90,18 @@ const CAPS = {
   'about-service-1600': { avif: 80, webp: 160 },
   'about-service-960': { avif: 70, webp: 70 },
   'about-service-640': { avif: 70, webp: 70 },
-  'cta-diag-960': { avif: 45, webp: 45 },
-  'cta-diag-640': { avif: 45, webp: 45 },
+  /* раунд 20 (задание №22): светлая секция «Как мы работаем» — ориентиры B6 */
+  'est-bg-1600': { avif: 22, webp: 30 },
+  'est-bg-960': { avif: 12, webp: 16 },
+  'est-bg-640': { avif: 6, webp: 9 },
+  'est-bg-m-960': { avif: 12, webp: 16 },
+  'est-bg-m-640': { avif: 6, webp: 9 },
+  'est-p1-640': { avif: 6, webp: 9 },
+  'est-p2-640': { avif: 6, webp: 9 },
+  'est-p3-640': { avif: 6, webp: 9 },
+  'est-p4-640': { avif: 6, webp: 9 },
+  'est-aside-1000': { avif: 18, webp: 24 },
+  'est-aside-640': { avif: 8, webp: 12 },
   /* раунд 12, патч #62: слайды 2–3 в ровно 16:9 (кроп 0 px в рамке героя) */
   'hero-tyre-2032': { avif: 120, webp: 120 },
   'hero-tyre-1600': { avif: 70, webp: 70 },
@@ -337,7 +347,6 @@ async function main() {
   const stripSrc = { 'strip-sign': 'strip-tyre.jpg', 'strip-bay': 'strip-lift.jpg', 'strip-gates': 'strip-diag.jpg' };
   const stripPipes = {};
   for (const [name, f] of Object.entries(stripSrc)) stripPipes[name] = sharp(join(R11, f)).resize(1200, 500, { fit: 'cover' });
-  const ctaSrc = join(R11, 'cta-diag.jpg');
   const PH = join(PHOTOS);
   const slide16 = {};
   for (const [name, f] of [['hero-tyre', 'gen-tyre-2048.jpg'], ['hero-tools', 'gen-tools-2048.jpg']]) {
@@ -358,8 +367,6 @@ async function main() {
     await encodeSet('about-service-1600', sharp(aboutMaster).resize(1600, 1000), 1600, 1000, false),
     await encodeSet('about-service-960', sharp(aboutMaster).resize(960, 600), 960, 600, false),
     await encodeSet('about-service-640', sharp(aboutMaster).resize(640, 400), 640, 400, false),
-    await encodeSet('cta-diag-960', sharp(ctaSrc).resize(960, 540, { fit: 'cover' }).linear([0.45, 0.45, 0.45], [0, 0, 0]), 960, 540, false),
-    await encodeSet('cta-diag-640', sharp(ctaSrc).resize(640, 360, { fit: 'cover' }).linear([0.45, 0.45, 0.45], [0, 0, 0]), 640, 360, false),
   ]) report.push(...r);
   for (const name of ['hero-tyre', 'hero-tools']) {
     for (const [w, h] of [[640, 360], [960, 540], [1600, 900], [2032, 1143]]) {
@@ -529,6 +536,20 @@ async function main() {
   const C = [1, 2, 3, 4].map(i => join(R19, `card-${i}-${['estimate', 'warranty', 'schedule', 'fleet'][i - 1]}-2400.jpg`));
   const F = [1, 2, 3, 4].map(i => join(R19, `fact-${i}-${['address', 'hours', 'warranty', 'fleet'][i - 1]}-1600.jpg`));
   const BTN = join(R19, 'btn-cta-1200.jpg');
+  /* раунд 20: предел хайлайтов в текстовой полосе карточек (y 791…1147 мастера).
+     Под принятыми приёмкой скримами .52/.66/.81 p mist #B7C4BB требует фон rel ≤ .079,
+     что при a≈.69 даёт мастер ≤ ~230; берём 215 с запасом. Идемпотентно (повторный
+     прогон не меняет файл), среднюю/разброс пола почти не трогает. */
+  for (const f of C) {
+    const im = await sharp(f).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    let n = 0;
+    for (let y = 791; y < 1147; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+      const L = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      if (L > 215) { const k = 215 / L; for (let q = 0; q < 3; q++) d[i + q] = Math.round(d[i + q] * k); n++; } }
+    if (n) { await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(f + '.tmp'); renameSync(f + '.tmp', f); }
+    console.log(`ok   band-clamp ${f.split('/').pop()}: пикселей прижато ${n}`);
+  }
   for (const r of await Promise.all([
     encodeSet('about-bg-2560', sharp(A2560).resize(2560, 1440), 2560, 1440, false),
     encodeSet('about-bg-1600', sharp(A2560).resize(1600, 900), 1600, 900, false),
@@ -545,6 +566,72 @@ async function main() {
     ]),
     encodeSet('about-btn-640', sharp(BTN).resize(640, 213), 640, 213, false),
     encodeSet('about-btn-320', sharp(BTN).resize(320, 107), 320, 107, false),
+  ])) report.push(...r);
+
+  /* ----- 10b. раунд 20 (задание №22): светлая секция «Как мы работаем» -----
+     Мастера: sec и aside — AI-генерации (2 из лимита 3), 4 панели — детерминированный
+     синтез synth-steps-textures.mjs. Нормализация — ОДИН аффинный проход плюс фикс.
+     локальные правки; циклов подгонки под числа гейта нет (запрет части F). */
+  const R20 = join(HERE, '../../docs/photos-source/r20-steps');
+  const secMaster = join(R20, 'sec-2600.jpg');
+  /* раунд 20, ред. приёмки: убрано ветвление по y («пол 212 в зоне h2» + рампа только сверху).
+     Оно давало ступень 228 → 216 на 37 % высоты — видимую линию через всю секцию (A6, major B).
+     Новая формула непрерывна по y: одна аффинная нормализация + рампа по X. */
+  {
+    const im = await sharp(join(R20, 'sec-2600-raw.jpg')).resize(2600, 1400, { fit: 'cover' })
+      .raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    let sum = 0, n = 0, mn = 255, mx = 0;
+    for (let i = 0; i < d.length; i += c) { const v = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      sum += v; n++; if (v < mn) mn = v; if (v > mx) mx = v; }
+    const T_MEAN = 214, T_SPREAD = 70;
+    const a = T_SPREAD / Math.max(1, mx - mn), b = T_MEAN - a * (sum / n);
+    const AMP = 14;                                                   /* живость по X: ±14 */
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+      let v = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) * a + b;
+      v += AMP * ((x / (w - 1)) * 2 - 1);
+      const g = Math.max(0, Math.min(255, Math.round(v)));
+      const tint = d[i + 1] - d[i];                                  /* сохраняем холодный подтон */
+      d[i] = Math.max(0, Math.min(255, g - 2)); d[i + 1] = g; d[i + 2] = Math.max(0, Math.min(255, g - 4 - Math.max(0, tint)));
+    }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(secMaster + '.tmp');
+    renameSync(secMaster + '.tmp', secMaster);
+  }
+  const asideMaster = join(R20, 'aside-1200.jpg');
+  {
+    const im = await sharp(join(R20, 'aside-1200-raw.jpg')).resize(1200, 1400, { fit: 'cover' })
+      .raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let i = 0; i < d.length; i += c) for (let q = 0; q < 3; q++) {
+      let v = d[i + q]; if (v > 150) v = 150 + (v - 150) * 0.25;      /* блики под скримом .78…86 ≤ 79 */
+      d[i + q] = Math.max(0, Math.min(255, Math.round(v))); }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(asideMaster + '.tmp');
+    renameSync(asideMaster + '.tmp', asideMaster);
+  }
+  /* портретные кропы фона для ≤1024/≤640: в узкий cover-кроп попадает вся рампа */
+  /* портретные кропы: узкий кроп берёт только середину мастера, где рампа по X почти плоская.
+     Поэтому в кроп добавляется СВОЯ непрерывная рампа по X (без ветвления по y — ступеней нет). */
+  const rampCrop = async (left, width, amp, out) => {
+    const im = await sharp(secMaster).extract({ left, top: 0, width, height: 1400 }).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+      const add = amp * ((x / (w - 1)) * 2 - 1);
+      for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] + add))); }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out);
+    return out;
+  };
+  const secM960 = await rampCrop(700, 1200, 22, join(R20, 'sec-m-960.jpg'));
+  const secM640 = await rampCrop(980, 640, 30, join(R20, 'sec-m-640.jpg'));
+  const panelMasters = [1, 2, 3, 4].map(i => join(R20, `panel-${i}-${['metal', 'paper', 'concrete', 'fabric'][i - 1]}.jpg`));
+  for (const r of await Promise.all([
+    encodeSet('est-bg-1600', sharp(secMaster).resize(1600, 862), 1600, 862, false),
+    encodeSet('est-bg-960', sharp(secMaster).resize(960, 517), 960, 517, false),
+    encodeSet('est-bg-640', sharp(secMaster).resize(640, 345), 640, 345, false),
+    encodeSet('est-bg-m-960', sharp(secM960).resize(960, 1120), 960, 1120, false),
+    encodeSet('est-bg-m-640', sharp(secM640).resize(640, 1400), 640, 1400, false),
+    ...[0, 1, 2, 3].map(i => encodeSet(`est-p${i + 1}-640`, sharp(panelMasters[i]).resize(640, 480), 640, 480, false)),
+    encodeSet('est-aside-1000', sharp(asideMaster).resize(1000, 1167), 1000, 1167, false),
+    encodeSet('est-aside-640', sharp(asideMaster).resize(640, 747), 640, 747, false),
   ])) report.push(...r);
 
   /* ----- 11. текстура ≤100 КБ ----- */

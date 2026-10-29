@@ -276,6 +276,31 @@ function gate({ css: C, astro: A, zones: z, files, geom, ...opts }) {
   if (!/@media \(max-width:1024px\)\{\.facts--strip\{grid-template-columns:1fr 1fr/.test(C)) bad.push('§2.4: .facts--strip не 2×2 на 641…1024');
   if (!/@media \(max-width:640px\)\{\.facts--strip\{grid-template-columns:1fr\}/.test(C)) bad.push('§2.4: .facts--strip не 1 колонка на ≤640');
 
+  /* раунд 20 (A1): плашки — данные, карточки — обещания: заголовки не пересекаются.
+     Нормализация: нижний регистр, ё→е, только буквы/цифры; токены {S.*} подставляются
+     из site/src/server/settings.ts. Пересечение множеств пусто + Левенштейн > 6. */
+  {
+    const SET = readFileSync(join(HERE, '../src/server/settings.ts'), 'utf8');
+    const tok = (t) => t.replace(/\{S\.(\w+)\}/g, (m, k) => {
+      const re = new RegExp(`\\b${k}:\\s*'([^']*)'`); const mm = SET.match(re); return mm ? mm[1] : m; });
+    const norm = (t) => tok(t).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim();
+    const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+      for (let j = 0; j <= b.length; j++) d[0][j] = j;
+      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      return d[a.length][b.length]; };
+    const factsStart = A.indexOf('class="facts facts--strip"');
+    const featsStart = A.indexOf('<div class="feats">', factsStart);
+    const featsEnd = A.indexOf('</section>', featsStart);
+    const fb = [...A.slice(factsStart, featsStart).matchAll(/<div class="fact">[\s\S]*?<b>([^<]*)<\/b>/g)].map(m => norm(m[1]));
+    const fh = [...A.slice(featsStart, featsEnd).matchAll(/<h3>([^<]*)<\/h3>/g)].map(m => norm(m[1]));
+    if (fb.length !== 4 || fh.length !== 4) bad.push(`A1: заголовков плашек/карточек ${fb.length}/${fh.length}, ожидалось 4/4`);
+    const hit = fb.filter(x => fh.includes(x));
+    if (hit.length) bad.push(`A1: заголовки плашек и карточек совпадают: ${hit.join(', ')}`);
+    for (const x of fb) for (const y of fh) { const L = lev(x, y);
+      if (L <= 6) bad.push(`A1: заголовки «${x}» и «${y}» слишком близки (Левенштейн ${L} ≤ 6)`); }
+    if (opts.verbose) console.log(`info  A1: плашки [${fb.join(' | ')}] × карточки [${fh.join(' | ')}] — пересечений нет, мин. Левенштейн ${Math.min(...fb.flatMap(x => fh.map(y => lev(x, y))))}`);
+  }
   /* разметка */
   const cnt = (re) => (A.match(re) || []).length;
   if (cnt(/<div class="about-bg" aria-hidden="true">\s*<picture>/g) !== 1) bad.push('разметка: .about-bg c <picture> ≠ 1');
@@ -377,6 +402,7 @@ const mutants = [
   ['.facts возвращены в левую колонку', () => { const m = ASTRO.match(/    <div class="facts facts--strip">[\s\S]*?<\/div>\n/); if (!m) return ['мутант не собрался'];
     const a = ASTRO.replace(m[0], '').replace('<p class="u-mt24">', m[0].trim() + '\n      <p class="u-mt24">');
     return gate({ css, astro: a, zones, files }); }],
+  ['заголовок карточки совпал с плашкой (A1)', () => gate({ css, astro: ASTRO.replace('<h3>Запись без живой очереди</h3>', '<h3>Гарантия в заказ-наряде</h3>'), zones, files })],
   ['у .fact b убран text-wrap:balance', () => gate({ css: css.replace('.about .fact b{text-wrap:balance}', ''), astro: ASTRO, zones, files })],
   ['карточка B1 с полосой ярче верха', () => gate({ css, astro: ASTRO, zones, files, bandMul: 5 })],
 ];
