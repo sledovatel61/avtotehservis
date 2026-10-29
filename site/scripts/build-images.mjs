@@ -439,25 +439,6 @@ async function main() {
       .jpeg({ quality: 95 }).toFile(outPath + '.tmp');
     renameSync(outPath + '.tmp', outPath);
   }
-  /* раунд 19 (§2.5): мастер B1 «Смета» — полоса текста (y 791…1147) обязана быть
-     темнее верха кадра на рендере; осветлённый лист планшета приглушается
-     детерминированным ramp ×0.68 с феерингом 140 px (без Math.random). */
-  {
-    const f = join(R19, 'card-1-estimate-2400.jpg');
-    const im = await sharp(f).raw().toBuffer({ resolveWithObject: true });
-    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
-    const y0 = 791, y1 = 1147, fe = 140;
-    for (let y = 0; y < h; y++) {
-      let k = 1;
-      if (y >= y0 && y <= y1) k = 0.68;
-      else if (y > y0 - fe && y < y0) k = 1 - 0.32 * (y - (y0 - fe)) / fe;
-      else if (y > y1 && y < y1 + fe) k = 0.68 + 0.32 * (y - y1) / fe;
-      if (k < 1) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
-        for (let q = 0; q < 3; q++) d[i + q] = Math.round(d[i + q] * k); }
-    }
-    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(f + '.tmp');
-    renameSync(f + '.tmp', f);
-  }
   /* раунд 19 (§3 пол видимости): мастера растягиваются аффинно до целевых
      средней/разброса, чтобы слой ПОД скримом читался: mean−17,8 ≥ 3 и разброс ≥ 40.
      Цели из рабочей точки оркестратора (плашки 29,7/54 при скриме 0,78). */
@@ -486,27 +467,47 @@ async function main() {
       renameSync(fp + '.tmp', fp);
     }
   }
-  /* §2.5: полоса текста B1 — темнее верха И низа ≥3 на рендере: доводка после стретча */
-  {
-    const f = join(R19, 'card-1-estimate-2400.jpg');
-    const F_A = 0.85, B_A = 0.92;   /* средние альфы скрима карточки по полосе и низу */
-    for (let pass = 0; pass < 6; pass++) {
-      const im = await sharp(f).raw().toBuffer({ resolveWithObject: true });
-      const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
-      const stat = (y0, y1) => { let s = 0, n = 0; for (let y = y0; y < y1; y += 3) for (let x = 0; x < w; x += 3) {
-        const i = (y * w + x) * c; s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; n++; } return s / n; };
-      const mb = stat(791, 1147), mt = stat(0, 791), mo = stat(1147, 1600);
-      const rBand = mb * (1 - F_A) + 17.8 * F_A, rTop = mt * (1 - F_A) + 17.8 * F_A, rBot = mo * (1 - B_A) + 17.8 * B_A;
-      const target = Math.min(rTop, rBot) - 4;
-      if (rBand <= target) break;
-      const k = Math.max(0.15, (target - 17.8 * F_A) / Math.max(1, mb * (1 - F_A)));
-      for (let y = 791; y < 1147; y++) { const fe = Math.min(y - 791, 1146 - y, 120) / 120; const kk = 1 - (1 - k) * fe;
-        for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
-          for (let q = 0; q < 3; q++) d[i + q] = Math.round(d[i + q] * kk); } }
-      await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(f + '.tmp');
-      renameSync(f + '.tmp', f);
-    }
+  /* §3.2 (ред. приёмки круга 19): вертикальная виньетка мастеров. У сгенерированных
+     кадров низ темнее верха на 30–45 единиц; под скримом это давало «фото сверху,
+     чёрный низ» — фон карточек фактически не читался (низ 21 при верхе 43).
+     Выравниваем профиль строк мягкой базой (бокс-блюр 12 % высоты) и частичным
+     коэффициентом 0.85: кромок нет (коэффициент гладкий по y), фактура сохраняется,
+     общий mean/spread дальше нормирует STRETCH. */
+  for (const [name, m] of Object.entries(r19Masters)) {
+    if (!/^card-|^fact-/.test(name)) continue;   /* фон секции и кнопка — без выравнивания:
+                                                    у фона надзаголовок должен остаться ≤30 */
+    const fp = join(R19, name + '.jpg');
+    const im = await sharp(fp).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    const rowMean = new Float64Array(h);
+    for (let y = 0; y < h; y++) { let t = 0;
+      for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+        t += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; }
+      rowMean[y] = t / w; }
+    const R = Math.max(2, Math.round(h * 0.12));
+    const base = new Float64Array(h);
+    for (let y = 0; y < h; y++) { let t = 0, n = 0;
+      for (let k = -R; k <= R; k++) { const yy = y + k; if (yy < 0 || yy >= h) continue; t += rowMean[yy]; n++; }
+      base[y] = t / n; }
+    let bs = 0; for (let y = 0; y < h; y++) bs += base[y]; const T = bs / h;
+    const gain = new Float64Array(h);
+    for (let y = 0; y < h; y++) { const g = Math.pow(T / Math.max(4, base[y]), 0.85);
+      gain[y] = Math.max(0.55, Math.min(2.2, g)); }
+    for (let y = 0; y < h; y++) { const g = gain[y]; if (Math.abs(g - 1) < 0.02) continue;
+      for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+        for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] * g))); } }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(fp + '.tmp');
+    renameSync(fp + '.tmp', fp);
+    let mn = 255, mx = 0, sm = 0;
+    for (let i = 0; i < d.length; i += c * 11) { const v = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      sm += v; if (v < mn) mn = v; if (v > mx) mx = v; }
+    console.log(`ok   r19 ${name}: выравнивание, gain ${gain[0].toFixed(2)}→${gain[h - 1].toFixed(2)}, mean ${(sm / (d.length / (c * 11))).toFixed(1)}`);
   }
+  /* §2.5 (ред. приёмки круга 19): приёмка A5 притемняла ПЛАТО y 791…1147 с феерингом
+     140 px. На рендере это дало видимую кромку поперёк карточки: между 48 % и 53 %
+     высоты яркость падала на 16 единиц (замер оркестратора, 1440/DPR2). Плато удалено.
+     Затемнение полосы под текстом делает скрим .feat-bg::after — он плавный по всей
+     высоте и кромок не даёт; мастер остаётся натуральным. */
   const BTN0 = join(R19, 'btn-cta-1200.jpg');
   /* §2.1/§3 кнопка: стекло — блик в полосе текста (y81…319) ограничен плечом
      (рамка ghost .55 обязана держать ≥3:1 на худшем пикселе фона), а отражённый

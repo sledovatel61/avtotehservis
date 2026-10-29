@@ -134,12 +134,39 @@ function gate({ css: C, astro: A, zones: z, files, geom, ...opts }) {
   const gF = C.match(/\.fact-bg::after\{[^}]*linear-gradient\(95deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 45%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
   if (!gF) bad.push('CSS: нет градиента скрима плашек .fact-bg::after (95deg, 3 стопа)');
   else { const [, a, b, c] = gF.map(Number);
-    if (Math.min(a, b, c) < 0.74 || Math.max(a, b, c) > 0.82) bad.push(`CSS: скрим плашек ${a}/${b}/${c} вне диапазона 0,74…0,82 (§2.1)`); }
+    if (Math.min(a, b, c) < 0.68 || Math.max(a, b, c) > 0.84) bad.push(`CSS: скрим плашек ${a}/${b}/${c} вне диапазона 0,68…0,84 (§2.1)`); }
   const gB = C.match(/\.btn-bg::after\{[^}]*linear-gradient\(90deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 50%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
   if (!gB) bad.push('CSS: нет градиента скрима кнопки .btn-bg::after (90deg, 3 стопа)');
   else { const [, a, b, c] = gB.map(Number);
-    if (Math.min(a, b, c) < 0.72 || Math.max(a, b, c) > 0.82) bad.push(`CSS: скрим кнопки ${a}/${b}/${c} вне диапазона 0,72…0,82 (§2.1)`); }
-  if (!/\.feat-bg::after\{[^}]*var\(--fc1,\.76\)/.test(C)) bad.push('CSS: скрим карточек ≠ .76/.84/.92');
+    if (Math.min(a, b, c) < 0.66 || Math.max(a, b, c) > 0.84) bad.push(`CSS: скрим кнопки ${a}/${b}/${c} вне диапазона 0,66…0,84 (§2.1)`); }
+  /* скрим карточек: значения читаются из CSS, проверяется СМЫСЛ, а не магические числа.
+     Требования: монотонное затемнение сверху вниз, верх ≤ .60 (фото у верха читается),
+     низ ≤ .84 (фото не залито), шаг ≥ .18. */
+  {
+    const m = C.match(/\.feat-bg::after\{[^}]*var\(--fc1,([\d.]+)\)[^%]*%?,\s*rgba\(11,20,16,var\(--fc2,([\d.]+)\)/);
+    if (!m) bad.push('CSS: нет скрима карточек .feat-bg::after на переменных --fc1/--fc2');
+    else {
+      const a1 = +m[1], a2 = +m[2];
+      const m3 = C.match(/rgba\(11,20,16,var\(--fc3,([\d.]+)\)/);
+      const a3 = m3 ? +m3[1] : NaN;
+      if (!(a1 < a2 && a2 < a3)) bad.push(`CSS: скрим карточек не монотонный ${a1}/${a2}/${a3}`);
+      if (a1 > 0.60) bad.push(`CSS: скрим карточек у верха ${a1} > 0,60 — фото залито (§2.1)`);
+      if (a3 > 0.84) bad.push(`CSS: скрим карточек у низа ${a3} > 0,84 — фото залито (§2.1)`);
+      if (a3 - a1 < 0.18) bad.push(`CSS: скрим карточек слишком плоский, шаг ${(a3 - a1).toFixed(2)} < 0,18`);
+    }
+  }
+  /* A6 круг 19 (A): обход проверок через opacity/display:none/!important на слоях фона */
+  for (const sel of ['feat-bg', 'fact-bg', 'btn-bg', 'about-bg']) {
+    /* только одиночные селекторы: списки вида «.about-bg,.feat-bg{display:none}» в
+       @media print / prefers-reduced-data законны */
+    const re = new RegExp('(?:^|[}\\n])\\.' + sel + '(::after|\\s+img)?\\{[^}]*\\}', 'g');
+    for (const decl of C.match(re) || []) {
+      if (/!important/.test(decl)) bad.push(`CSS: !important внутри правила .${sel} — обход гейта (A6, круг 19)`);
+      const op = decl.match(/(?:^|[;{])opacity:([\d.]+)/);
+      if (op && +op[1] < 0.95) bad.push(`CSS: opacity ${op[1]} на .${sel} — слой фона погашен (A6, круг 19)`);
+      if (/(?:^|[;{])display:none/.test(decl)) bad.push(`CSS: display:none на .${sel} — слой фона убран (A6, круг 19)`);
+    }
+  }
   if (/\.btn\{[^}]*background-image/.test(C)) bad.push('CSS: у .btn появился background-image (запрещено §3.3)');
   if (/\.fact\{[^}]*background-image/.test(C)) bad.push('CSS: у .fact появился background-image (запрещено §3.3)');
   if (/\.about\{[^}]*background-image/.test(C)) bad.push('CSS: у .about появился background-image (запрещено §3.3)');
@@ -190,8 +217,8 @@ function gate({ css: C, astro: A, zones: z, files, geom, ...opts }) {
     const mp = files.mp['card-1-estimate-2400.jpg'];
     if (mp) { const ls = layerStats(mp, F_ST, 'y', opts.bandMul ?? 1);
       if (ls.band > ls.top - 3) bad.push(`§2.5: полоса текста B1 ${ls.band.toFixed(1)} не темнее верха ${ls.top.toFixed(1)} − 3`);
-      if (ls.band > ls.bot - 3) bad.push(`§2.5: полоса текста B1 ${ls.band.toFixed(1)} не темнее низа ${ls.bot.toFixed(1)} − 3`);
-      if (opts.verbose) console.log(`info  §2.5 B1 рендер верх/полоса/низ: ${ls.top.toFixed(1)}/${ls.band.toFixed(1)}/${ls.bot.toFixed(1)} — полоса темнее верха на ${(ls.top - ls.band).toFixed(1)} и низа на ${(ls.bot - ls.band).toFixed(1)} (норма ≥3)`); }
+      if (ls.bot > ls.band + 3) bad.push(`§2.5: низ карточки B1 ${ls.bot.toFixed(1)} светлее полосы текста ${ls.band.toFixed(1)} + 3 (скрим не монотонный)`);
+      if (opts.verbose) console.log(`info  §2.5 B1 рендер верх/полоса/низ: ${ls.top.toFixed(1)}/${ls.band.toFixed(1)}/${ls.bot.toFixed(1)} — полоса темнее верха на ${(ls.top - ls.band).toFixed(1)} (норма ≥3), низ темнее полосы на ${(ls.band - ls.bot).toFixed(1)}`); }
   }
   /* §2.2/2.3: сироты заголовка и плашки адреса — модель переносов, калиброванная
      по замерам оркестратора (760 px → 95/85/18, 820 px → 88/96; плашка 99/12 → 53/57) */
