@@ -1,0 +1,35 @@
+Проверка обоих гейтов на мутантах «того же класса», что ловил круг 19 (28.10.2026, коммит e15d581)
+Формат: мутация | гейт | rc | вердикт
+
+.about .fact-bg{opacity:.12}
+    check-about-bg: rc=0 · составной селектор + opacity (плашки гаснут на экране)
+    → НЕ ПОЙМАН — гейт зелёный
+
+.about .feat-bg{filter:brightness(.15)}
+    check-about-bg: rc=0 · составной селектор + filter
+    → НЕ ПОЙМАН — гейт зелёный
+
+.fact-bg{opacity:.12}
+    check-about-bg: rc=1 · простой селектор + opacity (для контроля — должен ловиться)
+    → ПОЙМАН: FAIL CSS: opacity .12 на .fact-bg — слой фона погашен (A6, круг 19)
+
+.est-step .est-bg-p{opacity:.35}
+    check-steps-bg: rc=0 · составной селектор + opacity
+    → НЕ ПОЙМАН — гейт зелёный
+
+.est-bg-p{filter:brightness(.2)}
+    check-steps-bg: rc=0 · filter на слое
+    → НЕ ПОЙМАН — гейт зелёный
+
+.est-step .est-bg-p img{visibility:hidden}
+    check-steps-bg: rc=0 · visibility:hidden на картинке слоя
+    → НЕ ПОЙМАН — гейт зелёный
+
+.est-sec .est-bg-p::after{background:rgba(11,20,16,.9)!important}
+    check-steps-bg: rc=0 · !important в ::after через составной селектор
+    → НЕ ПОЙМАН — гейт зелёный
+
+.est-bg-p{opacity:.4}
+    check-steps-bg: rc=0 · простой селектор + opacity (для контроля)
+    → НЕ ПОЙМАН — гейт зелёный
+
