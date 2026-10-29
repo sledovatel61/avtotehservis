@@ -48,6 +48,24 @@ function stats(m, step = 3) {                   /* средняя, min, max, т�
     if (y < m.h * 0.3) { if (x < m.w / 3) { lS += v; lN++; } else if (x > 2 * m.w / 3) { rS += v; rN++; } } }
   return { mean: s / n, mn, mx, thirdL: lS / Math.max(1, lN), thirdR: rS / Math.max(1, rN) };
 }
+function seamStep(m) {                          /* макс. ступень между соседними строками (A6, major B) */
+  const row = new Float64Array(m.h);
+  for (let y = 0; y < m.h; y++) { let t = 0;
+    for (let x = 0; x < m.w; x++) { const i = (y * m.w + x) * m.c; t += LUM(m.d[i], m.d[i + 1], m.d[i + 2]); }
+    row[y] = t / m.w; }
+  let best = 0, at = 0;
+  /* низкочастотный профиль: скользящее среднее по 21 строке. Высокочастотное зерно
+     фактуры (штрих металла, бумажные волокна) при этом гасится, а настоящая ступень —
+     нет: она сохраняется целиком, потому что окно по обе стороны от границы разное. */
+  const R = 10;
+  const smooth = (y) => { let t = 0, n = 0;
+    for (let k = -R; k <= R; k++) { const yy = y + k; if (yy < 0 || yy >= m.h) continue; t += row[yy]; n++; }
+    return t / n; };
+  for (let y = R + 1; y < m.h - R - 1; y++) {
+    const d = Math.abs(smooth(y + 1) - smooth(y));
+    if (d > best) { best = d; at = y; } }
+  return { step: best, at: at / m.h };
+}
 function coverRect(zone, box, mw, mh) {         /* зона (css px внутри бокса) → прямоугольник мастера */
   const sc = Math.max(box.w / mw, box.h / mh);
   const sw = box.w / sc, sh = box.h / sc, ox = (mw - sw) / 2, oy = (mh - sh) / 2;
@@ -67,17 +85,40 @@ const alphaAt = (st, yFrac) => {                 /* линейная интер�
     return a0 + (a1 - a0) * ((p - p0) / Math.max(1, p1 - p0)); }
   return st[st.length - 1][0];
 };
-function layerRules(css) {                       /* базовые правила слоёв (вне print/reduced-data) */
-  const out = []; let depth = 0, media = '', buf = '';
-  const lines = css.split('\n');
-  for (const ln of lines) {
+function layerRules(css) {                       /* правила, сгруппированные по @media */
+  const out = []; let depth = 0, stack = [], buf = '';
+  for (const ln of css.split('\n')) {
+    const openM = ln.match(/@media[^{]*/);
+    const sameLine = openM && (ln.match(/{/g) || []).length === (ln.match(/}/g) || []).length;
+    if (sameLine) {                       /* однострочный @media-блок: своя область, не задевая глубину */
+      out.push({ media: openM[0].trim() + ' ' + (buf || ''), block: ln });
+      buf = ''; continue;
+    }
     buf += ln + '\n';
-    if (/@media/.test(ln)) media = ln;
     depth += (ln.match(/{/g) || []).length - (ln.match(/}/g) || []).length;
-    if (depth === 0 && buf.trim()) { out.push({ media, block: buf }); buf = ''; }
+    if (openM) stack.push({ d: depth - 1, q: openM[0].trim() });
+    if (depth === 0 && buf.trim()) {
+      /* медиа берём ДО очистки стека — иначе закрывающая строка обнуляет контекст */
+      out.push({ media: stack.map(x => x.q).join(' '), block: buf });
+      buf = ''; stack = [];
+      continue;
+    }
+    while (stack.length && depth <= stack[stack.length - 1].d && !openM) stack.pop();
   }
-  return out.filter(o => !/print|prefers-reduced-data/.test(o.media))
-    .flatMap(o => [...o.block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => ({ sel: m[1].trim(), body: m[2], media: o.media })));
+  /* ред. приёмки: НЕ выбрасываем правила из print/reduced-data из разбора —
+     они нужны антиобходу; исключение делается точечно в самих проверках */
+  const flat2 = [];
+  for (const o of out) for (const m of o.block.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    let sel = m[1].trim(), body = m[2], media = o.media;
+    if (/^@media/.test(sel)) {            /* однострочный @media: разворачиваем вложенные правила */
+      media = (media + ' ' + sel).trim();
+      for (const n of body.matchAll(/([^{}]+)\{([^{}]*)\}/g))
+        flat2.push({ sel: n[1].trim(), body: n[2], media });
+      continue;
+    }
+    flat2.push({ sel, body, media });
+  }
+  return flat2;
 }
 
 /* ---------- мутации ---------- */
@@ -95,6 +136,17 @@ const MUTANTS = {
   'panel2-выше-на-30': ({ G }) => { for (const w of Object.keys(G.widths)) { const x = G.widths[w]; if (x.panelsRel) { x.panelsRel[1].h += 30; x.panelHeights[1] += 30; } } },
   'aside-зазор-96': ({ G }) => { for (const w of ['1440', '1280', '1200']) if (G.widths[w]) G.widths[w].gapBottom = 96; },
   'надзаголовок-светлой-медью': ({ o }) => { o.css = o.css.replace(/--est-ink:\s*#[0-9A-Fa-f]{6}/, '--est-ink:#C08A5A'); },
+  /* мутанты по протоколу A6 (major A): те самые обходы, на которых гейт круга 20 был зелёным */
+  'A6-составной-opacity': ({ o }) => { o.css += '\n.est-step .est-bg-p{opacity:.35}\n'; },
+  'A6-filter-brightness': ({ o }) => { o.css += '\n.est-bg-p{filter:brightness(.2)}\n'; },
+  'A6-visibility-hidden': ({ o }) => { o.css += '\n.est-step .est-bg-p img{visibility:hidden}\n'; },
+  'A6-important-90': ({ o }) => { o.css += '\n.est-sec .est-bg-p::after{background:rgba(11,20,16,.9)!important}\n'; },
+  'A6-about-fact-opacity': ({ o }) => { o.css += '\n.about .fact-bg{opacity:.12}\n'; },
+  'A6-about-feat-filter': ({ o }) => { o.css += '\n.about .feat-bg{filter:brightness(.15)}\n'; },
+  /* ровно дефект A6: всё ниже 38 % высоты притемнено — на границе ступень, а не рампа */
+  'A6-фон-со-швом': ({ M }) => { const y0 = Math.round(M.sec.h * 0.38);
+    for (let y = y0; y < M.sec.h; y++) for (let x = 0; x < M.sec.w; x++) { const i = (y * M.sec.w + x) * M.sec.c; for (let q = 0; q < 3; q++) M.sec.d[i + q] = Math.max(0, M.sec.d[i + q] - 12); } },
+  'A6-панели-одинаковые': ({ M }) => { M.panel2 = { w: M.panel1.w, h: M.panel1.h, c: M.panel1.c, d: Buffer.from(M.panel1.d) }; M.panel3 = { w: M.panel1.w, h: M.panel1.h, c: M.panel1.c, d: Buffer.from(M.panel1.d) }; },
   'пол-h2-убран': ({ M }) => { for (let y = 0; y < M.sec.h * 0.38; y++) for (let x = 0; x < M.sec.w; x++) { const i = (y * M.sec.w + x) * M.sec.c; for (let q = 0; q < 3; q++) M.sec.d[i + q] = Math.max(0, M.sec.d[i + q] - 40); } },
 };
 
@@ -133,7 +185,11 @@ export async function checkStepsBg(opts = {}) {
   if (astroPanels.length !== 4) fails.push(`C1 в разметке панелей задействовано ${astroPanels.length} файла вместо 4`);
 
   /* 2. смысл CSS: скримы и фон на переменной */
-  const layers = { '.est-bg': [0.60, 0.80], '.est-bg-p': [0.60, 0.80], '.est-aside-bg': [0.60, 0.95] };
+  /* ред. приёмки: назначение скрима — держать контраст текста, а не заливать картинку.
+     Верх ≤ .50 (фактура видна), низ ≤ .85 (не глухая заливка), монотонность.
+     Настоящую гарантию контраста даёт C4 по худшему пикселю — он ниже. */
+  const layers = { '.est-bg': [0.00, 0.85], '.est-bg-p': [0.00, 0.85], '.est-aside-bg': [0.55, 0.98] };
+  const SCRIM_TOP_MAX = 0.50;
   const ST = {};
   for (const [sel, [lo, hi]] of Object.entries(layers)) {
     const st = stops(css, sel);
@@ -141,22 +197,33 @@ export async function checkStepsBg(opts = {}) {
     ST[sel] = st;
     const [top, bot] = [st[0][0], st[st.length - 1][0]];
     if (top < lo) fails.push(`C2 ${sel}: верх скрима ${top} < ${lo}`);
+    if (sel !== '.est-aside-bg' && top > SCRIM_TOP_MAX) fails.push(`C2 ${sel}: верх скрима ${top} > ${SCRIM_TOP_MAX} — фактура залита (A6, major D)`);
     if (bot > hi) fails.push(`C2 ${sel}: низ скрима ${bot} > ${hi}`);
     for (let i = 1; i < st.length; i++) if (st[i][0] < st[i - 1][0] - 1e-9) fails.push(`C2 ${sel}: скрим не монотонен`);
   }
   if (!/\.est-bg\s*\{[^}]*background(-color)?:\s*var\(--/.test(css)) fails.push('C2 фон секции не на var(--…)');
 
-  /* 3. антиобход */
+  /* 3. антиобход (A6, major A): смотрим ЛЮБОЕ правило, в селекторе которого есть класс слоя —
+     включая составные (.est-step .est-bg-p) и контекстные. Гасить слой можно только
+     в print / prefers-reduced-data / prefers-reduced-motion, иначе это обход гейта. */
+  const LAYER_CLS = ['est-bg', 'est-bg-p', 'est-aside-bg', 'fact-bg', 'feat-bg', 'btn-bg', 'about-bg'];
   for (const r of layerRules(css)) {
-    if (!/^\.est-(bg|bg-p|aside-bg)(::after| img|\s*$)/.test(r.sel)) continue;
-    if (/!important/.test(r.body)) fails.push(`C3 ${r.sel}: !important`);
-    const op = r.body.match(/opacity:\s*([.\d]+)/); if (op && +op[1] < 0.95) fails.push(`C3 ${r.sel}: opacity ${op[1]}`);
-    if (/display:\s*none/.test(r.body)) fails.push(`C3 ${r.sel}: display:none`);
+    if (!LAYER_CLS.some(cl => new RegExp('(^|[\\s,>+~])\\.' + cl.replace(/-/g, '\\-') + '(?![\\w-])').test(r.sel))) continue;
+    const allowed = /print|prefers-reduced-data|prefers-reduced-motion/.test(r.media);
+    if (/!important/.test(r.body)) fails.push(`C3 ${r.sel} [${r.media || 'base'}]: !important на слое фона`);
+    const op = r.body.match(/opacity:\s*([.\d]+)/); if (op && +op[1] < 0.95 && !allowed) fails.push(`C3 ${r.sel}: opacity ${op[1]} на слое фона`);
+    if (/display:\s*none/.test(r.body) && !allowed) fails.push(`C3 ${r.sel} [${r.media || 'base'}]: display:none на слое фона`);
+    if (/visibility:\s*hidden/.test(r.body) && !allowed) fails.push(`C3 ${r.sel}: visibility:hidden на слое фона`);
+    const fl = r.body.match(/filter:\s*([^;}]+)/); if (fl && !allowed) fails.push(`C3 ${r.sel}: filter ${fl[1].trim()} на слое фона`);
+    const br = r.body.match(/brightness\(([.\d]+)/); if (br && +br[1] < 0.95 && !allowed) fails.push(`C3 ${r.sel}: brightness ${br[1]} < 0,95`);
   }
 
   /* 4. модель контраста (худший пиксель мастера под зоной + скрим), зоны рендера @1440 */
   const W = geom.widths['1440'];
   const ink = (css.match(/--est-ink:\s*(#[0-9A-Fa-f]{6})/) || [])[1] || '#7A4620';
+  /* цвет основного текста панели читаем из CSS — иначе гейт сверяет не то, что на экране */
+  const panelInk = (css.match(/\.est-step p\s*\{[^}]*color:\s*(#[0-9A-Fa-f]{6})/) || [])[1] || '#3F4E47';
+  const panelH3 = (css.match(/\.est-step h3\s*\{[^}]*color:\s*([^;}]+)/) || [])[1] || '#0B1410';
   const Z = W.zones, box = W.section;
   const stSec = ST['.est-bg'], stPan = ST['.est-bg-p'], stAs = ST['.est-aside-bg'];
   const zone = (m, z, b, mw, mh, scrim, base, textHex, need, label) => {
@@ -174,21 +241,43 @@ export async function checkStepsBg(opts = {}) {
   };
   const h2Lum = zone(M.sec, Z.h2, { x: 0, y: 0, w: box.w, h: box.h }, 2600, 1400, 'sec', IVORY_LUM, '#0B1410', 7, 'h2 секции');
   zone(M.sec, Z.eye, { x: 0, y: 0, w: box.w, h: box.h }, 2600, 1400, 'sec', IVORY_LUM, ink, 4.5, 'надзаголовок');
-  if (h2Lum !== undefined && h2Lum < 225) fails.push(`C4/B1 худший пиксель фона зоны h2 ${Math.round(h2Lum)} < 225`);
+  /* ред. приёмки: порог «худший пиксель ≥ 225» был прокси для контраста надзаголовка и заставлял
+     заливать фон. Теперь контраст надзаголовка считается напрямую (zone(...'надзаголовок') выше),
+     а здесь остаётся пол видимости: фон под заголовком обязан быть светлым, но живым. */
+  if (h2Lum !== undefined && (h2Lum < 186 || h2Lum > 246)) fails.push(`C4/B1 худший пиксель фона зоны h2 ${Math.round(h2Lum)} вне 186…246`);
   for (let i = 0; i < 4; i++) {
     const b = W.panelsRel[i];
-    zone(P[i], Z[`p${i + 1}h`], b, 1200, 900, 'pan', IVORY_LUM, '#0B1410', 7, `панель ${i + 1} h3`);
-    zone(P[i], Z[`p${i + 1}p`], b, 1200, 900, 'pan', IVORY_LUM, '#3F4E47', 4.5, `панель ${i + 1} p`);
+    zone(P[i], Z[`p${i + 1}h`], b, 1200, 900, 'pan', IVORY_LUM, panelH3.trim(), 7, `панель ${i + 1} h3`);
+    zone(P[i], Z[`p${i + 1}p`], b, 1200, 900, 'pan', IVORY_LUM, panelInk, 4.5, `панель ${i + 1} p`);
   }
   zone(M.aside, Z.ah, W.asideRel, 1200, 1400, 'as', DARK_LUM, '#C9A06A', 4.5, 'aside h3');
   zone(M.aside, Z.ap, W.asideRel, 1200, 1400, 'as', DARK_LUM, '#E9EDEA', 4.5, 'aside p');
 
   /* 5. пол видимости: мастера + модель + рендер */
   P.forEach((m, i) => { const s = stats(m);
-    if (s.mean < 200 || s.mean > 220) fails.push(`C5 панель ${i + 1}: средняя мастера ${s.mean.toFixed(1)} вне 200…220`);
-    if (s.mx - s.mn < 25) fails.push(`C5 панель ${i + 1}: разброс мастера ${Math.round(s.mx - s.mn)} < 25`);
-    if (s.mx - s.mn > 40) fails.push(`C5 панель ${i + 1}: разброс мастера ${Math.round(s.mx - s.mn)} > 40`); });
+    if (s.mean < 150 || s.mean > 200) fails.push(`C5 панель ${i + 1}: средняя мастера ${s.mean.toFixed(1)} вне 150…200`);
+    if (s.mx - s.mn < 50) fails.push(`C5 панель ${i + 1}: разброс мастера ${Math.round(s.mx - s.mn)} < 50 (фактура не читается)`);
+    if (s.mx - s.mn > 90) fails.push(`C5 панель ${i + 1}: разброс мастера ${Math.round(s.mx - s.mn)} > 90`); });
+  /* ред. приёмки (A6, major D): четыре панели должны отличаться друг от друга — не только sha,
+     но и по средней яркости после скрима. Иначе на экране это один прямоугольник. */
+  {
+    const aP = alphaAt(ST['.est-bg-p'] || [[0.40, 0]], 0.5);
+    const onScreen = P.map(m => { const st = stats(m); return st.mean * (1 - aP) + IVORY_LUM * aP; });
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) {
+      const d = Math.abs(onScreen[i] - onScreen[j]);
+      if (d < 3) fails.push(`C5 панели ${i + 1} и ${j + 1} на экране неразличимы: Δ средней ${d.toFixed(1)} < 3 (A6, major D)`);
+    }
+  }
   const aSt = stats(M.aside); if (aSt.mx - aSt.mn < 25) fails.push(`C5 aside: разброс мастера ${Math.round(aSt.mx - aSt.mn)} < 25`);
+  /* ред. приёмки (A6, major B): в мастере фона не должно быть горизонтального шва.
+     Порог 2,0 — при фактуре разбросом 70 соседние строки отличаются на доли единицы,
+     а «ступень» от ветвления по y давала 30. */
+  for (const [key, m] of [['фон секции', M.sec], ['портрет 960', M.secM960], ['портрет 640', M.secM640]]) {
+    const sm = seamStep(m);
+    if (sm.step > 2.0) fails.push(`C5/B2 ${key}: горизонтальный шов ${sm.step.toFixed(1)} на ${(sm.at * 100).toFixed(0)} % высоты (порог 2,0) — A6, major B`);
+  }
+  for (let i = 0; i < 4; i++) { const sm = seamStep(P[i]);
+    if (sm.step > 3.0) fails.push(`C5/B2 панель ${i + 1}: шов ${sm.step.toFixed(1)} на ${(sm.at * 100).toFixed(0)} % высоты (порог 3,0)`); }
   const sSt = stats(M.sec);
   if (stSec) {
     const aMid = alphaAt(stSec, 0.5);
@@ -207,14 +296,14 @@ export async function checkStepsBg(opts = {}) {
     P.forEach((m, i) => { const p = stats(m); const aP = alphaAt(ST['.est-bg-p'] || [[0.72, 0]], 0.5);
       /* модель консервативна (без теней): порог 5; спецификационные ≥6 проверяются рендером ниже */
       const d = (p.mean * (1 - aP) + IVORY_LUM * aP) - modelMean;
-      if (d < 5) fails.push(`C5 модель панель ${i + 1} − секция ${d.toFixed(1)} < 5`); });
+      if (Math.abs(d) < 6) fails.push(`C5 модель панель ${i + 1} и фон секции: |Δ| ${Math.abs(d).toFixed(1)} < 6 (панель сливается с фоном)`); });
   }
   for (const w of ['1440', '390']) { const r = geom.widths[w].render; if (!r) continue;
     if (r.secMean < 205 || r.secMean > 228) fails.push(`C5 рендер ${w}: средняя ${r.secMean} вне 205…228`);
     if (r.secSpread < 35) fails.push(`C5 рендер ${w}: разброс ${r.secSpread} < 35`);
     if (Math.abs(r.thirdR - r.thirdL) < 5) fails.push(`C5 рендер ${w}: трети ${r.thirdL}/${r.thirdR}, Δ < 5`);
     r.panelSpread.forEach((s, i) => { if (s < 25) fails.push(`C5 рендер ${w}: разброс панели ${i + 1} ${s} < 25`); });
-    r.panelMean.forEach((m, i) => { if (m - r.secMean < 6) fails.push(`C5 рендер ${w}: панель ${i + 1} − секция ${(m - r.secMean).toFixed(1)} < 6`); }); }
+    r.panelMean.forEach((m, i) => { if (Math.abs(m - r.secMean) < 6) fails.push(`C5 рендер ${w}: панель ${i + 1} и секция: |Δ| ${Math.abs(m - r.secMean).toFixed(1)} < 6`); }); }
 
   /* 6. геометрия из geom */
   for (const w of ['1440', '1280', '1200']) { const x = geom.widths[w]; if (!x) continue;

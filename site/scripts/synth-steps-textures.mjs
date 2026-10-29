@@ -30,10 +30,10 @@ function make(seed, kind, base, ramp) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     let v = base + ramp * ((x / (W - 1)) * 2 - 1);       /* живость: лево/право */
     const g = rnd() * 2 - 1;                              /* зерно */
-    if (kind === 'metal') v += row[y] * 7 + low(x, y) * 4 + g * 4;
-    if (kind === 'paper') v += low(x, y) * 7 + g * 6 + (rnd() < .02 ? -8 : 0);
-    if (kind === 'concrete') v += low(x, y) * 10 + g * 5 + (rnd() < .008 ? -12 : 0);
-    if (kind === 'fabric') v += Math.sin(x / 2.2) * 3.4 * Math.sin(y / 2.2) + low(x, y) * 4 + g * 4;
+    if (kind === 'metal') v += row[y] * 15 + low(x, y) * 9 + g * 8;
+    if (kind === 'paper') v += low(x, y) * 15 + g * 11 + (rnd() < .02 ? -18 : 0);
+    if (kind === 'concrete') v += low(x, y) * 22 + g * 10 + (rnd() < .008 ? -26 : 0);
+    if (kind === 'fabric') v += Math.sin(x / 2.2) * 7.5 * Math.sin(y / 2.2) + low(x, y) * 9 + g * 8;
     v = Math.max(0, Math.min(255, Math.round(v)));
     const i = (y * W + x) * 3;
     /* холодный подтон: g чуть выше r, b чуть ниже — без желтизны */
@@ -41,25 +41,35 @@ function make(seed, kind, base, ramp) {
   }
   return d;
 }
+/* ред. приёмки: панели должны отличаться друг от друга и от фона секции (A6, major D):
+   средние разнесены на 4–12 единиц, цель по разбросу 70 (после скрима 0,42 → ~40 на экране) */
+/* [файл, seed, тип, базовая яркость синтеза, рампа, целевая средняя, целевой разброс]
+   средние разнесены на ≥6 единиц: на экране под скримом 0,40 это Δ ≥ 3,6 — панели различимы
+   разброс 72 при минимуме 168−36 = 132: под скримом 0,40 худший пиксель ≈ 177, контраст
+   для p (#33403A) ≈ 4,8 : 1 и для h3 ≈ 13 : 1 */
 const JOB = [
-  ['panel-1-metal-raw.jpg', 11, 'metal', 213, 10],
-  ['panel-2-paper-raw.jpg', 22, 'paper', 213, 8],
-  ['panel-3-concrete-raw.jpg', 33, 'concrete', 213, 12],
-  ['panel-4-fabric-raw.jpg', 44, 'fabric', 214, 9],
+  ['panel-1-metal-raw.jpg', 11, 'metal', 170, 10, 156, 72],
+  ['panel-2-paper-raw.jpg', 22, 'paper', 186, 8, 172, 72],
+  ['panel-3-concrete-raw.jpg', 33, 'concrete', 174, 12, 164, 72],
+  ['panel-4-fabric-raw.jpg', 44, 'fabric', 192, 9, 180, 72],
 ];
-for (const [name, seed, kind, base, ramp] of JOB) {
+for (const [name, seed, kind, base, ramp, tMean, tSpread] of JOB) {
   const d0 = make(seed, kind, base, ramp);
   /* один аффинный проход к целевому разбросу 34 (середина 25…40): не цикл подгонки */
   let mn = 255, mx = 0, s = 0;
   for (let i = 0; i < d0.length; i += 3) { const v = d0[i + 1]; s += v; if (v < mn) mn = v; if (v > mx) mx = v; }
-  const k = 34 / Math.max(1, mx - mn), bmean = s / (W * H);
+  /* ред. приёмки: нормируем к ТОЧНОЙ средней и ТОЧНОМУ разбросу панели —
+     тогда панели гарантированно различимы между собой и по ним считается контраст */
+  const mean0 = s / (W * H), spread0 = Math.max(1, mx - mn);
   const d = Buffer.from(d0);
-  for (let i = 0; i < d.length; i += 3) for (let q = 0; q < 3; q++)
-    d[i + q] = Math.max(0, Math.min(255, Math.round(bmean + (d0[i + q] - bmean) * k)));
+  for (let i = 0; i < d.length; i += 3) for (let q = 0; q < 3; q++) {
+    const x = (d0[i + q] - mean0) / spread0;                 /* -0.5…0.5 */
+    d[i + q] = Math.max(0, Math.min(255, Math.round(tMean + x * tSpread)));
+  }
   mn = 255; mx = 0; s = 0;
   for (let i = 0; i < d.length; i += 3) { const v = d[i + 1]; s += v; if (v < mn) mn = v; if (v > mx) mx = v; }
   await sharp(d0, { raw: { width: W, height: H, channels: 3 } }).jpeg({ quality: 95 }).toFile(join(OUT, name));
   await sharp(d, { raw: { width: W, height: H, channels: 3 } }).jpeg({ quality: 95 }).toFile(join(OUT, name.replace('-raw.jpg', '.jpg')));
-  console.log(`${name}: средняя ${(s / (W * H)).toFixed(1)}, разброс ${mx - mn} (цель 200…220 / 25…40)`);
+  console.log(`${name}: средняя ${(s / (W * H)).toFixed(1)}, разброс ${mx - mn} (цель ${tMean} / ${tSpread})`);
 }
 console.log('синтез панелей r20 готов (детерминированный, seed фиксирован)');

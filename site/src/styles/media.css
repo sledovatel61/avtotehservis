@@ -93,11 +93,11 @@
 @media (max-width:640px){
   .est-panels{grid-template-columns:1fr;gap:16px}
   /* секция на 390 ≤ 1450 px: компактнее хром панелей, кегли и тексты не тронуты */
-  .est-sec{padding-block:56px}
+  .est-sec{padding-block:44px}
   .est-sec .sec-head{margin-bottom:26px}
   .est-sec .est-grid{gap:24px}
-  .est-step{padding:12px 16px}
+  .est-step{padding:10px 16px 12px}
   .est-step p{line-height:1.5}
-  .est-step .n{font-size:40px;padding-bottom:6px;margin-bottom:6px}
+  .est-step .n{font-size:34px;padding-bottom:4px;margin-bottom:6px}
   .est-aside{padding:16px 18px 14px}
 }

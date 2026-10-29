@@ -574,6 +574,9 @@ async function main() {
      локальные правки; циклов подгонки под числа гейта нет (запрет части F). */
   const R20 = join(HERE, '../../docs/photos-source/r20-steps');
   const secMaster = join(R20, 'sec-2600.jpg');
+  /* раунд 20, ред. приёмки: убрано ветвление по y («пол 212 в зоне h2» + рампа только сверху).
+     Оно давало ступень 228 → 216 на 37 % высоты — видимую линию через всю секцию (A6, major B).
+     Новая формула непрерывна по y: одна аффинная нормализация + рампа по X. */
   {
     const im = await sharp(join(R20, 'sec-2600-raw.jpg')).resize(2600, 1400, { fit: 'cover' })
       .raw().toBuffer({ resolveWithObject: true });
@@ -581,19 +584,12 @@ async function main() {
     let sum = 0, n = 0, mn = 255, mx = 0;
     for (let i = 0; i < d.length; i += c) { const v = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
       sum += v; n++; if (v < mn) mn = v; if (v > mx) mx = v; }
-    const a = 150 / Math.max(1, mx - mn), b = 190 - a * (sum / n);   /* цель: mean 190, spread 150 */
-    /* собственный перекос мастерa по X меряем один раз и гасим рампой до цели +18 по третям */
-    let lS = 0, lN = 0, rS = 0, rN = 0;
-    for (let y = 0; y < h; y += 4) for (let x = 0; x < w; x += 4) { const i = (y * w + x) * c;
-      const v = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) * a + b;
-      if (x < w / 3) { lS += v; lN++; } else if (x > 2 * w / 3) { rS += v; rN++; } }
-    const own = rS / rN - lS / lN;
-    const AMP = Math.min(34, Math.max(0, (22 - own) * 3 / 4));
+    const T_MEAN = 214, T_SPREAD = 70;
+    const a = T_SPREAD / Math.max(1, mx - mn), b = T_MEAN - a * (sum / n);
+    const AMP = 14;                                                   /* живость по X: ±14 */
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
       let v = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) * a + b;
-      v += AMP * ((x / (w - 1)) * 2 - 1);                             /* рампа X: третьи доли живые */
-      if (y < h * 0.38) { if (v < 212) v = 212 - (212 - v) * 0.15;      /* пол 212 в зоне h2/надзаголовка */
-        v += 24 * (x / (w - 1)); }                                     /* односторонняя рампа поверх пола: трети живые */
+      v += AMP * ((x / (w - 1)) * 2 - 1);
       const g = Math.max(0, Math.min(255, Math.round(v)));
       const tint = d[i + 1] - d[i];                                  /* сохраняем холодный подтон */
       d[i] = Math.max(0, Math.min(255, g - 2)); d[i + 1] = g; d[i + 2] = Math.max(0, Math.min(255, g - 4 - Math.max(0, tint)));
@@ -613,17 +609,19 @@ async function main() {
     renameSync(asideMaster + '.tmp', asideMaster);
   }
   /* портретные кропы фона для ≤1024/≤640: в узкий cover-кроп попадает вся рампа */
-  const rampCrop = async (left, width, R, out) => {
+  /* портретные кропы: узкий кроп берёт только середину мастера, где рампа по X почти плоская.
+     Поэтому в кроп добавляется СВОЯ непрерывная рампа по X (без ветвления по y — ступеней нет). */
+  const rampCrop = async (left, width, amp, out) => {
     const im = await sharp(secMaster).extract({ left, top: 0, width, height: 1400 }).raw().toBuffer({ resolveWithObject: true });
     const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
-    for (let y = 0; y < h * 0.38; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
-      const add = R * (x / (w - 1));
-      for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, d[i + q] + add)); }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+      const add = amp * ((x / (w - 1)) * 2 - 1);
+      for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] + add))); }
     await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out);
     return out;
   };
-  const secM960 = await rampCrop(700, 1200, 24, join(R20, 'sec-m-960.jpg'));
-  const secM640 = await rampCrop(980, 640, 40, join(R20, 'sec-m-640.jpg'));
+  const secM960 = await rampCrop(700, 1200, 22, join(R20, 'sec-m-960.jpg'));
+  const secM640 = await rampCrop(980, 640, 30, join(R20, 'sec-m-640.jpg'));
   const panelMasters = [1, 2, 3, 4].map(i => join(R20, `panel-${i}-${['metal', 'paper', 'concrete', 'fabric'][i - 1]}.jpg`));
   for (const r of await Promise.all([
     encodeSet('est-bg-1600', sharp(secMaster).resize(1600, 862), 1600, 862, false),
