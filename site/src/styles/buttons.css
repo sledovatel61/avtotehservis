@@ -12,7 +12,11 @@
 .btn-bg{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}
 .btn-bg picture,.btn-bg img{display:block;width:100%;height:100%}
 .btn-bg img{object-fit:cover;object-position:50% 50%}
-.btn-bg::after{content:'';position:absolute;inset:0;background:rgba(11,20,16,.9)}
+.btn-bg::after{
+  content:'';position:absolute;inset:0;
+  /* раунд 19 (§2.1): пилюле разрешён 0,72 — лёгкий градиент по X вместо сплошной заливки */
+  background:linear-gradient(90deg,rgba(11,20,16,.76) 0%,rgba(11,20,16,.72) 50%,rgba(11,20,16,.74) 100%);
+}
 .btn:active{transform:translateY(1px)}
 .btn--copper{background:var(--copper);color:var(--night);box-shadow:0 6px 24px rgba(200,127,69,.28)}
 .btn--copper:hover{background:var(--brass);color:var(--night);transform:translateY(-2px)}

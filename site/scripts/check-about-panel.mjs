@@ -160,8 +160,8 @@ for (const [name, r] of [['левый проём', AL], ['правый проё�
   chk(`${name}: без вставок (совпадает с фасадом)`, s2 / n <= 6, `средний |Δ| ${(s2 / n).toFixed(2)}`, '≤ 6');
 }
 
-console.log('\n§7 фон панели диагностики — cta-diag-960.webp / cta-diag-640.webp:');
-for (const f of ['cta-diag-960.webp', 'cta-diag-640.webp']) {
+console.log('\n§7 фон тёмной CTA-панели «Как мы работаем» — est-aside-1000.webp / est-aside-640.webp (раунд 20, вместо cta-diag):');
+for (const f of ['est-aside-1000.webp', 'est-aside-640.webp']) {
   const im = await raw(f);
   let mx = 0, sum = 0, n = 0, strokes = 0;
   for (let y = 1; y < im.h - 1; y++) {

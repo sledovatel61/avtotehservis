@@ -86,7 +86,7 @@ async function meanInRect(file, r) {
   return s / n;
 }
 
-function gate({ css: C, astro: A, zones: z, files, geom }) {
+function gate({ css: C, astro: A, zones: z, files, geom, ...opts }) {
   const bad = [];
   for (const [f, [w, h]] of Object.entries(MASTERS)) {
     const m = files.master[f];
@@ -131,15 +131,176 @@ function gate({ css: C, astro: A, zones: z, files, geom }) {
   const aS = C.match(/\.about::before\{[^}]*rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 12%,rgba\(11,20,16,([\d.]+)\) 45%,rgba\(11,20,16,([\d.]+)\) 75%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
   if (!aS) bad.push('CSS: нет скрима секции .about::before заявленной формы (§3.4)');
   else { const [, a0, a1, a2, a3, a4] = aS.map(Number); if (a0 < .88 || a1 < .86 || a2 < .8 || a3 < .62 || a4 < .45) bad.push(`CSS: скрим секции ${[a0, a1, a2, a3, a4].join('/')} слабее §3.4`); }
-  if (!/\.fact-bg::after\{[^}]*background:rgba\(11,20,16,\.9\)/.test(C)) bad.push('CSS: скрим плашек ≠ сплошной rgba(11,20,16,.9)');
-  if (!/\.btn-bg::after\{[^}]*background:rgba\(11,20,16,\.9\)/.test(C)) bad.push('CSS: скрим кнопки ≠ сплошной rgba(11,20,16,.9)');
-  if (!/\.feat-bg::after\{[^}]*var\(--fc1,\.76\)/.test(C)) bad.push('CSS: скрим карточек ≠ .76/.84/.92');
+  const gF = C.match(/\.fact-bg::after\{[^}]*linear-gradient\(95deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 45%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+  if (!gF) bad.push('CSS: нет градиента скрима плашек .fact-bg::after (95deg, 3 стопа)');
+  else { const [, a, b, c] = gF.map(Number);
+    if (Math.min(a, b, c) < 0.68 || Math.max(a, b, c) > 0.84) bad.push(`CSS: скрим плашек ${a}/${b}/${c} вне диапазона 0,68…0,84 (§2.1)`); }
+  const gB = C.match(/\.btn-bg::after\{[^}]*linear-gradient\(90deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 50%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+  if (!gB) bad.push('CSS: нет градиента скрима кнопки .btn-bg::after (90deg, 3 стопа)');
+  else { const [, a, b, c] = gB.map(Number);
+    if (Math.min(a, b, c) < 0.66 || Math.max(a, b, c) > 0.84) bad.push(`CSS: скрим кнопки ${a}/${b}/${c} вне диапазона 0,66…0,84 (§2.1)`); }
+  /* скрим карточек: значения читаются из CSS, проверяется СМЫСЛ, а не магические числа.
+     Требования: монотонное затемнение сверху вниз, верх ≤ .60 (фото у верха читается),
+     низ ≤ .84 (фото не залито), шаг ≥ .18. */
+  {
+    const m = C.match(/\.feat-bg::after\{[^}]*var\(--fc1,([\d.]+)\)[^%]*%?,\s*rgba\(11,20,16,var\(--fc2,([\d.]+)\)/);
+    if (!m) bad.push('CSS: нет скрима карточек .feat-bg::after на переменных --fc1/--fc2');
+    else {
+      const a1 = +m[1], a2 = +m[2];
+      const m3 = C.match(/rgba\(11,20,16,var\(--fc3,([\d.]+)\)/);
+      const a3 = m3 ? +m3[1] : NaN;
+      if (!(a1 < a2 && a2 < a3)) bad.push(`CSS: скрим карточек не монотонный ${a1}/${a2}/${a3}`);
+      if (a1 > 0.60) bad.push(`CSS: скрим карточек у верха ${a1} > 0,60 — фото залито (§2.1)`);
+      if (a3 > 0.84) bad.push(`CSS: скрим карточек у низа ${a3} > 0,84 — фото залито (§2.1)`);
+      if (a3 - a1 < 0.18) bad.push(`CSS: скрим карточек слишком плоский, шаг ${(a3 - a1).toFixed(2)} < 0,18`);
+    }
+  }
+  /* A6 круг 19 (A): обход проверок через opacity/display:none/!important на слоях фона */
+  for (const sel of ['feat-bg', 'fact-bg', 'btn-bg', 'about-bg']) {
+    /* только одиночные селекторы: списки вида «.about-bg,.feat-bg{display:none}» в
+       @media print / prefers-reduced-data законны */
+    const re = new RegExp('(?:^|[}\\n])\\.' + sel + '(::after|\\s+img)?\\{[^}]*\\}', 'g');
+    for (const decl of C.match(re) || []) {
+      if (/!important/.test(decl)) bad.push(`CSS: !important внутри правила .${sel} — обход гейта (A6, круг 19)`);
+      const op = decl.match(/(?:^|[;{])opacity:([\d.]+)/);
+      if (op && +op[1] < 0.95) bad.push(`CSS: opacity ${op[1]} на .${sel} — слой фона погашен (A6, круг 19)`);
+      if (/(?:^|[;{])display:none/.test(decl)) bad.push(`CSS: display:none на .${sel} — слой фона убран (A6, круг 19)`);
+    }
+  }
   if (/\.btn\{[^}]*background-image/.test(C)) bad.push('CSS: у .btn появился background-image (запрещено §3.3)');
   if (/\.fact\{[^}]*background-image/.test(C)) bad.push('CSS: у .fact появился background-image (запрещено §3.3)');
   if (/\.about\{[^}]*background-image/.test(C)) bad.push('CSS: у .about появился background-image (запрещено §3.3)');
   if (!/\.about \.btn\{[^}]*position:relative;isolation:isolate;overflow:hidden/.test(C)) bad.push('CSS: .about .btn без position:relative;isolation:isolate;overflow:hidden');
   if (!/\.about \.btn--ghost\{border-color:rgba\(224,169,109,\.55\)\}/.test(C)) bad.push('CSS: .about .btn--ghost без рамки .55');
   if (/(?<!\.about )\.btn--ghost\{border-color:rgba\(224,169,109,\.55\)/.test(C)) bad.push('CSS: правка рамки .55 вышла за пределы .about (регресс первого экрана и 3 страниц)');
+  /* ---- раунд 19: ПОЛ видимости фона (средняя яркость и разброс деталей слоя) ---- */
+  const stA = C.match(/\.about::before\{[^}]*rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 12%,rgba\(11,20,16,([\d.]+)\) 45%,rgba\(11,20,16,([\d.]+)\) 75%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+  const A_ST = stA ? [[0, +stA[1]], [.12, +stA[2]], [.45, +stA[3]], [.75, +stA[4]], [1, +stA[5]]] : [[0, .88], [.12, .86], [.45, .8], [.75, .62], [1, .45]];
+  const stF = C.match(/\.feat-bg::after\{[^}]*var\(--fc1,([\d.]+)\)[^%]*%?,rgba\(11,20,16,var\(--fc2,([\d.]+)\)[^%]*%?,rgba\(11,20,16,var\(--fc3,([\d.]+)\)/);
+  const F_ST = stF ? [[0, +stF[1]], [.38, +stF[2]], [1, +stF[3]]] : [[0, .76], [.38, .84], [1, .92]];
+  const gF2 = C.match(/\.fact-bg::after\{[^}]*linear-gradient\(95deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 45%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+  const FC_ST = gF2 ? [[0, +gF2[1]], [.45, +gF2[2]], [1, +gF2[3]]] : [[0, .8], [.45, .76], [1, .78]];
+  const gB2 = C.match(/\.btn-bg::after\{[^}]*linear-gradient\(90deg,rgba\(11,20,16,([\d.]+)\) 0%,rgba\(11,20,16,([\d.]+)\) 50%,rgba\(11,20,16,([\d.]+)\) 100%\)/);
+  const BN_ST = gB2 ? [[0, +gB2[1]], [.5, +gB2[2]], [1, +gB2[3]]] : [[0, .76], [.5, .72], [1, .74]];
+  const stopAt = (st, t) => { for (let k = 1; k < st.length; k++) if (t <= st[k][0]) { const [t0, a0] = st[k - 1], [t1, a1] = st[k]; return a0 + (a1 - a0) * (t - t0) / (t1 - t0); } return st[st.length - 1][1]; };
+  const layerStats = (mp, stops, dir, bandMul) => {
+    const { data: d, info } = mp; const w = info.width, h = info.height, c = info.channels;
+    let sum = 0, n = 0, mn = 255, mx = 0, bandS = 0, bandN = 0, topS = 0, topN = 0, botS = 0, botN = 0;
+    for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) {
+      const t = dir === 'x' ? x / (w - 1) : y / (h - 1);
+      const a = stopAt(stops, t); const i = (y * w + x) * c;
+      let v = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      if (bandMul && y >= 791 && y <= 1147) v *= bandMul;
+      const r = v * (1 - a) + 15.8 * a;
+      sum += r; n++; if (r < mn) mn = r; if (r > mx) mx = r;
+      if (y >= 791 && y <= 1147) { bandS += r; bandN++; } else if (y < 791) { topS += r; topN++; } else { botS += r; botN++; }
+    }
+    return { mean: sum / n, spread: mx - mn, band: bandS / Math.max(1, bandN), top: topS / Math.max(1, topN), bot: botS / Math.max(1, botN) };
+  };
+  const FLOOR_MEAN = 3.0, FLOOR_SPREAD = 40;
+  const floorRows = [
+    ['A секция', 'sec-bg-2560.jpg', A_ST, 'y'], ['B1', 'card-1-estimate-2400.jpg', F_ST, 'y'],
+    ['B2', 'card-2-warranty-2400.jpg', F_ST, 'y'], ['B3', 'card-3-schedule-2400.jpg', F_ST, 'y'],
+    ['B4', 'card-4-fleet-2400.jpg', F_ST, 'y'], ['C1', 'fact-1-address-1600.jpg', FC_ST, 'x'],
+    ['C2', 'fact-2-hours-1600.jpg', FC_ST, 'x'], ['C3', 'fact-3-warranty-1600.jpg', FC_ST, 'x'],
+    ['C4', 'fact-4-fleet-1600.jpg', FC_ST, 'x'], ['D кнопка', 'btn-cta-1200.jpg', BN_ST, 'x'],
+  ];
+  for (const [tag, f, st, dir] of floorRows) {
+    const mp = files.mp[f]; if (!mp) { bad.push(`пол: мастер ${f} недоступен`); continue; }
+    const ls = layerStats(mp, st, dir, 1);
+    if (ls.mean - 17.8 < FLOOR_MEAN) bad.push(`пол видимости ${tag}: средняя ${ls.mean.toFixed(1)} − база 17,8 < ${FLOOR_MEAN} (фон не читается)`);
+    if (ls.spread < FLOOR_SPREAD) bad.push(`пол видимости ${tag}: разброс деталей ${ls.spread.toFixed(0)} < ${FLOOR_SPREAD} (фон залит)`);
+    if (opts.verbose) console.log(`info  пол ${tag}: средняя рендера ${ls.mean.toFixed(1)} (над базой +${(ls.mean - 17.8).toFixed(1)} ≥ ${FLOOR_MEAN}), разброс деталей ${ls.spread.toFixed(0)} ≥ ${FLOOR_SPREAD}`);
+  }
+  /* §2.5: полоса текста B1 темнее верха кадра ≥3 единицы на рендере */
+  {
+    const mp = files.mp['card-1-estimate-2400.jpg'];
+    if (mp) { const ls = layerStats(mp, F_ST, 'y', opts.bandMul ?? 1);
+      if (ls.band > ls.top - 3) bad.push(`§2.5: полоса текста B1 ${ls.band.toFixed(1)} не темнее верха ${ls.top.toFixed(1)} − 3`);
+      if (ls.bot > ls.band + 3) bad.push(`§2.5: низ карточки B1 ${ls.bot.toFixed(1)} светлее полосы текста ${ls.band.toFixed(1)} + 3 (скрим не монотонный)`);
+      if (opts.verbose) console.log(`info  §2.5 B1 рендер верх/полоса/низ: ${ls.top.toFixed(1)}/${ls.band.toFixed(1)}/${ls.bot.toFixed(1)} — полоса темнее верха на ${(ls.top - ls.band).toFixed(1)} (норма ≥3), низ темнее полосы на ${(ls.band - ls.bot).toFixed(1)}`); }
+  }
+  /* §2.2/2.3: сироты заголовка и плашки адреса — модель переносов, калиброванная
+     по замерам оркестратора (760 px → 95/85/18, 820 px → 88/96; плашка 99/12 → 53/57) */
+  const TITLE = '«АвтоТехСервис» на Западном: честно, по делу, с сметой до работ';
+  const FACTB = 'Ростов-на-Дону, ул. Портовая, 439';
+  const emW = (t, tab) => [...t].reduce((a, ch) => a + (ch === ' ' ? tab.sp : /[a-zа-яё]/i.test(ch) ? (ch === ch.toUpperCase() ? tab.up : tab.lo) : /\d/.test(ch) ? tab.dg : tab.pu), 0);
+  const wrap = (text, maxEm, tab) => { const words = text.split(' '); const lines = []; let cur = 0;
+    for (const w of words) { const we = emW(w, tab) + (cur ? tab.sp : 0);
+      if (cur && cur + we > maxEm) { lines.push(cur); cur = emW(w, tab); } else cur += we; }
+    lines.push(cur); return lines; };
+  const headM = C.match(/\.about \.sec-head\{max-width:(\d+)px\}/);
+  const headW = headM ? +headM[1] : 760;
+  const T_TAB = { lo: .74, up: .85, sp: .35, dg: .72, pu: .42 };
+  for (const vw of [1025, 1100, 1200, 1222, 1280, 1440, 1920]) {
+    const block = Math.min(headW, vw - 40);
+    const lines = wrap(TITLE, block / 36.8, T_TAB);
+    const lastFill = lines[lines.length - 1] * 36.8 / block;
+    if (lines.length > 2 || (lines.length === 2 && lastFill < 0.85) || (lines.length > 1 && lastFill < 0.45))
+      bad.push(`§2.2 сирота заголовка @${vw}: строк ${lines.length}, заполнение последней ${(lastFill * 100).toFixed(0)} %`);
+    if (opts.verbose && (vw === 1440 || vw === 1025)) console.log(`info  §2.2 @${vw}: строк ${lines.length}, заполнения ${lines.map(l => (l * 36.8 / block * 100).toFixed(0)).join('/')} %`);
+  }
+  const hasBal = /\.about \.fact b\{text-wrap:balance\}/.test(C);
+  const gapM = C.match(/\.facts--strip\{grid-template-columns:repeat\(4,1fr\);gap:(\d+)px/);
+  const gap = gapM ? +gapM[1] : 8;
+  const F_TAB = { lo: .606, up: .704, sp: .293, dg: .587, pu: .352 };
+  for (const [vw, plateW] of [[1025, (985 - 3 * gap) / 4], [1440, (1160 - 3 * gap) / 4]]) {
+    const content = plateW - 28;
+    if (hasBal) {
+      const total = emW(FACTB, F_TAB); const half = total / 2;
+      const words = FACTB.split(' '); let acc = 0, best = 0;
+      for (const w of words) { acc += emW(w, F_TAB) + F_TAB.sp; if (Math.abs(acc - half) < Math.abs(best - half) || !best) best = acc; }
+      const l1 = best, l2 = total - best;
+      if (Math.min(l1, l2) * 16 / content < 0.45) bad.push(`§2.3 сирота плашки @${vw}: заполнение строк ${(l1 * 16 / content * 100).toFixed(0)}/${(l2 * 16 / content * 100).toFixed(0)} %`);
+      else if (opts.verbose) console.log(`info  §2.3 @${vw} (плашка ${plateW.toFixed(0)} px, balance): заполнения строк ${(l1 * 16 / content * 100).toFixed(0)}/${(l2 * 16 / content * 100).toFixed(0)} % (норма ≥45)`);
+    } else {
+      const lines = wrap(FACTB, content / 16, F_TAB);
+      const minFill = Math.min(...lines.map(l => l * 16 / content));
+      if (minFill < 0.45) bad.push(`§2.3 сирота плашки @${vw}: строка с заполнением ${(minFill * 100).toFixed(0)} % (< 45, balance снят)`);
+    }
+  }
+  /* §2.4: дыра под фото — facts полосой ПОД сеткой, ширины плашек */
+  const gridStart = A.indexOf('class="about-grid"');
+  const figEnd = A.indexOf('</figure>', gridStart);
+  const stripPos = A.indexOf('facts--strip');
+  if (stripPos < figEnd) bad.push('§2.4: .facts не вынесены полосой под .about-grid (дыра под фото вернётся)');
+  const w1440 = (1160 - 3 * gap) / 4, w1025 = (985 - 3 * gap) / 4;
+  if (stripPos < figEnd) { /* facts в колонке: плашки 2×2 узкие */ }
+  else {
+    if (w1440 < 280) bad.push(`§2.4: плашка на 1440 = ${w1440.toFixed(0)} px < 280`);
+    if (w1025 < 240) bad.push(`§2.4: плашка на 1025 = ${w1025.toFixed(0)} px < 240`);
+  }
+  if (stripPos < figEnd) { const leftW = (985 - 48) * 1.05 / 2; const plate = (leftW - 14) / 2;
+    if (plate < 240) bad.push(`§2.4: плашка в левой колонке на 1025 = ${plate.toFixed(0)} px < 240`); }
+  if (!/\.facts--strip\{grid-template-columns:repeat\(4,1fr\)/.test(C)) bad.push('§2.4: .facts--strip не 4 в ряд при ≥1025');
+  if (!/@media \(max-width:1024px\)\{\.facts--strip\{grid-template-columns:1fr 1fr/.test(C)) bad.push('§2.4: .facts--strip не 2×2 на 641…1024');
+  if (!/@media \(max-width:640px\)\{\.facts--strip\{grid-template-columns:1fr\}/.test(C)) bad.push('§2.4: .facts--strip не 1 колонка на ≤640');
+
+  /* раунд 20 (A1): плашки — данные, карточки — обещания: заголовки не пересекаются.
+     Нормализация: нижний регистр, ё→е, только буквы/цифры; токены {S.*} подставляются
+     из site/src/server/settings.ts. Пересечение множеств пусто + Левенштейн > 6. */
+  {
+    const SET = readFileSync(join(HERE, '../src/server/settings.ts'), 'utf8');
+    const tok = (t) => t.replace(/\{S\.(\w+)\}/g, (m, k) => {
+      const re = new RegExp(`\\b${k}:\\s*'([^']*)'`); const mm = SET.match(re); return mm ? mm[1] : m; });
+    const norm = (t) => tok(t).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim();
+    const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+      for (let j = 0; j <= b.length; j++) d[0][j] = j;
+      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      return d[a.length][b.length]; };
+    const factsStart = A.indexOf('class="facts facts--strip"');
+    const featsStart = A.indexOf('<div class="feats">', factsStart);
+    const featsEnd = A.indexOf('</section>', featsStart);
+    const fb = [...A.slice(factsStart, featsStart).matchAll(/<div class="fact">[\s\S]*?<b>([^<]*)<\/b>/g)].map(m => norm(m[1]));
+    const fh = [...A.slice(featsStart, featsEnd).matchAll(/<h3>([^<]*)<\/h3>/g)].map(m => norm(m[1]));
+    if (fb.length !== 4 || fh.length !== 4) bad.push(`A1: заголовков плашек/карточек ${fb.length}/${fh.length}, ожидалось 4/4`);
+    const hit = fb.filter(x => fh.includes(x));
+    if (hit.length) bad.push(`A1: заголовки плашек и карточек совпадают: ${hit.join(', ')}`);
+    for (const x of fb) for (const y of fh) { const L = lev(x, y);
+      if (L <= 6) bad.push(`A1: заголовки «${x}» и «${y}» слишком близки (Левенштейн ${L} ≤ 6)`); }
+    if (opts.verbose) console.log(`info  A1: плашки [${fb.join(' | ')}] × карточки [${fh.join(' | ')}] — пересечений нет, мин. Левенштейн ${Math.min(...fb.flatMap(x => fh.map(y => lev(x, y))))}`);
+  }
   /* разметка */
   const cnt = (re) => (A.match(re) || []).length;
   if (cnt(/<div class="about-bg" aria-hidden="true">\s*<picture>/g) !== 1) bad.push('разметка: .about-bg c <picture> ≠ 1');
@@ -168,12 +329,13 @@ function gate({ css: C, astro: A, zones: z, files, geom }) {
 }
 
 async function collect() {
-  const files = { master: {}, raw: {}, deriv: {} };
+  const files = { master: {}, raw: {}, deriv: {}, mp: {} };
   for (const f of Object.keys(MASTERS)) {
     const p = join(R19, f);
     if (existsSync(p)) { const m = await sharp(p).metadata(); files.master[f] = { width: m.width, height: m.height }; }
     const rp = join(R19, f.replace('.jpg', '-raw.jpg'));
     if (existsSync(rp)) files.raw[f.replace('.jpg', '-raw.jpg')] = true;
+    if (existsSync(p)) files.mp[f] = await sharp(p).raw().toBuffer({ resolveWithObject: true });
   }
   for (const name of Object.keys(DERIV)) for (const fmt of ['avif', 'webp']) {
     const p = join(IMG, `${name}.${fmt}`);
@@ -185,7 +347,7 @@ async function collect() {
 }
 
 const files = await collect();
-const base = gate({ css, astro: ASTRO, zones, files, geom: GEOM });
+const base = gate({ css, astro: ASTRO, zones, files, geom: GEOM, verbose: true });
 for (const b of base) row(false, b);
 if (!base.length) row(true, `11 мастеров, ${Object.keys(DERIV).length * 2} производных, зоны, CSS и разметка — совпадают с заявленными`);
 
@@ -231,7 +393,18 @@ const mutants = [
     return gate({ css, astro: a, zones, files });
   }],
   ['рамка .55 вынесена из .about в глобальный .btn--ghost', () => gate({ css: css + '\n.btn--ghost{border-color:rgba(224,169,109,.55)}', astro: ASTRO, zones, files })],
-  ['у .fact-bg скрим 0,5', () => gate({ css: css.replace('.fact-bg::after{content:\'\';position:absolute;inset:0;background:rgba(11,20,16,.9)}', '.fact-bg::after{content:\'\';position:absolute;inset:0;background:rgba(11,20,16,.5)}'), astro: ASTRO, zones, files })],
+  ['у .fact-bg скрим 0,5', () => gate({ css: css.replace(/\.fact-bg::after\{[^}]*\}/, '.fact-bg::after{content:\'\';position:absolute;inset:0;background:rgba(11,20,16,.5)}'), astro: ASTRO, zones, files })],
+  /* раунд 19: семь новых мутантов пола/сирот/дыры */
+  ['скрим плашек обратно 0,90', () => gate({ css: css.replace(/\.fact-bg::after\{[^}]*\}/, '.fact-bg::after{content:\'\';position:absolute;inset:0;background:rgba(11,20,16,.9)}'), astro: ASTRO, zones, files })],
+  ['скрим кнопки 0,95', () => gate({ css: css.replace(/\.btn-bg::after\{[^}]*\}/, '.btn-bg::after{content:\'\';position:absolute;inset:0;background:rgba(11,20,16,.95)}'), astro: ASTRO, zones, files })],
+  ['object-position: 0 0 у плашек (C)', () => gate({ css: css.replace('.fact-bg img{object-fit:cover;object-position:50% 50%}', '.fact-bg img{object-fit:cover;object-position:0 0}'), astro: ASTRO, zones, files })],
+  ['.sec-head возвращён к 760 px', () => gate({ css: css.replace('.about .sec-head{max-width:820px}', '.about .sec-head{max-width:760px}'), astro: ASTRO, zones, files })],
+  ['.facts возвращены в левую колонку', () => { const m = ASTRO.match(/    <div class="facts facts--strip">[\s\S]*?<\/div>\n/); if (!m) return ['мутант не собрался'];
+    const a = ASTRO.replace(m[0], '').replace('<p class="u-mt24">', m[0].trim() + '\n      <p class="u-mt24">');
+    return gate({ css, astro: a, zones, files }); }],
+  ['заголовок карточки совпал с плашкой (A1)', () => gate({ css, astro: ASTRO.replace('<h3>Запись без живой очереди</h3>', '<h3>Гарантия в заказ-наряде</h3>'), zones, files })],
+  ['у .fact b убран text-wrap:balance', () => gate({ css: css.replace('.about .fact b{text-wrap:balance}', ''), astro: ASTRO, zones, files })],
+  ['карточка B1 с полосой ярче верха', () => gate({ css, astro: ASTRO, zones, files, bandMul: 5 })],
 ];
 let mOk = 0;
 for (const [name, fn] of mutants) {
