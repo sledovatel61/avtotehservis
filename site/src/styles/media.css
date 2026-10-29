@@ -1,5 +1,8 @@
 /* ---------- Медиазапросы ---------- */
 @media (max-width:1024px){
+  /* раунд 20 (A2): при схлопывании .about-grid мера колонки и фото ограничена */
+  .about-grid>*{max-width:680px}
+  .about-media{max-width:720px;margin-inline:auto}
   .tri{grid-template-columns:1fr;gap:14px}
   .tri-card{min-height:0}
   .about-grid,.est-grid,.svc-detail,.contacts-grid,.post-layout,.adm-grid{grid-template-columns:1fr;gap:30px}
@@ -68,3 +71,33 @@
   .carousel-track{transition:none}
 }
 
+
+/* ---------- раунд 20 (A2/B4): переопределения ПОСЛЕ исходных медиаблоков ---------- */
+@media (min-width:900px) and (max-width:1024px){
+  /* секция «О компании» на 1024 ≤ 1500 px: карточки в один ряд */
+  .feats{grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px}
+}
+@media (max-width:1024px){
+  .about{padding-block:56px}
+  .about-media{max-width:640px}   /* фактическая мера фото на планшете; предел задания 720 */
+  .about-grid{gap:26px}
+  .facts{margin-top:20px}
+}
+@media (max-width:960px){
+  /* about ≤ 1500 px и на 900: компактнее хром карточек и отступы секции */
+  .about{padding-block:48px}
+  .about-grid{gap:22px}
+  .facts{margin-top:14px}
+  .feat{padding:16px 14px}
+}
+@media (max-width:640px){
+  .est-panels{grid-template-columns:1fr;gap:16px}
+  /* секция на 390 ≤ 1450 px: компактнее хром панелей, кегли и тексты не тронуты */
+  .est-sec{padding-block:56px}
+  .est-sec .sec-head{margin-bottom:26px}
+  .est-sec .est-grid{gap:24px}
+  .est-step{padding:12px 16px}
+  .est-step p{line-height:1.5}
+  .est-step .n{font-size:40px;padding-bottom:6px;margin-bottom:6px}
+  .est-aside{padding:16px 18px 14px}
+}

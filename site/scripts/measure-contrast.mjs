@@ -103,10 +103,10 @@ row('641…1024 герой', `sub mist по худшему пикселю зон
 row('≤640 герой', 'h1 ivory на --night (текст под фото)', IVORY, NIGHT, 4.5);
 row('≤640 герой', 'sub mist на --night (текст под фото)', MIST, NIGHT, 4.5);
 
-/* 3) панель диагностики: градиент .78→.86 поверх cta-diag-960 */
-const diagBg = await worstAfter(join(IMG, 'cta-diag-960.webp'), (t) => 0.78 + 0.08 * t, [11, 20, 16]);
-row('панель диагностики', 'h3 brass по худшему пикселю фона', BRASS, diagBg, 7);
-row('панель диагностики', 'p mist по худшему пикселю фона', MIST, diagBg, 7);
+/* 3) раунд 20: тёмная CTA-панель «Как мы работаем»: градиент .78→.86 поверх est-aside-1000 */
+const diagBg = await worstAfter(join(IMG, 'est-aside-1000.webp'), (t) => 0.78 + 0.08 * t, [11, 20, 16]);
+row('aside «Как мы работаем»', 'h3 brass по худшему пикселю фона', BRASS, diagBg, 4.5);
+row('aside «Как мы работаем»', 'p mist по худшему пикселю фона', MIST, diagBg, 4.5);
 
 
 /* 4) РАУНД 17 (задание №19): карточки «Три направления» — худший пиксель В ЗОНЕ
@@ -220,13 +220,22 @@ for (const [key, file, H] of [['section_desktop', join(R19, 'sec-bg-2560.jpg'), 
 /* B: четыре карточки — полоса текста h3+p (y 791…1147 мастера) и иконка */
 const cardFiles = ['card-1-estimate-2400.jpg', 'card-2-warranty-2400.jpg', 'card-3-schedule-2400.jpg', 'card-4-fleet-2400.jpg'];
 const cardNames = ['B1 Смета', 'B2 Гарантия', 'B3 График', 'B4 Парк'];
+/* раунд 20: худший пиксель — по union фактических лин-боксов текста и bbox иконки
+   (zones.feats, снято рендером measure-feats-zones.mjs); подложка чипа .feat-ic
+   rgba(200,127,69,.14) учитывается в фоне иконки */
 for (let i = 0; i < 4; i++) {
   const f = join(R19, cardFiles[i]);
-  const band = await worstInZone(f, [Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1], [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
-  row(`карточка ${cardNames[i]}`, `h3 ivory по худшему пикселю полосы текста (${band.wx},${band.wy})`, IVORY, band.worst, 4.5);
-  row(`карточка ${cardNames[i]}`, `p mist по худшему пикселю полосы текста (${band.wx},${band.wy})`, MIST, band.worst, 4.5);
-  const ic = await worstInZone(f, [335, 181, 726, 571], [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
-  row(`карточка ${cardNames[i]}`, `штрих иконки brass по худшему пикселю зоны иконки (${ic.wx},${ic.wy})`, BRASS, ic.worst, 3);
+  const zr = (Z19.feats && Z19.feats[i]) || { text: { h3: [[Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1]], p: [[Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1]] }, icon: [335, 181, 726, 571] };
+  const worstOf = async (rects) => { let b = null;
+    for (const r of rects) { const c = await worstInZone(f, r, [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
+      if (!b || lum(c.worst) > lum(b.worst)) b = c; } return b; };
+  const band = await worstOf(zr.text.h3);
+  const bandP = await worstOf(zr.text.p);
+  row(`карточка ${cardNames[i]}`, `h3 ivory по худшему пикселю union строк h3 (${band.wx},${band.wy})`, IVORY, band.worst, 4.5);
+  row(`карточка ${cardNames[i]}`, `p mist по худшему пикселю union строк p (${bandP.wx},${bandP.wy})`, MIST, bandP.worst, 4.5);
+  const ic0 = await worstInZone(f, zr.icon, [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
+  const ic = { ...ic0, worst: over(ic0.worst, 0.26, [11, 20, 16]) };
+  row(`карточка ${cardNames[i]}`, `штрих иконки brass по худшему пикселю иконки с чипом (${ic.wx},${ic.wy})`, BRASS, ic.worst, 3);
 }
 /* C: четыре плашки — зона x221…1379 y151…382, градиент 95deg по X */
 const factFiles = ['fact-1-address-1600.jpg', 'fact-2-hours-1600.jpg', 'fact-3-warranty-1600.jpg', 'fact-4-fleet-1600.jpg'];

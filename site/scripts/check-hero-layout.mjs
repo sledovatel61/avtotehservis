@@ -266,8 +266,8 @@ await (async () => {
     ['strip-sign.webp', 1200, 500, 60], ['strip-bay.webp', 1200, 500, 60], ['strip-gates.webp', 1200, 500, 60],
     ['strip-sign.avif', 1200, 500, 60], ['strip-bay.avif', 1200, 500, 60], ['strip-gates.avif', 1200, 500, 60],
     ['about-service-1600.webp', 1600, 1000, 160], ['about-service-1600.avif', 1600, 1000, 90],
-    ['cta-diag-960.webp', 960, 540, 45], ['cta-diag-640.webp', 640, 360, 45],
-    ['cta-diag-960.avif', 960, 540, 45], ['cta-diag-640.avif', 640, 360, 45],
+    ['est-aside-1000.webp', 1000, 1167, 24], ['est-aside-640.webp', 640, 747, 12],
+    ['est-aside-1000.avif', 1000, 1167, 18], ['est-aside-640.avif', 640, 747, 8],
   ]) {
     const p = join(IMG, f);
     if (!existsSync(p)) { chk(f, false, 'нет файла', `${w}×${h}, ≤${cap} КБ`); continue; }

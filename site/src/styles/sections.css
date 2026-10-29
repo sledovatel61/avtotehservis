@@ -122,33 +122,58 @@
 .feat:hover{transform:translateY(-3px);border-color:rgba(224,169,109,.45)}
 .feat-ic{
   width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-  background:rgba(200,127,69,.14);border:1px solid rgba(224,169,109,.35);margin-bottom:16px;
+  background:rgba(11,20,16,.26);border:1px solid rgba(224,169,109,.35);margin-bottom:16px;
 }
 .feat-ic svg{width:26px;height:26px;stroke:var(--brass)}
 .feat h3{font-family:var(--font-text);font-weight:700;font-size:16.5px;letter-spacing:0;margin-bottom:.4em}
 .feat p{color:var(--mist);font-size:14.5px}
 
 /* ---------- Смета до ремонта (персональная секция A5, тёплый свет) ---------- */
-.est-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
-.est-steps{display:grid;gap:0;counter-reset:est}
-.est-step{display:flex;gap:18px;padding:18px 0;border-bottom:1px solid rgba(11,20,16,.12)}
-.est-step:first-child{padding-top:0}
-.est-step:last-child{border-bottom:0}
-.est-step .n{
-  counter-increment:est;flex-shrink:0;width:44px;height:44px;border-radius:50%;
-  background:var(--night);color:var(--brass);font-family:var(--font-display);font-weight:600;font-size:16px;
-  display:flex;align-items:center;justify-content:center;
+.est-sec{--est-ink:#7A4620;position:relative;isolation:isolate;overflow:hidden}
+.est-sec .eyebrow{color:var(--est-ink)}   /* раунд 20 (B5): локальная медь темнее глобальной */
+.est-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background-color:var(--ivory)}
+.est-bg picture,.est-bg img{display:block;width:100%;height:100%}
+.est-bg img{object-fit:cover;object-position:50% 50%}
+.est-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(244,239,230,.62) 0%,rgba(244,239,230,.68) 55%,rgba(244,239,230,.74) 100%)}
+.est-sec>.container{position:relative;z-index:2}
+.est-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:stretch}
+.est-panels{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:16px;counter-reset:est}
+.est-step{
+  position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;
+  border:1px solid rgba(11,20,16,.10);border-radius:var(--r);padding:22px 22px 20px;
+  box-shadow:0 10px 30px rgba(11,20,16,.06);transition:transform 300ms var(--ease),box-shadow 300ms var(--ease);
 }
-.est-step .n::before{content:counter(est,decimal-leading-zero)}
+.est-step::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);pointer-events:none;z-index:2}
+.est-bg-p{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit;background-color:var(--ivory)}
+.est-bg-p picture,.est-bg-p img{display:block;width:100%;height:100%}
+.est-bg-p img{object-fit:cover;object-position:50% 50%;transition:transform 600ms var(--ease)}
+.est-bg-p::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(244,239,230,.72) 0%,rgba(244,239,230,.76) 60%,rgba(244,239,230,.78) 100%)}
+.est-step>*:not(.est-bg-p){position:relative;z-index:1}
+.est-step .n{
+  counter-increment:est;display:block;font-family:var(--font-display);font-weight:600;font-size:44px;line-height:1;
+  color:var(--copper-dark);border-bottom:1px solid rgba(11,20,16,.08);padding-bottom:10px;margin-bottom:12px;
+  transition:color 300ms var(--ease),border-color 300ms var(--ease);
+}
+.est-step .n::before{content:counter(est)}
+.est-step:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(11,20,16,.10)}
+.est-step:hover .n{color:var(--copper);border-color:var(--copper)}
+.est-step:hover .est-bg-p img{transform:scale(1.02)}
 .est-step h3{font-family:var(--font-text);font-weight:700;font-size:17px;color:var(--night);margin:0 0 .25em;letter-spacing:0}
 .est-step p{color:#3F4E47;font-size:15px;margin:0}
 .est-aside{
-  background:linear-gradient(rgba(11,20,16,.78),rgba(11,20,16,.86)),url('/img/cta-diag-960.webp') center/cover no-repeat var(--night);color:var(--ivory);border-radius:var(--r);padding:34px 32px;
-  border:1px solid rgba(224,169,109,.3);box-shadow:0 24px 60px rgba(11,20,16,.35);
+  position:relative;isolation:isolate;overflow:hidden;align-self:stretch;display:flex;flex-direction:column;
+  color:var(--ivory);border-radius:var(--r);padding:30px 30px 26px;
+  border:1px solid rgba(224,169,109,.3);box-shadow:0 24px 60px rgba(11,20,16,.35);background-color:var(--night);
 }
+.est-aside-bg{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit}
+.est-aside-bg picture,.est-aside-bg img{display:block;width:100%;height:100%}
+.est-aside-bg img{object-fit:cover;object-position:50% 50%}
+.est-aside-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,20,16,.78) 0%,rgba(11,20,16,.86) 100%)}
+.est-aside>*:not(.est-aside-bg){position:relative;z-index:1}
 .est-aside h3{color:var(--brass);margin-bottom:.5em}
 .est-aside p{color:var(--mist);font-size:15.5px}
-.est-aside .btn{margin-top:8px}
+.est-cta{margin-top:auto;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.est-tel{margin:0;font-size:13px}
 
 /* ---------- Слайдер услуг ---------- */
 .slider-sec .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;max-width:none;flex-wrap:wrap}
@@ -287,7 +312,10 @@
 @media (max-width:640px){.strip-item{aspect-ratio:16/10}}
 /* раунд 18: печать и экономия данных для новых слоёв — в конце файла, после баз */
 @media (prefers-reduced-data:reduce){.about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}}
-@media print{
+@media (prefers-reduced-motion:reduce){.est-step:hover{transform:none}.est-step:hover .est-bg-p img{transform:none}}
+/* раунд 20 (B7): экономия трафика — слои светлой секции скрыты, фолбэк --ivory/--night */
+@media (prefers-reduced-data:reduce){.est-bg,.est-bg-p,.est-aside-bg{display:none}}
+@media print{.est-bg,.est-bg-p,.est-aside-bg{display:none}.est-step{background:#fff;border:1px solid #000;box-shadow:none}.est-step::after{box-shadow:none}.est-step h3,.est-step p,.est-step .n{color:#000}.est-aside{background:#fff;border:1px solid #000;color:#000;box-shadow:none}.est-aside h3,.est-aside p{color:#000}
   .about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}
   .about{background:#fff}
   .about::before{display:none}
