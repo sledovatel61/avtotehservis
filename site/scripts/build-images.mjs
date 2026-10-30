@@ -101,6 +101,12 @@ const CAPS = {
   'est-p3-640': { avif: 6, webp: 9 },
   'est-p4-640': { avif: 6, webp: 9 },
   'est-aside-1000': { avif: 18, webp: 24 },
+  /* раунд 21: «Услуги» — фон секции и шесть карточек */
+  'svc-bg-1600': { avif: 15, webp: 30 }, 'svc-bg-m-960': { avif: 11, webp: 20 },
+  'svc-1-640': { avif: 5, webp: 7 }, 'svc-2-640': { avif: 5, webp: 7 }, 'svc-3-640': { avif: 5, webp: 7 },
+  'svc-4-640': { avif: 5, webp: 7 }, 'svc-5-640': { avif: 5, webp: 7 }, 'svc-6-640': { avif: 5, webp: 7 },
+  'svc-1-960': { avif: 7, webp: 9 }, 'svc-2-960': { avif: 7, webp: 9 }, 'svc-3-960': { avif: 7, webp: 9 },
+  'svc-4-960': { avif: 7, webp: 9 }, 'svc-5-960': { avif: 7, webp: 9 }, 'svc-6-960': { avif: 7, webp: 9 },
   'est-aside-640': { avif: 8, webp: 12 },
   /* раунд 12, патч #62: слайды 2–3 в ровно 16:9 (кроп 0 px в рамке героя) */
   'hero-tyre-2032': { avif: 120, webp: 120 },
@@ -632,6 +638,61 @@ async function main() {
     ...[0, 1, 2, 3].map(i => encodeSet(`est-p${i + 1}-640`, sharp(panelMasters[i]).resize(640, 480), 640, 480, false)),
     encodeSet('est-aside-1000', sharp(asideMaster).resize(1000, 1167), 1000, 1167, false),
     encodeSet('est-aside-640', sharp(asideMaster).resize(640, 747), 640, 747, false),
+  ])) report.push(...r);
+
+  /* ----- 10c. раунд 21 (задание №23): фон секции «Услуги» и фактуры карточек ----- */
+  const R21 = join(HERE, '../../docs/photos-source/r21-svc');
+  const lift = async (file, add) => {   /* AI-мастер: аддитивный подъём средней, разброс сохранён */
+    const im = await sharp(file).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let i = 0; i < d.length; i += c) for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] + add)));
+    /* ПРИЁМКА КРУГА 21: раньше имя выводилось только для *-raw.jpg, а gen-*.jpg писался
+       сам в себя — каждый прогон добавлял яркость к мастеру (12 → +16 → …) и портил исходник.
+       Теперь выход всегда отдельный файл. */
+    const out = file.replace(/(\.jpe?g)$/i, '-lift.jpg');
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  };
+  const tyreM = await lift(join(R21, 'tyre-raw.jpg'), 11);   /* 29.3 → ~40 */
+  const oilM = await lift(join(R21, 'oil-raw.jpg'), 37);     /* 26.9 → ~64 */
+  /* раунд 21, приёмка оркестратора: фон — фото НЕ разрушаем. Раньше каждый пиксель заменялся
+     средним по своему столбцу (target = ramp + colMean[x] − gMean): фактура исчезала,
+     оставались вертикальные полосы и хроматические разводы. Теперь — только экспозиция:
+     затемнение постоянным множителем + мягкая вертикальная виньетка, фотография цела. */
+  const bgExpose = async () => {
+    const im = await sharp(join(R21, 'bg-raw.jpg')).resize(1600, 900, { fit: 'cover', position: 'centre' })
+      .modulate({ brightness: 0.68, saturation: 0.94 }).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let y = 0; y < h; y++) {
+      const v = 1 - 0.26 * (y / (h - 1));            /* верх светлее, низ уходит в тень */
+      for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+        for (let q = 0; q < 3; q++) d[i + q] = Math.min(255, Math.round(d[i + q] * v)); }
+    }
+    const out = join(R21, 'bg-exposed.jpg');
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 94 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  };
+  const bgMaster = await bgExpose();
+  /* фактуры карточек: 2 AI-кадра круга + 4 новых AI-кадра приёмки (процедурные синтезы
+     «электрики» и «болгарки» были шумом, а не материалом) */
+  /* подъём подобран по фактическим средним 640×480-кропов мастеров. Видимые в кадре на 1440 —
+     svc-1 (шиномонтаж 43), svc-4 (ТО/масло 65), svc-6 (диагностика 55): попарная Δ 11…22
+     (было 43 / 65 / 44 — «Шиномонтаж» и «Диагностика» сливались по яркости). */
+  const CARD_M = [tyreM,
+    await lift(join(R21, 'gen-bal.jpg'), 16),
+    await lift(join(R21, 'gen-repair.jpg'), 0),
+    oilM,
+    await lift(join(R21, 'gen-susp.jpg'), 12),
+    await lift(join(R21, 'gen-elec.jpg'), 30)];
+  for (const r of await Promise.all([
+    encodeSet('svc-bg-1600', sharp(bgMaster).resize(1500, 844), 1500, 844, false),
+    encodeSet('svc-bg-m-960', sharp(bgMaster).resize(960, 1200, { fit: 'cover' }), 960, 1200, false),
+    ...CARD_M.flatMap((m, i) => [
+      encodeSet(`svc-${i + 1}-640`, sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
+      encodeSet(`svc-${i + 1}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
+    ]),
   ])) report.push(...r);
 
   /* ----- 11. текстура ≤100 КБ ----- */

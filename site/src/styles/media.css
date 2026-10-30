@@ -101,3 +101,18 @@
   .est-step .n{font-size:34px;padding-bottom:4px;margin-bottom:6px}
   .est-aside{padding:16px 18px 14px}
 }
+
+/* ---------- раунд 21 (задание №23): стрелки карусели «Услуги» ---------- */
+@media (min-width:1280px){
+  .svc-body h3{font-size:19px}
+}
+@media (max-width:1023px){
+  /* своя строка, но по правому краю контейнера */
+  .slider-sec .sec-head{flex-wrap:wrap}
+  .slider-sec .slider-nav{width:auto;margin-left:auto;justify-content:flex-end}
+}
+@media (max-width:640px){
+  .slider-hint{display:block}
+  .slider-sec .slider-nav{width:auto;gap:10px;margin-left:auto}
+  .slider-sec .hero-arrow{width:44px;height:44px}
+}

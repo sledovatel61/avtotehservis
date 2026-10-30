@@ -138,3 +138,18 @@ A6 описал оба (major B и D) — но по мастерам и моде
 - `site/data/steps-geom.json` — перегенерирован из сборки;
 - `docs/photos-source/r20-steps/*` — 6 мастеров и 22 производных пересобраны;
 - `evaluation/assets/r20-steps/review-*.jpg` — итоговые рендеры 1440 и 390 и «О компании».
+
+## Публикация на GitHub Pages (29.10, после приёмки)
+
+Пользователь 29.10 18:13 увидел на `https://sledovatel61.github.io/avtotehservis/` разметку круга 18:
+публичная ветка не обновлялась после `6a6089b` (его скрин — `evaluation/assets/round20-client/client-181307.jpg`).
+
+Опубликовано дерево приёмки `47941e8` + деплой-файлы (`workflow` и `site/deploy/github-pages.md`,
+ветка-сирота без общего предка):
+
+- `preview/github-pages`: `6a6089b` → **`e9baf24`**;
+- run GitHub Actions `40901059610` (`Publish client preview`) — **success**, deployment `e9baf24`;
+- живая главная отдаёт новую секцию: `est-bg-960.webp` + панели `est-p1…p4-640.webp`;
+- внутренняя `/appointment` открывается, гейт `check-pages.mjs` внутри workflow прошёл (job success).
+
+Правило на будущее: публичную ветку обновлять сразу после каждой приёмки, до сообщения пользователю.
