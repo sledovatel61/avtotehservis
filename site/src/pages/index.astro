@@ -7,6 +7,10 @@ import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
 const services = listHomeServices();
+const SVC_IMG: Record<string, string> = {
+  shinomontazh: 'svc-1', balansirovka: 'svc-2', 'remont-shin': 'svc-3',
+  'to-maslo': 'svc-4', 'hodovaya-tormoza': 'svc-5', elektrika: 'svc-6',
+};
 const cases = listPublishedCases(6);
 const reviews = listPublishedReviews(8);
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
@@ -286,6 +290,14 @@ const jsonLd = {
   </div>
 </section>
 <section class="sec sec--deep slider-sec" aria-labelledby="svc-h">
+  <div class="svc-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" srcset="/img/svc-bg-m-960.avif" type="image/avif">
+      <source media="(max-width:640px)" srcset="/img/svc-bg-m-960.webp" type="image/webp">
+      <source srcset="/img/svc-bg-1600.avif" type="image/avif">
+      <img src="/img/svc-bg-1600.webp" alt="" width="1600" height="900" loading="lazy" decoding="async">
+    </picture>
+  </div>
   <div class="container">
     <div class="sec-head reveal">
       <div>
@@ -293,19 +305,29 @@ const jsonLd = {
         <h2 id="svc-h">Что делаем — без цен, со сметой по факту осмотра</h2>
       </div>
       <div class="slider-nav">
+        <span class="slider-hint" aria-hidden="true">листайте</span>
         <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие услуги">←</button>
         <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие услуги">→</button>
       </div>
     </div>
-    <div class="carousel reveal" data-carousel>
+    <div class="carousel reveal" data-carousel data-live-word="Услуга">
       <div class="carousel-win">
         <div class="carousel-track">
-          {services.map((sv) => (
+          {services.map((sv) => {
+            const k = SVC_IMG[sv.slug] ?? 'svc-1';
+            return (
             <a class="svc-card" href={`/services/${sv.slug}`}>
-              <span class="svc-img"><img src={sv.icon ?? '/img/svc-1.svg'} alt="" aria-hidden="true" width="800" height="600" loading="lazy" decoding="async"></span>
+              <span class="svc-img">
+                <picture>
+                  <source type="image/avif" srcset={`/img/${k}-640.avif 640w, /img/${k}-960.avif 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                  <source type="image/webp" srcset={`/img/${k}-640.webp 640w, /img/${k}-960.webp 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                  <img src={`/img/${k}-640.webp`} alt="" aria-hidden="true" width="800" height="600" loading="lazy" decoding="async">
+                </picture>
+              </span>
               <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
             </a>
-          ))}
+            );
+          })}
           </div>
       </div>
     </div>
