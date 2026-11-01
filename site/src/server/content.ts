@@ -80,6 +80,6 @@ export function coverInfo(row: { cover_media_id: string | null; cover_static: st
     }
   }
   const src = row.cover_static ?? fallbackSrc;
-  return { src, lg: src, srcset: null, alt: staticAlt ?? `${title} — фото появится после съёмки` };
+  return { src, lg: src, srcset: null, alt: staticAlt ?? title };
 }
 

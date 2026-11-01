@@ -335,6 +335,33 @@
 @media (max-width:1024px){.strip{grid-template-columns:1fr}.strip-item{aspect-ratio:21/9}}
 @media (max-width:640px){.strip-item{aspect-ratio:16/10}}
 /* раунд 18: печать и экономия данных для новых слоёв — в конце файла, после баз */
+/* ---------- раунд 22 (задание №24): страница «О компании» — фоны, медиа, карточки ---------- */
+.page-head{position:relative;overflow:hidden}
+.page-head>.container{position:relative;z-index:2}
+section[aria-labelledby="ab-text-h"]{position:relative;overflow:hidden;border-top:1px solid var(--line)}
+section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
+.abh-bg,.ab-feats-bg,.ab-text-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.abh-bg img,.ab-feats-bg img,.ab-text-bg img{width:100%;height:100%;object-fit:cover}
+.abh-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,20,16,.18) 0%,rgba(11,20,16,.34) 100%)}
+.ab-feats{position:relative;border-top:1px solid var(--line)}
+.ab-feats-bg::after{content:'';position:absolute;inset:0;background:rgba(11,20,16,.34)}
+.ab-text-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,20,16,.14) 0%,rgba(11,20,16,.2) 55%,rgba(11,20,16,.24) 100%)}
+.ab-feats>.container{position:relative;z-index:2}
+.about-media{margin:0;width:100%}
+.about-media img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r)}
+.about-media figcaption{margin-top:10px;color:var(--mist);font-size:13px;line-height:1.45}
+.feat{position:relative}
+.feat-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
+.feat-bg img{width:100%;height:100%;object-fit:cover}
+.feat-bg::after{content:'';position:absolute;inset:0;background:rgba(11,20,16,.66)}
+.feat .feat-ic,.feat h3,.feat p{position:relative;z-index:2}
+.ab-acc summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+.ab-acc summary::-webkit-details-marker{display:none}
+.ab-acc summary::before{content:'＋';color:var(--brass);font-size:18px;line-height:1}
+.ab-acc[open] summary::before{content:'−'}
+.ab-acc summary h2{margin:0}
+.ab-acc summary:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:6px}
+.ab-aside-tag{display:inline-block;margin-bottom:10px;padding:3px 10px;border:1px solid rgba(224,169,109,.4);border-radius:999px;color:var(--brass);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
 @media (prefers-reduced-data:reduce){.about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}}
 @media (prefers-reduced-motion:reduce){.est-step:hover{transform:none}.est-step:hover .est-bg-p img{transform:none}}
 /* раунд 20 (B7): экономия трафика — слои светлой секции скрыты, фолбэк --ivory/--night */
@@ -348,3 +375,5 @@
   .about .lead,.about .eyebrow,.about h2,.about .fact b,.about .fact span{color:#000}
   .about .btn{color:#000;border-color:#000}
 }
+@media (prefers-reduced-data:reduce){.abh-bg,.ab-feats-bg,.ab-text-bg,.feat-bg{display:none}}
+@media print{.abh-bg,.ab-feats-bg,.ab-text-bg,.feat-bg{display:none}}

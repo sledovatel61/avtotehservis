@@ -7,10 +7,7 @@ import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
 const services = listHomeServices();
-const SVC_IMG: Record<string, string> = {
-  shinomontazh: 'svc-1', balansirovka: 'svc-2', 'remont-shin': 'svc-3',
-  'to-maslo': 'svc-4', 'hodovaya-tormoza': 'svc-5', elektrika: 'svc-6',
-};
+import { SVC_IMG } from '../server/svc-img.ts';
 const cases = listPublishedCases(6);
 const reviews = listPublishedReviews(8);
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
@@ -294,6 +291,12 @@ const jsonLd = {
     <picture>
       <source media="(max-width:640px)" srcset="/img/svc-bg-m-960.avif" type="image/avif">
       <source media="(max-width:640px)" srcset="/img/svc-bg-m-960.webp" type="image/webp">
+      <source media="(max-width:900px)" srcset="/img/svc-bg-960.avif" type="image/avif">
+      <source media="(max-width:900px)" srcset="/img/svc-bg-960.webp" type="image/webp">
+      <source media="(max-width:1024px)" srcset="/img/svc-bg-1024.avif" type="image/avif">
+      <source media="(max-width:1024px)" srcset="/img/svc-bg-1024.webp" type="image/webp">
+      <source media="(max-width:1280px)" srcset="/img/svc-bg-1280.avif" type="image/avif">
+      <source media="(max-width:1280px)" srcset="/img/svc-bg-1280.webp" type="image/webp">
       <source srcset="/img/svc-bg-1600.avif" type="image/avif">
       <img src="/img/svc-bg-1600.webp" alt="" width="1600" height="900" loading="lazy" decoding="async">
     </picture>

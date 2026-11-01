@@ -1,0 +1,633 @@
+{
+ "widths": {
+  "390": {
+   "head": {
+    "x": 0,
+    "y": 181.125,
+    "w": 390,
+    "h": 473.96875
+   },
+   "feats": {
+    "x": 0,
+    "y": 1988.703125,
+    "w": 390,
+    "h": 1019.140625
+   },
+   "textH": 1334,
+   "media": {
+    "w": 348,
+    "nat": 358,
+    "sel": 480,
+    "colRatio": 0.99
+   },
+   "rateNotes": 1,
+   "coverHead": {
+    "w": 100,
+    "h": 99.8
+   },
+   "coverFeats": {
+    "w": 100,
+    "h": 99.9
+   },
+   "coverText": {
+    "w": 100,
+    "h": 99.9
+   },
+   "headBg": {
+    "mean": 36.6,
+    "spread": 234.9,
+    "thirds": [
+     43,
+     31.1,
+     35.8
+    ],
+    "detailX": 3.37,
+    "detailY": 3.12
+   },
+   "featsBg": {
+    "mean": 42.4,
+    "spread": 144.1,
+    "thirds": [
+     49.3,
+     35.3,
+     39.9
+    ],
+    "detailX": 2.81,
+    "detailY": 1.87
+   },
+   "textBg": {
+    "mean": 37.4,
+    "spread": 204.1,
+    "thirds": [
+     43.8,
+     31.3,
+     37
+    ],
+    "detailX": 2.53,
+    "detailY": 1.47
+   },
+   "featZones": [
+    {
+     "mean": 61,
+     "spread": 102,
+     "thirds": [
+      41.3,
+      81.5,
+      60.2
+     ],
+     "detailX": 1.64,
+     "detailY": 1.29
+    },
+    {
+     "mean": 35.6,
+     "spread": 138.8,
+     "thirds": [
+      35.6,
+      40.6,
+      30.5
+     ],
+     "detailX": 2.08,
+     "detailY": 1.85
+    },
+    {
+     "mean": 51.1,
+     "spread": 119.9,
+     "thirds": [
+      52.7,
+      49.7,
+      51
+     ],
+     "detailX": 2.33,
+     "detailY": 1.67
+    },
+    {
+     "mean": 43.9,
+     "spread": 149.3,
+     "thirds": [
+      35.8,
+      59,
+      36.9
+     ],
+     "detailX": 1.88,
+     "detailY": 3.7
+    }
+   ]
+  },
+  "768": {
+   "head": {
+    "x": 0,
+    "y": 147.4375,
+    "w": 768,
+    "h": 340.53125
+   },
+   "feats": {
+    "x": 0,
+    "y": 1933.34375,
+    "w": 768,
+    "h": 589.28125
+   },
+   "textH": 1445,
+   "media": {
+    "w": 718,
+    "nat": 706,
+    "sel": 720,
+    "colRatio": 1.06
+   },
+   "rateNotes": 1,
+   "coverHead": {
+    "w": 100,
+    "h": 99.7
+   },
+   "coverFeats": {
+    "w": 100,
+    "h": 99.8
+   },
+   "coverText": {
+    "w": 100,
+    "h": 99.9
+   },
+   "headBg": {
+    "mean": 34.3,
+    "spread": 235.2,
+    "thirds": [
+     41.4,
+     29,
+     32.4
+    ],
+    "detailX": 3.07,
+    "detailY": 2.3
+   },
+   "featsBg": {
+    "mean": 38,
+    "spread": 159.5,
+    "thirds": [
+     45.2,
+     31.6,
+     36.9
+    ],
+    "detailX": 1.45,
+    "detailY": 2.04
+   },
+   "textBg": {
+    "mean": 37.5,
+    "spread": 200.6,
+    "thirds": [
+     43.9,
+     31.5,
+     37.1
+    ],
+    "detailX": 1.62,
+    "detailY": 1.41
+   },
+   "featZones": [
+    {
+     "mean": 61.3,
+     "spread": 135.5,
+     "thirds": [
+      41.7,
+      82.3,
+      59.8
+     ],
+     "detailX": 1.55,
+     "detailY": 1.24
+    },
+    {
+     "mean": 34.8,
+     "spread": 145.4,
+     "thirds": [
+      33.7,
+      40.3,
+      30.4
+     ],
+     "detailX": 1.93,
+     "detailY": 1.93
+    },
+    {
+     "mean": 51,
+     "spread": 115.4,
+     "thirds": [
+      52.3,
+      50.1,
+      50.6
+     ],
+     "detailX": 2.11,
+     "detailY": 1.61
+    },
+    {
+     "mean": 42.1,
+     "spread": 129.2,
+     "thirds": [
+      32.8,
+      58.1,
+      35.5
+     ],
+     "detailX": 1.68,
+     "detailY": 3.72
+    }
+   ]
+  },
+  "1024": {
+   "head": {
+    "x": 0,
+    "y": 143.4375,
+    "w": 1024,
+    "h": 367.40625
+   },
+   "feats": {
+    "x": 0,
+    "y": 1990.703125,
+    "w": 1024,
+    "h": 562.28125
+   },
+   "textH": 1480,
+   "media": {
+    "w": 638,
+    "nat": 471,
+    "sel": 480,
+    "colRatio": 0.94
+   },
+   "rateNotes": 1,
+   "coverHead": {
+    "w": 100,
+    "h": 99.7
+   },
+   "coverFeats": {
+    "w": 100,
+    "h": 99.8
+   },
+   "coverText": {
+    "w": 100,
+    "h": 99.9
+   },
+   "headBg": {
+    "mean": 33.8,
+    "spread": 235,
+    "thirds": [
+     40.7,
+     28,
+     32.8
+    ],
+    "detailX": 2.54,
+    "detailY": 1.87
+   },
+   "featsBg": {
+    "mean": 40.8,
+    "spread": 163.9,
+    "thirds": [
+     47.2,
+     34.4,
+     40.4
+    ],
+    "detailX": 1.61,
+    "detailY": 2.02
+   },
+   "textBg": {
+    "mean": 38.2,
+    "spread": 200.8,
+    "thirds": [
+     44.9,
+     31.9,
+     37.6
+    ],
+    "detailX": 1.38,
+    "detailY": 1.23
+   },
+   "featZones": [
+    {
+     "mean": 74.1,
+     "spread": 133.1,
+     "thirds": [
+      57.7,
+      84.7,
+      79.8
+     ],
+     "detailX": 1.08,
+     "detailY": 0.67
+    },
+    {
+     "mean": 36.1,
+     "spread": 128.2,
+     "thirds": [
+      34.4,
+      41.1,
+      32.7
+     ],
+     "detailX": 2.13,
+     "detailY": 2.05
+    },
+    {
+     "mean": 54.8,
+     "spread": 103.9,
+     "thirds": [
+      54.9,
+      53.4,
+      56.2
+     ],
+     "detailX": 2.01,
+     "detailY": 1.95
+    },
+    {
+     "mean": 48.7,
+     "spread": 149.3,
+     "thirds": [
+      41.4,
+      62.8,
+      41.9
+     ],
+     "detailX": 1.99,
+     "detailY": 4.79
+    }
+   ]
+  },
+  "1280": {
+   "head": {
+    "x": 0,
+    "y": 143.4375,
+    "w": 1280,
+    "h": 374.90625
+   },
+   "feats": {
+    "x": 0,
+    "y": 1555.96875,
+    "w": 1280,
+    "h": 528.828125
+   },
+   "textH": 1038,
+   "media": {
+    "w": 526,
+    "nat": 526,
+    "sel": 720,
+    "colRatio": 0.9
+   },
+   "rateNotes": 1,
+   "coverHead": {
+    "w": 100,
+    "h": 99.7
+   },
+   "coverFeats": {
+    "w": 100,
+    "h": 99.8
+   },
+   "coverText": {
+    "w": 100,
+    "h": 99.9
+   },
+   "headBg": {
+    "mean": 33,
+    "spread": 235.2,
+    "thirds": [
+     39.1,
+     27,
+     32.8
+    ],
+    "detailX": 2.21,
+    "detailY": 1.56
+   },
+   "featsBg": {
+    "mean": 42.9,
+    "spread": 169.1,
+    "thirds": [
+     48.7,
+     38.2,
+     41.7
+    ],
+    "detailX": 1.5,
+    "detailY": 1.61
+   },
+   "textBg": {
+    "mean": 36,
+    "spread": 200.7,
+    "thirds": [
+     42.1,
+     30.1,
+     35.6
+    ],
+    "detailX": 1.18,
+    "detailY": 1.05
+   },
+   "featZones": [
+    {
+     "mean": 62.3,
+     "spread": 112.5,
+     "thirds": [
+      41.7,
+      83.8,
+      61.3
+     ],
+     "detailX": 1.77,
+     "detailY": 1.29
+    },
+    {
+     "mean": 35.3,
+     "spread": 107.6,
+     "thirds": [
+      35.1,
+      40.7,
+      30
+     ],
+     "detailX": 2.16,
+     "detailY": 2.17
+    },
+    {
+     "mean": 54.2,
+     "spread": 90.9,
+     "thirds": [
+      54.7,
+      53.1,
+      54.7
+     ],
+     "detailX": 2.08,
+     "detailY": 2.16
+    },
+    {
+     "mean": 45.7,
+     "spread": 167.1,
+     "thirds": [
+      40.2,
+      57.6,
+      39
+     ],
+     "detailX": 2.08,
+     "detailY": 4.98
+    }
+   ]
+  },
+  "1440": {
+   "head": {
+    "x": 0,
+    "y": 143.4375,
+    "w": 1440,
+    "h": 374.90625
+   },
+   "feats": {
+    "x": 0,
+    "y": 1555.96875,
+    "w": 1440,
+    "h": 528.828125
+   },
+   "textH": 1038,
+   "media": {
+    "w": 526,
+    "nat": 526,
+    "sel": 720,
+    "colRatio": 0.9
+   },
+   "rateNotes": 1,
+   "coverHead": {
+    "w": 100,
+    "h": 99.7
+   },
+   "coverFeats": {
+    "w": 100,
+    "h": 99.8
+   },
+   "coverText": {
+    "w": 100,
+    "h": 99.9
+   },
+   "headBg": {
+    "mean": 33.1,
+    "spread": 156.2,
+    "thirds": [
+     39.2,
+     27,
+     33
+    ],
+    "detailX": 1.96,
+    "detailY": 1.41
+   },
+   "featsBg": {
+    "mean": 41.8,
+    "spread": 167.9,
+    "thirds": [
+     45.7,
+     37.4,
+     41.2
+    ],
+    "detailX": 1.38,
+    "detailY": 1.21
+   },
+   "textBg": {
+    "mean": 36,
+    "spread": 237.6,
+    "thirds": [
+     41.7,
+     29.7,
+     36.6
+    ],
+    "detailX": 1.37,
+    "detailY": 1.28
+   },
+   "featZones": [
+    {
+     "mean": 63,
+     "spread": 125.6,
+     "thirds": [
+      40.8,
+      84.9,
+      63.3
+     ],
+     "detailX": 1.77,
+     "detailY": 1.38
+    },
+    {
+     "mean": 34.9,
+     "spread": 100.5,
+     "thirds": [
+      35.1,
+      39.2,
+      30.2
+     ],
+     "detailX": 2.16,
+     "detailY": 2.25
+    },
+    {
+     "mean": 56.2,
+     "spread": 99.8,
+     "thirds": [
+      56.6,
+      55.2,
+      56.8
+     ],
+     "detailX": 2.14,
+     "detailY": 2.37
+    },
+    {
+     "mean": 45.7,
+     "spread": 116.2,
+     "thirds": [
+      39,
+      58.5,
+      39.5
+     ],
+     "detailX": 1.95,
+     "detailY": 4.98
+    }
+   ]
+  }
+ },
+ "contrast": {
+  "390": {
+   "h1": 17.78,
+   "lead": 11.32,
+   "featH3": 16.89,
+   "featP": 10.84,
+   "asideH3": 16.38,
+   "asideP": 10.39
+  },
+  "768": {
+   "h1": 17.88,
+   "lead": 11.32,
+   "featH3": 16.99,
+   "featP": 10.83,
+   "asideH3": 16.38,
+   "asideP": 10.39
+  },
+  "1024": {
+   "h1": 17.86,
+   "lead": 11.32,
+   "featH3": 15.68,
+   "featP": 10.75,
+   "asideH3": 16.38,
+   "asideP": 10.39
+  },
+  "1280": {
+   "h1": 17.88,
+   "lead": 11.32,
+   "featH3": 16.8,
+   "featP": 10.86,
+   "asideH3": 16.38,
+   "asideP": 10.39
+  },
+  "1440": {
+   "h1": 17.88,
+   "lead": 11.32,
+   "featH3": 16.8,
+   "featP": 10.86,
+   "asideH3": 16.38,
+   "asideP": 10.39
+  }
+ },
+ "weights": {
+  "390": 278,
+  "768": 289,
+  "1024": 283,
+  "1280": 298,
+  "1440": 298
+ },
+ "page": {},
+ "scroll": {
+  "390": true,
+  "768": true,
+  "1024": true,
+  "1280": true,
+  "1440": true
+ },
+ "weightsBase": {
+  "390": 226,
+  "768": 234,
+  "1024": 232,
+  "1280": 242,
+  "1440": 242
+ }
+}

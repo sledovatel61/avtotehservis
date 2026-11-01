@@ -27,6 +27,12 @@ const jsonLd = {
 
 <nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">О компании</span></nav>
 <section class="page-head">
+  <div class="abh-bg" aria-hidden="true">
+    <picture>
+      <source srcset="/img/ab-head-1600.avif" type="image/avif">
+      <img src="/img/ab-head-1600.webp" alt="" width="620" height="795" loading="lazy" decoding="async">
+    </picture>
+  </div>
   <div class="container">
     <span class="eyebrow">О компании</span>
     <h1>Сервис, где смета приходит раньше счёта</h1>
@@ -34,6 +40,14 @@ const jsonLd = {
   </div>
 </section>
 <section class="sec" aria-labelledby="ab-text-h">
+  <div class="ab-text-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" srcset="/img/ab-t-m-960.avif" type="image/avif">
+      <source media="(max-width:640px)" srcset="/img/ab-t-m-960.webp" type="image/webp">
+      <source srcset="/img/ab-t-1440.avif" type="image/avif">
+      <img src="/img/ab-t-1440.webp" alt="" width="640" height="1280" loading="lazy" decoding="async">
+    </picture>
+  </div>
   <div class="container about-grid">
     <div class="reveal">
       <h2 id="ab-text-h">Кто мы и где нас найти</h2>
@@ -41,8 +55,10 @@ const jsonLd = {
       <p class="lead u-mt14">Мы открыты ежедневно с 9:00 до 19:00. Формально сервис работает как {S.legal.name} — все документы, заказ-наряды и гарантийные обязательства оформляются от индивидуального предпринимателя с ИНН {S.legal.inn}.</p>
       <h2>Что мы делаем</h2>
       <p class="lead">В сети точка известна прежде всего как шиномонтаж, но по факту сервис закрывает почти весь цикл обслуживания автомобиля: колёса и диски, ТО и замена масла, ходовая и тормоза, рулевые рейки, развал-схождение, двигатели, АКПП и МКПП, дизельные форсунки, автоэлектрика, кондиционеры и замена лобовых стёкол. Полный перечень — в разделе <a href="/services" class="u-brass">«Услуги»</a>.</p>
-      <h2>Как мы работаем</h2>
-      <p class="lead">Сначала диагностика и смета, потом ремонт. Мы показываем неисправность на детали, называем перечень работ и стоимость, и начинаем только после согласования. Если что-то может подождать — скажем прямо. На выполненные работы действует гарантия: условия и срок фиксируются в заказ-наряде.</p>
+      <details class="ab-acc">
+        <summary><h2>Как мы работаем</h2></summary>
+        <p class="lead">Сначала диагностика и смета, потом ремонт. Мы показываем неисправность на детали, называем перечень работ и стоимость, и начинаем только после согласования. Если что-то может подождать — скажем прямо. На выполненные работы действует гарантия: условия и срок фиксируются в заказ-наряде.</p>
+      </details>
       <div class="facts">
         <div class="fact"><b>{S.address_full}</b><span>ост. «3-й Поселковый» ~330 м · база «Бум» рядом</span></div>
         <div class="fact"><b>{S.hours}</b><span>без выходных</span></div>
@@ -50,22 +66,35 @@ const jsonLd = {
         <div class="fact"><b>Координаты</b><span>47.193068, 39.648295</span></div>
       </div>
     </div>
-    <div class="about-media reveal" data-d="1">
-      <img src="/img/svc-4.svg" alt="фото сервиса появится после съёмки" width="800" height="600">
-    </div>
+    <figure class="about-media reveal" data-d="1">
+      <picture>
+        <source type="image/avif" srcset="/img/ab-media-480.avif 480w, /img/ab-media-720.avif 720w, /img/ab-media-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 46vw, 526px">
+        <source type="image/webp" srcset="/img/ab-media-480.webp 480w, /img/ab-media-720.webp 720w, /img/ab-media-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 46vw, 526px">
+        <img src="/img/ab-media-720.webp" alt="Бокс сервиса на Портовой, 439: открытые ворота и рабочий пост внутри" width="1080" height="675" loading="lazy" decoding="async">
+      </picture>
+      <figcaption>Портовая, 439 — бокс и зона выдачи: сюда можно приехать без записи через центр</figcaption>
+    </figure>
   </div>
 </section>
-<section class="sec sec--deep" aria-labelledby="ab-feats-h">
+<section class="sec sec--deep ab-feats" aria-labelledby="ab-feats-h">
+  <div class="ab-feats-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" srcset="/img/ab-feats-m-960.avif" type="image/avif">
+      <source media="(max-width:640px)" srcset="/img/ab-feats-m-960.webp" type="image/webp">
+      <source srcset="/img/ab-feats-1600.avif" type="image/avif">
+      <img src="/img/ab-feats-1600.webp" alt="" width="920" height="576" loading="lazy" decoding="async">
+    </picture>
+  </div>
   <div class="container">
     <div class="sec-head reveal">
       <span class="eyebrow">Преимущества</span>
       <h2 id="ab-feats-h">Четыре причины записаться именно сюда</h2>
     </div>
     <div class="feats u-mt0">
-      <div class="feat reveal" data-d="0"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><h3>Смета до начала работ</h3><p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p></div>
-      <div class="feat reveal" data-d="1"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><h3>Гарантия на работы</h3><p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p></div>
-      <div class="feat reveal" data-d="2"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><h3>{S.hours}</h3><p>Один график всю неделю — удобно планировать визит до или после работы.</p></div>
-      <div class="feat reveal" data-d="3"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span><h3>Легковые и коммерческие</h3><p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p></div>
+      <div class="feat reveal" data-d="0"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f1-480.avif"><source type="image/webp" srcset="/img/ab-f1-480.webp"><img src="/img/ab-f1-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><h3>Смета до начала работ</h3><p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p></div>
+      <div class="feat reveal" data-d="1"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f2-480.avif"><source type="image/webp" srcset="/img/ab-f2-480.webp"><img src="/img/ab-f2-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><h3>Гарантия на работы</h3><p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p></div>
+      <div class="feat reveal" data-d="2"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f3-480.avif"><source type="image/webp" srcset="/img/ab-f3-480.webp"><img src="/img/ab-f3-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><h3>{S.hours}</h3><p>Один график всю неделю — удобно планировать визит до или после работы.</p></div>
+      <div class="feat reveal" data-d="3"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f4-480.avif"><source type="image/webp" srcset="/img/ab-f4-480.webp"><img src="/img/ab-f4-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span><h3>Легковые и коммерческие</h3><p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p></div>
     </div>
   </div>
 </section>
@@ -83,6 +112,7 @@ const jsonLd = {
       </ul>
     </div>
     <aside class="est-aside reveal" data-d="1">
+      <span class="ab-aside-tag" aria-hidden="true">Портовая, 439 · бокс парка</span>
       <h3>Обсудить обслуживание парка</h3>
       <p>Позвоните или оставьте заявку — вернёмся с предложением по графику и порядку работ. В форме записи отметьте «грузовой шиномонтаж» и опишите парк в сообщении.</p>
       <a class="btn btn--copper" href="/appointment?s=shinomontazh-gruz">Записать машину парка</a>
@@ -112,7 +142,6 @@ const jsonLd = {
           })}
           </div></div>
     </div>
-    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
   </div>
 </section>
 <section class="sec sec--deep" aria-labelledby="ab-rev-h">
