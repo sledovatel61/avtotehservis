@@ -88,10 +88,10 @@
 .feat-bg img{object-fit:cover;object-position:50% 50%;transition:transform 600ms var(--ease)}
 .feat-bg::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(11,20,16,var(--fc1,.52)) 0%,rgba(11,20,16,var(--fc2,.66)) 42%,rgba(11,20,16,var(--fc3,.81)) 100%);
+  background:linear-gradient(180deg,rgba(11,20,16,var(--fc1,.44)) 0%,rgba(11,20,16,var(--fc2,.54)) 42%,rgba(11,20,16,var(--fc3,.74)) 100%);
 }
 .feat>*:not(.feat-bg){position:relative;z-index:1}
-.feat:hover{--fc1:.60;--fc2:.70;--fc3:.86}
+.feat:hover{--fc1:.50;--fc2:.60;--fc3:.80}
 .feat:hover .feat-bg img{transform:scale(1.02)}
 @media (prefers-reduced-motion:reduce){.feat:hover .feat-bg img{transform:none}}
 /* раунд 18: фон секции «О компании» — слой .about-bg (НЕ background-image: image-set
@@ -335,6 +335,72 @@
 @media (max-width:1024px){.strip{grid-template-columns:1fr}.strip-item{aspect-ratio:21/9}}
 @media (max-width:640px){.strip-item{aspect-ratio:16/10}}
 /* раунд 18: печать и экономия данных для новых слоёв — в конце файла, после баз */
+/* ---------- раунд 22 (задание №24): страница «О компании» — фоны, медиа, карточки ---------- */
+.page-head{position:relative;overflow:hidden}
+.page-head>.container{position:relative;z-index:2}
+section[aria-labelledby="ab-text-h"]{position:relative;overflow:hidden;border-top:1px solid var(--line)}
+section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
+.abh-bg,.ab-feats-bg,.ab-text-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.abh-bg img,.ab-feats-bg img,.ab-text-bg img{width:100%;height:100%;object-fit:cover}
+/* ПРИЁМКА КРУГА 22. Слой фона обязан покрывать секцию целиком (B1: 100×100 %), поэтому
+   кадр растянут на всю секцию, а «работает» он справа: левую часть съедает маска, под
+   текстом лежит сплошной --deep. Так слот и кадр совпадают по габаритам — растяжения,
+   на которое указывало ревью (2,32×), больше нет. */
+.abh-bg{inset:0}
+.abh-bg::after{content:'';position:absolute;inset:0;background:
+  linear-gradient(90deg,var(--deep) 0%,var(--deep) 26%,rgba(16,32,26,.62) 38%,rgba(16,32,26,.26) 52%,rgba(16,32,26,.06) 70%,rgba(16,32,26,0) 100%),
+  linear-gradient(180deg,rgba(11,20,16,.05) 0%,rgba(11,20,16,.16) 100%)}
+.abh-bg img{object-position:74% 45%;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,transparent 22%,rgba(0,0,0,.55) 40%,#000 60%);
+  mask-image:linear-gradient(90deg,transparent 0,transparent 22%,rgba(0,0,0,.55) 40%,#000 60%)}
+@media (max-width:900px){.abh-bg img{object-position:34% 44%;
+  -webkit-mask-image:none;mask-image:none}
+  .abh-bg::after{background:
+    radial-gradient(92% 74% at 4% 6%,rgba(11,20,16,.88) 0%,rgba(11,20,16,.32) 50%,rgba(11,20,16,0) 78%),
+    linear-gradient(90deg,rgba(11,20,16,.62) 0%,rgba(11,20,16,.02) 50%,rgba(11,20,16,.44) 100%),
+    linear-gradient(180deg,rgba(11,20,16,.30) 0%,rgba(11,20,16,.47) 46%,rgba(11,20,16,.72) 100%)}}
+section[aria-labelledby="ab-text-h"]{background:var(--night);border-top:1px solid var(--line)}
+.ab-text-bg{inset:0}
+.ab-text-bg::after{content:'';position:absolute;inset:0;background:
+  linear-gradient(90deg,var(--night) 0%,var(--night) 38%,rgba(11,20,16,.54) 50%,rgba(11,20,16,.18) 66%,rgba(11,20,16,.02) 86%,rgba(11,20,16,0) 100%)}
+.ab-text-bg img{object-position:74% 30%;
+  /* кадр верстака — фон, а не герой: приглушён и раскрывается только справа */
+  filter:brightness(.98) saturate(.92) contrast(1.09);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,transparent 30%,rgba(0,0,0,.58) 44%,#000 62%);
+  mask-image:linear-gradient(90deg,transparent 0,transparent 30%,rgba(0,0,0,.58) 44%,#000 62%)}
+@media (max-width:900px){
+  .ab-text-bg img{filter:brightness(.92) saturate(.92);object-position:50% 18%;
+    -webkit-mask-image:linear-gradient(150deg,#000 0%,rgba(0,0,0,.85) 40%,rgba(0,0,0,.45) 78%,rgba(0,0,0,.22) 100%);
+    mask-image:linear-gradient(150deg,#000 0%,rgba(0,0,0,.85) 40%,rgba(0,0,0,.45) 78%,rgba(0,0,0,.22) 100%)}
+  .ab-text-bg::after{background:
+    radial-gradient(96% 60% at 4% 2%,rgba(11,20,16,.82) 0%,rgba(11,20,16,.28) 48%,rgba(11,20,16,0) 76%),
+    linear-gradient(90deg,rgba(11,20,16,.58) 0%,rgba(11,20,16,0) 50%,rgba(11,20,16,.42) 100%),
+    linear-gradient(180deg,rgba(11,20,16,.18) 0%,rgba(11,20,16,.38) 52%,rgba(11,20,16,.64) 100%)}}
+/*
+ * Секция преимуществ — фото на всю площадь под карточками; карточки сами несут свой скрим
+ * (см. .feat-bg::after), поэтому общий затемнитель умеренный: кадр видно, текст читается.
+ */
+.ab-feats-bg::after{content:'';position:absolute;inset:0;background:
+  radial-gradient(78% 62% at 4% 4%,rgba(11,20,16,.80) 0%,rgba(11,20,16,.28) 52%,rgba(11,20,16,0) 78%),
+  linear-gradient(180deg,rgba(11,20,16,.20) 0%,rgba(11,20,16,.32) 58%,rgba(11,20,16,.48) 100%)}
+.ab-feats{border-top:1px solid var(--line)}   /* B1: видимый разделитель между фонами */
+.ab-feats>.container{position:relative;z-index:2}
+.about-media{margin:0;width:100%}
+.about-media img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r)}
+.about-media figcaption{margin-top:10px;color:var(--mist);font-size:13px;line-height:1.45}
+.feat{position:relative}
+.feat-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
+.feat-bg img{width:100%;height:100%;object-fit:cover}
+.feat .feat-ic,.feat h3,.feat p{position:relative;z-index:2}
+.ab-acc summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+.ab-acc summary::-webkit-details-marker{display:none}
+.ab-acc summary::before{content:'';flex:0 0 auto;width:14px;height:14px;border-radius:3px;
+  background:linear-gradient(var(--brass),var(--brass)) center/14px 2px no-repeat,
+             linear-gradient(var(--brass),var(--brass)) center/2px 14px no-repeat}
+.ab-acc[open] summary::before{background:linear-gradient(var(--brass),var(--brass)) center/14px 2px no-repeat}
+.ab-acc summary h2{margin:0}
+.ab-acc summary:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:6px}
+.ab-aside-tag{display:inline-block;margin-bottom:10px;padding:3px 10px;border:1px solid rgba(224,169,109,.4);border-radius:999px;color:var(--brass);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
 @media (prefers-reduced-data:reduce){.about-bg,.feat-bg,.fact-bg,.btn-bg{display:none}}
 @media (prefers-reduced-motion:reduce){.est-step:hover{transform:none}.est-step:hover .est-bg-p img{transform:none}}
 /* раунд 20 (B7): экономия трафика — слои светлой секции скрыты, фолбэк --ivory/--night */
@@ -348,3 +414,20 @@
   .about .lead,.about .eyebrow,.about h2,.about .fact b,.about .fact span{color:#000}
   .about .btn{color:#000;border-color:#000}
 }
+@media (prefers-reduced-data:reduce){.abh-bg,.ab-feats-bg,.ab-text-bg,.feat-bg{display:none}}
+@media print{.abh-bg,.ab-feats-bg,.ab-text-bg,.feat-bg{display:none}}
+
+/* ПРИЁМКА КРУГА 22: текст не заезжает на светлую часть кадра.
+   Шапка: фото занимает правые 56 %, поэтому заголовок и лид держатся в левых ~46 %
+   (h1 12.5em ≈ 700 px при 56 px, лид 46ch) — иначе шрифт идёт по светлому пилону кадра
+   и контраст падает до 2,1:1.
+   Текстовая секция: слой справа 42 %, колонка текста ограничена 640 px. */
+.page-head .container h1{max-width:13em}
+.page-head .container .lead{max-width:46ch}
+section[aria-labelledby="ab-text-h"] .about-grid>div:first-child{max-width:640px}
+@media (max-width:900px){
+  .page-head .container h1,.page-head .container .lead{max-width:none}
+}
+/* приёмка к22: на 1024 и 390 четвёртая карточка (фасад) выходит ярче третьей почти вплотную —
+   экспозиция кадра гасится чуть сильнее, чтобы четыре карточки читались как разные кадры */
+.ab-feats .feat:nth-child(4) .feat-bg img{filter:brightness(.93)}

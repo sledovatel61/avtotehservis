@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import { getSettings } from '../../server/settings.ts';
 import { getService, otherServices } from '../../server/services.ts';
 import { mdToHtml } from '../../server/markdown.ts';
+import { svcImgKey } from '../../server/svc-img.ts';
 
 const S = getSettings();
 const { slug } = Astro.params;
@@ -52,7 +53,11 @@ const jsonLd = svc ? [
     <div class="container svc-detail" id="svc-detail">
       <div class="svc-text reveal">
         <div class="svc-detail-img" id="svc-img">
-          <img src={svc.icon ?? '/img/svc-1.svg'} alt={`${svc.title} — фото появится после съёмки в сервисе`} width="800" height="600">
+          <picture>
+            <source type="image/avif" srcset={`/img/${svcImgKey(svc.slug)}-640.avif 640w, /img/${svcImgKey(svc.slug)}-960.avif 960w`} sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 560px">
+            <source type="image/webp" srcset={`/img/${svcImgKey(svc.slug)}-640.webp 640w, /img/${svcImgKey(svc.slug)}-960.webp 960w`} sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 560px">
+            <img src={`/img/${svcImgKey(svc.slug)}-960.webp`} alt={svc.title} width="800" height="600" decoding="async">
+          </picture>
         </div>
         <div id="svc-body" set:html={mdToHtml(svc.description ?? '')} />
         <div class="price-note">
@@ -80,7 +85,13 @@ const jsonLd = svc ? [
       <div class="svc-grid" id="svc-others">
         {others.map((o) => (
           <a class="svc-card" href={`/services/${o.slug}`}>
-            <span class="svc-img"><img src={o.icon ?? '/img/svc-1.svg'} alt={`${o.title} — фото появится после съёмки`} width="800" height="600" loading="lazy"></span>
+            <span class="svc-img">
+              <picture>
+                <source type="image/avif" srcset={`/img/${svcImgKey(o.slug)}-640.avif 640w, /img/${svcImgKey(o.slug)}-960.avif 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                <source type="image/webp" srcset={`/img/${svcImgKey(o.slug)}-640.webp 640w, /img/${svcImgKey(o.slug)}-960.webp 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                <img src={`/img/${svcImgKey(o.slug)}-640.webp`} alt={o.title} width="800" height="600" loading="lazy" decoding="async">
+              </picture>
+            </span>
             <span class="svc-body"><span class="svc-tag">{o.tag ?? o.grp}</span><h3>{o.title}</h3><p>{o.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
           </a>
         ))}

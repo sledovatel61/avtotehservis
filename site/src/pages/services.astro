@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import { listCatalogServices } from '../server/services.ts';
 import { fmtDateRu, plural } from '../server/format.ts';
+import { svcImgKey } from '../server/svc-img.ts';
 
 const S = getSettings();
 const services = listCatalogServices();
@@ -44,7 +45,13 @@ const jsonLd = [
     <div class="svc-grid">
           {services.map((sv) => (
             <a class="svc-card" href={`/services/${sv.slug}`}>
-              <span class="svc-img"><img src={sv.icon ?? '/img/svc-1.svg'} alt={`${sv.title} — фото появится после съёмки`} width="800" height="600" loading="lazy"></span>
+              <span class="svc-img">
+                <picture>
+                  <source type="image/avif" srcset={`/img/${svcImgKey(sv.slug)}-640.avif 640w, /img/${svcImgKey(sv.slug)}-960.avif 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                  <source type="image/webp" srcset={`/img/${svcImgKey(sv.slug)}-640.webp 640w, /img/${svcImgKey(sv.slug)}-960.webp 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                  <img src={`/img/${svcImgKey(sv.slug)}-640.webp`} alt={sv.title} width="800" height="600" loading="lazy" decoding="async">
+                </picture>
+              </span>
               <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
             </a>
           ))}

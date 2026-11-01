@@ -17,7 +17,7 @@ function lbRender(): void {
   const it = items[lbIdx];
   if (!it || !lb) return;
   const img = $('#lb-img', lb);
-  if (img) img.innerHTML = `<img src="${it.img}" alt="${it.title} — фото появится после съёмки">`;
+  if (img) img.innerHTML = `<img src="${it.img}" alt="${it.title}">`;
   const t = $('#lb-title', lb); if (t) t.textContent = it.title;
   const s = $('#lb-sub', lb); if (s) s.textContent = it.sub;
   const c = $('#lb-count', lb); if (c) c.textContent = `${lbIdx + 1} / ${items.length}`;
