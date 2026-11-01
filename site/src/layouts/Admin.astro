@@ -1,0 +1,66 @@
+---
+import { getSettings } from '../server/settings.ts';
+import { sessionFromContext, ensureCsrfCookie } from '../server/admin-auth.ts';
+import '../styles/fonts.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/buttons.css';
+import '../styles/utils.css';
+import '../styles/pages.css';
+import '../styles/misc.css';
+import '../styles/admin.css';
+
+export interface Props { section: string; title: string }
+const { section, title } = Astro.props;
+
+// выход — POST-действием прямо из layout-обработчика не делается; см. /admin/logout
+const user = sessionFromContext(Astro);
+if (!user) return new Response('Требуется вход', { status: 401 });
+const csrf = ensureCsrfCookie(Astro);
+const S = getSettings();
+const msg = Astro.url.searchParams.get('msg') ?? '';
+const errMsg = Astro.url.searchParams.get('err') ?? '';
+const NAV = [
+  { href: '/admin', key: 'dash', label: 'Дашборд' },
+  { href: '/admin/leads', label: 'Заявки', key: 'leads' },
+  { href: '/admin/cases', label: 'Кейсы', key: 'cases' },
+  { href: '/admin/news', label: 'Новости', key: 'news' },
+  { href: '/admin/reviews', label: 'Отзывы', key: 'reviews' },
+  { href: '/admin/services', label: 'Услуги', key: 'services' },
+  { href: '/admin/media', label: 'Медиа', key: 'media' },
+  { href: '/admin/settings', label: 'Настройки', key: 'settings' },
+  { href: '/admin/log', label: 'Журнал', key: 'log' },
+];
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{title} — админка {S.site_name}</title>
+  <meta name="theme-color" content="#0B1410">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="csrf-token" content={csrf}>
+</head>
+<body class="adm-body" data-adm-section={section}>
+  <div class="adm-top">
+    <span class="adm-logo">{S.site_name} <b>админка</b></span>
+    <span class="spacer"></span>
+    <a href="/" target="_blank" rel="noopener">Сайт ↗</a>
+    <form method="post" action="/admin/logout" class="adm-inline-form">
+      <input type="hidden" name="_csrf" value={csrf}>
+      <button type="submit" class="linklike">Выйти ({user.login})</button>
+    </form>
+  </div>
+  <nav class="adm-nav" aria-label="Разделы админки">
+    {NAV.map((n) => <a href={n.href} class:list={[{ 'is-on': section === n.key }]} aria-current={section === n.key ? 'page' : undefined}>{n.label}</a>)}
+  </nav>
+  <main class="adm-main">
+    {msg && <div class="adm-msg adm-msg--ok" role="status">{msg}</div>}
+    {errMsg && <div class="adm-msg adm-msg--err" role="alert">{errMsg}</div>}
+    <slot />
+  </main>
+  <script>import '../client/admin.ts';</script>
+</body>
+</html>

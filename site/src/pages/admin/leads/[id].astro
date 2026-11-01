@@ -1,0 +1,122 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+import { serviceTitles, type LeadRow } from '../../../server/telegram.ts';
+import { retryOutboxRow } from '../../../server/outbox.ts';
+import { fmtDateRu } from '../../../server/format.ts';
+
+const id = Number(Astro.params.id);
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const action = String(form.get('action') ?? '');
+  if (action === 'status') {
+    const status = String(form.get('status') ?? '');
+    if (['new', 'confirmed', 'done', 'canceled'].includes(status)) {
+      db().prepare('UPDATE leads SET status=? WHERE id=?').run(status, id);
+      logAction(user.id, 'lead_status', 'leads', id, { status });
+      return Astro.redirect(`/admin/leads/${id}?msg=${encodeURIComponent('Статус обновлён')}`, 302);
+    }
+  }
+  if (action === 'retry') {
+    const rowId = Number(form.get('row'));
+    const ok = await retryOutboxRow(rowId);
+    logAction(user.id, ok ? 'delivery_retry_ok' : 'delivery_retry_fail', 'outbox', rowId, { lead: id });
+    return Astro.redirect(`/admin/leads/${id}?msg=${encodeURIComponent(ok ? 'Доставка повторена успешно' : 'Повтор не удался — смотрите ошибку в истории')}`, 302);
+  }
+}
+
+const lead = db().prepare('SELECT * FROM leads WHERE id=?').get(id) as (LeadRow & {
+  vin: string | null; mileage: number | null; model: string | null; year: number | null;
+  message: string | null; consent_at: string; consent_version: string; page: string;
+  ip_hash: string | null; user_agent: string | null; status: string; payload_json: string; idempotency_key: string;
+}) | undefined;
+if (!lead) return Astro.redirect('/admin/leads?err=' + encodeURIComponent('Заявка не найдена'), 302);
+
+const photos = db().prepare(`SELECT m.id, m.path, m.kind, m.poster_path FROM lead_photos lp JOIN media m ON m.id=lp.media_id WHERE lp.lead_id=?`).all(id) as { id: string; path: string; kind: string; poster_path: string | null }[];
+const outbox = db().prepare('SELECT * FROM outbox WHERE lead_id=? ORDER BY id').all(id) as {
+  id: number; channel: string; status: string; attempts: number; next_attempt_at: string | null; last_error: string | null; sent_at: string | null;
+}[];
+const svcs = serviceTitles(JSON.parse(lead.services_json || '[]') as string[]);
+---
+<Admin section="leads" title={`Заявка ${lead.ticket}`}>
+  <p><a href="/admin/leads" class="linklike">← все заявки</a></p>
+  <h1 class="adm-h1">{lead.ticket} <span class={`badge badge--${lead.status}`}>{lead.status}</span></h1>
+
+  <div class="adm-card">
+    <h2>{lead.kind === 'message' ? 'Обращение с сайта' : 'Запись на сервис'}</h2>
+    <dl class="adm-dl">
+      <dt>Создана</dt><dd>{lead.created_at} (МСК в БД — UTC)</dd>
+      <dt>Имя</dt><dd>{lead.name}</dd>
+      <dt>Телефон</dt><dd><a href={`tel:${lead.phone}`} class="linklike">{lead.phone}</a> · связь: {lead.contact_method === 'telegram' ? 'написать в Telegram' : 'позвонить'}</dd>
+      {lead.kind === 'booking' && <>
+        <dt>Автомобиль</dt><dd>{[lead.brand, lead.model, lead.year ? `${lead.year} г.` : null, lead.mileage != null ? `${lead.mileage.toLocaleString('ru-RU')} км` : null].filter(Boolean).join(', ') || '—'}</dd>
+        <dt>VIN</dt><dd>{lead.vin ?? 'не указан'}</dd>
+        <dt>Услуги</dt><dd>{svcs.join('; ') || '—'}</dd>
+        <dt>Когда</dt><dd>{lead.asap ? 'как можно скорее' : `${lead.preferred_date ? fmtDateRu(lead.preferred_date) : ''} ${lead.preferred_slot ?? ''}`}</dd>
+      </>}
+      {lead.message && <><dt>Сообщение</dt><dd>{lead.message}</dd></>}
+      <dt>Источник</dt><dd>страница «{lead.page}»</dd>
+      <dt>Согласие</dt><dd>версия {lead.consent_version}, зафиксировано {lead.consent_at}</dd>
+      <dt>Ключ идемпотентности</dt><dd class="hint">{lead.idempotency_key}</dd>
+      <dt>IP / UA</dt><dd class="hint">{lead.ip_hash ? lead.ip_hash.slice(0, 12) + '…' : '—'} · {lead.user_agent ?? '—'}</dd>
+    </dl>
+    {photos.length > 0 && (
+      <div class="u-mt18">
+        <h2>Фото клиента ({photos.length})</h2>
+        <div class="adm-lead-photos">
+          {photos.map((p) => (
+            <a href={`/media/${p.id}/master.jpg`} target="_blank" rel="noopener">
+              <img src={`/media/${p.id}/v480.webp`} alt="Фото клиента к заявке" loading="lazy" width="140" height="105">
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+
+  <div class="adm-card">
+    <h2>Статус</h2>
+    <form method="post" class="adm-row">
+      <input type="hidden" name="_csrf" value={csrf}>
+      <input type="hidden" name="action" value="status">
+      <select name="status" aria-label="Статус заявки">
+        {['new', 'confirmed', 'done', 'canceled'].map((s) => <option value={s} selected={lead.status === s}>{s}</option>)}
+      </select>
+      <button type="submit" class="btn btn--copper btn--sm">Сохранить</button>
+    </form>
+  </div>
+
+  <div class="adm-card">
+    <h2>Доставка уведомления</h2>
+    <table class="adm-table">
+      <thead><tr><th>Канал</th><th>Статус</th><th>Попыток</th><th>Следующая</th><th>Отправлено</th><th>Ошибка</th><th></th></tr></thead>
+      <tbody>
+        {outbox.map((o) => (
+          <tr>
+            <td>{o.channel === 'telegram' ? 'Telegram' : 'E-mail'}</td>
+            <td><span class={`badge badge--${o.status === 'sent' ? 'done' : o.status === 'failed' && o.attempts >= 8 ? 'failed' : 'pending'}`}>{o.status}{o.status === 'failed' && o.attempts < 8 ? ' (ретрай)' : ''}</span></td>
+            <td>{o.attempts}</td>
+            <td>{o.next_attempt_at ?? '—'}</td>
+            <td>{o.sent_at ?? '—'}</td>
+            <td class="hint">{o.last_error ?? '—'}</td>
+            <td>
+              {o.status !== 'sent' && (
+                <form method="post">
+                  <input type="hidden" name="_csrf" value={csrf}>
+                  <input type="hidden" name="action" value="retry">
+                  <input type="hidden" name="row" value={o.id}>
+                  <button type="submit" class="btn btn--ghost btn--sm">Отправить ещё раз</button>
+                </form>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Admin>

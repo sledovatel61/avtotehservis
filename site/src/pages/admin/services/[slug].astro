@@ -1,0 +1,68 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+
+const slug = String(Astro.params.slug ?? '');
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+
+function getSvc() {
+  return db().prepare('SELECT * FROM services WHERE slug=?').get(slug) as {
+    slug: string; title: string; short: string | null; description: string | null; icon: string | null;
+    grp: string | null; tag: string | null; sort: number; hidden: number; chip: number;
+    seo_title: string | null; seo_description: string | null;
+  } | undefined;
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const title = String(form.get('title') ?? '').trim();
+  if (title.length < 4) return Astro.redirect(`/admin/services/${slug}?err=` + encodeURIComponent('Название минимум 4 символа'), 302);
+  db().prepare(`UPDATE services SET title=?, short=?, description=?, icon=?, grp=?, tag=?, sort=?, hidden=?, chip=?, seo_title=?, seo_description=? WHERE slug=?`)
+    .run(title,
+      String(form.get('short') ?? '').trim() || null,
+      String(form.get('description') ?? ''),
+      String(form.get('icon') ?? '').trim() || null,
+      String(form.get('grp') ?? '').trim() || null,
+      String(form.get('tag') ?? '').trim() || null,
+      Number(form.get('sort') ?? 0) || 0,
+      form.get('hidden') === '1' ? 1 : 0,
+      form.get('chip') === '1' ? 1 : 0,
+      String(form.get('seo_title') ?? '').trim() || null,
+      String(form.get('seo_description') ?? '').trim() || null,
+      slug);
+  logAction(user.id, 'service_save', 'services', slug, { title });
+  return Astro.redirect(`/admin/services/${slug}?msg=` + encodeURIComponent('Услуга сохранена'), 302);
+}
+
+const svc = getSvc();
+if (!svc) return Astro.redirect('/admin/services?err=' + encodeURIComponent('Услуга не найдена'), 302);
+---
+<Admin section="services" title={`Услуга: ${svc.title}`}>
+  <p><a href="/admin/services" class="linklike">← все услуги</a>{!svc.hidden && <> · <a class="linklike" href={`/services/${svc.slug}`} target="_blank" rel="noopener">страница на сайте ↗</a></>}</p>
+  <h1 class="adm-h1">{svc.title}</h1>
+  <form method="post" class="adm-form">
+    <input type="hidden" name="_csrf" value={csrf}>
+    <label>Название <input type="text" name="title" value={svc.title} required minlength="4" maxlength="120"></label>
+    <label>Краткое описание (лид карточки) <textarea name="short" rows="2" maxlength="300">{svc.short ?? ''}</textarea></label>
+    <label>Полное описание (Markdown; «# Что входит» + список — как на странице услуги)
+      <textarea name="description" rows="12">{svc.description ?? ''}</textarea>
+    </label>
+    <div class="adm-row">
+      <label>Иконка/изображение (путь) <input type="text" name="icon" value={svc.icon ?? ''} placeholder="/img/svc-1.svg или /media/…"></label>
+      <label>Группа чипов <input type="text" name="grp" value={svc.grp ?? ''} list="grp-list"></label>
+      <datalist id="grp-list"><option value="Колёса"></option><option value="Ремонт и ТО"></option><option value="Электрика и комфорт"></option></datalist>
+      <label>Метка карточки <input type="text" name="tag" value={svc.tag ?? ''}></label>
+      <label>Порядок <input type="number" name="sort" value={svc.sort} min="0" max="999"></label>
+    </div>
+    <div class="adm-row">
+      <label class="adm-row"><input type="checkbox" name="hidden" value="1" checked={svc.hidden === 1}> скрыть страницу (только чип)</label>
+      <label class="adm-row"><input type="checkbox" name="chip" value="1" checked={svc.chip === 1}> показывать в чипах формы</label>
+    </div>
+    <label>SEO-заголовок <input type="text" name="seo_title" value={svc.seo_title ?? ''} maxlength="120"></label>
+    <label>SEO-описание <textarea name="seo_description" rows="2" maxlength="300">{svc.seo_description ?? ''}</textarea></label>
+    <div><button type="submit" class="btn btn--copper">Сохранить</button></div>
+  </form>
+</Admin>

@@ -1,0 +1,170 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import { listCatalogServices } from '../server/services.ts';
+import { listPublishedCases, listPublishedReviews, coverInfo } from '../server/content.ts';
+import { fmtDateRu, plural } from '../server/format.ts';
+
+const S = getSettings();
+const services = listCatalogServices();
+const cases = listPublishedCases(6);
+const reviews = listPublishedReviews(8);
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+    { '@type': 'ListItem', position: 2, name: 'О компании' },
+  ],
+};
+---
+<Base
+  page="about"
+  title="О компании — АвтоТехСервис, Ростов-на-Дону"
+  description="Автосервис и шиномонтаж на Западном в Ростове-на-Дону: ул. Портовая, 439. Как мы работаем: диагностика, смета до ремонта, согласование, фотоотчёт."
+  jsonLd={jsonLd}
+>
+
+<nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">О компании</span></nav>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">О компании</span>
+    <h1>Сервис, где смета приходит раньше счёта</h1>
+    <p class="lead">«АвтоТехСервис» — автосервис и шиномонтаж в Железнодорожном районе Ростова-на-Дону. Мы работаем с легковыми и коммерческими автомобилями и держимся простого правила: владелец машины должен понимать, за что платит, — до начала работ.</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="ab-text-h">
+  <div class="container about-grid">
+    <div class="reveal">
+      <h2 id="ab-text-h">Кто мы и где нас найти</h2>
+      <p class="lead">Сервис находится на улице Портовой, 439 — это Западный жилой массив, примерно 330 метров от остановки «3-й Поселковый», рядом с продуктовой базой «Бум». Заезжать удобно и со стороны Портовой, и из жилых кварталов: не нужно ехать через центр.</p>
+      <p class="lead u-mt14">Мы открыты ежедневно с 9:00 до 19:00. Формально сервис работает как {S.legal.name} — все документы, заказ-наряды и гарантийные обязательства оформляются от индивидуального предпринимателя с ИНН {S.legal.inn}.</p>
+      <h2>Что мы делаем</h2>
+      <p class="lead">В сети точка известна прежде всего как шиномонтаж, но по факту сервис закрывает почти весь цикл обслуживания автомобиля: колёса и диски, ТО и замена масла, ходовая и тормоза, рулевые рейки, развал-схождение, двигатели, АКПП и МКПП, дизельные форсунки, автоэлектрика, кондиционеры и замена лобовых стёкол. Полный перечень — в разделе <a href="/services" class="u-brass">«Услуги»</a>.</p>
+      <h2>Как мы работаем</h2>
+      <p class="lead">Сначала диагностика и смета, потом ремонт. Мы показываем неисправность на детали, называем перечень работ и стоимость, и начинаем только после согласования. Если что-то может подождать — скажем прямо. На выполненные работы действует гарантия: условия и срок фиксируются в заказ-наряде.</p>
+      <div class="facts">
+        <div class="fact"><b>{S.address_full}</b><span>ост. «3-й Поселковый» ~330 м · база «Бум» рядом</span></div>
+        <div class="fact"><b>{S.hours}</b><span>без выходных</span></div>
+        <div class="fact"><b>ИП Яковенко П. И.</b><span>ИНН {S.legal.inn} · ОГРНИП {S.legal.ogrnip}</span></div>
+        <div class="fact"><b>Координаты</b><span>47.193068, 39.648295</span></div>
+      </div>
+    </div>
+    <div class="about-media reveal" data-d="1">
+      <img src="/img/svc-4.svg" alt="фото сервиса появится после съёмки" width="800" height="600">
+    </div>
+  </div>
+</section>
+<section class="sec sec--deep" aria-labelledby="ab-feats-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Преимущества</span>
+      <h2 id="ab-feats-h">Четыре причины записаться именно сюда</h2>
+    </div>
+    <div class="feats u-mt0">
+      <div class="feat reveal" data-d="0"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><h3>Смета до начала работ</h3><p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p></div>
+      <div class="feat reveal" data-d="1"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><h3>Гарантия на работы</h3><p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p></div>
+      <div class="feat reveal" data-d="2"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><h3>{S.hours}</h3><p>Один график всю неделю — удобно планировать визит до или после работы.</p></div>
+      <div class="feat reveal" data-d="3"><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span><h3>Легковые и коммерческие</h3><p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p></div>
+    </div>
+  </div>
+</section>
+<section class="sec sec--ivory" aria-labelledby="ab-b2b-h">
+  <div class="container est-grid">
+    <div class="reveal">
+      <span class="eyebrow">B2B</span>
+      <h2 id="ab-b2b-h">Паркам и коммерческому транспорту</h2>
+      <p class="u-lead-c">Простой машины стоит дороже ремонта. Для парков, маршруток и коммерческого транспорта мы держим отдельный порядок работы: запись нескольких машин на разные дни, грузовой шиномонтаж, согласование графика в сезон переобувки, документы для бухгалтерии — заказ-наряд и закрывающие по договорённости.</p>
+      <ul class="u-grid8-lead">
+        <li>— планирование визитов парка без простоя всей линейки;</li>
+        <li>— грузовой шиномонтаж и балансировка коммерческих колёс;</li>
+        <li>— смета по каждой машине до начала работ;</li>
+        <li>— один контакт для всех вопросов: {S.phone_main}.</li>
+      </ul>
+    </div>
+    <aside class="est-aside reveal" data-d="1">
+      <h3>Обсудить обслуживание парка</h3>
+      <p>Позвоните или оставьте заявку — вернёмся с предложением по графику и порядку работ. В форме записи отметьте «грузовой шиномонтаж» и опишите парк в сообщении.</p>
+      <a class="btn btn--copper" href="/appointment?s=shinomontazh-gruz">Записать машину парка</a>
+      <p class="u-mt14-fs13">Telegram для быстрой связи: <a href={`${S.telegram_url}`} data-track="telegram_click" class="u-brass">{S.telegram_phone}</a></p>
+    </aside>
+  </div>
+</section>
+<section class="sec" aria-labelledby="ab-gal-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Работы</span><h2 id="ab-gal-h">Примеры кейсов</h2></div>
+      <div class="slider-nav">
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel>
+      <div class="carousel-win"><div class="carousel-track gal-track">
+          {cases.map((c, ci) => {
+            const cov = coverInfo(c, '/img/case-1.svg', c.title, `${c.title} — фото «до/после» появится после съёмки`);
+            return (
+              <button class="gal-card" type="button" data-gal={ci} data-img={cov.lg} data-title={c.title} data-sub={c.description ?? ''} aria-label={`Открыть кейс: ${c.title}`}>
+                <span class="gal-img"><img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cov.alt} width="800" height="600" loading="lazy"></span>
+                <span class="gal-cap"><span>{c.title}</span><span class="ba">до / после</span></span>
+              </button>
+            );
+          })}
+          </div></div>
+    </div>
+    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+  </div>
+</section>
+<section class="sec sec--deep" aria-labelledby="ab-rev-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Отзывы</span><h2 id="ab-rev-h">Мнения клиентов</h2></div>
+      <div class="slider-nav">
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel>
+      <div class="carousel-win"><div class="carousel-track">
+          {reviews.length === 0 ? (
+            <article class="rev-card">
+              <div class="rev-text"><p>Собираем отзывы — пока читайте нас на Яндекс.Картах: там карточка сервиса с оценками реальных клиентов.</p></div>
+              <div class="rev-who">
+                <span class="rev-ava" aria-hidden="true">Я</span>
+                <span><b>Яндекс.Карты</b><span><a class="linklike" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer">Открыть карточку организации</a></span></span>
+              </div>
+            </article>
+          ) : reviews.map((r) => (
+            <article class="rev-card">
+              <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating ?? 5} из 5`}>{Array.from({ length: r.rating ?? 5 }).map(() => (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>))}</span>
+              <div class="rev-text"><p>{r.text}</p></div>
+              <div class="rev-who">
+                <span class="rev-ava" aria-hidden="true">{r.author.slice(0, 1)}</span>
+                <span><b>{r.author}</b><span>{[r.source, r.published_at ? fmtDateRu(r.published_at) : ''].filter(Boolean).join(' · ')}</span></span>
+              </div>
+            </article>
+          ))}
+          </div></div>
+    </div>
+    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="brands-h">
+  <div class="container">
+    <div class="sec-head sec-head--center reveal">
+      <span class="eyebrow">Марки</span>
+      <h2 id="brands-h">Обслуживаем легковые и коммерческие автомобили</h2>
+    </div>
+  </div>
+  <div class="marq reveal" aria-label="Марки автомобилей (бегущая строка)">
+    <div class="marq-in">
+      {[...S.brands, ...S.brands].map((b, bi) => (
+        <span class="brand-chip" aria-hidden={bi >= S.brands.length ? 'true' : 'false'}>{b}</span>
+      ))}
+    </div>
+  </div>
+  <div class="container"><p class="marq-note">Список не полный — если вашей марки здесь нет, позвоните: {S.phone_main}. Бегущая строка останавливается при наведении; с «уменьшением движения» в настройках системы показывается статичным списком.</p></div>
+</section>
+
+  <script>import '../client/lightbox.ts';</script>
+</Base>

@@ -1,0 +1,124 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+
+const S = getSettings();
+const E0 = S.phones_extra[0];
+const E1 = S.phones_extra[1];
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+    { '@type': 'ListItem', position: 2, name: 'Контакты' },
+  ],
+};
+---
+<Base
+  page="contacts"
+  title="Контакты — АвтоТехСервис, Ростов-на-Дону, ул. Портовая, 439"
+  description="Как доехать: Ростов-на-Дону, ул. Портовая, 439, ост. «3-й Поселковый» ~330 м, база «Бум». Ежедневно 9:00–19:00. Телефоны, Telegram, e-mail, схема проезда."
+  jsonLd={jsonLd}
+>
+
+<nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">Контакты</span></nav>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Контакты</span>
+    <h1>Как нас найти и как связаться</h1>
+    <p class="lead">Ростов-на-Дону, Западный жилой массив, {S.address}. Ориентиры: остановка «3-й Поселковый» примерно в 330 метрах, рядом продуктовая база «Бум». {S.hours}.</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="ct-h">
+  <h2 id="ct-h" class="u-sr">Контакты и схема проезда</h2>
+  <div class="container contacts-grid">
+    <div class="reveal">
+      <div class="map-box">
+        <img src="/img/map.svg" alt={`Схема проезда: ${S.address} — между остановкой «3-й Поселковый» (~330 м) и базой «Бум». Не картографически точная схема.`} width="1200" height="760">
+        <div class="map-cap">
+          <span><b>Координаты:</b> 47.193068, 39.648295</span>
+          <span><b>Индекс:</b> 344033</span>
+          <a href={`${S.map_link}`} data-track="route_click" class="u-brass">Построить маршрут в картографическом сервисе →</a>
+        </div>
+      </div>
+      <p class="rate-note u-mt14">Схема проезда — собственная SVG: без сторонних виджетов и внешних тайлов, страница не делает сторонних запросов. Кнопка «Маршрут» открывает Яндекс Карты с меткой сервиса.</p>
+      <div class="c-list u-mt26">
+        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><div><h3>Адрес</h3><span class="v">{S.address_full}</span><small>Железнодорожный район, Западный жилой массив. Остановка «3-й Поселковый» ~330 м, рядом база «Бум».</small></div></div>
+        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><div><h3>Часы работы</h3><span class="v">{S.hours}</span><small>График подтверждён владельцем 21.10.2026.</small></div></div>
+        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg></span><div><h3>Телефон</h3><span class="v"><a href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a></span>{E0?.tel && <span class="v">{E0.title ? `${E0.title}: ` : ''}<a href={`tel:${E0.tel}`} data-track="call_click">{E0.display || E0.tel}</a></span>}{E1?.tel && <span class="v">{E1.title ? `${E1.title}: ` : ''}<a href={`tel:${E1.tel}`} data-track="call_click">{E1.display || E1.tel}</a></span>}<small>Основной номер для записи и вопросов.</small></div></div>
+        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 4.5 2.8 11.3c-.9.3-.9 1.6.1 1.8l4.6 1.2 1.8 5.4c.3.8 1.3 1 1.8.3l2.5-3 4.6 3.4c.7.5 1.7.1 1.9-.7l3.2-14c.2-1-.7-1.8-1.8-1.2z"/><path d="m7.5 14.3 11-7.8-8.4 9.4"/></svg></span><div><h3>Telegram</h3><span class="v"><a href={`${S.telegram_url}`} data-track="telegram_click">{S.telegram_phone}</a></span><small>Удобно прислать фото повреждения до визита.</small></div></div>
+        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span><div><h3>E-mail</h3><span class="v"><a href={`mailto:${S.email}`}>{S.email}</a></span><small>Для заявок, документов и вопросов по паркам.</small></div></div>
+        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><div><h3>Реквизиты</h3><span class="v">{S.legal.name}</span><small>ИНН {S.legal.inn} · ОГРНИП {S.legal.ogrnip}</small></div></div>
+      </div>
+    </div>
+    <div class="reveal" data-d="1">
+      <form class="cform" id="cform" novalidate aria-labelledby="cf-h" data-consent-version={S.consent_version}>
+        <h2 id="cf-h">Написать нам</h2>
+        <p class="hint u-mb18">Короткая форма: имя, телефон и сообщение. E-mail не обязателен. Ответим звонком или в Telegram — как укажете.</p>
+        <div id="cform-box">
+          <div class="fields">
+            <div class="field">
+              <label for="c-name">Имя <span class="req" aria-hidden="true">*</span></label>
+              <input class="input" type="text" id="c-name" autocomplete="name" placeholder="Как к вам обращаться">
+              <span class="err" role="alert"></span>
+            </div>
+            <div class="field">
+              <label for="c-phone">Телефон <span class="req" aria-hidden="true">*</span></label>
+              <input class="input" type="tel" id="c-phone" data-mask inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__">
+              <span class="hint">Формат +7 (999) 999-99-99</span>
+              <span class="err" role="alert"></span>
+            </div>
+            <div class="field">
+              <label for="c-msg">Сообщение <span class="opt">необязательно</span></label>
+              <textarea id="c-msg" placeholder="Коротко: что с машиной или какой вопрос"></textarea>
+            </div>
+            <div class="field">
+              <div class="field u-sr" aria-hidden="true">
+            <label>Служебное поле — не заполняйте его
+              <input id="c-hp" name="c_hp" type="text" tabindex="-1" autocomplete="off">
+            </label>
+          </div>
+          <div class="consent-row">
+                <input type="checkbox" id="c-consent">
+                <div class="u-flex1">
+                  <label for="c-consent">Согласен(на) на обработку персональных данных <span class="req" aria-hidden="true">*</span></label>
+                  <span class="hint u-blk-mt4">
+                    <button type="button" class="linklike" data-modal="consent">Текст согласия</button> ·
+                    <button type="button" class="linklike" data-modal="policy">Политика</button>
+                  </span>
+                  <span class="err" role="alert"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn--copper btn--block u-mt18" type="button" id="c-send">Отправить</button>
+          <p class="hint u-mt12-center">Обращение уходит в сервис: перезвоним или ответим письмом в рабочее время.</p>
+          <noscript><p class="hint">Форма работает с включённым JavaScript. Без него — позвоните: {S.phone_main}.</p></noscript>
+          <div class="payload u-sep-top" id="c-payload">
+            <button class="payload-btn" type="button" id="c-payload-btn" aria-expanded="false" aria-controls="c-payload-pre"><span class="car" aria-hidden="true">▶</span> Что уйдёт на сервер (JSON)</button>
+            <pre id="c-payload-pre"></pre>
+          </div>
+        </div>
+        <div class="cform-state" id="cform-sending" role="status" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Отправляем…</p>
+        </div>
+        <div class="cform-state" id="cform-ok" role="status" aria-live="polite">
+          <div class="ticket u-mb0">
+            <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg><b>Сообщение принято</b></div>
+            <div class="no"><small>Номер обращения</small><span id="c-ok-no">—</span></div>
+            <p class="hint">Перезвоним с номера {S.phone_main} в рабочее время ({S.hours}). Обращение уже записано в базу сервиса.</p>
+          </div>
+        </div>
+        <div class="cform-state" id="cform-err" role="alert" aria-live="assertive">
+          <p><b class="u-danger">Не удалось отправить.</b></p>
+          <p class="hint">Данные сохранены в полях. Повторите отправку или позвоните: {S.phone_main}.</p>
+          <p class="u-mt16"><button type="button" class="btn btn--ghost" id="c-err-retry">Вернуться к форме</button></p>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+  <script>import '../client/contacts-form.ts';</script>
+</Base>

@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F7F3EB" />
+    <meta
+      name="description"
+      content="Демонстрационная форма записи: пять шагов, локальный черновик и предпросмотр JSON. Данные не отправляются."
+    />
+    <title>Запись в автосервис · АвтоТехСервис</title>
+    <link rel="icon" href="assets/brand.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/style.css" />
+    <script src="assets/app.js" defer></script>
+  </head>
+  <body data-page="appointment">
+    <a class="skip-link" href="#main">К содержанию</a>
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="index.html" aria-label="АвтоТехСервис — главная"
+          ><img src="assets/brand.svg" width="44" height="44" alt="" /><span class="brand-name"
+            >АвтоТехСервис<span class="brand-sub">Портовая · Ростов-на-Дону</span></span
+          ></a
+        >
+        <nav class="main-nav" aria-label="Основная навигация">
+          <a href="index.html">Главная</a><a href="about.html">О компании</a
+          ><a href="services.html">Услуги</a
+          ><a href="appointment.html" aria-current="page">Запись</a><a href="news.html">Новости</a
+          ><a href="contacts.html">Контакты</a>
+        </nav>
+        <div class="header-actions">
+          <a class="header-phone" href="tel:+79289065700">+7 (928) 906-57-00</a
+          ><a class="button" href="appointment.html">Записаться</a
+          ><button
+            id="menuToggle"
+            class="menu-toggle"
+            type="button"
+            aria-label="Открыть меню"
+            aria-controls="mobileMenu"
+            aria-expanded="false"
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <div
+      class="mobile-menu"
+      id="mobileMenu"
+      inert
+      role="dialog"
+      aria-modal="true"
+      aria-label="Меню сайта"
+      aria-hidden="true"
+    >
+      <div class="mobile-menu-head">
+        <a class="brand" href="index.html"
+          ><img src="assets/brand.svg" width="40" height="40" alt="" /><span class="brand-name"
+            >АвтоТехСервис<span class="brand-sub">Портовая · Ростов-на-Дону</span></span
+          ></a
+        ><button id="menuClose" class="icon-button" type="button" aria-label="Закрыть меню">
+          ×
+        </button>
+      </div>
+      <nav aria-label="Мобильная навигация">
+        <a href="index.html">Главная</a><a href="about.html">О компании</a
+        ><a href="services.html">Услуги</a><a href="appointment.html" aria-current="page">Запись</a
+        ><a href="news.html">Новости</a><a href="contacts.html">Контакты</a>
+      </nav>
+      <div class="mobile-menu-actions">
+        <a class="button-secondary" href="tel:+79289065700">Позвонить</a
+        ><a class="button" href="appointment.html">Записаться</a>
+      </div>
+    </div>
+    <div class="sticky-cta" id="stickyCta">
+      <a class="button-secondary" href="tel:+79289065700">Позвонить</a
+      ><a class="button" href="appointment.html">Записаться</a>
+    </div>
+    <main id="main" class="page-main">
+      <section class="page-hero">
+        <div class="wrap">
+          <nav class="breadcrumbs" aria-label="Хлебные крошки">
+            <a href="index.html">Главная</a><span class="sep">/</span
+            ><span aria-current="page">Запись</span>
+          </nav>
+          <div class="page-title-wrap">
+            <span class="eyebrow">Запись · 5 шагов</span>
+            <h1 class="page-title">Начните с того, что уже знаете.</h1>
+            <p class="page-intro">
+              Марка обязательна. Год, VIN и пробег можно пропустить. Запись здесь демонстрационная и
+              не бронирует реальный слот.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="section" style="padding-top: 8px">
+        <div class="wrap appointment-shell">
+          <div class="demo-banner" style="margin-bottom: 16px">
+            <strong>Демо.</strong
+            ><span
+              >Данные не отправляются. Даты и пометки «занято» — примеры интерфейса, не расписание
+              сервиса.</span
+            >
+          </div>
+          <form id="appointmentWizard" class="wizard-card" novalidate>
+            <div class="wizard-head">
+              <span id="wizardStepLabel">Шаг 1 из 5</span
+              ><span>Черновик сохраняется локально, если браузер это разрешает</span>
+            </div>
+            <div
+              class="wizard-progress"
+              role="progressbar"
+              aria-label="Прогресс записи"
+              aria-valuemin="1"
+              aria-valuemax="5"
+              aria-valuenow="1"
+              id="wizardProgress"
+            >
+              <span></span>
+            </div>
+            <section class="wizard-step" data-step="0">
+              <h2 tabindex="-1">01 · Автомобиль</h2>
+              <p class="wizard-help">Марка обязательна; модель, год, VIN и пробег — по желанию.</p>
+              <div class="auto-grid">
+                <div class="field">
+                  <label for="brand">Марка автомобиля *</label
+                  ><input
+                    name="brand"
+                    id="brand"
+                    type="text"
+                    list="makeList"
+                    autocomplete="off"
+                    placeholder="Начните вводить марку"
+                    aria-describedby="brandError"
+                  /><datalist id="makeList">
+                    <option value="LADA"></option>
+                    <option value="Toyota"></option>
+                    <option value="Kia"></option>
+                    <option value="Hyundai"></option>
+                    <option value="Volkswagen"></option>
+                    <option value="Nissan"></option>
+                    <option value="Renault"></option>
+                    <option value="Skoda"></option>
+                    <option value="Mazda"></option>
+                    <option value="Mitsubishi"></option>
+                    <option value="Ford"></option>
+                    <option value="Chevrolet"></option>
+                    <option value="Honda"></option>
+                    <option value="BMW"></option>
+                    <option value="Mercedes-Benz"></option>
+                    <option value="Audi"></option>
+                    <option value="Opel"></option>
+                    <option value="Peugeot"></option>
+                    <option value="Geely"></option>
+                    <option value="Chery"></option></datalist
+                  ><span class="field-error" id="brandError"></span>
+                </div>
+                <div class="field">
+                  <label for="model">Модель</label
+                  ><input
+                    name="model"
+                    id="model"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Например, модель автомобиля"
+                  />
+                </div>
+                <div class="field">
+                  <label for="year">Год выпуска</label
+                  ><input
+                    name="year"
+                    id="year"
+                    type="number"
+                    inputmode="numeric"
+                    min="1980"
+                    max="2026"
+                    placeholder="1980–2026"
+                  /><label class="option-inline"
+                    ><input type="checkbox" name="yearUnknown" /> Не помню год</label
+                  ><span class="field-error"></span>
+                </div>
+                <div class="field">
+                  <label for="vin">VIN (17 символов)</label
+                  ><input
+                    name="vin"
+                    id="vin"
+                    type="text"
+                    maxlength="17"
+                    autocomplete="off"
+                    autocapitalize="characters"
+                    placeholder="Можно пропустить"
+                  /><label class="option-inline"
+                    ><input type="checkbox" name="vinUnknown" /> Не знаю VIN</label
+                  ><span class="field-error"></span>
+                </div>
+                <div class="field">
+                  <label for="mileage">Пробег, км</label
+                  ><input
+                    name="mileage"
+                    id="mileage"
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                    placeholder="Необязательно"
+                  /><label class="option-inline"
+                    ><input type="checkbox" name="mileageUnknown" /> Не знаю пробег</label
+                  ><span class="field-error"></span>
+                </div>
+              </div>
+            </section>
+            <section class="wizard-step" data-step="1" hidden>
+              <h2 tabindex="-1">02 · Что нужно сделать?</h2>
+              <p class="wizard-help">
+                Выберите один или несколько пунктов. Если сомневаетесь — отметьте диагностику.
+              </p>
+              <div class="service-chips">
+                <div class="service-chip">
+                  <input
+                    id="svc-shinomontazh"
+                    type="checkbox"
+                    name="services"
+                    value="shinomontazh"
+                    data-label="Шиномонтаж"
+                  /><label for="svc-shinomontazh">Шиномонтаж</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-balansirovka"
+                    type="checkbox"
+                    name="services"
+                    value="balansirovka"
+                    data-label="Балансировка"
+                  /><label for="svc-balansirovka">Балансировка</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-disk"
+                    type="checkbox"
+                    name="services"
+                    value="disk"
+                    data-label="Правка диска"
+                  /><label for="svc-disk">Правка диска</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-tire-repair"
+                    type="checkbox"
+                    name="services"
+                    value="tire-repair"
+                    data-label="Ремонт шины"
+                  /><label for="svc-tire-repair">Ремонт шины</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-maintenance"
+                    type="checkbox"
+                    name="services"
+                    value="maintenance"
+                    data-label="ТО и масло"
+                  /><label for="svc-maintenance">ТО и масло</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-brakes"
+                    type="checkbox"
+                    name="services"
+                    value="brakes"
+                    data-label="Тормоза и ходовая"
+                  /><label for="svc-brakes">Тормоза и ходовая</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-engine"
+                    type="checkbox"
+                    name="services"
+                    value="engine"
+                    data-label="Двигатель / трансмиссия"
+                  /><label for="svc-engine">Двигатель / трансмиссия</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-electric"
+                    type="checkbox"
+                    name="services"
+                    value="electric"
+                    data-label="Электрика / климат"
+                  /><label for="svc-electric">Электрика / климат</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-glass"
+                    type="checkbox"
+                    name="services"
+                    value="glass"
+                    data-label="Автостекло"
+                  /><label for="svc-glass">Автостекло</label>
+                </div>
+                <div class="service-chip">
+                  <input
+                    id="svc-diagnostics"
+                    type="checkbox"
+                    name="services"
+                    value="diagnostics"
+                    data-label="Не знаю — нужна диагностика"
+                  /><label for="svc-diagnostics">Не знаю — нужна диагностика</label>
+                </div>
+              </div>
+              <div class="upload-box">
+                <label for="photos"
+                  ><span>Добавить фотографии · до 3 файлов</span
+                  ><span class="button-quiet" aria-hidden="true">Выбрать</span></label
+                ><input type="file" name="photos" id="photos" accept="image/*" multiple />
+                <p class="upload-hint">
+                  Предпросмотр только в браузере; макет файлы не отправляет и не хранит.
+                </p>
+                <div id="fileList" class="file-list" aria-live="polite"></div>
+              </div>
+            </section>
+            <section class="wizard-step" data-step="2" hidden>
+              <h2 tabindex="-1">03 · Когда связаться?</h2>
+              <p class="wizard-help">
+                Выберите дату в ближайшие 14 дней и примерное время. Занятость в демо условная.
+              </p>
+              <div
+                id="dateStrip"
+                class="date-strip"
+                role="radiogroup"
+                aria-label="Дата визита"
+              ></div>
+              <h3 class="slots-title">Время · 09:00–19:00</h3>
+              <div id="timeSlots" class="time-slots" aria-label="Время визита"></div>
+              <label class="asap-option"
+                ><input type="checkbox" name="asap" /><span
+                  ><strong>Как можно скорее</strong><br />Время согласуем при обратной связи.</span
+                ></label
+              >
+              <p class="availability-note">
+                Демо-слоты «занято» показаны только для проверки состояния. Это не актуальная
+                запись.
+              </p>
+            </section>
+            <section class="wizard-step" data-step="3" hidden>
+              <h2 tabindex="-1">04 · Как с вами связаться?</h2>
+              <p class="wizard-help">Нужны только имя и телефон. E-mail не спрашиваем.</p>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="name">Имя *</label
+                  ><input
+                    name="name"
+                    id="name"
+                    type="text"
+                    autocomplete="name"
+                    placeholder="Как к вам обращаться"
+                  /><span class="field-error"></span>
+                </div>
+                <div class="field">
+                  <label for="phone">Телефон *</label
+                  ><input
+                    name="phone"
+                    id="phone"
+                    type="tel"
+                    inputmode="tel"
+                    autocomplete="tel"
+                    placeholder="+7 (___) ___-__-__"
+                  /><span class="field-error"></span>
+                </div>
+                <fieldset class="field full" style="border: 0; padding: 0; margin: 0">
+                  <legend class="field-label">Предпочтительный способ связи</legend>
+                  <div class="contact-pref">
+                    <label
+                      ><input type="radio" name="contact_method:call" value="call" checked />
+                      Звонок</label
+                    ><label
+                      ><input type="radio" name="contact_method:telegram" value="telegram" />
+                      Telegram</label
+                    >
+                  </div>
+                  <span class="form-note"
+                    >Telegram: номер владельца из брифа; публичную ссылку на аккаунт нужно
+                    подтвердить.</span
+                  >
+                </fieldset>
+                <label class="consent-row field full"
+                  ><input name="consent" type="checkbox" /><span
+                    >Согласен(на) на обработку данных для ответа на запрос.
+                    <a class="text-link" href="#privacy" data-policy>Политика · демо-заглушка</a>.
+                    Согласие не отмечено заранее.</span
+                  ></label
+                >
+              </div>
+            </section>
+            <section class="wizard-step" data-step="4" hidden>
+              <h2 tabindex="-1">05 · Проверьте заявку</h2>
+              <p class="wizard-help">Перед отправкой можно вернуться и изменить данные.</p>
+              <div id="appointmentSummary" class="summary-box"></div>
+              <button
+                id="payloadToggle"
+                class="button-quiet payload-toggle"
+                type="button"
+                aria-expanded="false"
+              >
+                Что уйдёт на сервер
+              </button>
+              <div id="payloadPanel" class="payload-panel"><pre></pre></div>
+              <p class="form-note">
+                В реальном сервисе отправка возможна только после подключения сервера и проверки
+                согласия. Здесь сеть отключена.
+              </p>
+              <button id="demoError" class="button-quiet" type="button">
+                Показать ошибку демо-отправки
+              </button>
+            </section>
+            <p class="form-status" id="wizardStatus" role="status" aria-live="polite"></p>
+            <div class="wizard-footer">
+              <button class="button-quiet" id="wizardBack" type="button" disabled>← Назад</button
+              ><button class="button" id="wizardNext" type="button" disabled>
+                Далее <span aria-hidden="true">→</span></button
+              ><button class="button" id="wizardSubmit" type="button" hidden>
+                Отправить демо-заявку
+              </button>
+            </div>
+          </form>
+          <section id="errorTicket" class="error-ticket" role="alert">
+            <strong>Не удалось получить ответ.</strong> Это симуляция ошибки; введённые поля и
+            локальный черновик остаются. Можно повторить.
+          </section>
+          <section id="successTicket" class="success-ticket" aria-live="polite">
+            <h2>Демо-проверка пройдена</h2>
+            <p>
+              Сетевого запроса не было. В настоящем проекте номер появится только после сохранения
+              заявки.
+            </p>
+            <span id="ticketNumber" class="ticket-code">DEMO-—</span>
+            <p>
+              <strong>Что дальше в реальном сценарии:</strong> сервис подтверждает время и состав
+              работ; перед визитом стоит взять документы на автомобиль и ключи. Это предложение
+              интерфейса, согласовать у владельца.
+            </p>
+            <a class="button-secondary" href="contacts.html">Контакты сервиса</a>
+          </section>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a class="brand" href="index.html"
+              ><img src="assets/brand.svg" width="44" height="44" alt="" /><span class="brand-name"
+                >АвтоТехСервис<span class="brand-sub">Портовая · Ростов-на-Дону</span></span
+              ></a
+            >
+            <p class="footer-copy">
+              Автосервис и шиномонтаж. Состав работ и доступность конкретной услуги уточняются при
+              обращении.
+            </p>
+          </div>
+          <div class="footer-col">
+            <h2>Разделы</h2>
+            <ul>
+              <li><a href="about.html">О компании</a></li>
+              <li><a href="services.html">Услуги</a></li>
+              <li><a href="appointment.html">Запись</a></li>
+              <li><a href="news.html">Новости и акции</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Контакты</h2>
+            <ul>
+              <li><a href="contacts.html">ул. Портовая, 439</a></li>
+              <li><a href="tel:+79289065700">+7 (928) 906-57-00</a></li>
+              <li><a href="mailto:avtotehservis439@mail.ru">avtotehservis439@mail.ru</a></li>
+              <li><span>Ежедневно, 09:00–19:00</span></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Документы</h2>
+            <ul>
+              <li><a href="#privacy" data-policy>Политика · демо-заглушка</a></li>
+              <li><a href="#consent" data-policy>Согласие · демо-заглушка</a></li>
+              <li><a href="admin.html">Админка · демонстрация</a></li>
+            </ul>
+            <p style="margin-top: 14px">
+              ИП Яковенко Павел Иванович<br />ИНН 341010400388<br />ОГРНИП 324619600117335
+            </p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 АвтоТехСервис · демонстрационный макет</span
+          ><span class="footer-legal"
+            >Демо-контент и графические заглушки не являются подтверждением выполненных работ,
+            отзывов или доступности услуг. <a href="#privacy" data-policy>О документах</a></span
+          >
+        </div>
+      </div>
+    </footer>
+    <div class="modal-backdrop" id="modalBackdrop" inert aria-hidden="true">
+      <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+          <h2 id="modalTitle">Демо</h2>
+          <button id="modalClose" class="icon-button" type="button" aria-label="Закрыть окно">
+            ×
+          </button>
+        </div>
+        <div id="modalBody"></div>
+        <div class="review-controls" data-lightbox-controls hidden>
+          <button id="modalPrev" class="icon-button" type="button" aria-label="Предыдущая работа">
+            ←</button
+          ><button id="modalNext" class="icon-button" type="button" aria-label="Следующая работа">
+            →
+          </button>
+        </div>
+      </section>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

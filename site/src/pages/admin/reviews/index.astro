@@ -1,0 +1,95 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+import { fmtDateShort } from '../../../server/format.ts';
+
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const action = String(form.get('action') ?? '');
+  const rid = Number(form.get('id') ?? 0);
+  if (action === 'add') {
+    const author = String(form.get('author') ?? '').trim();
+    const text = String(form.get('text') ?? '').trim();
+    const rating = Number(form.get('rating') ?? 0);
+    if (author.length < 2 || text.length < 20 || !(rating >= 1 && rating <= 5)) {
+      return Astro.redirect('/admin/reviews?err=' + encodeURIComponent('Автор ≥2 символов, текст ≥20 символов, оценка 1–5'), 302);
+    }
+    const source = String(form.get('source') ?? '').trim() || null;
+    const sourceUrl = String(form.get('source_url') ?? '').trim() || null;
+    if (sourceUrl && !/^https?:\/\//.test(sourceUrl)) {
+      return Astro.redirect('/admin/reviews?err=' + encodeURIComponent('Ссылка на источник — только http(s)'), 302);
+    }
+    db().prepare(`INSERT INTO reviews(author, text, rating, source, source_url, status) VALUES(?,?,?,?,?,'pending')`)
+      .run(author, text, rating, source, sourceUrl);
+    logAction(user.id, 'review_add', 'reviews', author, { rating, source });
+    return Astro.redirect('/admin/reviews?msg=' + encodeURIComponent('Отзыв добавлен — опубликуйте после проверки'), 302);
+  }
+  if ((action === 'publish' || action === 'hide') && rid) {
+    const status = action === 'publish' ? 'published' : 'hidden';
+    db().prepare(`UPDATE reviews SET status=?, published_at=CASE WHEN ?='published' AND published_at IS NULL THEN datetime('now') ELSE published_at END WHERE id=?`)
+      .run(status, status, rid);
+    logAction(user.id, `review_${action}`, 'reviews', rid);
+    return Astro.redirect('/admin/reviews?msg=' + encodeURIComponent(status === 'published' ? 'Отзыв опубликован' : 'Отзыв скрыт'), 302);
+  }
+}
+const reviews = db().prepare('SELECT * FROM reviews ORDER BY CASE status WHEN \'pending\' THEN 0 ELSE 1 END, id DESC').all() as {
+  id: number; author: string; text: string; rating: number | null; source: string | null; source_url: string | null;
+  published_at: string | null; status: string;
+}[];
+---
+<Admin section="reviews" title="Отзывы">
+  <h1 class="adm-h1">Отзывы</h1>
+  <p class="hint u-mb18">Публикуйте только реальные отзывы — с источником и ссылкой (Яндекс, 2ГИС, книга отзывов). Выдуманные отзывы запрещены и вредят репутации.</p>
+  <div class="adm-card">
+    <h2>Добавить отзыв</h2>
+    <form method="post" class="adm-form">
+      <input type="hidden" name="_csrf" value={csrf}>
+      <input type="hidden" name="action" value="add">
+      <div class="adm-row">
+        <label>Автор <input type="text" name="author" required minlength="2" maxlength="60" placeholder="Имя клиента"></label>
+        <label>Оценка
+          <select name="rating" required>{[5,4,3,2,1].map((r) => <option value={r}>{r}</option>)}</select>
+        </label>
+      </div>
+      <label>Текст отзыва <textarea name="text" required minlength="20" maxlength="1200"></textarea></label>
+      <div class="adm-row">
+        <label>Источник <input type="text" name="source" maxlength="40" placeholder="Яндекс Карты / 2ГИС / книга отзывов"></label>
+        <label>Ссылка на источник <input type="url" name="source_url" maxlength="300" placeholder="https://…"></label>
+      </div>
+      <button type="submit" class="btn btn--copper">Добавить (на модерацию)</button>
+    </form>
+  </div>
+  {reviews.length ? (
+    <div class="adm-card">
+      <table class="adm-table">
+        <thead><tr><th>Автор</th><th>Текст</th><th>Оценка</th><th>Источник</th><th>Статус</th><th>Действия</th></tr></thead>
+        <tbody>
+          {reviews.map((r) => (
+            <tr>
+              <td>{r.author}<div class="hint">{r.published_at ? fmtDateShort(r.published_at) : ''}</div></td>
+              <td>{r.text.slice(0, 120)}{r.text.length > 120 ? '…' : ''}</td>
+              <td>{r.rating ?? '—'}/5</td>
+              <td>{r.source ?? '—'}{r.source_url && <div><a href={r.source_url} target="_blank" rel="noopener noreferrer">ссылка ↗</a></div>}</td>
+              <td><span class={`badge badge--${r.status}`}>{r.status}</span></td>
+              <td>
+                <div class="adm-row">
+                  {r.status !== 'published' && (
+                    <form method="post"><input type="hidden" name="_csrf" value={csrf}><input type="hidden" name="action" value="publish"><input type="hidden" name="id" value={r.id}><button class="btn btn--ghost btn--sm" type="submit">опубликовать</button></form>
+                  )}
+                  {r.status === 'published' && (
+                    <form method="post"><input type="hidden" name="_csrf" value={csrf}><input type="hidden" name="action" value="hide"><input type="hidden" name="id" value={r.id}><button class="btn btn--ghost btn--sm" type="submit">скрыть</button></form>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : <p class="adm-empty">Отзывов пока нет — на сайте показывается честное пустое состояние со ссылкой на Яндекс.Карты.</p>}
+</Admin>

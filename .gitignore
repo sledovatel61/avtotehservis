@@ -1,0 +1,54 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next / build
+.next/
+out/
+dist/
+build/
+.turbo/
+.vercel/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# uploads / media (в репозиторий не кладём, живут на сервере)
+uploads/
+media/
+!media/.gitkeep
+
+# backups / dumps
+backups/
+*.sql
+*.dump
+# ...но схема БД сайта — это код, а не дамп: без неё чистый клон не поднимается
+!site/migrations/
+!site/migrations/*.sql
+
+# logs / temp
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# tests & coverage
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+
+# editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# скачиваемые архивы мокапов (собираются из папок, в git не нужны)
+mockups/round2b/_downloads/*.zip
+
+# сборка превью для GitHub Pages (генерируется скриптом, в git не нужна)
+site/pages-dist/

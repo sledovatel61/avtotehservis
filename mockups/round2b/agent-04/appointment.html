@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Запись — АвтоТехСервис</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="topbar"><div class="container"><div class="row"><span>Портовая, 439 • 9:00–19:00</span><a href="tel:+79289065700">+7 (928) 906-57-00</a></div></div></div>
+<header class="header"><div class="container"><div class="header__inner"><a class="logo" href="index.html"><span class="logo__mark"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#1F242B"/><circle cx="32" cy="32" r="20" fill="none" stroke="#FF6B2C" stroke-width="4"/></svg></span><span class="logo__text"><b>АвтоТехСервис</b><span>Портовая, 439</span></span></a><nav class="nav"><a href="index.html">Главная</a><a href="about.html">О компании</a><a href="services.html">Услуги</a><a class="is-active" href="appointment.html">Запись</a><a href="news.html">Новости</a><a href="contacts.html">Контакты</a></nav><div class="header__actions"><a class="btn btn--accent" href="appointment.html">Записаться</a><button class="burger" id="burger"><span></span></button></div></div></div></header>
+<div class="mnav" id="mnav" aria-hidden="true"><div class="mnav__bg" data-close></div><div class="mnav__panel"><nav class="mnav__links"><a href="index.html">Главная</a><a href="about.html">О компании</a><a href="services.html">Услуги</a><a class="is-active" href="appointment.html">Запись</a><a href="news.html">Новости</a><a href="contacts.html">Контакты</a></nav></div></div>
+
+<nav class="breadcrumbs container"><ol><li><a href="index.html">Главная</a></li><li>Запись</li></ol></nav>
+<section class="section"><div class="container"><div class="kicker">Запись</div><h1 class="h2">Запись на сервис — 5 шагов, 2 минуты</h1><div class="title-accent"></div><p class="lead">Без внешних запросов. Черновик — в localStorage (если доступен), иначе форма всё равно работает. Отправка имитируется 700–1200 мс, без fetch/XHR.</p>
+
+<div class="form" id="appointmentRoot">
+  <div class="form__head"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b id="stepLabel">Шаг 1 из 5</b><span class="chip" id="branchLabel">Авто</span></div><div class="progress"><i id="formProg" style="--p:0.2"></i></div><a href="#" id="resetForm" style="font-size:13px">Сбросить</a></div>
+  <div class="form__body" id="formBody"></div>
+</div>
+
+<div id="policyModal" class="lightbox" aria-hidden="true"><div class="lightbox__bg" data-close-policy></div><div class="lightbox__panel"><div class="lightbox__card" role="dialog" aria-modal="true" aria-label="Политика"><div class="lightbox__head"><b>Политика обработки ПД — коротко</b><button data-close-policy style="width:44px;height:44px;border-radius:999px;border:1px solid var(--line);background:#fff">✕</button></div><div style="padding:16px;font-size:14px;color:var(--muted)"><p>Оператор — ИП Яковенко Павел Иванович, ИНН 341010400388, адрес для обращений: Портовая, 439. Цель — обработка заявки и запись. Данные: имя, телефон, марка/модель/год/VIN/пробег, услуги, дата/время, фото. Храним 1 год. Отзыв согласия — по телефону +7 (928) 906-57-00 или e-mail avtotehservis439@mail.ru. Передача — только обработчикам по договору (почта, Telegram) в РФ.</p><p>Отдельной страницы в референсе нет — отдельную страницу не выдумываем. Полный текст — согласовать с юристом.</p></div></div></div></div>
+
+</div></section>
+
+<footer class="footer"><div class="container"><small>© <span id="y"></span> • ИП Яковенко П.И., ИНН 341010400388 • <a href="#" data-open-policy>Политика</a> • <a href="#" data-open-policy>Согласие</a></small></div></footer>
+<div class="sticky" id="sticky"><a class="btn btn--ghost" href="tel:+79289065700">Позвонить</a><a class="btn btn--accent" href="appointment.html">Записаться</a></div>
+<div class="toast" id="toast"></div><script src="assets/app.js"></script>
+</body>
+</html>

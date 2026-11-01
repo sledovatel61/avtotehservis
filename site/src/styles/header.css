@@ -1,0 +1,129 @@
+/* ---------- Шапка (три колонки: логотип — меню — контакт) ---------- */
+.hdr{
+  position:sticky;top:0;z-index:80;
+  background:rgba(11,20,16,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+  transition:padding var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease);
+}
+.hdr-in{display:flex;align-items:center;gap:24px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
+.hdr.is-compact .hdr-in{padding-top:8px;padding-bottom:8px}
+.logo{display:flex;align-items:center;gap:12px;color:var(--ivory);flex-shrink:0}
+.logo:hover{color:var(--ivory)}
+.logo img{width:44px;height:44px;transition:transform var(--t-mid) var(--ease)}
+.hdr.is-compact .logo img{transform:scale(.86)}
+.logo-t{font-family:var(--font-display);font-weight:600;font-size:17px;letter-spacing:-.01em;line-height:1.1}
+.logo-t b{display:block;font-family:var(--font-text);font-weight:400;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);margin-top:3px}
+.nav{margin-left:auto}
+/* раунд 15: пункты меню не ломаются на две строки (скрин g: 1212 px) */
+.nav a{white-space:nowrap}
+.nav ul{display:flex;gap:4px}
+.nav a{
+  display:block;padding:10px 13px;border-radius:8px;color:var(--mist);
+  font-size:14.5px;font-weight:500;letter-spacing:.01em;min-height:44px;
+  display:flex;align-items:center;
+  transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+}
+.nav a:hover{color:var(--ivory);background:rgba(224,169,109,.08)}
+.nav a.is-active{color:var(--brass);background:rgba(224,169,109,.1)}
+.nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:7px}
+.hdr-cta{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.hdr-phone{
+  font-weight:700;font-size:16.5px;color:var(--ivory);white-space:nowrap;
+  display:flex;align-items:center;gap:8px;min-height:44px;
+}
+.hdr-phone:hover{color:var(--brass)}
+.hdr-phone svg{width:17px;height:17px;stroke:var(--brass)}
+.burger{
+  display:none;width:48px;height:48px;border-radius:10px;border:1px solid var(--line);
+  background:transparent;cursor:pointer;position:relative;flex-shrink:0;
+}
+.burger span{
+  position:absolute;left:12px;right:12px;height:2px;background:var(--ivory);border-radius:2px;
+  transition:transform var(--t-mid) var(--ease),opacity var(--t-mid) var(--ease);
+}
+.burger span:nth-child(1){top:16px}
+.burger span:nth-child(2){top:23px}
+.burger span:nth-child(3){top:30px}
+body.menu-open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+body.menu-open .burger span:nth-child(2){opacity:0}
+body.menu-open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ---------- Мобильное меню (на весь экран) ---------- */
+.m-menu{
+  position:fixed;inset:0;z-index:90;background:var(--night);
+  display:flex;flex-direction:column;padding:20px 24px calc(28px + env(safe-area-inset-bottom));
+  opacity:0;visibility:hidden;transform:translateY(-12px);
+  transition:opacity var(--t-mid) var(--ease),transform var(--t-mid) var(--ease),visibility var(--t-mid);
+}
+body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
+.m-menu-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px}
+.m-close{width:48px;height:48px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ivory);font-size:22px;cursor:pointer;line-height:1}
+.m-menu nav ul{display:flex;flex-direction:column;gap:6px}
+.m-menu nav a{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:var(--font-display);font-weight:600;font-size:clamp(1.3rem,6vw,1.8rem);
+  color:var(--ivory);padding:13px 4px;border-bottom:1px solid var(--line-soft);min-height:56px;
+}
+.m-menu nav a.is-active{color:var(--brass)}
+.m-menu nav a .n{font-family:var(--font-text);font-size:12px;font-weight:500;color:var(--copper);letter-spacing:.1em}
+.m-menu-contacts{margin-top:auto;display:grid;gap:12px;padding-top:28px}
+.m-menu-contacts a{font-weight:500;font-size:17px;min-height:44px;display:flex;align-items:center;gap:10px}
+.m-menu-contacts .tel{font-size:22px;font-weight:700;color:var(--ivory)}
+
+/* РАУНД 15 / патч оркестратора. nowrap у пунктов вернул меню в одну строку (жалоба `g`),
+   но шапка перестала влезать в окно: «Записаться» обрезалась краем (A6: +83 px на 1024,
+   +60 на 1217, +74 на 1280, +31 на 1366). Ширину считали по метрикам Golos Text (fontTools):
+   пункты меню 448 px при 14.5 — самый дорогой блок шапки, поэтому на 1024–1199 убираем
+   подпись под логотипом и цифры телефона (они есть в док-панели, мобильном меню, футере
+   и на «Контактах»), а меню уплотняем. С 1200 подпись возвращается, с 1280 — цифры. */
+@media (min-width:1024px) and (max-width:1199px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .logo-t b{display:none}
+  .hdr-phone span{display:none}
+  .nav ul{gap:2px}
+  .nav a{padding:8px 6px;font-size:13.5px}
+}
+@media (min-width:1200px) and (max-width:1279px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .hdr-phone span{display:none}
+  .nav ul{gap:2px}
+  .nav a{padding:8px 7px;font-size:14px}
+}
+@media (min-width:1280px) and (max-width:1359px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .logo-t b{display:none}
+  .nav ul{gap:2px}
+  .nav a{padding:8px 7px;font-size:13.5px}
+}
+@media (min-width:1360px) and (max-width:1439px){
+  .hdr-in{gap:16px}
+  .hdr-cta{gap:12px}
+  .nav ul{gap:4px}
+  .nav a{padding:9px 9px;font-size:14px}
+}
+
+/* РАУНД 15 / патч оркестратора: на телефоне шапка была шире окна (рендер: .burger
+   x 363…411 при clientWidth 360, scrollWidth 411). Подпись под логотипом — 196 px,
+   на ≤560 убираем её и поджимаем блоки; на ≤380 — ещё компактнее. */
+@media (max-width:560px){
+  .logo-t b{display:none}
+  .hdr-in{gap:14px}
+  .logo{gap:10px}
+  .logo img{width:40px;height:40px}
+  .logo-t{font-size:16px}
+  .burger{width:44px;height:44px}
+  .burger span{left:11px;right:11px}
+  .burger span:nth-child(1){top:14px}
+  .burger span:nth-child(2){top:21px}
+  .burger span:nth-child(3){top:28px}
+  body.menu-open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  body.menu-open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+}
+@media (max-width:380px){
+  .hdr-in{gap:10px}
+  .logo-t{font-size:15px}
+  .logo img{width:36px;height:36px}
+}

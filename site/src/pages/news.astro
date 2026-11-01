@@ -1,0 +1,91 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import { listNews, NEWS_CATEGORIES, coverInfo, catTitle, newsCategoryCounts, newsTotal } from '../server/content.ts';
+import { fmtDateRu } from '../server/format.ts';
+
+const S = getSettings();
+const cat = Astro.url.searchParams.get('cat');
+const PER = 6;
+const counts = newsCategoryCounts();
+const allCount = newsTotal();
+const requestedPage = Math.max(1, parseInt(Astro.url.searchParams.get('page') ?? '1', 10) || 1);
+const first = listNews({ category: cat, page: 1, per: PER });
+const pageNum = Math.min(requestedPage, first.pages);
+const { items, total, pages } = pageNum === 1 ? first : listNews({ category: cat, page: pageNum, per: PER });
+const fallbackCovers = ['/img/news-1.svg', '/img/news-2.svg', '/img/news-3.svg', '/img/news-4.svg'];
+const pageUrl = (p: number): string => {
+  const q = new URLSearchParams();
+  if (cat) q.set('cat', cat);
+  if (p > 1) q.set('page', String(p));
+  const s = q.toString();
+  return '/news' + (s ? `?${s}` : '');
+};
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+    { '@type': 'ListItem', position: 2, name: 'Новости и акции' },
+  ],
+};
+---
+<Base
+  page="news"
+  title="Новости и акции — АвтоТехСервис, Ростов-на-Дону"
+  description="Новости автосервиса на Портовой, 439: сезонные советы по шинам и электрике, жизнь сервиса, акции. Публикуем по мере поступления."
+  jsonLd={jsonLd}
+>
+
+<nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">Новости и акции</span></nav>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Новости и акции</span>
+    <h1>Полезное про колёса, ремонт и сезон</h1>
+    <p class="lead">Пишем о том, что помогает водителям: когда переобуваться, что делать с грыжей, как готовить электрику к зиме. Раздел ведёт владелец сервиса — статьи появляются по мере публикации.</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="news-h">
+  <h2 id="news-h" class="u-sr">Список новостей</h2>
+  <div class="container">
+    <div class="filters" role="group" aria-label="Фильтр по категориям">
+      <a class={`filter-chip${!cat ? ' is-on' : ''}`} href="/news" aria-pressed={!cat ? 'true' : 'false'}>Все ({allCount})</a>
+      {NEWS_CATEGORIES.map((c) => (
+        <a class={`filter-chip${cat === c.slug ? ' is-on' : ''}`} href={`/news?cat=${c.slug}`} aria-pressed={cat === c.slug ? 'true' : 'false'}>{c.title} ({counts[c.slug] ?? 0})</a>
+      ))}
+    </div>
+    {items.length ? (
+      <div class="news-grid" id="news-grid">
+        {items.map((n, ni) => (
+          <article class="news-card" data-cat={n.category}>
+            <div class="news-img">{(() => { const cov = coverInfo(n, fallbackCovers[ni % fallbackCovers.length], n.title); return (
+              <img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 380px" alt={cov.alt} width="800" height="450" loading="lazy">
+            ); })()}</div>
+            <div class="news-body">
+              <div class="news-meta"><span class="news-cat">{catTitle(n.category)}</span><time datetime={(n.published_at ?? '').replace(' ', 'T')}>{fmtDateRu(n.published_at)}</time></div>
+              <h3><a href={`/news/${n.slug}`}>{n.title}</a></h3>
+              <p>{n.excerpt}</p>
+              <a class="link-more u-fs13" href={`/news/${n.slug}`}>Читать <span class="ar" aria-hidden="true">→</span></a>
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="news-empty">
+        <b>{cat ? 'В этой категории пока пусто' : 'Статей пока нет'}</b>
+        <p class="u-mt6">Публикуем новости по мере поступления — сезонные советы, жизнь сервиса, акции. Загляните позже или подпишитесь на нас в Telegram.</p>
+      </div>
+    )}
+    {items.length > 0 && <p class="hint u-center-mt18">Показано {items.length} из {total}</p>}
+    {pages > 1 && (
+      <nav class="pager" aria-label="Страницы новостей">
+        {pageNum > 1 && <a href={pageUrl(pageNum - 1)} aria-label="Предыдущая страница">←</a>}
+        {Array.from({ length: pages }).map((_, pi) => (
+          <a href={pageUrl(pi + 1)} class={pi + 1 === pageNum ? 'is-on' : ''} aria-current={pi + 1 === pageNum ? 'page' : undefined}>{pi + 1}</a>
+        ))}
+        {pageNum < pages && <a href={pageUrl(pageNum + 1)} aria-label="Следующая страница">→</a>}
+      </nav>
+    )}
+  </div>
+</section>
+</Base>

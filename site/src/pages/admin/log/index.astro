@@ -1,0 +1,37 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+
+const entity = Astro.url.searchParams.get('entity') ?? '';
+const rows = (entity
+  ? db().prepare(`SELECT a.*, u.login FROM audit_log a LEFT JOIN admin_users u ON u.id=a.user_id WHERE a.entity=? ORDER BY a.id DESC LIMIT 500`).all(entity)
+  : db().prepare(`SELECT a.*, u.login FROM audit_log a LEFT JOIN admin_users u ON u.id=a.user_id ORDER BY a.id DESC LIMIT 500`).all()) as {
+  id: number; user_id: number | null; login: string | null; action: string; entity: string | null; entity_id: string | null; at: string; meta_json: string | null;
+}[];
+const entities = (db().prepare('SELECT DISTINCT entity FROM audit_log WHERE entity IS NOT NULL ORDER BY entity').all() as { entity: string }[]).map((r) => r.entity);
+---
+<Admin section="log" title="Журнал">
+  <h1 class="adm-h1">Журнал действий</h1>
+  <div class="adm-filters">
+    <a href="/admin/log" class:list={[{ 'is-on': !entity }]}>все</a>
+    {entities.map((e) => <a href={`/admin/log?entity=${e}`} class:list={[{ 'is-on': entity === e }]}>{e}</a>)}
+  </div>
+  {rows.length ? (
+    <div class="adm-card">
+      <table class="adm-table">
+        <thead><tr><th>Когда (UTC)</th><th>Кто</th><th>Действие</th><th>Объект</th><th>Детали</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <td>{r.at}</td>
+              <td>{r.login ?? 'система'}</td>
+              <td>{r.action}</td>
+              <td>{r.entity ?? '—'}{r.entity_id ? ` #${r.entity_id}` : ''}</td>
+              <td class="hint">{r.meta_json ?? ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : <p class="adm-empty">Записей нет.</p>}
+</Admin>

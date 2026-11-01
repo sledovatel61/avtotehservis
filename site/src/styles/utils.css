@@ -1,0 +1,35 @@
+/* Утилитарные классы: заменяют инлайновые style-атрибуты мокапа (CSP style-src 'self'). */
+.skip{position:absolute;left:-999px;top:0;background:var(--brass);color:var(--night);padding:10px 16px;z-index:200;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+.u-fs13{font-size:13.5px}
+.u-mt14-fs13{margin-top:14px;font-size:13px}
+.u-brass{color:var(--brass)}
+.u-warn{color:var(--warn)}
+.u-mist{color:var(--mist)}
+.u-danger{color:var(--danger)}
+.u-lead-c{color:#3F4E47}
+.u-sr{position:absolute;left:-999px}
+.u-mt0{margin-top:0}.u-mt6{margin-top:6px}.u-mt8{margin-top:8px}.u-mt10{margin-top:10px}
+.u-mt12{margin-top:12px}.u-mt14{margin-top:14px}.u-mt16{margin-top:16px}.u-mt18{margin-top:18px}
+.u-mt24{margin-top:24px}.u-mt26{margin-top:26px}.u-mt44{margin-top:44px}
+.u-mb0{margin-bottom:0}.u-mb14{margin-bottom:14px}.u-mb18{margin-bottom:18px}
+.u-mla{margin-left:auto}
+.u-m8-0-12{margin:8px 0 12px}
+.u-m6-0-0{margin:6px 0 0}
+.u-flex1{flex:1}
+.u-blk-mt4{display:block;margin-top:4px}
+.u-invisible{visibility:hidden}
+.u-none{display:none}
+.u-center-mt18{text-align:center;margin-top:18px}
+.u-mt12-center{margin-top:12px;text-align:center}
+.u-pt34{padding-top:34px}
+.u-chips-mt26{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+.u-actions-center{margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.u-flex-mt18{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+.u-grid8-lead{display:grid;gap:8px;color:#3F4E47;margin-top:14px}
+.u-grid22{display:grid;gap:22px}
+.u-note-box{gap:10px;align-items:center;flex-wrap:wrap;border:1px dashed rgba(224,169,109,.4);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.u-sep-top{border-top:1px solid var(--line-soft);margin-top:10px}
+.u-bar-copper{background:rgba(200,127,69,.65)}
+.u-bar-mist2{background:rgba(183,196,187,.25)}
+.u-bar-mist1{background:rgba(183,196,187,.16)}

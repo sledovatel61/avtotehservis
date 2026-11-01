@@ -1,0 +1,53 @@
+---
+import { getSettings } from '../server/settings.ts';
+const S = getSettings();
+interface Props { page: string }
+const { page } = Astro.props as Props;
+---
+<header class="hdr" id="hdr">
+  <div class="hdr-in container">
+    <a class="logo" href="/" aria-label={`${S.site_name} — на главную`}>
+      <img src="/img/logo.svg" alt="" width="44" height="44">
+      <span class="logo-t">{S.site_name}<b>{S.city} · {S.address_short}</b></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Основное меню">
+      <ul>
+        <li><a href="/" class:list={[{ 'is-active': page === 'home' }]} aria-current={page === 'home' ? 'page' : undefined}>Главная</a></li>
+        <li><a href="/about" class:list={[{ 'is-active': page === 'about' }]} aria-current={page === 'about' ? 'page' : undefined}>О компании</a></li>
+        <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги</a></li>
+        <li><a href="/appointment" class:list={[{ 'is-active': page === 'appointment' }]} aria-current={page === 'appointment' ? 'page' : undefined}>Запись</a></li>
+        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Новости и акции</a></li>
+        <li><a href="/contacts" class:list={[{ 'is-active': page === 'contacts' }]} aria-current={page === 'contacts' ? 'page' : undefined}>Контакты</a></li>
+      </ul>
+    </nav>
+    <div class="hdr-cta">
+      <a class="hdr-phone" href={`tel:${S.phone_main_tel}`} data-track="call_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg><span>{S.phone_main}</span></a>
+      <a class="btn btn--copper btn--sm" href="/appointment">Записаться</a>
+    </div>
+    <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="m-menu" aria-label="Открыть меню">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<div class="m-menu" id="m-menu" aria-label="Меню (мобильное)">
+  <div class="m-menu-top">
+    <a class="logo" href="/"><img src="/img/logo.svg" alt="" width="40" height="40"><span class="logo-t">{S.site_name}</span></a>
+    <button class="m-close" id="m-close" type="button" aria-label="Закрыть меню">✕</button>
+  </div>
+  <nav aria-label="Основное меню (мобильное)">
+    <ul>
+        <li><a href="/" class:list={[{ 'is-active': page === 'home' }]} aria-current={page === 'home' ? 'page' : undefined}>Главная <span class="n">01</span></a></li>
+        <li><a href="/about" class:list={[{ 'is-active': page === 'about' }]} aria-current={page === 'about' ? 'page' : undefined}>О компании <span class="n">02</span></a></li>
+        <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги <span class="n">03</span></a></li>
+        <li><a href="/appointment" class:list={[{ 'is-active': page === 'appointment' }]} aria-current={page === 'appointment' ? 'page' : undefined}>Запись <span class="n">04</span></a></li>
+        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Новости и акции <span class="n">05</span></a></li>
+        <li><a href="/contacts" class:list={[{ 'is-active': page === 'contacts' }]} aria-current={page === 'contacts' ? 'page' : undefined}>Контакты <span class="n">06</span></a></li>
+    </ul>
+  </nav>
+  <div class="m-menu-contacts">
+    <a class="tel" href={`tel:${S.phone_main_tel}`} data-track="call_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg> {S.phone_main}</a>
+    <a href={`${S.telegram_url}`} data-track="telegram_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 4.5 2.8 11.3c-.9.3-.9 1.6.1 1.8l4.6 1.2 1.8 5.4c.3.8 1.3 1 1.8.3l2.5-3 4.6 3.4c.7.5 1.7.1 1.9-.7l3.2-14c.2-1-.7-1.8-1.8-1.2z"/><path d="m7.5 14.3 11-7.8-8.4 9.4"/></svg> Telegram: {S.telegram_phone}</a>
+    <a href="/contacts"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {S.address_full} · {S.hours}</a>
+  </div>
+</div>
+

@@ -1,0 +1,39 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { fmtDateShort } from '../../../server/format.ts';
+
+const cases = db().prepare(`SELECT c.*, (SELECT COUNT(*) FROM case_media cm WHERE cm.case_id=c.id) AS media_count
+  FROM cases c ORDER BY c.sort, c.id DESC`).all() as {
+  id: number; slug: string; title: string; service_slug: string | null; status: string;
+  published_at: string | null; sort: number; cover_media_id: string | null; cover_static: string | null; media_count: number;
+}[];
+function thumb(c: { cover_media_id: string | null; cover_static: string | null }): string {
+  if (c.cover_media_id) {
+    const m = db().prepare('SELECT kind, path, poster_path, id FROM media WHERE id=?').get(c.cover_media_id) as { kind: string; path: string; poster_path: string | null; id: string } | undefined;
+    if (m) return m.kind === 'video' ? `/media/${m.poster_path}` : `/media/${m.id}/v480.webp`;
+  }
+  return c.cover_static ?? '/img/case-1.svg';
+}
+---
+<Admin section="cases" title="Кейсы">
+  <div class="adm-row u-mb18">
+    <h1 class="adm-h1 u-mb0">Кейсы и галерея</h1>
+    <span class="adm-top-spacer"></span>
+    <a class="btn btn--copper" href="/admin/cases/new">＋ Новый кейс</a>
+  </div>
+  {cases.length ? (
+    <div class="adm-media-grid">
+      {cases.map((c) => (
+        <a class="adm-media" href={`/admin/cases/${c.id}`}>
+          <img src={thumb(c)} alt="" loading="lazy" width="300" height="225">
+          <span class="m">
+            <b>{c.title}</b>
+            <span class={`badge badge--${c.status}`}>{c.status === 'published' ? 'опубликован' : 'черновик'}</span>
+            <span class="hint">{c.media_count} медиа · sort {c.sort}{c.published_at ? ` · ${fmtDateShort(c.published_at)}` : ''}</span>
+          </span>
+        </a>
+      ))}
+    </div>
+  ) : <p class="adm-empty">Кейсов пока нет. «Новый кейс» → фото → заголовок → «Опубликовать» — весь путь с телефона занимает меньше минуты.</p>}
+</Admin>

@@ -1,0 +1,35 @@
+# systemd-юнит: /etc/systemd/system/avtotehservis.service
+[Unit]
+Description=AvtoTekhServis site (Astro + SQLite, single node process)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=avtotehservis
+Group=avtotehservis
+WorkingDirectory=/var/www/avtotehservis/repo/site
+EnvironmentFile=/etc/avtotehservis/env
+ExecStart=/usr/bin/node dist/server/entry.mjs
+Restart=always
+RestartSec=3
+
+# Безопасность: не root, без новых привилегий, файловая система защищена
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+# Пишем только в каталог данных (БД, медиа, журнал почты при SMTP_JSON_DIR)
+ReadWritePaths=/var/lib/avtotehservis
+
+# Лимиты (2 ГБ VPS)
+MemoryMax=700M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

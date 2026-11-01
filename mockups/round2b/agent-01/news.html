@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Новости и акции — АвтоТехСервис, Ростов-на-Дону</title>
+<meta name="description" content="Новости, статьи и акции АвтоТехСервис на Портовой, 439.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <img src="assets/logo.svg" alt="" width="38" height="38">
+      <span class="brand-text">АвтоТехСервис<span>на Портовой, 439</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Основная навигация">
+      <ul>
+        <li><a href="index.html">Главная</a></li>
+        <li><a href="about.html">О компании</a></li>
+        <li><a href="services.html">Услуги</a></li>
+        <li><a href="appointment.html">Запись</a></li>
+        <li><a href="news.html" aria-current="page">Новости</a></li>
+        <li><a href="contacts.html">Контакты</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a class="header-phone" href="tel:+79289065700" data-track="call_click" data-source="header">+7 (928) 906-57-00</a>
+      <a class="btn btn-primary" href="appointment.html" data-track="route_click" data-source="header-cta" style="min-height:44px;padding:10px 20px;">Записаться</a>
+      <button class="burger" id="menuToggle" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobileNav"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-top">
+    <a class="brand" href="index.html"><img src="assets/logo.svg" alt="" width="34" height="34"><span class="brand-text">АвтоТехСервис</span></a>
+    <button class="mobile-nav-close" id="mobileNavClose" aria-label="Закрыть меню">×</button>
+  </div>
+  <nav aria-label="Мобильная навигация">
+    <ul>
+      <li><a href="index.html">Главная</a></li>
+      <li><a href="about.html">О компании</a></li>
+      <li><a href="services.html">Услуги</a></li>
+      <li><a href="appointment.html">Запись</a></li>
+      <li><a href="news.html" aria-current="page">Новости</a></li>
+      <li><a href="contacts.html">Контакты</a></li>
+    </ul>
+  </nav>
+  <div class="mobile-nav-foot">
+    <a href="tel:+79289065700" data-track="call_click" data-source="mobile-menu">+7 (928) 906-57-00</a>
+    <a href="appointment.html" class="btn btn-primary btn-block">Записаться</a>
+  </div>
+</div>
+
+<main id="main">
+
+<div data-first-screen>
+<section class="breadcrumb-area">
+  <div class="container breadcrumbs">
+    <a href="index.html">Главная</a><span class="sep">/</span><span class="current">Новости и акции</span>
+  </div>
+</section>
+<section class="page-title">
+  <div class="container"><h1>Новости и акции</h1></div>
+</section>
+</div>
+
+<section class="section-pad-sm">
+  <div class="container">
+    <div class="news-filter" role="group" aria-label="Фильтр по категориям">
+      <button type="button" data-news-filter="all" aria-pressed="true">Все</button>
+      <button type="button" data-news-filter="news" aria-pressed="false">Новости</button>
+      <button type="button" data-news-filter="actions" aria-pressed="false">Акции</button>
+      <button type="button" data-news-filter="post" aria-pressed="false">Статьи</button>
+    </div>
+
+    <div class="news-grid" id="newsGrid">
+      <article class="news-card" data-category="post">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#1C2024"/><circle cx="140" cy="112" r="55" fill="none" stroke="#5CF2FF" stroke-width="5"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Статья</span><span>18.10.2026</span></div><h3><a href="post.html">Как подготовить колёса к межсезонью</a></h3><p>Что проверить перед сменой резины, чтобы не терять время в очереди.</p></div>
+      </article>
+      <article class="news-card" data-category="news">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#15181C"/><path d="M60 180 L140 180 L170 120 L210 200 L250 90 L300 180 L340 180" fill="none" stroke="#5CF2FF" stroke-width="4"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Новость</span><span>15.10.2026</span></div><h3><a href="post.html">Обновили список услуг на сайте</a></h3><p>Добавили описания по каждому направлению — от шиномонтажа до диагностики.</p></div>
+      </article>
+      <article class="news-card" data-category="actions">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#1C2024"/><rect x="150" y="70" width="100" height="85" rx="10" fill="none" stroke="#5CF2FF" stroke-width="5"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Акция</span><span>12.10.2026</span></div><h3><a href="post.html">Актуальные акции уточняйте по телефону</a></h3><p>Раздел наполняется — цифр и сроков заранее не публикуем, чтобы не вводить в заблуждение.</p></div>
+      </article>
+      <article class="news-card" data-category="post">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#15181C"/><path d="M120 165 L200 60 L280 165 Z" fill="none" stroke="#5CF2FF" stroke-width="5"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Статья</span><span>08.10.2026</span></div><h3><a href="post.html">Зачем нужна диагностика до ремонта</a></h3><p>Как мы находим причину неисправности, прежде чем называть смету.</p></div>
+      </article>
+      <article class="news-card" data-category="news">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#1C2024"/><circle cx="200" cy="112" r="50" fill="none" stroke="#5CF2FF" stroke-width="5"/><circle cx="200" cy="112" r="14" fill="#5CF2FF"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Новость</span><span>03.10.2026</span></div><h3><a href="post.html">Раздел «Новости» наполняется</a></h3><p>Будем публиковать реальные кейсы и обновления по мере готовности фото и видео.</p></div>
+      </article>
+      <article class="news-card" data-category="post">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#15181C"/><rect x="130" y="80" width="140" height="80" rx="10" fill="none" stroke="#5CF2FF" stroke-width="5"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Статья</span><span>27.09.2026</span></div><h3><a href="post.html">Что проверить перед дальней поездкой</a></h3><p>Короткий чек-лист: шины, тормоза, жидкости, аккумулятор.</p></div>
+      </article>
+      <article class="news-card" data-category="actions">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#1C2024"/><path d="M160 60 L120 140 L185 140 L150 180 L260 100 L195 100 Z" fill="none" stroke="#5CF2FF" stroke-width="4"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Акция</span><span>20.09.2026</span></div><h3><a href="post.html">Следите за разделом «Акции»</a></h3><p>Публикуем предложения по мере появления — без искусственных «скидок до визита».</p></div>
+      </article>
+      <article class="news-card" data-category="news">
+        <a href="post.html"><div class="thumb"><svg viewBox="0 0 400 225"><rect width="400" height="225" fill="#15181C"/><circle cx="200" cy="112" r="55" fill="none" stroke="#5CF2FF" stroke-width="5"/></svg></div></a>
+        <div class="body"><div class="meta"><span class="cat">Новость</span><span>14.09.2026</span></div><h3><a href="post.html">Работаем ежедневно, 9:00–19:00</a></h3><p>Уточнили график работы — он одинаков на сайте и во всех карточках.</p></div>
+      </article>
+    </div>
+
+    <div class="pagination" id="newsPagination"></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <a class="brand" href="index.html" style="margin-bottom:14px;"><img src="assets/logo.svg" width="34" height="34" alt=""><span class="brand-text">АвтоТехСервис</span></a>
+        <p class="muted">Автосервис и шиномонтаж в Ростове-на-Дону.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Контакты</h5>
+        <a href="tel:+79289065700" data-track="call_click" data-source="footer">+7 (928) 906-57-00</a>
+        <a href="#" data-track="telegram_click" data-source="footer">Telegram: +7 (951) 826-98-39</a>
+        <a href="mailto:avtotehservis439@mail.ru">avtotehservis439@mail.ru</a>
+        <p class="muted">Ежедневно, 9:00–19:00</p>
+      </div>
+      <div class="footer-col">
+        <h5>Навигация</h5>
+        <a href="about.html">О компании</a>
+        <a href="services.html">Услуги</a>
+        <a href="appointment.html">Запись</a>
+        <a href="news.html">Новости и акции</a>
+        <a href="contacts.html">Контакты</a>
+      </div>
+      <div class="footer-col">
+        <h5>Адрес</h5>
+        <p>Ростов-на-Дону, ул. Портовая, 439</p>
+        <p class="muted">Ост. «3-й Поселковый» ~330 м, рядом база «Бум»</p>
+        <a href="admin.html" class="muted" style="text-decoration:underline;">Демо-админка</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 АвтоТехСервис · ИП Яковенко П. И., ИНН 341010400388, ОГРНИП 324619600117335</span>
+      <div class="links">
+        <button type="button" data-modal-open="policyModal">Политика конфиденциальности</button>
+        <button type="button" data-modal-open="consentModal">Согласие на обработку ПДн</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="sticky-bar" id="stickyBar">
+  <a class="btn btn-outline" href="tel:+79289065700" data-track="call_click" data-source="sticky">Позвонить</a>
+  <a class="btn btn-primary" href="appointment.html" data-track="route_click" data-source="sticky">Записаться</a>
+</div>
+
+<div class="modal-backdrop" id="policyModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="policyTitle">
+    <button class="modal-close" aria-label="Закрыть">×</button>
+    <h3 id="policyTitle">Политика конфиденциальности</h3>
+    <p>Оператор персональных данных — ИП Яковенко Павел Иванович, ИНН 341010400388.</p>
+    <p style="font-size:12.5px;">Демонстрационный текст мокапа, не юридический документ.</p>
+  </div>
+</div>
+<div class="modal-backdrop" id="consentModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
+    <button class="modal-close" aria-label="Закрыть">×</button>
+    <h3 id="consentTitle">Согласие на обработку персональных данных</h3>
+    <p>Отправляя форму, вы соглашаетесь на обработку имени и телефона согласно 152-ФЗ.</p>
+    <p style="font-size:12.5px;">Демонстрационный текст мокапа.</p>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

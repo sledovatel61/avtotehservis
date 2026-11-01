@@ -1,0 +1,73 @@
+/* Админка — та же визуальная система (ночь/изумруд/медь), своя раскладка. */
+.adm-body{background:var(--night);color:var(--ivory);min-height:100vh;display:flex;flex-direction:column}
+.adm-top{position:sticky;top:0;z-index:40;background:var(--deep);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.adm-top .adm-logo{font-family:'Unbounded',var(--display);font-weight:600;font-size:15px;letter-spacing:-.01em}
+.adm-top .adm-logo b{color:var(--brass)}
+.adm-top .spacer{flex:1}
+.adm-top a,.adm-top button{color:var(--mist);font-size:13.5px;text-decoration:none}
+.adm-top a:hover{color:var(--ivory)}
+.adm-nav{display:flex;gap:4px;flex-wrap:wrap;padding:10px 16px;background:var(--deep2);border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:39}
+.adm-nav a{padding:8px 12px;border-radius:8px;color:var(--mist);font-size:13.5px;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.adm-nav a:hover{background:rgba(183,196,187,.08);color:var(--ivory)}
+.adm-nav a.is-on{background:var(--copper);color:var(--night);font-weight:700}
+.adm-main{flex:1;padding:22px 16px 60px;max-width:1200px;width:100%;margin:0 auto}
+.adm-h1{font-family:'Unbounded',var(--display);font-size:clamp(20px,3.4vw,26px);letter-spacing:-.02em;margin:0 0 18px}
+.adm-card{background:var(--deep);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:18px}
+.adm-card h2{font-family:'Unbounded',var(--display);font-size:16px;margin:0 0 12px;letter-spacing:-.01em}
+.adm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.adm-stat{background:var(--deep2);border:1px solid var(--line);border-radius:var(--r2);padding:14px}
+.adm-stat .n{font-family:'Unbounded',var(--display);font-size:26px;color:var(--brass)}
+.adm-stat .t{color:var(--mist);font-size:13px;margin-top:4px}
+.adm-table{width:100%;border-collapse:collapse;font-size:14px}
+.adm-table th{text-align:left;color:var(--mist);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;border-bottom:1px solid var(--line)}
+.adm-table td{padding:10px;border-bottom:1px solid rgba(183,196,187,.08);vertical-align:top}
+.adm-table tr:hover td{background:rgba(183,196,187,.04)}
+.adm-table a{color:var(--brass);text-decoration:none}
+.adm-table a:hover{text-decoration:underline}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid transparent}
+.badge--new{background:rgba(224,169,109,.16);color:var(--brass);border-color:rgba(224,169,109,.4)}
+.badge--confirmed,.badge--work{background:rgba(143,184,232,.14);color:#8FB8E8;border-color:rgba(143,184,232,.4)}
+.badge--done,.badge--published{background:rgba(78,158,116,.16);color:var(--emerald);border-color:rgba(78,158,116,.45)}
+.badge--canceled,.badge--failed{background:rgba(232,131,107,.14);color:var(--danger);border-color:rgba(232,131,107,.45)}
+.badge--draft,.badge--pending,.badge--hidden{background:rgba(183,196,187,.12);color:var(--mist);border-color:rgba(183,196,187,.3)}
+.adm-form{display:grid;gap:14px;max-width:640px}
+.adm-form label{display:grid;gap:6px;font-size:13.5px;color:var(--mist)}
+.adm-form input,.adm-form select,.adm-form textarea{background:var(--deep2);border:1px solid var(--line);color:var(--ivory);border-radius:10px;padding:12px 14px;font:inherit;font-size:16px;min-height:44px;width:100%}
+.adm-form textarea{min-height:160px;resize:vertical}
+.adm-form input:focus,.adm-form select:focus,.adm-form textarea:focus{outline:2px solid var(--brass);outline-offset:1px;border-color:var(--brass)}
+.adm-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.adm-msg{padding:12px 14px;border-radius:10px;margin-bottom:16px;font-size:14px}
+.adm-msg--ok{background:rgba(78,158,116,.14);border:1px solid rgba(78,158,116,.4);color:var(--ivory)}
+.adm-msg--err{background:rgba(232,131,107,.14);border:1px solid rgba(232,131,107,.45);color:var(--ivory)}
+.adm-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.adm-filters a,.adm-filters select{padding:8px 12px;border-radius:8px;border:1px solid var(--line);color:var(--mist);text-decoration:none;font-size:13.5px;background:var(--deep2);min-height:44px;display:inline-flex;align-items:center}
+.adm-filters a.is-on{border-color:var(--copper);color:var(--brass)}
+.adm-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.adm-media{background:var(--deep2);border:1px solid var(--line);border-radius:var(--r2);overflow:hidden}
+.adm-media img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.adm-media .m{padding:8px 10px;font-size:12px;color:var(--mist);display:grid;gap:4px}
+.adm-login{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(1200px 500px at 70% -10%,var(--deep2),var(--night))}
+.adm-login-box{width:100%;max-width:400px;background:var(--deep);border:1px solid var(--line);border-radius:var(--r);padding:28px}
+.adm-login-box h1{font-family:'Unbounded',var(--display);font-size:20px;margin:0 0 6px}
+.adm-progress{height:6px;background:var(--deep2);border-radius:3px;overflow:hidden;margin-top:8px}
+.adm-progress i{display:block;height:100%;background:var(--copper);width:0;transition:width 200ms linear}
+.adm-uploads{display:grid;gap:10px;margin-top:10px}
+.adm-upl{display:flex;gap:10px;align-items:center;background:var(--deep2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
+.adm-upl img{width:56px;height:42px;object-fit:cover;border-radius:6px}
+.adm-upl .grow{flex:1}
+.adm-empty{color:var(--mist);padding:26px;text-align:center;border:1px dashed var(--line);border-radius:var(--r2)}
+.adm-lead-photos{display:flex;gap:10px;flex-wrap:wrap}
+.adm-lead-photos a{display:block;width:140px}
+.adm-lead-photos img{width:140px;aspect-ratio:4/3;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.adm-dl{display:grid;grid-template-columns:170px 1fr;gap:8px 14px;font-size:14.5px}
+.adm-dl dt{color:var(--mist)}
+.adm-dl dd{margin:0}
+@media (max-width:640px){
+  .adm-dl{grid-template-columns:1fr}
+  .adm-dl dt{margin-top:6px}
+  .adm-nav{top:auto;position:static;overflow-x:auto;flex-wrap:nowrap}
+  .adm-table{display:block;overflow-x:auto}
+}
+.hint{font-size:13px;color:var(--mist)}
+.adm-top-spacer{flex:1}
+.btn--block{display:block;width:100%}

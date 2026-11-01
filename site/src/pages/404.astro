@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import { listCatalogServices } from '../server/services.ts';
+
+const S = getSettings();
+const services = listCatalogServices();
+Astro.response.status = 404;
+---
+<Base
+  page="404"
+  title="Страница не найдена — АвтоТехСервис, Ростов-на-Дону"
+  description="Запрошенная страница не найдена. Перейдите в интересующий раздел или позвоните в сервис."
+  noindex
+>
+  <section class="page-head">
+    <div class="container">
+      <span class="eyebrow">Ошибка 404</span>
+      <h1>Такой страницы нет</h1>
+      <p class="lead">Возможно, адрес набран с ошибкой или страница переехала. Ничего страшного — вот все разделы сайта, а мы всегда на связи по телефону.</p>
+      <p class="u-chips-mt26">
+        <a class="btn btn--copper" href="/">На главную</a>
+        <a class="btn btn--ghost" href="/appointment">Записаться</a>
+        <a class="btn btn--ghost" href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a>
+      </p>
+    </div>
+  </section>
+  <section class="sec" aria-labelledby="s404-h">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div>
+          <span class="eyebrow">Навигация</span>
+          <h2 id="s404-h">Куда перейти</h2>
+        </div>
+      </div>
+      <div class="svc-grid">
+        <a class="svc-card" href="/services">
+          <span class="svc-body"><span class="svc-tag">Каталог</span><h3>Все услуги</h3><p>Шиномонтаж, балансировка, ремонт шин, ТО, ходовая, тормоза, электрика.</p><span class="link-more">Открыть <span class="ar" aria-hidden="true">→</span></span></span>
+        </a>
+        <a class="svc-card" href="/contacts">
+          <span class="svc-body"><span class="svc-tag">Как доехать</span><h3>Контакты и схема проезда</h3><p>{S.address_full} · {S.landmark}</p><span class="link-more">Открыть <span class="ar" aria-hidden="true">→</span></span></span>
+        </a>
+        <a class="svc-card" href="/news">
+          <span class="svc-body"><span class="svc-tag">Читать</span><h3>Новости и акции</h3><p>Сезонные советы и жизнь сервиса.</p><span class="link-more">Открыть <span class="ar" aria-hidden="true">→</span></span></span>
+        </a>
+      </div>
+      <p class="hint u-center-mt18">Популярные услуги: {services.slice(0, 4).map((sv, i) => (
+        <>{i > 0 && ', '}<a class="linklike" href={`/services/${sv.slug}`}>{sv.title}</a></>
+      ))}</p>
+    </div>
+  </section>
+</Base>

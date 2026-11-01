@@ -1,0 +1,111 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { db } from '../../../server/db.ts';
+import { bodyTooLarge } from '../../../server/http.ts';
+import { sessionFromContext, csrfValidForm, csrfRefusal, adminRefusal, logAction, ensureCsrfCookie } from '../../../server/admin-auth.ts';
+import {processPhotoUpload, MediaError, PHOTO_MAX_BYTES } from '../../../server/media.ts';
+import { uniqueSlug, slugify } from '../../../server/slug.ts';
+import { NEWS_CATEGORIES } from '../../../server/content.ts';
+import { mdToHtml } from '../../../server/markdown.ts';
+
+const id = Number(Astro.params.id);
+const user = sessionFromContext(Astro)!;
+const csrf = ensureCsrfCookie(Astro);
+
+function getPost() {
+  return db().prepare('SELECT * FROM news WHERE id=?').get(id) as {
+    id: number; slug: string; title: string; excerpt: string | null; body_md: string; category: string;
+    cover_media_id: string | null; status: string; published_at: string | null;
+  } | undefined;
+}
+let previewHtml = '';
+
+if (Astro.request.method === 'POST') {
+  // Отклоняем запрос сразу по Content-Length — не буферизуя 100+ МБ в памяти (minor-5 ревью).
+  if (bodyTooLarge(Astro.request, PHOTO_MAX_BYTES + 1024 * 1024)) {
+    return adminRefusal(Astro, 'Обложка слишком большая: фото до 15 МБ.');
+  }
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await csrfValidForm(Astro, form))) return csrfRefusal(Astro);
+  const action = String(form.get('action') ?? 'save');
+  const p = getPost();
+  if (!p) return Astro.redirect('/admin/news?err=' + encodeURIComponent('Статья не найдена'), 302);
+
+  if (action === 'delete') {
+    db().prepare('DELETE FROM news WHERE id=?').run(id);
+    logAction(user.id, 'news_delete', 'news', id, { slug: p.slug });
+    return Astro.redirect('/admin/news?msg=' + encodeURIComponent('Статья удалена'), 302);
+  }
+  const title = String(form.get('title') ?? '').trim();
+  const bodyMd = String(form.get('body_md') ?? '');
+  if (title.length < 6) return Astro.redirect(`/admin/news/${id}?err=` + encodeURIComponent('Заголовок минимум 6 символов'), 302);
+  const slugRaw = String(form.get('slug') ?? '').trim();
+  const slug = slugRaw ? uniqueSlug(slugRaw, 'news', id) : uniqueSlug(title, 'news', id);
+  const cat = NEWS_CATEGORIES.some((c) => c.slug === form.get('category')) ? String(form.get('category')) : p.category;
+  const status = String(form.get('status') ?? 'draft') === 'published' ? 'published' : 'draft';
+  let coverId = p.cover_media_id;
+  try {
+    const cover = form.getAll('cover').filter((f): f is File => f instanceof File && f.size > 0)[0];
+    if (cover) {
+      coverId = (await processPhotoUpload(Buffer.from(await cover.arrayBuffer()))).id;
+      db().prepare('UPDATE media SET attached_to=? WHERE id=?').run(`news:${id}`, coverId);
+    }
+  } catch (e) {
+    return Astro.redirect(`/admin/news/${id}?err=` + encodeURIComponent(e instanceof MediaError ? e.message : 'Ошибка загрузки'), 302);
+  }
+  db().prepare(`UPDATE news SET title=?, slug=?, excerpt=?, body_md=?, category=?, cover_media_id=?, status=?,
+    published_at=CASE WHEN ?='published' AND published_at IS NULL THEN datetime('now') ELSE published_at END WHERE id=?`)
+    .run(title, slug, String(form.get('excerpt') ?? '').trim() || null, bodyMd, cat, coverId, status, status, id);
+  logAction(user.id, action === 'preview' ? 'news_preview' : 'news_save', 'news', id, { slug, status });
+  if (action === 'preview') {
+    previewHtml = mdToHtml(bodyMd);
+  } else {
+    return Astro.redirect(`/admin/news/${id}?msg=` + encodeURIComponent('Сохранено'), 302);
+  }
+}
+
+const p = getPost();
+if (!p) return Astro.redirect('/admin/news?err=' + encodeURIComponent('Статья не найдена'), 302);
+const coverSrc = p.cover_media_id ? `/media/${p.cover_media_id}/v480.webp` : null;
+---
+<Admin section="news" title={`Статья: ${p.title}`}>
+  <p><a href="/admin/news" class="linklike">← все статьи</a>{p.status === 'published' && <> · <a class="linklike" href={`/news/${p.slug}`} target="_blank" rel="noopener">открыть на сайте ↗</a></>}</p>
+  <h1 class="adm-h1">{p.title} <span class={`badge badge--${p.status}`}>{p.status === 'published' ? 'опубликована' : 'черновик'}</span></h1>
+  <form method="post" enctype="multipart/form-data" class="adm-form" data-upload>
+    <input type="hidden" name="_csrf" value={csrf}>
+    <input type="hidden" name="action" value="save">
+    <label>Заголовок <input type="text" name="title" value={p.title} required minlength="6" maxlength="160"></label>
+    <label>Слаг <input type="text" name="slug" value={p.slug} pattern="[a-z0-9-]+"></label>
+    <label>Категория
+      <select name="category">{NEWS_CATEGORIES.map((c) => <option value={c.slug} selected={p.category === c.slug}>{c.title}</option>)}</select>
+    </label>
+    <label>Лид <textarea name="excerpt" maxlength="300" rows="2">{p.excerpt ?? ''}</textarea></label>
+    <label>Текст (Markdown) <textarea name="body_md" rows="16">{p.body_md}</textarea></label>
+    <label>Обложка
+      <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/avif">
+      {coverSrc && <img src={coverSrc} alt="Текущая обложка" width="160" height="90" class="u-mt8">}
+    </label>
+    <label class="adm-row">Статус
+      <select name="status">
+        <option value="draft" selected={p.status === 'draft'}>черновик</option>
+        <option value="published" selected={p.status === 'published'}>опубликована</option>
+      </select>
+    </label>
+    <div class="adm-progress u-none" data-progress aria-hidden="true"><i></i></div>
+    <div class="adm-row">
+      <button type="submit" class="btn btn--copper">Сохранить</button>
+      <button type="submit" name="action" value="preview" class="btn btn--ghost" formnovalidate>Превью</button>
+    </div>
+  </form>
+  {previewHtml && (
+    <div class="adm-card">
+      <h2>Превью (так увидят читатели)</h2>
+      <div class="post-text" set:html={previewHtml} />
+    </div>
+  )}
+  <form method="post" class="adm-row u-mt18" data-confirm="Удалить статью безвозвратно?">
+    <input type="hidden" name="_csrf" value={csrf}>
+    <input type="hidden" name="action" value="delete">
+    <button type="submit" class="btn btn--ghost u-danger">Удалить статью</button>
+  </form>
+</Admin>

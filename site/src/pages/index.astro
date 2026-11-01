@@ -1,0 +1,436 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import { listCatalogServices, listHomeServices } from '../server/services.ts';
+import { listPublishedCases, listPublishedReviews, coverInfo } from '../server/content.ts';
+import { fmtDateRu, plural } from '../server/format.ts';
+
+const S = getSettings();
+const services = listHomeServices();
+const SVC_IMG: Record<string, string> = {
+  shinomontazh: 'svc-1', balansirovka: 'svc-2', 'remont-shin': 'svc-3',
+  'to-maslo': 'svc-4', 'hodovaya-tormoza': 'svc-5', elektrika: 'svc-6',
+};
+const cases = listPublishedCases(6);
+const reviews = listPublishedReviews(8);
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'AutoRepair',
+  name: S.site_name,
+  description: 'Автосервис и шиномонтаж на Западном: колёса, ремонт и обслуживание, диагностика. Сначала смета — потом ремонт.',
+  url: siteUrl + '/',
+  image: siteUrl + '/img/og.png',
+  telephone: S.phone_main_tel,
+  address: { '@type': 'PostalAddress', addressCountry: 'RU', addressLocality: S.city, streetAddress: S.address },
+  geo: { '@type': 'GeoCoordinates', latitude: S.coords.lat, longitude: S.coords.lon },
+  openingHoursSpecification: [{
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    opens: '09:00', closes: '19:00',
+  }],
+};
+---
+<Base
+  page="home"
+  title="АвтоТехСервис — автосервис и шиномонтаж на Портовой, 439 · Ростов-на-Дону"
+  description="Ремонт авто на Портовой, 439: шиномонтаж, балансировка, ремонт шин, ТО, ходовая, тормоза, электрика. Сначала смета — потом ремонт. Ежедневно 9:00–19:00."
+  jsonLd={jsonLd}
+>
+
+<section class="hero" id="hero" aria-roledescription="карусель" aria-label="Первый экран">
+  <div class="hero-track">
+      <div class="slide is-active" role="group" aria-roledescription="слайд" aria-label="Слайд 1 из 3">
+        <div class="slide-bg">
+          <picture>
+            <source type="image/avif" media="(max-width:640px)" srcset="/img/hero-service-m-640.avif 640w, /img/hero-service-m-960.avif 960w" sizes="100vw">
+            <source type="image/webp" media="(max-width:640px)" srcset="/img/hero-service-m-640.webp 640w, /img/hero-service-m-960.webp 960w" sizes="100vw">
+            <source type="image/avif" srcset="/img/hero-service-640.avif 640w, /img/hero-service-960.avif 960w, /img/hero-service-1600.avif 1600w, /img/hero-service-2560.avif 2560w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-service-640.webp 640w, /img/hero-service-960.webp 960w, /img/hero-service-1600.webp 1600w, /img/hero-service-2560.webp 2560w" sizes="100vw">
+            <img class="f16" src="/img/hero-service-1600.webp" width="1600" height="900" alt="Фасад «АвтоТехСервис» на Портовой, 439 в сумерках: вывеска с телефонами, два рабочих бокса и две машины перед фасадом" fetchpriority="high" decoding="async">
+          </picture>
+        </div>
+        <div class="slide-in container">
+          <span class="slide-eyebrow">Автосервис и шиномонтаж · Западный</span>
+          <h1>Ремонт авто на Портовой — от колеса до двигателя</h1>
+          <p class="slide-sub">{S.address_full}. {S.hours}, остановка «3-й Поселковый» в 330 метрах. Запишитесь на удобное время — без живой очереди.</p>
+          <div class="slide-cta">
+          <a class="btn btn--copper" href="/appointment">Записаться на визит</a>
+          <a class="btn btn--ghost" href="/services">Все услуги</a>
+          </div>
+        </div>
+      </div>
+      <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 2 из 3">
+        <div class="slide-bg">
+          <picture>
+            <source type="image/avif" srcset="/img/hero-tyre-640.avif 640w, /img/hero-tyre-960.avif 960w, /img/hero-tyre-1600.avif 1600w, /img/hero-tyre-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tyre-640.webp 640w, /img/hero-tyre-960.webp 960w, /img/hero-tyre-1600.webp 1600w, /img/hero-tyre-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tyre-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
+          </picture>
+        </div>
+        <div class="slide-in container">
+          <span class="slide-eyebrow">Правило сервиса</span>
+          <p class="h1">Сначала смета — потом ремонт</p>
+          <p class="slide-sub">Диагностируем, показываем проблему, называем перечень работ и стоимость — и только после вашего согласия начинаем. Никаких работ «втихую» и сюрпризов при выдаче.</p>
+          <div class="slide-cta">
+          <a class="btn btn--copper" href="/appointment?s=diagnostika">Получить смету</a>
+          <a class="btn btn--ghost" href="/about">Как мы работаем</a>
+          </div>
+        </div>
+      </div>
+      <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 3 из 3">
+        <div class="slide-bg">
+          <picture>
+            <source type="image/avif" srcset="/img/hero-tools-640.avif 640w, /img/hero-tools-960.avif 960w, /img/hero-tools-1600.avif 1600w, /img/hero-tools-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tools-640.webp 640w, /img/hero-tools-960.webp 960w, /img/hero-tools-1600.webp 1600w, /img/hero-tools-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tools-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
+          </picture>
+        </div>
+        <div class="slide-in container">
+          <span class="slide-eyebrow">Легковые и коммерческие</span>
+          <p class="h1">Колёса, ходовая, двигатель, электрика</p>
+          <p class="slide-sub">Один сервис закрывает почти весь цикл: шиномонтаж и балансировка, ТО и масло, тормоза и подвеска, АКПП/МКПП, автоэлектрика и кондиционеры, стёкла.</p>
+          <div class="slide-cta">
+          <a class="btn btn--copper" href="/services">Выбрать услугу</a>
+          <a class="btn btn--ghost btn-phone" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить<span class="btn-phone-num">: {S.phone_main}</span></a>
+          </div>
+        </div>
+      </div>
+  </div>
+  <div class="hero-ui">
+    <div class="container">
+      <button class="hero-arrow" id="hero-prev" type="button" aria-label="Предыдущий слайд">←</button>
+      <button class="hero-arrow" id="hero-next" type="button" aria-label="Следующий слайд">→</button>
+      <span class="hero-note">Автопрокрутка · пауза при наведении · свайп</span>
+      <div class="hero-dots" id="hero-dots" aria-label="Слайды"></div>
+    </div>
+  </div>
+  <a class="hero-scroll" href="#strip" aria-label="Прокрутить к фото сервиса">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+  </a>
+</section>
+<section class="strip" id="strip" aria-label="Фотографии сервиса">
+  <figure class="strip-item reveal" data-d="0">
+    <picture>
+      <source type="image/avif" srcset="/img/strip-sign.avif">
+      <source type="image/webp" srcset="/img/strip-sign.webp">
+      <img src="/img/strip-sign.webp" width="1200" height="500" alt="Шиномонтаж: руки в перчатках ставят покрышку на диск под тёплой лампой" loading="lazy" decoding="async">
+    </picture>
+    <figcaption>Шиномонтаж и ремонт в одном месте</figcaption>
+  </figure>
+  <figure class="strip-item reveal" data-d="1">
+    <picture>
+      <source type="image/avif" srcset="/img/strip-bay.avif">
+      <source type="image/webp" srcset="/img/strip-bay.webp">
+      <img src="/img/strip-bay.webp" width="1200" height="500" alt="Бокс изнутри: автомобиль на подъёмнике, кирпичные стены и красные шкафы" loading="lazy" decoding="async">
+    </picture>
+    <figcaption>Портовая, 439 — два бокса</figcaption>
+  </figure>
+  <figure class="strip-item reveal" data-d="2">
+    <picture>
+      <source type="image/avif" srcset="/img/strip-gates.avif">
+      <source type="image/webp" srcset="/img/strip-gates.webp">
+      <img src="/img/strip-gates.webp" width="1200" height="500" alt="Двигатель под лампой и планшет диагностики: осмотр перед сметой" loading="lazy" decoding="async">
+    </picture>
+    <figcaption>Работаем ежедневно 9:00–19:00</figcaption>
+  </figure>
+</section>
+<section class="sec sec--deep dirs" aria-labelledby="tri-h">
+  {/* РАУНД 17 / приёмка: фон секции — такой же слой <picture>, как у карточек, а не CSS
+      background-image. Причина: минцификатор сборки переписывает объявление внутри @supports
+      в голые строки image-set("/img/…" 1x type("image/avif")), а export-pages.mjs умел
+      префиксовать только url(…) — в итоге на Pages под /avtotehservis/ фон 404-ился.
+      Заодно <picture> даёт avif/webp и мобильный кадр без media-хаков в CSS. */}
+  <div class="dirs-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" type="image/avif" srcset="/img/tri-bg-m-900.avif">
+      <source media="(max-width:640px)" type="image/webp" srcset="/img/tri-bg-m-900.webp">
+      <source type="image/avif" srcset="/img/tri-bg-2560.avif">
+      <source type="image/webp" srcset="/img/tri-bg-2560.webp">
+      <img src="/img/tri-bg-2560.webp" width="2560" height="1440" alt="" loading="lazy" decoding="async">
+    </picture>
+  </div>
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Три направления</span>
+      <h2 id="tri-h">Чем сервис занимается каждый день</h2>
+    </div>
+    <div class="tri">
+      <article class="tri-card reveal" data-d="0">
+        <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-wheel-1600.avif 1600w, /img/tri-wheel-960.avif 960w, /img/tri-wheel-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-wheel-1600.webp 1600w, /img/tri-wheel-960.webp 960w, /img/tri-wheel-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-wheel-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
+        <span class="tri-num" aria-hidden="true">01</span>
+        <h3>Колёса</h3>
+        <p>Шиномонтаж легковой и грузовой, балансировка, правка и прокатка дисков, ремонт порезов и грыж, вулканизация, сезонное хранение шин. То, с чем приезжают чаще всего — и что нужно сделать быстро и ровно.</p>
+        <a class="link-more" href="/services/shinomontazh">Шиномонтаж и диски <span class="ar" aria-hidden="true">→</span></a>
+      </article>
+      <article class="tri-card tri-card--accent reveal" data-d="1">
+        <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-serv-1600.avif 1600w, /img/tri-serv-960.avif 960w, /img/tri-serv-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-serv-1600.webp 1600w, /img/tri-serv-960.webp 960w, /img/tri-serv-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-serv-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
+        <span class="tri-num" aria-hidden="true">02</span>
+        <h3>Ремонт и ТО</h3>
+        <p>ТО и аппаратная замена масла, ходовая и тормоза, рулевые рейки, развал-схождение, двигатели, АКПП и МКПП, дизельные форсунки, замена лобовых стёкол. Обслуживание, которое не допускает сюрпризов в дороге.</p>
+        <a class="link-more" href="/services/to-maslo">Ремонт и обслуживание <span class="ar" aria-hidden="true">→</span></a>
+      </article>
+      <article class="tri-card reveal" data-d="2">
+        <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-diag-1600.avif 1600w, /img/tri-diag-960.avif 960w, /img/tri-diag-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-diag-1600.webp 1600w, /img/tri-diag-960.webp 960w, /img/tri-diag-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-diag-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
+        <span class="tri-num" aria-hidden="true">03</span>
+        <h3>Диагностика</h3>
+        <p>Компьютерная диагностика, автоэлектрика, ремонт и заправка кондиционеров. Начинаем с причины: находим неисправность, показываем её и согласуем смету — до начала работ.</p>
+        <a class="link-more" href="/services/elektrika">Диагностика и электрика <span class="ar" aria-hidden="true">→</span></a>
+      </article>
+    </div>
+  </div>
+</section>
+<section class="sec sec--narrow about" aria-labelledby="about-h">
+  <div class="about-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:1024px)" type="image/avif" srcset="/img/about-bg-m-640.avif 640w, /img/about-bg-m-1200.avif 1200w" sizes="100vw">
+      <source media="(max-width:1024px)" type="image/webp" srcset="/img/about-bg-m-640.webp 640w, /img/about-bg-m-1200.webp 1200w" sizes="100vw">
+      <source type="image/avif" srcset="/img/about-bg-1600.avif 1600w, /img/about-bg-2560.avif 2560w" sizes="100vw">
+      <source type="image/webp" srcset="/img/about-bg-1600.webp 1600w, /img/about-bg-2560.webp 2560w" sizes="100vw">
+      <img src="/img/about-bg-1600.webp" width="2560" height="1440" alt="" loading="lazy" decoding="async">
+    </picture>
+  </div>
+  <div class="container">
+    <div class="sec-head sec-head--wide reveal">
+      <span class="eyebrow">О компании</span>
+      <h2 id="about-h">«АвтоТехСервис» на Западном: честно, по делу, с сметой до работ</h2>
+    </div>
+    <div class="about-grid">
+    <div class="reveal">
+      <p class="lead">Мы — автосервис и шиномонтаж на улице Портовой, 439: рядом с остановкой «3-й Поселковый» и базой «Бум». Принимаем легковые и коммерческие автомобили ежедневно, с 9:00 до 19:00.</p>
+      <p class="lead u-mt14">За одним визитом здесь закрывают и «переобуться», и стук в подвеске, и горящий «чек»: от балансировки до ремонта двигателя и АКПП. Правило одно для всех работ — сначала показываем проблему и называем стоимость, потом берёмся за инструмент.</p>
+      <p class="u-mt24"><a class="btn btn--ghost" href="/about"><span class="btn-bg" aria-hidden="true"><picture><source srcset="/img/about-btn-320.avif 320w, /img/about-btn-640.avif 640w" sizes="252px" type="image/avif"><source srcset="/img/about-btn-320.webp 320w, /img/about-btn-640.webp 640w" sizes="252px" type="image/webp"><img src="/img/about-btn-320.webp" alt="" loading="lazy" decoding="async"></picture></span>Подробнее о сервисе</a></p>
+    </div>
+    <figure class="about-media reveal" data-d="1">
+      <picture>
+        <source type="image/avif" srcset="/img/about-service-640.avif 640w, /img/about-service-960.avif 960w, /img/about-service-1600.avif 1600w" sizes="(max-width:1024px) 92vw, 46vw">
+        <source type="image/webp" srcset="/img/about-service-640.webp 640w, /img/about-service-960.webp 960w, /img/about-service-1600.webp 1600w" sizes="(max-width:1024px) 92vw, 46vw">
+        <img src="/img/about-service-960.webp" width="1600" height="1000" alt="Фасад «АвтоТехСервис» на Портовой, 439: баннер с брендами, две машины в боксах и стойка NGN у входа" loading="lazy" decoding="async">
+      </picture>
+      <figcaption>{S.address_full} — въезд со стороны Портовой</figcaption>
+    </figure>
+    </div>
+    <div class="facts facts--strip">
+        <div class="fact"><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f1-640.avif 640w, /img/about-f1-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f1-640.webp 640w, /img/about-f1-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f1-640.webp" alt="" loading="lazy" decoding="async"></picture></div><b>{S.address_full}</b><span>ост. «3-й Поселковый» ~330 м</span></div>
+        <div class="fact"><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f2-640.avif 640w, /img/about-f2-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f2-640.webp 640w, /img/about-f2-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f2-640.webp" alt="" loading="lazy" decoding="async"></picture></div><b>{S.hours}</b><span>без выходных</span></div>
+        <div class="fact"><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f3-640.avif 640w, /img/about-f3-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f3-640.webp 640w, /img/about-f3-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f3-640.webp" alt="" loading="lazy" decoding="async"></picture></div><b>{S.phone_main}</b><span>Telegram: {S.telegram_phone}</span></div>
+        <div class="fact"><div class="fact-bg" aria-hidden="true"><picture><source srcset="/img/about-f4-640.avif 640w, /img/about-f4-1280.avif 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/avif"><source srcset="/img/about-f4-640.webp 640w, /img/about-f4-1280.webp 1280w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 285px" type="image/webp"><img src="/img/about-f4-640.webp" alt="" loading="lazy" decoding="async"></picture></div><b>Гарантия в заказ-наряде</b><span>условия и срок по каждой операции</span></div>
+      </div>
+
+  </div>
+  <div class="container">
+    <div class="feats">
+      <div class="feat reveal" data-d="0">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c1-480.avif 480w, /img/about-c1-720.avif 720w, /img/about-c1-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c1-480.webp 480w, /img/about-c1-720.webp 720w, /img/about-c1-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c1-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+        <h3>Смета до начала работ</h3>
+        <p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p>
+      </div>
+      <div class="feat reveal" data-d="1">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c2-480.avif 480w, /img/about-c2-720.avif 720w, /img/about-c2-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c2-480.webp 480w, /img/about-c2-720.webp 720w, /img/about-c2-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c2-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <h3>Показываем проблему на детали</h3>
+        <p>Показываем проблему вам — на детали, а не «на словах».</p>
+      </div>
+      <div class="feat reveal" data-d="2">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c3-480.avif 480w, /img/about-c3-720.avif 720w, /img/about-c3-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c3-480.webp 480w, /img/about-c3-720.webp 720w, /img/about-c3-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c3-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+        <h3>Запись без живой очереди</h3>
+        <p>Выберем время визита, чтобы вы не сидели в живой очереди.</p>
+      </div>
+      <div class="feat reveal" data-d="3">
+        <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c4-480.avif 480w, /img/about-c4-720.avif 720w, /img/about-c4-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c4-480.webp 480w, /img/about-c4-720.webp 720w, /img/about-c4-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c4-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
+        <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span>
+        <h3>Грузовой шиномонтаж и парки</h3>
+        <p>Обслуживание парков: «Газели», маршрутки, спецтехника.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec sec--ivory est-sec" aria-labelledby="est-h">
+  <div class="est-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" type="image/avif" srcset="/img/est-bg-m-640.avif 640w" sizes="100vw">
+      <source media="(max-width:640px)" type="image/webp" srcset="/img/est-bg-m-640.webp 640w" sizes="100vw">
+      <source media="(max-width:1024px)" type="image/avif" srcset="/img/est-bg-m-960.avif 960w" sizes="100vw">
+      <source media="(max-width:1024px)" type="image/webp" srcset="/img/est-bg-m-960.webp 960w" sizes="100vw">
+      <source type="image/avif" srcset="/img/est-bg-960.avif 960w, /img/est-bg-1600.avif 1600w" sizes="100vw">
+      <source type="image/webp" srcset="/img/est-bg-960.webp 960w, /img/est-bg-1600.webp 1600w" sizes="100vw">
+      <img src="/img/est-bg-960.webp" width="1600" height="862" alt="" loading="lazy" decoding="async">
+    </picture>
+  </div>
+  <div class="container">
+    <div class="sec-head sec-head--wide reveal">
+      <span class="eyebrow">Как мы работаем</span>
+      <h2 id="est-h">Смета до ремонта: четыре шага без сюрпризов</h2>
+    </div>
+    <div class="est-grid">
+    <div class="est-panels reveal">
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p1-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p1-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p1-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Заявка или звонок</h3><p>Опишите задачу в форме записи или позвоните — выберем время визита, чтобы вы не сидели в живой очереди.</p></div></div>
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p2-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p2-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p2-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Осмотр и диагностика</h3><p>Поднимаем, смотрим, при необходимости считываем ошибки. Показываем проблему вам — на детали, а не «на словах».</p></div></div>
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p3-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p3-640.webp 640w" sizes="(max-width:640px) 46vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p3-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Смета и согласование</h3><p>Перечень работ и стоимость — до начала ремонта. Что критично сейчас, а что доживёт до весны — говорим прямо.</p></div></div>
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p4-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p4-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p4-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Работы и выдача</h3><p>Делаем согласованное, показываем заменённые детали, выдаём заказ-наряд с гарантией. Дальше — по записи на ТО.</p></div></div>
+    </div>
+    <aside class="est-aside reveal" data-d="1">
+      <div class="est-aside-bg" aria-hidden="true">
+        <picture>
+          <source type="image/avif" srcset="/img/est-aside-640.avif 640w, /img/est-aside-1000.avif 1000w" sizes="(max-width:1024px) 92vw, 40vw">
+          <source type="image/webp" srcset="/img/est-aside-640.webp 640w, /img/est-aside-1000.webp 1000w" sizes="(max-width:1024px) 92vw, 40vw">
+          <img src="/img/est-aside-1000.webp" width="1000" height="1167" alt="" loading="lazy" decoding="async">
+        </picture>
+      </div>
+      <h3>Не знаете, что сломалось?</h3>
+      <p>Так бывает чаще, чем кажется: «стучит», «тянет», «горит лампочка». Начните с диагностики — она отвечает на вопрос «что случилось», а смета решает, что делать дальше. Навязывать работы не будем.</p>
+      <div class="est-cta">
+        <a class="btn btn--copper" href="/appointment?s=diagnostika">Записаться на диагностику</a>
+        <p class="est-tel">Или позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a></p>
+      </div>
+    </aside>
+    </div>
+  </div>
+</section>
+<section class="sec sec--deep slider-sec" aria-labelledby="svc-h">
+  <div class="svc-bg" aria-hidden="true">
+    <picture>
+      <source media="(max-width:640px)" srcset="/img/svc-bg-m-960.avif" type="image/avif">
+      <source media="(max-width:640px)" srcset="/img/svc-bg-m-960.webp" type="image/webp">
+      <source srcset="/img/svc-bg-1600.avif" type="image/avif">
+      <img src="/img/svc-bg-1600.webp" alt="" width="1600" height="900" loading="lazy" decoding="async">
+    </picture>
+  </div>
+  <div class="container">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Услуги</span>
+        <h2 id="svc-h">Что делаем — без цен, со сметой по факту осмотра</h2>
+      </div>
+      <div class="slider-nav">
+        <span class="slider-hint" aria-hidden="true">листайте</span>
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие услуги">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие услуги">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel data-live-word="Услуга">
+      <div class="carousel-win">
+        <div class="carousel-track">
+          {services.map((sv) => {
+            const k = SVC_IMG[sv.slug] ?? 'svc-1';
+            return (
+            <a class="svc-card" href={`/services/${sv.slug}`}>
+              <span class="svc-img">
+                <picture>
+                  <source type="image/avif" srcset={`/img/${k}-640.avif 640w, /img/${k}-960.avif 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                  <source type="image/webp" srcset={`/img/${k}-640.webp 640w, /img/${k}-960.webp 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                  <img src={`/img/${k}-640.webp`} alt="" aria-hidden="true" width="800" height="600" loading="lazy" decoding="async">
+                </picture>
+              </span>
+              <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
+            </a>
+            );
+          })}
+          </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec" aria-labelledby="gal-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Галерея работ</span>
+        <h2 id="gal-h">Шесть кейсов «до / после»</h2>
+      </div>
+      <div class="slider-nav">
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel>
+      <div class="carousel-win">
+        <div class="carousel-track gal-track">
+          {cases.map((c, ci) => {
+            const cov = coverInfo(c, '/img/case-1.svg', c.title, '');
+            // Раунд 7: фраза-заглушка о съёмке остаётся только в одной заметке под секцией.
+            const sub = (c.description ?? '').replace(/\.?\s*Фото появится после съёмки в сервисе\./i, '').trim();
+            return (
+              <button class="gal-card" type="button" data-gal={ci} data-img={cov.lg} data-title={c.title} data-sub={sub} aria-label={`Открыть кейс: ${c.title}`}>
+                <span class="gal-img"><img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cov.alt} width="800" height="600" loading="lazy" decoding="async"><span class="ba" aria-hidden="true">до / после</span></span>
+                <span class="gal-cap">{c.title}</span>
+              </button>
+            );
+          })}
+          </div>
+      </div>
+    </div>
+    <p class="gal-note">Показываем только реальные работы — фото появятся после съёмки.</p>
+  </div>
+</section>
+<section class="sec sec--deep sec--narrow" aria-labelledby="rev-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Отзывы</span>
+        <h2 id="rev-h">Что говорят клиенты — и где это проверить</h2>
+      </div>
+      <div class="slider-nav">
+        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
+        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
+      </div>
+    </div>
+    <div class="carousel reveal" data-carousel>
+      <div class="carousel-win">
+        <div class="carousel-track">
+          {reviews.length === 0 ? (
+            <article class="rev-card">
+              <div class="rev-text"><p>Собираем отзывы — пока читайте нас на Яндекс.Картах: там карточка сервиса с оценками реальных клиентов.</p></div>
+              <div class="rev-who">
+                <span class="rev-ava" aria-hidden="true">Я</span>
+                <span><b>Яндекс.Карты</b><span><a class="linklike" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer">Открыть карточку организации</a></span></span>
+              </div>
+            </article>
+          ) : reviews.map((r) => (
+            <article class="rev-card">
+              <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating ?? 5} из 5`}>{Array.from({ length: r.rating ?? 5 }).map(() => (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>))}</span>
+              <div class="rev-text"><p>{r.text}</p></div>
+              <div class="rev-who">
+                <span class="rev-ava" aria-hidden="true">{r.author.slice(0, 1)}</span>
+                <span><b>{r.author}</b><span>{[r.source, r.published_at ? fmtDateRu(r.published_at) : ''].filter(Boolean).join(' · ')}</span></span>
+              </div>
+            </article>
+          ))}
+          </div>
+      </div>
+    </div>
+    {S.ratings_visible && (
+      <div class="rates">
+        {S.ratings.map((r, ri) => (
+          <div class={`rate-card${ri === 0 ? ' rate-card--main' : ''}`}>
+            <div class="v">{r.value} <small>из 5 · {r.count} {plural(r.count, 'оценка', 'оценки', 'оценок')}</small></div>
+            <div class="s">{r.source} — {r.note} · <a class="linklike" href={r.url} target="_blank" rel="noopener noreferrer">источник</a></div>
+          </div>
+        ))}
+      </div>
+    )}
+    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы).</p>
+  </div>
+</section>
+<section class="sec" aria-labelledby="brands-h">
+  <div class="container">
+    <div class="sec-head sec-head--center reveal">
+      <span class="eyebrow">Марки</span>
+      <h2 id="brands-h">Обслуживаем легковые и коммерческие автомобили</h2>
+    </div>
+  </div>
+  <div class="marq reveal" aria-label="Марки автомобилей (бегущая строка)">
+    <div class="marq-in">
+      {[...S.brands, ...S.brands].map((b, bi) => (
+        <span class="brand-chip" aria-hidden={bi >= S.brands.length ? 'true' : 'false'}>{b}</span>
+      ))}
+    </div>
+  </div>
+  <div class="container"><p class="marq-note">Список не полный — если вашей марки здесь нет, позвоните: {S.phone_main}. Бегущая строка останавливается при наведении; с «уменьшением движения» в настройках системы показывается статичным списком.</p></div>
+</section>
+
+  <script>import '../client/hero.ts';</script>
+  <script>import '../client/lightbox.ts';</script>
+</Base>

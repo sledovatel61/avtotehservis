@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>АвтоТехСервис на Портовой, 439 — шиномонтаж и ремонт (демо-мокап)</title>
+<meta name="description" content="Демонстрационный мокап сайта автосервиса «АвтоТехСервис»: квиз заявки, галерея работ, отзывы, контакты. Данные никуда не отправляются.">
+<meta name="robots" content="noindex,nofollow">
+<style>
+  :root{
+    --bg:#14181C;
+    --surface:#1D2226;
+    --surface-2:#242A2F;
+    --text:#F4F2EC;
+    --muted:#A9B0B6;
+    --accent:#FF6A1A;
+    --accent-ink:#14181C;
+    --success:#3FAE6B;
+    --error:#E5484D;
+    --border:#2B3237;
+    --radius-lg:12px;
+    --radius-sm:8px;
+    --maxw:1180px;
+    --dur-fast:120ms;
+    --dur-base:200ms;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  img,svg{max-width:100%;display:block;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  h1,h2,h3,p,ul,ol,fieldset{margin:0;padding:0;}
+  ul{list-style:none;}
+  fieldset{border:0;}
+  input,select,textarea,button{font-family:inherit;font-size:16px;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px;}
+  section{padding:56px 0;}
+  section + section{border-top:1px solid var(--border);}
+  h2{font-size:clamp(22px,4vw,32px);margin-bottom:8px;}
+  .eyebrow{color:var(--accent);text-transform:uppercase;letter-spacing:.08em;font-size:12px;font-weight:700;margin-bottom:8px;display:block;}
+  .lead{color:var(--muted);max-width:640px;margin-bottom:28px;}
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  .skip-link{
+    position:absolute;left:8px;top:-60px;background:var(--accent);color:var(--accent-ink);
+    padding:10px 16px;border-radius:var(--radius-sm);font-weight:700;z-index:999;
+    transition:top var(--dur-base) ease;
+  }
+  .skip-link:focus{top:8px;}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+
+  /* Buttons */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    min-height:48px;padding:12px 22px;border-radius:var(--radius-sm);
+    border:1px solid transparent;font-weight:700;cursor:pointer;
+    text-decoration:none;transition:transform var(--dur-fast) ease, background var(--dur-fast) ease;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{background:#ff7d38;}
+  .btn-secondary{background:transparent;color:var(--text);border-color:var(--border);}
+  .btn-secondary:hover{border-color:var(--accent);}
+  .btn-ghost{background:transparent;color:var(--accent);border:0;padding:4px 0;min-height:auto;font-weight:700;}
+  .btn-block{width:100%;}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;}
+
+  /* Header */
+  header.site-header{
+    position:sticky;top:0;z-index:60;background:rgba(20,24,28,.92);
+    backdrop-filter:saturate(140%) blur(6px);
+    border-bottom:1px solid var(--border);
+  }
+  .header-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);}
+  .brand svg{width:36px;height:36px;flex:none;}
+  .brand-text strong{display:block;font-size:15px;line-height:1.2;}
+  .brand-text span{display:block;font-size:12px;color:var(--muted);}
+  .header-meta{display:none;align-items:center;gap:18px;color:var(--muted);font-size:13px;}
+  .header-meta a{color:var(--text);font-weight:700;text-decoration:none;}
+  .header-actions{display:flex;align-items:center;gap:10px;}
+  .burger{
+    display:inline-flex;width:44px;height:44px;align-items:center;justify-content:center;
+    background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);
+  }
+  .burger svg{width:20px;height:20px;}
+  @media (min-width:900px){
+    .header-meta{display:flex;}
+    .burger{display:none;}
+  }
+
+  /* Mobile nav overlay */
+  .mobile-nav{
+    position:fixed;inset:0;background:var(--bg);z-index:100;
+    display:none;flex-direction:column;padding:16px 20px calc(16px + var(--safe-b));
+    overflow-y:auto;
+  }
+  .mobile-nav.open{display:flex;}
+  .mobile-nav-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+  .mobile-nav-close{width:44px;height:44px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;color:var(--text);}
+  .mobile-nav ul{display:flex;flex-direction:column;gap:4px;margin-bottom:24px;}
+  .mobile-nav a.nav-link{display:block;padding:14px 4px;font-size:19px;text-decoration:none;color:var(--text);border-bottom:1px solid var(--border);}
+  .mobile-nav .mn-phone{font-size:20px;font-weight:700;color:var(--accent);text-decoration:none;display:block;margin-bottom:6px;}
+  .mobile-nav .mn-hours{color:var(--muted);font-size:14px;margin-bottom:20px;}
+
+  /* Hero */
+  .hero{padding-top:48px;padding-bottom:48px;}
+  .hero-inner{display:grid;gap:28px;align-items:center;}
+  @media (min-width:900px){.hero-inner{grid-template-columns:1.1fr .9fr;}}
+  .hero h1{font-size:clamp(26px,5vw,44px);line-height:1.15;margin-bottom:14px;}
+  .hero .lead{margin-bottom:24px;}
+  .hero-ctas{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+  .hero-facts{display:flex;flex-wrap:wrap;gap:16px;color:var(--muted);font-size:13px;}
+  .hero-facts strong{color:var(--text);}
+  .hero-art{
+    aspect-ratio:4/3;border-radius:var(--radius-lg);
+    background:
+      radial-gradient(120% 120% at 20% 10%, rgba(255,106,26,.28), transparent 60%),
+      linear-gradient(135deg, #20262b, #11151a 70%);
+    border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;
+  }
+  .hero-art svg{width:58%;opacity:.9;}
+  .hero-art .tag{
+    position:absolute;bottom:14px;left:14px;background:rgba(20,24,28,.75);
+    border:1px solid var(--border);color:var(--muted);font-size:11px;padding:6px 10px;border-radius:999px;
+  }
+
+  /* Fork */
+  .fork-grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr);}
+  @media (min-width:700px){.fork-grid{grid-template-columns:repeat(4,1fr);}}
+  .fork-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:20px 16px;text-align:left;color:var(--text);cursor:pointer;
+    display:flex;flex-direction:column;gap:10px;min-height:150px;transition:border-color var(--dur-base);
+  }
+  .fork-card:hover{border-color:var(--accent);}
+  .fork-card svg{width:30px;height:30px;color:var(--accent);}
+  .fork-card strong{font-size:16px;}
+  .fork-card span{color:var(--muted);font-size:13px;}
+
+  /* Services */
+  .services-grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr);}
+  @media (min-width:700px){.services-grid{grid-template-columns:repeat(3,1fr);}}
+  .service-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;}
+  .service-card h3{font-size:16px;margin-bottom:6px;}
+  .service-card p{color:var(--muted);font-size:13.5px;}
+
+  /* Process */
+  .process-list{display:grid;gap:14px;counter-reset:step;}
+  @media (min-width:800px){.process-list{grid-template-columns:repeat(5,1fr);}}
+  .process-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;position:relative;}
+  .process-item::before{
+    counter-increment:step;content:counter(step);
+    display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--accent);
+    color:var(--accent-ink);align-items:center;justify-content:center;font-weight:800;margin-bottom:10px;
+  }
+  .process-item h3{font-size:14.5px;margin-bottom:4px;}
+  .process-item p{color:var(--muted);font-size:12.5px;}
+
+  /* Quiz */
+  .quiz-shell{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;max-width:640px;margin:0 auto;}
+  .quiz-progress{margin-bottom:18px;}
+  .quiz-progress-bar{height:6px;background:var(--surface-2);border-radius:999px;overflow:hidden;}
+  .quiz-progress-fill{height:100%;background:var(--accent);width:14%;transition:width var(--dur-base) ease;}
+  .quiz-progress-label{font-size:12.5px;color:var(--muted);margin-top:8px;display:block;}
+  .quiz-step{display:none;}
+  .quiz-step.active{display:block;animation:qfade var(--dur-base) ease;}
+  @keyframes qfade{from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:translateX(0);}}
+  .quiz-step h3{font-size:19px;margin-bottom:4px;}
+  .quiz-step .hint{color:var(--muted);font-size:13px;margin-bottom:16px;display:block;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13.5px;font-weight:700;margin-bottom:6px;}
+  .field input[type="text"],.field input[type="tel"],.field select{
+    width:100%;min-height:48px;padding:0 14px;background:var(--bg);
+    border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);
+  }
+  .field input::placeholder{color:#6d757b;}
+  .field-error{color:var(--error);font-size:12.5px;margin-top:6px;display:none;}
+  .field.invalid input,.field.invalid select{border-color:var(--error);}
+  .field.invalid .field-error{display:block;}
+  .check-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .check-row input{width:20px;height:20px;flex:none;accent-color:var(--accent);}
+  .check-grid{display:grid;gap:10px;}
+  .pillcheck{
+    display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:12px 14px;cursor:pointer;
+  }
+  .pillcheck input{width:20px;height:20px;accent-color:var(--accent);flex:none;}
+  .pillcheck.checked{border-color:var(--accent);}
+  .inline-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .vin-row{display:flex;gap:10px;}
+  .vin-row input{flex:1;letter-spacing:.06em;text-transform:uppercase;}
+  .quiz-nav{display:flex;justify-content:space-between;gap:10px;margin-top:20px;}
+  .summary-box{background:var(--bg);border:1px dashed var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13.5px;color:var(--muted);margin-bottom:16px;}
+  .summary-box b{color:var(--text);}
+  .demo-note{font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center;}
+  .quiz-success{text-align:center;padding:10px 0;}
+  .quiz-success .big-check{width:56px;height:56px;margin:0 auto 14px;color:var(--success);}
+  .quiz-success h3{font-size:20px;margin-bottom:8px;}
+  .quiz-success .req-id{font-family:ui-monospace,monospace;background:var(--bg);border:1px solid var(--border);display:inline-block;padding:6px 12px;border-radius:999px;margin:10px 0 18px;}
+  .quiz-spinner{display:flex;flex-direction:column;align-items:center;gap:14px;padding:30px 0;}
+  .spinner{width:40px;height:40px;border-radius:50%;border:4px solid var(--border);border-top-color:var(--accent);animation:spin 800ms linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .quiz-error{text-align:center;padding:16px 0;}
+  .quiz-error svg{width:40px;height:40px;color:var(--error);margin:0 auto 10px;}
+
+  /* Gallery */
+  .gallery-grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr);}
+  @media (min-width:800px){.gallery-grid{grid-template-columns:repeat(3,1fr);}}
+  .g-card{
+    border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);background:var(--surface);
+    cursor:pointer;text-align:left;color:var(--text);padding:0;position:relative;
+  }
+  .g-thumb{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;position:relative;color:#fff;}
+  .g-thumb svg{width:34%;opacity:.85;}
+  .g-card figcaption{padding:10px 12px;font-size:13px;color:var(--muted);}
+  .g-card figcaption b{display:block;color:var(--text);font-size:13.5px;}
+  .badge{position:absolute;top:8px;left:8px;background:rgba(20,24,28,.75);border:1px solid var(--border);font-size:10.5px;padding:3px 8px;border-radius:999px;}
+  .badge-video{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .badge-video span{width:52px;height:52px;border-radius:50%;background:rgba(20,24,28,.6);display:flex;align-items:center;justify-content:center;}
+  .badge-video svg{width:20px;height:20px;}
+  .demo-chip{text-align:center;color:var(--muted);font-size:12px;margin-top:16px;}
+
+  /* Lightbox */
+  .lightbox{position:fixed;inset:0;background:rgba(10,12,14,.92);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px;}
+  .lightbox.open{display:flex;}
+  .lightbox-stage{position:relative;max-width:720px;width:100%;}
+  .lightbox-media{aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);}
+  .lightbox-media svg{width:40%;}
+  .lightbox-caption{color:var(--muted);text-align:center;margin-top:12px;font-size:13.5px;}
+  .lightbox-counter{text-align:center;color:var(--muted);font-size:12px;margin-top:4px;}
+  .lightbox-close{position:absolute;top:-44px;right:0;width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--text);}
+  .lightbox-arrow{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(20,24,28,.7);border:1px solid var(--border);color:var(--text);}
+  .lightbox-arrow.prev{left:-54px;}
+  .lightbox-arrow.next{right:-54px;}
+  @media (max-width:760px){
+    .lightbox-arrow.prev{left:4px;}
+    .lightbox-arrow.next{right:4px;}
+    .lightbox-close{top:4px;right:4px;}
+  }
+
+  /* Video modal */
+  .video-modal{position:fixed;inset:0;background:rgba(10,12,14,.92);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+  .video-modal.open{display:flex;}
+  .video-modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;max-width:420px;text-align:center;}
+  .video-modal-box svg{width:40px;height:40px;color:var(--accent);margin:0 auto 14px;}
+
+  /* Reviews */
+  .reviews-top{display:grid;gap:14px;grid-template-columns:1fr;margin-bottom:24px;}
+  @media (min-width:800px){.reviews-top{grid-template-columns:repeat(3,1fr);}}
+  .rating-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;}
+  .rating-card .score{font-size:28px;font-weight:800;}
+  .rating-card .scale{color:var(--muted);font-size:13px;}
+  .rating-card .source{display:block;margin-top:10px;font-size:12.5px;color:var(--accent);text-decoration:none;}
+  .rating-card .note{display:block;margin-top:8px;font-size:11.5px;color:var(--muted);}
+  .reviews-grid{display:grid;gap:14px;}
+  @media (min-width:800px){.reviews-grid{grid-template-columns:repeat(3,1fr);}}
+  .review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;}
+  .review-card .stars{color:var(--accent);margin-bottom:8px;letter-spacing:2px;}
+  .review-card p{font-size:13.5px;color:var(--muted);margin-bottom:10px;}
+  .review-card .who{font-size:12.5px;color:var(--text);font-weight:700;}
+  .review-demo-flag{display:inline-block;margin-top:10px;font-size:10.5px;color:var(--muted);border:1px dashed var(--border);padding:2px 8px;border-radius:999px;}
+
+  /* B2B */
+  .b2b-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px;display:grid;gap:20px;}
+  @media (min-width:800px){.b2b-box{grid-template-columns:1.3fr .7fr;align-items:center;}}
+  .b2b-list{display:grid;gap:8px;margin:14px 0;color:var(--muted);font-size:13.5px;}
+  .b2b-list li::before{content:"— ";color:var(--accent);}
+
+  /* FAQ */
+  .faq-item{border-bottom:1px solid var(--border);}
+  .faq-q{
+    width:100%;text-align:left;background:none;border:0;color:var(--text);
+    padding:16px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;font-size:15px;font-weight:700;
+  }
+  .faq-q svg{width:18px;height:18px;flex:none;transition:transform var(--dur-base);}
+  .faq-item[open] .faq-q svg{transform:rotate(45deg);}
+  .faq-a{padding:0 0 16px;color:var(--muted);font-size:14px;max-width:760px;}
+
+  /* Contacts */
+  .contacts-grid{display:grid;gap:22px;}
+  @media (min-width:900px){.contacts-grid{grid-template-columns:1fr 1fr;}}
+  .contact-list{display:grid;gap:14px;}
+  .contact-row{display:flex;gap:12px;align-items:flex-start;}
+  .contact-row svg{width:22px;height:22px;color:var(--accent);flex:none;margin-top:2px;}
+  .contact-row a{text-decoration:none;font-weight:700;}
+  .contact-row span.muted{color:var(--muted);font-size:13px;display:block;}
+  .map-stub{
+    aspect-ratio:4/3;border-radius:var(--radius-lg);border:1px solid var(--border);
+    background:
+      linear-gradient(0deg, rgba(255,255,255,.03) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px) 0 0/28px 28px,
+      var(--surface);
+    position:relative;overflow:hidden;
+  }
+  .map-stub .pin{position:absolute;top:46%;left:52%;transform:translate(-50%,-100%);color:var(--accent);width:40px;height:40px;}
+  .map-stub .map-note{position:absolute;bottom:10px;left:10px;right:10px;font-size:11px;color:var(--muted);background:rgba(20,24,28,.7);padding:8px 10px;border-radius:var(--radius-sm);}
+
+  /* Footer */
+  footer.site-footer{padding:36px 0 calc(36px + 70px);background:var(--surface);border-top:1px solid var(--border);}
+  .footer-grid{display:grid;gap:18px;font-size:12.5px;color:var(--muted);}
+  @media (min-width:800px){.footer-grid{grid-template-columns:1.2fr 1fr 1fr;}}
+  .footer-grid a{color:var(--muted);text-decoration:underline;}
+  .footer-bottom{margin-top:24px;padding-top:16px;border-top:1px solid var(--border);font-size:11.5px;color:#7a8187;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;}
+
+  /* Sticky bar */
+  .sticky-bar{
+    position:fixed;left:0;right:0;bottom:0;z-index:80;
+    background:rgba(20,24,28,.95);backdrop-filter:blur(6px);
+    border-top:1px solid var(--border);
+    padding:10px 16px calc(10px + var(--safe-b));
+    display:none;gap:10px;
+  }
+  .sticky-bar.visible{display:flex;}
+  .sticky-bar .btn{flex:1;min-height:48px;}
+  @media (min-width:900px){.sticky-bar{display:none !important;}}
+
+  /* Policy modal / leave review modal generic */
+  .modal-overlay{position:fixed;inset:0;background:rgba(10,12,14,.85);z-index:300;display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;position:relative;}
+  .modal-box h3{margin-bottom:12px;}
+  .modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:var(--bg);border:1px solid var(--border);color:var(--text);}
+  .star-input{display:flex;gap:6px;margin-bottom:14px;}
+  .star-input button{background:none;border:0;color:var(--border);width:30px;height:30px;cursor:pointer;}
+  .star-input button.active{color:var(--accent);}
+  .modal-box textarea{width:100%;min-height:90px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:10px 12px;}
+
+  /* Admin view */
+  #adminView{display:none;}
+  #adminView.open{display:block;}
+  #mainWrapper.hidden-by-admin{display:none;}
+  .admin-shell{min-height:100vh;}
+  .admin-top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .admin-gate{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;text-align:center;padding:20px;}
+  .admin-main{display:none;padding:24px 20px 80px;max-width:900px;margin:0 auto;}
+  .admin-main.open{display:block;}
+  .admin-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;}
+  .admin-section h2{font-size:18px;margin-bottom:14px;}
+  table.admin-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.admin-table th, table.admin-table td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);}
+  table.admin-table th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;}
+  .status-pill{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);}
+  .status-new{color:var(--accent);border-color:var(--accent);}
+  .status-done{color:var(--success);border-color:var(--success);}
+  .upload-row{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;margin-bottom:14px;}
+  .upload-preview{width:90px;height:90px;border-radius:var(--radius-sm);margin:10px auto 0;display:none;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);overflow:hidden;}
+  .timer-chip{display:inline-flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:12.5px;color:var(--muted);}
+  .timer-chip b{color:var(--accent);}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;}
+  .switch{position:relative;width:44px;height:24px;flex:none;}
+  .switch input{opacity:0;width:100%;height:100%;position:absolute;cursor:pointer;margin:0;}
+  .switch .track{position:absolute;inset:0;background:var(--border);border-radius:999px;transition:background var(--dur-base);}
+  .switch .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform var(--dur-base);}
+  .switch input:checked + .track{background:var(--accent);}
+  .switch input:checked ~ .knob{transform:translateX(20px);}
+  .queue-status{margin-top:12px;font-size:12.5px;padding:10px 12px;border-radius:var(--radius-sm);display:none;}
+  .queue-status.show{display:block;}
+  .queue-status.waiting{background:rgba(255,106,26,.12);color:var(--accent);border:1px solid var(--accent);}
+  .queue-status.ok{background:rgba(63,174,107,.12);color:var(--success);border:1px solid var(--success);}
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:0.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:0.001ms !important;
+      scroll-behavior:auto !important;
+    }
+  }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Перейти к основному содержимому</a>
+
+<div id="mainWrapper">
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a href="#hero" class="brand" aria-label="АвтоТехСервис, на главную">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#1D2226" stroke="#2B3237"/><path d="M14 50 L30 14 L34 14 L34 30 L30 30 L30 34 L34 34 L34 38 L30 38" stroke="#F4F2EC" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M34 18 H52 M34 24 H48 M34 30 H52 M34 36 H48" stroke="#FF6A1A" stroke-width="4" stroke-linecap="round"/><path d="M34 44 V50" stroke="#F4F2EC" stroke-width="4" stroke-linecap="round"/></svg>
+      <span class="brand-text"><strong>АвтоТехСервис</strong><span>на Портовой, 439</span></span>
+    </a>
+    <div class="header-meta">
+      <span>Ежедневно 9:00–19:00</span>
+      <a href="tel:+79289065700" data-track="call_click" data-source="header">+7 (928) 906-57-00</a>
+      <a href="#quiz" class="btn btn-primary" data-track="call_click" data-source="header-cta" style="min-height:44px;padding:10px 16px;">Пройти квиз</a>
+    </div>
+    <div class="header-actions">
+      <a href="tel:+79289065700" class="btn btn-secondary" style="display:none" data-track="call_click">Звонок</a>
+      <button class="burger" id="menuToggle" aria-expanded="false" aria-controls="mobileNav" aria-label="Открыть меню">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobileNav" aria-hidden="true" aria-label="Мобильное меню">
+  <div class="mobile-nav-top">
+    <span class="brand-text"><strong>АвтоТехСервис</strong></span>
+    <button class="mobile-nav-close" id="mobileNavClose" aria-label="Закрыть меню">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <a class="mn-phone" href="tel:+79289065700" data-track="call_click" data-source="mobile-menu">+7 (928) 906-57-00</a>
+  <span class="mn-hours">Ежедневно, 9:00–19:00 · Портовая, 439</span>
+  <ul>
+    <li><a class="nav-link" href="#fork" data-nav>Услуги и развилка</a></li>
+    <li><a class="nav-link" href="#quiz" data-nav>Оставить заявку</a></li>
+    <li><a class="nav-link" href="#gallery" data-nav>Галерея работ</a></li>
+    <li><a class="nav-link" href="#reviews" data-nav>Отзывы</a></li>
+    <li><a class="nav-link" href="#b2b" data-nav>Для бизнеса</a></li>
+    <li><a class="nav-link" href="#faq" data-nav>Вопросы</a></li>
+    <li><a class="nav-link" href="#contacts" data-nav>Контакты</a></li>
+  </ul>
+  <a href="#quiz" class="btn btn-primary btn-block" data-nav>Пройти квиз за 1 минуту</a>
+</nav>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section id="hero" class="hero">
+    <div class="wrap hero-inner">
+      <div>
+        <span class="eyebrow">Железнодорожный район · Западный жилой массив</span>
+        <h1>АвтоТехСервис на Портовой, 439 — шиномонтаж и ремонт каждый день</h1>
+        <p class="lead">Переобувка, ремонт дисков, ТО, ходовая, двигатель, АКПП и электрика в одном месте. Расскажем о машине за 4 коротких шага и перезвоним — без похода в сервис вслепую.</p>
+        <div class="hero-ctas">
+          <a href="#quiz" class="btn btn-primary" data-track="quiz_open" data-source="hero">Пройти квиз за 1 минуту</a>
+          <a href="tel:+79289065700" class="btn btn-secondary" data-track="call_click" data-source="hero">Позвонить: +7 (928) 906-57-00</a>
+        </div>
+        <div class="hero-facts">
+          <span><strong>Ежедневно 9:00–19:00</strong></span>
+          <span>Ост. «3‑й Поселковый» ~330 м</span>
+          <span>Телеграм для заявок</span>
+        </div>
+      </div>
+      <div class="hero-art" role="img" aria-label="Стилизованная иллюстрация: подъёмник с автомобилем">
+        <svg viewBox="0 0 200 160" aria-hidden="true">
+          <rect x="20" y="90" width="160" height="14" rx="4" fill="#2B3237"/>
+          <circle cx="55" cy="104" r="16" fill="none" stroke="#F4F2EC" stroke-width="4"/>
+          <circle cx="145" cy="104" r="16" fill="none" stroke="#F4F2EC" stroke-width="4"/>
+          <path d="M35 90 L55 55 H135 L160 90 Z" fill="none" stroke="#FF6A1A" stroke-width="4" stroke-linejoin="round"/>
+          <rect x="30" y="20" width="10" height="90" fill="#2B3237"/>
+          <rect x="160" y="20" width="10" height="90" fill="#2B3237"/>
+        </svg>
+        <span class="tag">демо-иллюстрация, не фото</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORK -->
+  <section id="fork">
+    <div class="wrap">
+      <span class="eyebrow">С чем приехать</span>
+      <h2>Выберите, что нужно</h2>
+      <p class="lead">Остальное уточним по ходу короткого квиза — отвечать на всё сразу не придётся.</p>
+      <div class="fork-grid">
+        <button class="fork-card" data-start-quiz="tires" data-track="quiz_open" data-source="fork-tires">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+          <strong>Колёса</strong>
+          <span>Замена, прокол, грыжа, порез, балансировка, диски</span>
+        </button>
+        <button class="fork-card" data-start-quiz="repair" data-track="quiz_open" data-source="fork-repair">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 7l3 3-8 8H6v-3l8-8z"/><path d="M13 5l6 6"/></svg>
+          <strong>Ремонт</strong>
+          <span>Двигатель, АКПП, ходовая, электрика, стук, течь</span>
+        </button>
+        <button class="fork-card" data-start-quiz="unsure" data-track="quiz_open" data-source="fork-unsure">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".3" fill="currentColor"/></svg>
+          <strong>Не знаю, что с машиной</strong>
+          <span>Опишите своими словами — мастер разберётся</span>
+        </button>
+        <a class="fork-card" href="#b2b" data-track="quiz_open" data-source="fork-b2b">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <strong>Бизнесу (B2B)</strong>
+          <span>Парк, маршрутки, грузовой шиномонтаж</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="wrap">
+      <span class="eyebrow">Услуги</span>
+      <h2>Полный цикл в одном месте</h2>
+      <p class="lead">Цены не публикуем — они зависят от марки, радиуса и объёма работ, точную сумму назовём после диагностики или по квизу.</p>
+      <div class="services-grid">
+        <div class="service-card"><h3>Шиномонтаж и балансировка</h3><p>Легковой и грузовой, сезонная замена, хранение шин</p></div>
+        <div class="service-card"><h3>Диски</h3><p>Правка, прокатка, ремонт порезов и грыж, вулканизация</p></div>
+        <div class="service-card"><h3>ТО и жидкости</h3><p>Аппаратная замена масла, плановое обслуживание</p></div>
+        <div class="service-card"><h3>Ходовая и тормоза</h3><p>Развал-схождение, рулевые рейки, подвеска</p></div>
+        <div class="service-card"><h3>Двигатель и трансмиссия</h3><p>Ремонт двигателя, АКПП/МКПП, форсунки</p></div>
+        <div class="service-card"><h3>Электрика и климат</h3><p>Автоэлектрика, кондиционеры, замена лобовых стёкол</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process">
+    <div class="wrap">
+      <span class="eyebrow">Как проходит обращение</span>
+      <h2>5 шагов от заявки до выдачи машины</h2>
+      <div class="process-list">
+        <div class="process-item"><h3>Диагностика</h3><p>Смотрим и слушаем, что с машиной — на месте или по описанию в квизе</p></div>
+        <div class="process-item"><h3>Смета</h3><p>Называем ориентир по стоимости и срокам до начала работ</p></div>
+        <div class="process-item"><h3>Согласование</h3><p>Подтверждаете объём работ — без скрытых доплат без вашего «да»</p></div>
+        <div class="process-item"><h3>Работа</h3><p>Выполняем согласованный объём</p></div>
+        <div class="process-item"><h3>Выдача</h3><p>Показываем, что сделали, отвечаем на вопросы по результату</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz">
+    <div class="wrap">
+      <span class="eyebrow">Заявка за 1 минуту</span>
+      <h2>Расскажите о машине — мы перезвоним</h2>
+      <p class="lead" style="margin-bottom:20px;">Демонстрация: данные никуда не отправляются, это мокап интерфейса.</p>
+
+      <div class="quiz-shell" id="quizShell">
+        <div class="quiz-progress" id="quizProgressWrap">
+          <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill"></div></div>
+          <span class="quiz-progress-label" id="quizProgressLabel">Шаг 1 из 7</span>
+        </div>
+
+        <form id="quizForm" novalidate>
+          <!-- Step 1: branch -->
+          <div class="quiz-step active" data-step="1">
+            <h3>С чем вы к нам?</h3>
+            <span class="hint">Выберите один вариант — дальше спросим только нужное</span>
+            <fieldset>
+              <legend class="sr-only">Выберите тип обращения</legend>
+              <div class="check-grid">
+                <label class="pillcheck"><input type="radio" name="branch" value="tires"> Колёса — замена, прокол, грыжа, балансировка</label>
+                <label class="pillcheck"><input type="radio" name="branch" value="repair"> Ремонт — двигатель, АКПП, ходовая, электрика</label>
+                <label class="pillcheck"><input type="radio" name="branch" value="unsure"> Не знаю, что с машиной</label>
+              </div>
+            </fieldset>
+            <div class="field-error" id="err-branch">Выберите один из вариантов</div>
+          </div>
+
+          <!-- Step 2: brand -->
+          <div class="quiz-step" data-step="2">
+            <h3>Марка автомобиля</h3>
+            <span class="hint">Начните печатать — подскажем по списку, или впишите свой вариант</span>
+            <div class="field" id="field-brand">
+              <label for="q-brand">Марка</label>
+              <input type="text" id="q-brand" name="brand" list="brandsList" placeholder="Например, Hyundai" autocomplete="off">
+              <datalist id="brandsList">
+                <option value="Lada (ВАЗ)"><option value="Hyundai"><option value="Kia">
+                <option value="Toyota"><option value="Volkswagen"><option value="Renault">
+                <option value="Nissan"><option value="Chevrolet"><option value="Skoda">
+                <option value="Ford"><option value="Mazda"><option value="Mitsubishi">
+                <option value="Chery"><option value="Geely"><option value="Haval">
+                <option value="BMW"><option value="Mercedes-Benz"><option value="Audi">
+                <option value="УАЗ"><option value="ГАЗ">
+              </datalist>
+              <div class="field-error">Укажите марку или выберите «другая» в поле</div>
+            </div>
+          </div>
+
+          <!-- Step 3: model/year -->
+          <div class="quiz-step" data-step="3">
+            <h3>Модель и год выпуска</h3>
+            <span class="hint">Можно не помнить точно — отметьте галочкой ниже</span>
+            <div class="field">
+              <label for="q-model">Модель (необязательно)</label>
+              <input type="text" id="q-model" name="model" placeholder="Например, Solaris">
+            </div>
+            <div class="field" id="field-year">
+              <label for="q-year">Год выпуска</label>
+              <input type="text" id="q-year" name="year" inputmode="numeric" placeholder="Например, 2016" maxlength="4">
+              <div class="field-error">Введите год четырьмя цифрами или отметьте «не помню»</div>
+            </div>
+            <label class="check-row"><input type="checkbox" id="q-year-unknown"> Не помню год выпуска</label>
+          </div>
+
+          <!-- Step 4: VIN -->
+          <div class="quiz-step" data-step="4">
+            <h3>VIN-номер (необязательно)</h3>
+            <span class="hint">17 символов, обычно в ПТС или на лобовом стекле со стороны водителя. Буквы I, O, Q в VIN не используются.</span>
+            <div class="field" id="field-vin">
+              <label for="q-vin">VIN</label>
+              <div class="vin-row">
+                <input type="text" id="q-vin" name="vin" maxlength="17" placeholder="17 символов" autocomplete="off">
+                <button type="button" class="btn btn-secondary" id="vinUnknownBtn" data-track="skip_vin">Не знаю VIN</button>
+              </div>
+              <div class="field-error">VIN — 17 символов без букв I, O и Q</div>
+            </div>
+            <p id="vinSkippedNote" style="display:none;color:var(--muted);font-size:13px;">Хорошо, продолжим без VIN.</p>
+          </div>
+
+          <!-- Step 5: issues -->
+          <div class="quiz-step" data-step="5">
+            <h3 id="issuesTitle">Что нужно сделать?</h3>
+            <span class="hint">Отметьте всё подходящее — можно несколько</span>
+            <fieldset>
+              <legend class="sr-only">Выберите неисправности или работы</legend>
+              <div class="check-grid" id="issuesList"></div>
+            </fieldset>
+            <div class="field-error" id="err-issues">Отметьте хотя бы один пункт</div>
+          </div>
+
+          <!-- Step 6: contacts -->
+          <div class="quiz-step" data-step="6">
+            <h3>Как с вами связаться</h3>
+            <span class="hint">Телефон обязателен, имя — по желанию</span>
+            <div class="field">
+              <label for="q-name">Имя (необязательно)</label>
+              <input type="text" id="q-name" name="name" placeholder="Как к вам обращаться">
+            </div>
+            <div class="field" id="field-phone">
+              <label for="q-phone">Телефон</label>
+              <input type="tel" id="q-phone" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel">
+              <div class="field-error">Введите номер в формате +7 (999) 999-99-99</div>
+            </div>
+            <div class="field">
+              <label for="q-time">Когда удобно привезти</label>
+              <select id="q-time" name="time">
+                <option value="today">Сегодня</option>
+                <option value="tomorrow">Завтра</option>
+                <option value="week">В течение недели</option>
+                <option value="notsoon">Не срочно</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Step 7: summary + consent -->
+          <div class="quiz-step" data-step="7">
+            <h3>Проверьте и отправьте</h3>
+            <div class="summary-box" id="summaryBox"></div>
+            <div class="field" id="field-consent">
+              <label class="check-row">
+                <input type="checkbox" id="q-consent" name="consent">
+                <span>Даю согласие на обработку персональных данных в соответствии с <a href="#" data-open-modal="policyModal" style="color:var(--accent);">политикой конфиденциальности</a></span>
+              </label>
+              <div class="field-error">Без согласия отправить заявку нельзя — это требование закона</div>
+            </div>
+          </div>
+        </form>
+
+        <div class="quiz-nav" id="quizNav">
+          <button type="button" class="btn btn-secondary" id="quizBack" data-track="step_back">Назад</button>
+          <button type="button" class="btn btn-primary" id="quizNext" data-track="step_next">Далее</button>
+        </div>
+
+        <!-- Sending state -->
+        <div class="quiz-spinner" id="quizSending" style="display:none;">
+          <div class="spinner" role="status" aria-live="polite"></div>
+          <span>Отправляем заявку…</span>
+        </div>
+
+        <!-- Success state -->
+        <div class="quiz-success" id="quizSuccess" style="display:none;" role="status" aria-live="polite">
+          <svg class="big-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
+          <h3>Заявка принята</h3>
+          <span class="req-id" id="reqIdOut">№ ATS-000000</span>
+          <p class="lead" style="margin:0 auto 16px;">Перезвоним в течение рабочего времени (ежедневно 9:00–19:00). Можно и самим набрать нас прямо сейчас.</p>
+          <a href="tel:+79289065700" class="btn btn-primary" data-track="call_click" data-source="quiz-success">Позвонить: +7 (928) 906-57-00</a>
+        </div>
+
+        <!-- Error state -->
+        <div class="quiz-error" id="quizErrorState" style="display:none;" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          <h3>Не получилось отправить</h3>
+          <p class="lead" style="margin:0 auto 16px;">Проверьте интернет. Данные квиза сохранены, вводить заново не нужно.</p>
+          <button type="button" class="btn btn-primary" id="retrySend">Повторить отправку</button>
+        </div>
+
+        <p class="demo-note" id="demoNoteLine">Демонстрация: данные никуда не отправляются</p>
+        <p class="demo-note"><button type="button" class="btn-ghost" id="simulateErrorBtn" style="font-size:11.5px;">Показать экран ошибки (для проверки)</button></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section id="gallery">
+    <div class="wrap">
+      <span class="eyebrow">Галерея</span>
+      <h2>Последние работы</h2>
+      <p class="lead">Ниже — демо-кейсы, которые показывают, как будет выглядеть галерея. Заменим реальными фото и видео по мере съёмки.</p>
+      <div class="gallery-grid" id="galleryGrid"></div>
+      <p class="demo-chip">демо-кейсы, заменим реальными</p>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section id="reviews">
+    <div class="wrap">
+      <span class="eyebrow">Отзывы и доверие</span>
+      <h2>Что пишут о нас</h2>
+      <div class="reviews-top">
+        <div class="rating-card">
+          <span class="score">4,5 / 5</span>
+          <span class="scale">182 оценки</span>
+          <a href="https://yandex.ru/maps/?pt=39.648295,47.193068&z=17&text=47.193068,39.648295" target="_blank" rel="noopener" class="source" data-track="route_click" data-source="review-yandex">Источник: Яндекс.Карты →</a>
+          <span class="note">Данные заказчика, требуют проверки перед публикацией на реальном сайте</span>
+        </div>
+        <div class="rating-card">
+          <span class="score">3,6 / 5</span>
+          <span class="scale">12 оценок</span>
+          <span class="source" style="color:var(--muted);">Источник: 2ГИС</span>
+          <span class="note">Показываем честно, без усреднения с другими картами</span>
+        </div>
+        <div class="rating-card">
+          <span class="score">2,2 / 5</span>
+          <span class="scale">1 оценка</span>
+          <span class="source" style="color:var(--muted);">Источник: Zoon</span>
+          <span class="note">Низкая оценка не скрывается</span>
+        </div>
+      </div>
+      <div class="reviews-grid">
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p>«Приехал с порезом на колесе, починили быстро, объяснили, что делали.»</p>
+          <span class="who">Демонстрационный отзыв</span>
+          <span class="review-demo-flag">заменяется реальными после модерации</span>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★☆</div>
+          <p>«Делали развал-схождение, показали результат на стенде до и после.»</p>
+          <span class="who">Демонстрационный отзыв</span>
+          <span class="review-demo-flag">заменяется реальными после модерации</span>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p>«Ремонтировали АКПП, заранее назвали ориентир по срокам и смете.»</p>
+          <span class="who">Демонстрационный отзыв</span>
+          <span class="review-demo-flag">заменяется реальными после модерации</span>
+        </div>
+      </div>
+      <p style="text-align:center;margin-top:22px;">
+        <button class="btn btn-secondary" id="openReviewModal" data-open-modal="reviewModal">Оставить отзыв</button>
+      </p>
+    </div>
+  </section>
+
+  <!-- B2B -->
+  <section id="b2b">
+    <div class="wrap">
+      <span class="eyebrow">Для бизнеса</span>
+      <h2>Парки, маршрутки, грузовой транспорт</h2>
+      <div class="b2b-box">
+        <div>
+          <p class="lead" style="margin-bottom:10px;">Отдельная заявка для юридических лиц и владельцев нескольких машин — не нужно проходить общий квиз.</p>
+          <ul class="b2b-list">
+            <li>Грузовой шиномонтаж</li>
+            <li>Обслуживание парка легковых и коммерческих машин</li>
+            <li>Безналичный расчёт — уточняется при заявке</li>
+          </ul>
+        </div>
+        <div style="text-align:center;">
+          <a href="#quiz" class="btn btn-primary btn-block" data-track="quiz_open" data-source="b2b">Оставить заявку B2B</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <span class="eyebrow">Вопросы</span>
+      <h2>Частые вопросы</h2>
+      <div id="faqList">
+        <details class="faq-item">
+          <summary class="faq-q">Это демонстрационный сайт?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">Да, это мокап для оценки концепции. Квиз и формы ничего не отправляют — это демонстрация интерфейса.</div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-q">Сколько стоит шиномонтаж или ремонт?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">Цены зависят от марки, радиуса диска и объёма работ. Пройдите короткий квиз или позвоните — назовём ориентир по телефону.</div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-q">Что делать, если я не знаю VIN?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">В квизе есть кнопка «Не знаю VIN» — заявку можно отправить и без него, он нужен только для точного подбора запчастей при ремонте.</div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-q">Работаете ли вы с грузовым транспортом и парками?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">Да, есть отдельная заявка для бизнеса — раздел «Для бизнеса» выше.</div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-q">Даёте ли вы гарантию на работы?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">Да, гарантия предоставляется. Точные условия и сроки уточняются при приёмке автомобиля.</div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-q">Как быстро вы перезвоните после заявки?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">В рабочее время — ежедневно с 9:00 до 19:00. Точный ориентир по времени ответа уточняется у владельца перед запуском сайта.</div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-q">Можно ли записаться на конкретное время?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">В квизе можно указать удобный день — точное время согласуем по телефону после заявки.</div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-q">Куда уходят данные из квиза?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <div class="faq-a">На реальном сайте — на e-mail и в Telegram с согласия на обработку персональных данных. В этом мокапе отправка не выполняется.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTS -->
+  <section id="contacts">
+    <div class="wrap">
+      <span class="eyebrow">Контакты</span>
+      <h2>Как нас найти</h2>
+      <div class="contacts-grid">
+        <div class="contact-list">
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div><a href="https://yandex.ru/maps/?pt=39.648295,47.193068&z=17&text=47.193068,39.648295" target="_blank" rel="noopener" data-track="route_click" data-source="contacts">Ростов-на-Дону, ул. Портовая, 439</a><span class="muted">Ост. «3-й Поселковый» ~330 м, рядом продуктовая база «Бум»</span></div>
+          </div>
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z"/></svg>
+            <div><a href="tel:+79289065700" data-track="call_click" data-source="contacts">+7 (928) 906-57-00</a><span class="muted">Основной телефон</span></div>
+          </div>
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <div><a href="#" data-track="telegram_click" data-source="contacts">Telegram: +7 (951) 826-98-39</a><span class="muted">Для заявок и фото</span></div>
+          </div>
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            <div><a href="mailto:avtotehservis439@mail.ru">avtotehservis439@mail.ru</a><span class="muted">E-mail заявок</span></div>
+          </div>
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div><span style="font-weight:700;">Ежедневно, 9:00–19:00</span><span class="muted">Подтверждено владельцем 21.10.2026</span></div>
+          </div>
+          <a href="https://yandex.ru/maps/?pt=39.648295,47.193068&z=17&text=47.193068,39.648295" target="_blank" rel="noopener" class="btn btn-primary" data-track="route_click" data-source="contacts-button">Построить маршрут</a>
+        </div>
+        <div class="map-stub" role="img" aria-label="Схематичная карта-заглушка без встроенной карты сторонних сервисов">
+          <svg class="pin" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+          <span class="map-note">Карта-заглушка (без iframe) — в продакшне встроим интерактивную карту с маршрутом</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <strong style="color:var(--text);display:block;margin-bottom:6px;">АвтоТехСервис на Портовой, 439</strong>
+        ИП Яковенко Павел Иванович<br>
+        ИНН 341010400388 · ОГРНИП 324619600117335
+      </div>
+      <div>
+        <strong style="color:var(--text);display:block;margin-bottom:6px;">Документы</strong>
+        <a href="#" data-open-modal="policyModal">Политика конфиденциальности</a><br>
+        <a href="#" data-open-modal="consentModal">Согласие на обработку ПДн</a>
+      </div>
+      <div>
+        <strong style="color:var(--text);display:block;margin-bottom:6px;">Разделы</strong>
+        <a href="#gallery">Галерея</a><br>
+        <a href="#reviews">Отзывы</a><br>
+        <a href="#" id="openAdminLink">Демо админки</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 АвтоТехСервис. Демонстрационный мокап, не продакшн-сайт.</span>
+      <span>Ростов-на-Дону, ул. Портовая, 439</span>
+    </div>
+  </div>
+</footer>
+
+<div class="sticky-bar" id="stickyBar">
+  <a href="tel:+79289065700" class="btn btn-secondary" data-track="call_click" data-source="sticky-bar">Позвонить</a>
+  <a href="#quiz" class="btn btn-primary" data-track="quiz_open" data-source="sticky-bar">Заявка</a>
+</div>
+
+</div><!-- /mainWrapper -->
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Просмотр фото работы">
+  <div class="lightbox-stage">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button class="lightbox-arrow prev" id="lightboxPrev" aria-label="Предыдущее фото">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="lightbox-media" id="lightboxMedia"></div>
+    <button class="lightbox-arrow next" id="lightboxNext" aria-label="Следующее фото">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <p class="lightbox-caption" id="lightboxCaption"></p>
+    <p class="lightbox-counter" id="lightboxCounter"></p>
+  </div>
+</div>
+
+<!-- VIDEO MODAL -->
+<div class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-label="Видео работы">
+  <div class="video-modal-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M10 9l5 3-5 3V9z"/></svg>
+    <h3 style="margin-bottom:8px;">Здесь будет видео 20–30 с</h3>
+    <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px;">В мокапе видеофайлов нет. На реальном сайте — короткий ролик с постером, запуск по клику, без автоплея со звуком.</p>
+    <button class="btn btn-secondary" id="videoModalClose">Закрыть</button>
+  </div>
+</div>
+
+<!-- POLICY MODAL -->
+<div class="modal-overlay" id="policyModal" role="dialog" aria-modal="true" aria-label="Политика конфиденциальности">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h3>Политика конфиденциальности (демо-заглушка)</h3>
+    <p style="color:var(--muted);font-size:13.5px;">Оператор: ИП Яковенко Павел Иванович (ИНН 341010400388, ОГРНИП 324619600117335). Цель обработки — связь по заявке на услуги автосервиса. На реальном сайте здесь будет полный текст политики, отдельный от текста согласия, как того требует 152-ФЗ.</p>
+  </div>
+</div>
+
+<!-- CONSENT MODAL -->
+<div class="modal-overlay" id="consentModal" role="dialog" aria-modal="true" aria-label="Согласие на обработку персональных данных">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h3>Согласие на обработку ПДн (демо-заглушка)</h3>
+    <p style="color:var(--muted);font-size:13.5px;">Отдельный документ, не часть политики конфиденциальности (с 1 сентября 2025 года это обязательное требование). Содержит: оператора, цель, перечень данных, перечень действий, срок и порядок отзыва согласия.</p>
+  </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="modal-overlay" id="reviewModal" role="dialog" aria-modal="true" aria-label="Оставить отзыв">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h3>Оставить отзыв (демо)</h3>
+    <div class="star-input" id="starInput">
+      <button type="button" data-star="1">★</button><button type="button" data-star="2">★</button>
+      <button type="button" data-star="3">★</button><button type="button" data-star="4">★</button>
+      <button type="button" data-star="5">★</button>
+    </div>
+    <textarea placeholder="Что понравилось или что можно улучшить?"></textarea>
+    <label class="check-row" style="margin-top:12px;"><input type="checkbox" id="reviewConsent"><span style="font-size:13px;">Согласен(на) на публикацию отзыва на сайте</span></label>
+    <button type="button" class="btn btn-primary btn-block" style="margin-top:14px;" id="reviewSubmitDemo">Отправить (демо)</button>
+    <p class="demo-note">Демонстрация: отзыв никуда не отправляется и не публикуется</p>
+  </div>
+</div>
+
+<!-- ADMIN VIEW -->
+<div id="adminView">
+  <div class="admin-shell">
+    <div class="admin-top">
+      <strong>АвтоТехСервис — демо-админка</strong>
+      <a href="#" id="adminBackLink" class="btn btn-secondary" style="min-height:44px;padding:8px 14px;">← Вернуться на сайт</a>
+    </div>
+
+    <div class="admin-gate" id="adminGate">
+      <h2 style="margin-bottom:10px;">Вход в панель владельца</h2>
+      <p class="lead" style="margin:0 auto 18px;">Демо-режим: пароль не требуется, это иллюстрация сценария публикации с телефона.</p>
+      <button class="btn btn-primary" id="adminLoginBtn">Войти (демо)</button>
+    </div>
+
+    <div class="admin-main" id="adminMain">
+      <div class="admin-section">
+        <h2>Заявки</h2>
+        <table class="admin-table">
+          <thead><tr><th>Заявка</th><th>Клиент</th><th>Суть</th><th>Статус</th></tr></thead>
+          <tbody>
+            <tr><td>ATS-100231</td><td>Алексей, +7 928 ••• 12 34</td><td>Прокол, R16, сегодня</td><td><span class="status-pill status-new">Новая</span></td></tr>
+            <tr><td>ATS-100230</td><td>Мария, +7 951 ••• 56 78</td><td>Развал-схождение, завтра</td><td><span class="status-pill status-new">Новая</span></td></tr>
+            <tr><td>ATS-100229</td><td>Игорь, +7 918 ••• 90 12</td><td>Стук в ходовой, не срочно</td><td><span class="status-pill status-done">Обработана</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="admin-section">
+        <h2>Добавить работу в галерею</h2>
+        <p class="lead" style="margin-bottom:14px;">Сценарий владельца: снять фото, выбрать категорию, опубликовать — цель уложиться в 60 секунд.</p>
+        <span class="timer-chip">Время с момента входа: <b id="adminTimer">0 с</b> · цель — 60 с</span>
+
+        <div class="toggle-row" style="margin-top:16px;">
+          <div>
+            <strong style="display:block;font-size:13.5px;">Эмулировать слабый интернет</strong>
+            <span style="color:var(--muted);font-size:12px;">Покажет очередь и повтор отправки, как в реальном боте на плохой связи</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="weakNetToggle">
+            <span class="track"></span><span class="knob"></span>
+          </label>
+        </div>
+
+        <div class="upload-row">
+          <input type="file" id="adminFileInput" accept="image/*" aria-describedby="uploadHint">
+          <p id="uploadHint" style="color:var(--muted);font-size:12px;margin-top:8px;">HEIC/JPEG/PNG — в мокапе только превью, без реальной загрузки</p>
+          <div class="upload-preview" id="uploadPreview"></div>
+        </div>
+        <div class="field">
+          <label for="pubCaption">Подпись</label>
+          <input type="text" id="pubCaption" placeholder="Например: Боковой порез — R16">
+        </div>
+        <div class="field">
+          <label for="pubCategory">Категория</label>
+          <select id="pubCategory">
+            <option value="Шиномонтаж">Шиномонтаж</option>
+            <option value="Ходовая">Ходовая</option>
+            <option value="Двигатель">Двигатель</option>
+            <option value="АКПП">АКПП</option>
+            <option value="Электрика">Электрика</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block" id="publishBtn">Опубликовать</button>
+        <div class="queue-status" id="queueStatus"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- analytics stub (demo, console-only, no network) ---------- */
+  function track(name, detail){
+    try{ console.log('[demo-analytics]', name, detail || {}); }catch(e){}
+  }
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-track]');
+    if(el){ track(el.getAttribute('data-track'), {source: el.getAttribute('data-source') || null}); }
+  });
+
+  /* ---------- mobile menu ---------- */
+  var menuToggle = document.getElementById('menuToggle');
+  var mobileNav = document.getElementById('mobileNav');
+  var mobileNavClose = document.getElementById('mobileNavClose');
+  var lastFocused = null;
+
+  function trapFocus(container, evt){
+    var focusables = container.querySelectorAll('a,button,input,select,textarea,[tabindex]:not([tabindex="-1"])');
+    if(!focusables.length) return;
+    var first = focusables[0], last = focusables[focusables.length-1];
+    if(evt.key === 'Tab'){
+      if(evt.shiftKey && document.activeElement === first){ evt.preventDefault(); last.focus(); }
+      else if(!evt.shiftKey && document.activeElement === last){ evt.preventDefault(); first.focus(); }
+    }
+  }
+
+  function openMobileNav(){
+    lastFocused = document.activeElement;
+    mobileNav.classList.add('open');
+    mobileNav.setAttribute('aria-hidden','false');
+    menuToggle.setAttribute('aria-expanded','true');
+    document.body.style.overflow='hidden';
+    mobileNavClose.focus();
+  }
+  function closeMobileNav(){
+    mobileNav.classList.remove('open');
+    mobileNav.setAttribute('aria-hidden','true');
+    menuToggle.setAttribute('aria-expanded','false');
+    document.body.style.overflow='';
+    if(lastFocused) lastFocused.focus();
+  }
+  menuToggle.addEventListener('click', openMobileNav);
+  mobileNavClose.addEventListener('click', closeMobileNav);
+  mobileNav.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeMobileNav();
+    if(e.key === 'Tab') trapFocus(mobileNav, e);
+  });
+  mobileNav.querySelectorAll('[data-nav]').forEach(function(a){
+    a.addEventListener('click', closeMobileNav);
+  });
+
+  /* ---------- sticky bar ---------- */
+  var stickyBar = document.getElementById('stickyBar');
+  var hero = document.getElementById('hero');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        stickyBar.classList.toggle('visible', !entry.isIntersecting);
+      });
+    }, {threshold: 0.1});
+    io.observe(hero);
+  } else {
+    stickyBar.classList.add('visible');
+  }
+
+  /* ---------- scroll reveal (IntersectionObserver, transform/opacity only) ---------- */
+  var revealTargets = document.querySelectorAll('.service-card, .fork-card, .process-item, .g-card, .review-card');
+  revealTargets.forEach(function(el){
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+    el.style.transition = 'opacity 220ms ease, transform 220ms ease';
+  });
+  if('IntersectionObserver' in window){
+    var revealIO = new IntersectionObserver(function(entries, obs){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          obs.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.12});
+    revealTargets.forEach(function(el){ revealIO.observe(el); });
+  } else {
+    revealTargets.forEach(function(el){ el.style.opacity='1'; el.style.transform='none'; });
+  }
+
+  /* ---------- generic modal open/close ---------- */
+  function openModal(id){
+    var modal = document.getElementById(id);
+    if(!modal) return;
+    lastFocused = document.activeElement;
+    modal.classList.add('open');
+    var focusable = modal.querySelector('button,input,textarea,a');
+    if(focusable) focusable.focus();
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(modal){
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    if(lastFocused) lastFocused.focus();
+  }
+  document.querySelectorAll('[data-open-modal]').forEach(function(trigger){
+    trigger.addEventListener('click', function(e){
+      e.preventDefault();
+      openModal(trigger.getAttribute('data-open-modal'));
+    });
+  });
+  document.querySelectorAll('.modal-overlay').forEach(function(modal){
+    modal.addEventListener('click', function(e){ if(e.target === modal) closeModal(modal); });
+    modal.querySelectorAll('[data-close-modal]').forEach(function(btn){
+      btn.addEventListener('click', function(){ closeModal(modal); });
+    });
+    modal.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') closeModal(modal);
+      if(e.key === 'Tab') trapFocus(modal, e);
+    });
+  });
+
+  /* review stars demo */
+  var starWrap = document.getElementById('starInput');
+  starWrap.querySelectorAll('button').forEach(function(btn, idx){
+    btn.addEventListener('click', function(){
+      starWrap.querySelectorAll('button').forEach(function(b,i){ b.classList.toggle('active', i<=idx); });
+    });
+  });
+  document.getElementById('reviewSubmitDemo').addEventListener('click', function(){
+    this.textContent = 'Спасибо! (демо, не отправлено)';
+    this.disabled = true;
+  });
+
+  /* ---------- FAQ: only one open at a time (not mandatory but nice) ---------- */
+  var faqItems = document.querySelectorAll('#faqList details');
+  faqItems.forEach(function(d){
+    d.addEventListener('toggle', function(){
+      if(d.open){
+        faqItems.forEach(function(other){ if(other!==d) other.open=false; });
+      }
+    });
+  });
+
+  /* ---------- GALLERY DATA (shared with admin publish) ---------- */
+  var galleryItems = [
+    {cat:'Шиномонтаж', caption:'Боковой порез — R16', badge:'до / после', kind:'photo', color1:'#2b3237', color2:'#11151a'},
+    {cat:'Ходовая', caption:'Замена рулевой тяги', badge:'до / после', kind:'photo', color1:'#1f2a24', color2:'#11151a'},
+    {cat:'Двигатель', caption:'Диагностика на стенде', badge:'диагностика', kind:'video', color1:'#2a2320', color2:'#11151a'},
+    {cat:'АКПП', caption:'Разбор и дефектовка АКПП', badge:'в процессе', kind:'photo', color1:'#241f2a', color2:'#11151a'},
+    {cat:'Электрика', caption:'Поиск неисправности проводки', badge:'диагностика', kind:'photo', color1:'#202a2a', color2:'#11151a'},
+    {cat:'Шиномонтаж', caption:'Сезонная замена, 4 колеса', badge:'готово', kind:'photo', color1:'#2b2720', color2:'#11151a'}
+  ];
+
+  var galleryGrid = document.getElementById('galleryGrid');
+
+  function placeholderSVG(){
+    return '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="none" stroke="#F4F2EC" stroke-width="4" opacity=".8"/><circle cx="32" cy="32" r="7" fill="#FF6A1A"/></svg>';
+  }
+  function playIconSVG(){
+    return '<svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
+  }
+
+  function renderGallery(){
+    galleryGrid.innerHTML='';
+    galleryItems.forEach(function(item, idx){
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'g-card';
+      card.setAttribute('data-index', idx);
+      card.setAttribute('aria-label', item.caption + (item.kind==='video' ? ' (видео)':' (фото)'));
+      var thumbStyle = 'background: linear-gradient(135deg,'+item.color1+','+item.color2+');';
+      var videoBadge = item.kind==='video' ? '<span class="badge-video"><span>'+playIconSVG()+'</span></span>' : '';
+      card.innerHTML =
+        '<div class="g-thumb" style="'+thumbStyle+'">' +
+          '<span class="badge">'+item.badge+'</span>' +
+          placeholderSVG() +
+          videoBadge +
+        '</div>' +
+        '<figcaption><b>'+item.caption+'</b>'+item.cat+'</figcaption>';
+      card.addEventListener('click', function(){
+        if(item.kind === 'video'){ openVideoModal(); }
+        else { openLightbox(idx); }
+      });
+      galleryGrid.appendChild(card);
+    });
+  }
+  renderGallery();
+
+  /* ---------- lightbox ---------- */
+  var lightbox = document.getElementById('lightbox');
+  var lightboxMedia = document.getElementById('lightboxMedia');
+  var lightboxCaption = document.getElementById('lightboxCaption');
+  var lightboxCounter = document.getElementById('lightboxCounter');
+  var currentIndex = 0;
+  var photoIndexes = [];
+
+  function refreshPhotoIndexes(){
+    photoIndexes = galleryItems.map(function(it,i){return it.kind==='photo'?i:null;}).filter(function(v){return v!==null;});
+  }
+
+  function openLightbox(idx){
+    refreshPhotoIndexes();
+    currentIndex = idx;
+    renderLightbox();
+    lastFocused = document.activeElement;
+    lightbox.classList.add('open');
+    document.getElementById('lightboxClose').focus();
+    document.body.style.overflow='hidden';
+  }
+  function renderLightbox(){
+    var item = galleryItems[currentIndex];
+    lightboxMedia.style.background = 'linear-gradient(135deg,'+item.color1+','+item.color2+')';
+    lightboxMedia.innerHTML = placeholderSVG();
+    lightboxCaption.textContent = item.caption + ' · ' + item.cat;
+    var posInPhotos = photoIndexes.indexOf(currentIndex) + 1;
+    lightboxCounter.textContent = posInPhotos + ' / ' + photoIndexes.length;
+  }
+  function closeLightbox(){
+    lightbox.classList.remove('open');
+    document.body.style.overflow='';
+    if(lastFocused) lastFocused.focus();
+  }
+  function stepLightbox(dir){
+    var pos = photoIndexes.indexOf(currentIndex);
+    pos = (pos + dir + photoIndexes.length) % photoIndexes.length;
+    currentIndex = photoIndexes[pos];
+    renderLightbox();
+  }
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightboxPrev').addEventListener('click', function(){ stepLightbox(-1); });
+  document.getElementById('lightboxNext').addEventListener('click', function(){ stepLightbox(1); });
+  lightbox.addEventListener('click', function(e){ if(e.target === lightbox) closeLightbox(); });
+  lightbox.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeLightbox();
+    else if(e.key === 'ArrowLeft') stepLightbox(-1);
+    else if(e.key === 'ArrowRight') stepLightbox(1);
+    else if(e.key === 'Tab') trapFocus(lightbox, e);
+  });
+  /* swipe */
+  var touchStartX = null;
+  lightbox.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].clientX; }, {passive:true});
+  lightbox.addEventListener('touchend', function(e){
+    if(touchStartX===null) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) > 40){ stepLightbox(dx < 0 ? 1 : -1); }
+    touchStartX = null;
+  }, {passive:true});
+
+  /* ---------- video modal ---------- */
+  var videoModal = document.getElementById('videoModal');
+  function openVideoModal(){
+    lastFocused = document.activeElement;
+    videoModal.classList.add('open');
+    document.getElementById('videoModalClose').focus();
+    document.body.style.overflow='hidden';
+  }
+  function closeVideoModal(){
+    videoModal.classList.remove('open');
+    document.body.style.overflow='';
+    if(lastFocused) lastFocused.focus();
+  }
+  document.getElementById('videoModalClose').addEventListener('click', closeVideoModal);
+  videoModal.addEventListener('click', function(e){ if(e.target===videoModal) closeVideoModal(); });
+  videoModal.addEventListener('keydown', function(e){ if(e.key==='Escape') closeVideoModal(); if(e.key==='Tab') trapFocus(videoModal,e); });
+
+  /* =====================================================================
+     QUIZ
+  ===================================================================== */
+  var quizState = { branch:null, brand:'', model:'', year:'', yearUnknown:false, vin:'', vinSkipped:false, issues:[], name:'', phone:'', time:'today', consent:false };
+  var currentStep = 1;
+  var TOTAL_STEPS = 7;
+  var quizOpened = false;
+
+  var issuesByBranch = {
+    tires: ['Сезонная замена','Прокол / грыжа / порез','Балансировка','Прокатка дисков','Сложно объяснить'],
+    repair: ['Стук или шум','Не заводится','Горит индикатор на панели','Течь жидкости','Сложно объяснить'],
+    unsure: ['Опишу своими словами ниже','Сложно объяснить']
+  };
+
+  var quizForm = document.getElementById('quizForm');
+  var steps = Array.prototype.slice.call(quizForm.querySelectorAll('.quiz-step'));
+  var progressFill = document.getElementById('quizProgressFill');
+  var progressLabel = document.getElementById('quizProgressLabel');
+  var btnBack = document.getElementById('quizBack');
+  var btnNext = document.getElementById('quizNext');
+  var quizNav = document.getElementById('quizNav');
+
+  function markQuizOpened(source){
+    if(!quizOpened){ quizOpened = true; track('quiz_open', {source: source||'direct'}); }
+  }
+  document.querySelectorAll('[data-start-quiz]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var branch = btn.getAttribute('data-start-quiz');
+      document.getElementById('quiz').scrollIntoView({behavior:'smooth', block:'start'});
+      markQuizOpened('fork:'+branch);
+      currentStep = 1;
+      showStep(1);
+      setTimeout(function(){
+        var radio = quizForm.querySelector('input[name="branch"][value="'+branch+'"]');
+        if(radio){ radio.checked = true; quizState.branch = branch; syncPillChecked(); }
+      }, 50);
+    });
+  });
+  document.querySelectorAll('a[href="#quiz"]').forEach(function(a){
+    a.addEventListener('click', function(){ markQuizOpened('cta'); });
+  });
+
+  function syncPillChecked(){
+    quizForm.querySelectorAll('.pillcheck').forEach(function(label){
+      var input = label.querySelector('input');
+      label.classList.toggle('checked', input.checked);
+    });
+  }
+  quizForm.querySelectorAll('input[name="branch"]').forEach(function(r){
+    r.addEventListener('change', function(){ quizState.branch = r.value; syncPillChecked(); clearError('branch'); });
+  });
+
+  function showStep(n){
+    steps.forEach(function(s){ s.classList.toggle('active', Number(s.getAttribute('data-step'))===n); });
+    progressFill.style.width = Math.round((n/TOTAL_STEPS)*100)+'%';
+    progressLabel.textContent = 'Шаг '+n+' из '+TOTAL_STEPS;
+    btnBack.style.visibility = n===1 ? 'hidden' : 'visible';
+    btnNext.textContent = n===TOTAL_STEPS ? 'Отправить заявку' : 'Далее';
+    quizNav.style.display = 'flex';
+    document.getElementById('quizSending').style.display='none';
+    document.getElementById('quizSuccess').style.display='none';
+    document.getElementById('quizErrorState').style.display='none';
+    quizForm.style.display='block';
+    document.getElementById('quizProgressWrap').style.display='block';
+    if(n===5){ buildIssuesStep(); }
+    if(n===7){ buildSummary(); }
+    track('step_view', {step:n});
+    var stepEl = quizForm.querySelector('.quiz-step[data-step="'+n+'"]');
+    var heading = stepEl.querySelector('h3');
+    if(heading){ heading.setAttribute('tabindex','-1'); heading.focus({preventScroll:true}); }
+  }
+
+  function buildIssuesStep(){
+    var branch = quizState.branch || 'unsure';
+    var title = document.getElementById('issuesTitle');
+    title.textContent = branch==='tires' ? 'Что нужно сделать с колёсами?' : (branch==='repair' ? 'Что беспокоит в машине?' : 'Опишите, что происходит');
+    var list = document.getElementById('issuesList');
+    list.innerHTML='';
+    (issuesByBranch[branch]||issuesByBranch.unsure).forEach(function(label, i){
+      var id = 'issue-'+i;
+      var wrap = document.createElement('label');
+      wrap.className='pillcheck';
+      wrap.innerHTML = '<input type="checkbox" id="'+id+'" value="'+label+'"> '+label;
+      var input = wrap.querySelector('input');
+      if(quizState.issues.indexOf(label)!==-1){ input.checked=true; wrap.classList.add('checked'); }
+      input.addEventListener('change', function(){
+        wrap.classList.toggle('checked', input.checked);
+        if(input.checked){ if(quizState.issues.indexOf(label)===-1) quizState.issues.push(label); }
+        else { quizState.issues = quizState.issues.filter(function(v){return v!==label;}); }
+        clearError('issues');
+      });
+      list.appendChild(wrap);
+    });
+  }
+
+  function buildSummary(){
+    var b = quizState;
+    var branchLabel = {tires:'Колёса', repair:'Ремонт', unsure:'Не знаю, что с машиной'}[b.branch] || '—';
+    var yearLine = b.yearUnknown ? 'не помню' : (b.year || '[уточнить]');
+    var vinLine = b.vinSkipped ? 'не указан (пропущено)' : (b.vin || '[не указан]');
+    document.getElementById('summaryBox').innerHTML =
+      '<b>Тип обращения:</b> '+branchLabel+'<br>' +
+      '<b>Марка/модель:</b> '+(b.brand||'[уточнить]')+' '+(b.model||'')+'<br>' +
+      '<b>Год:</b> '+yearLine+'<br>' +
+      '<b>VIN:</b> '+vinLine+'<br>' +
+      '<b>Что нужно:</b> '+(b.issues.join(', ')||'—')+'<br>' +
+      '<b>Телефон:</b> '+(b.phone||'[уточнить]')+' · <b>Когда:</b> '+labelForTime(b.time);
+  }
+  function labelForTime(v){
+    return {today:'сегодня', tomorrow:'завтра', week:'в течение недели', notsoon:'не срочно'}[v] || v;
+  }
+
+  function showError(field, show){
+    var box = document.getElementById('field-'+field) || document.getElementById('err-'+field+'-wrap');
+    var err = document.getElementById('err-'+field) || (box && box.querySelector('.field-error'));
+    if(box) box.classList.toggle('invalid', !!show);
+    if(err) err.style.display = show ? 'block' : 'none';
+    return err;
+  }
+  function clearError(field){ showError(field, false); }
+
+  function focusFirstError(fieldName){
+    var box = document.getElementById('field-'+fieldName);
+    var input = box ? box.querySelector('input,select') : null;
+    if(input) input.focus();
+  }
+
+  function validateStep(n){
+    if(n===1){
+      if(!quizState.branch){ showError('branch', true); return false; }
+      return true;
+    }
+    if(n===2){
+      var brand = document.getElementById('q-brand').value.trim();
+      quizState.brand = brand;
+      if(!brand){ document.getElementById('field-brand').classList.add('invalid'); document.getElementById('field-brand').querySelector('.field-error').style.display='block'; focusFirstError('brand'); return false; }
+      document.getElementById('field-brand').classList.remove('invalid');
+      return true;
+    }
+    if(n===3){
+      quizState.model = document.getElementById('q-model').value.trim();
+      var yearUnknown = document.getElementById('q-year-unknown').checked;
+      var yearVal = document.getElementById('q-year').value.trim();
+      quizState.yearUnknown = yearUnknown;
+      quizState.year = yearVal;
+      if(!yearUnknown && !/^(19|20)\d{2}$/.test(yearVal)){
+        showError('year', true); focusFirstError('year'); return false;
+      }
+      showError('year', false);
+      return true;
+    }
+    if(n===4){
+      var vin = document.getElementById('q-vin').value.trim().toUpperCase();
+      quizState.vin = vin;
+      if(quizState.vinSkipped) return true;
+      if(vin.length===0) return true; // optional overall
+      var vinOk = /^[A-HJ-NPR-Z0-9]{17}$/.test(vin);
+      if(!vinOk){ showError('vin', true); focusFirstError('vin'); return false; }
+      showError('vin', false);
+      return true;
+    }
+    if(n===5){
+      if(quizState.issues.length===0){ showError('issues', true); return false; }
+      showError('issues', false);
+      return true;
+    }
+    if(n===6){
+      quizState.name = document.getElementById('q-name').value.trim();
+      quizState.time = document.getElementById('q-time').value;
+      var phone = document.getElementById('q-phone').value.trim();
+      quizState.phone = phone;
+      var digits = phone.replace(/\D/g,'');
+      if(digits.length < 10){ showError('phone', true); focusFirstError('phone'); return false; }
+      showError('phone', false);
+      return true;
+    }
+    if(n===7){
+      var consent = document.getElementById('q-consent').checked;
+      quizState.consent = consent;
+      if(!consent){ showError('consent', true); return false; }
+      showError('consent', false);
+      return true;
+    }
+    return true;
+  }
+
+  btnNext.addEventListener('click', function(){
+    if(!validateStep(currentStep)) return;
+    if(currentStep === TOTAL_STEPS){
+      submitQuiz();
+      return;
+    }
+    currentStep++;
+    showStep(currentStep);
+  });
+  btnBack.addEventListener('click', function(){
+    if(currentStep===1) return;
+    currentStep--;
+    showStep(currentStep);
+    track('step_back', {step:currentStep});
+  });
+
+  document.getElementById('vinUnknownBtn').addEventListener('click', function(){
+    quizState.vinSkipped = true;
+    document.getElementById('q-vin').value='';
+    document.getElementById('q-vin').disabled = true;
+    document.getElementById('vinSkippedNote').style.display='block';
+    showError('vin', false);
+  });
+
+  /* phone mask */
+  var phoneInput = document.getElementById('q-phone');
+  phoneInput.addEventListener('input', function(){
+    var d = phoneInput.value.replace(/\D/g,'').replace(/^7/,'').replace(/^8/,'');
+    d = d.substring(0,10);
+    var out = '+7';
+    if(d.length>0) out += ' ('+d.substring(0,3);
+    if(d.length>=3) out += ')';
+    if(d.length>3) out += ' '+d.substring(3,6);
+    if(d.length>6) out += '-'+d.substring(6,8);
+    if(d.length>8) out += '-'+d.substring(8,10);
+    phoneInput.value = out;
+  });
+
+  /* VIN input filter: block I O Q, uppercase */
+  var vinInput = document.getElementById('q-vin');
+  vinInput.addEventListener('input', function(){
+    var v = vinInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/[IOQ]/g,'');
+    vinInput.value = v.substring(0,17);
+  });
+
+  /* year numeric only */
+  document.getElementById('q-year').addEventListener('input', function(e){
+    e.target.value = e.target.value.replace(/\D/g,'').substring(0,4);
+  });
+  document.getElementById('q-year-unknown').addEventListener('change', function(e){
+    document.getElementById('q-year').disabled = e.target.checked;
+    if(e.target.checked) showError('year', false);
+  });
+
+  function genRequestId(){
+    return 'ATS-' + Math.floor(100000 + Math.random()*899999);
+  }
+
+  var lastSendWasError = false;
+  function submitQuiz(){
+    track('quiz_submit_attempt', {branch: quizState.branch});
+    quizNav.style.display='none';
+    quizForm.style.display='none';
+    document.getElementById('quizProgressWrap').style.display='none';
+    document.getElementById('quizSending').style.display='flex';
+    var delay = 700 + Math.random()*500;
+    setTimeout(function(){
+      document.getElementById('quizSending').style.display='none';
+      if(lastSendWasError){
+        document.getElementById('quizErrorState').style.display='block';
+        return;
+      }
+      var id = genRequestId();
+      document.getElementById('reqIdOut').textContent = '№ '+id;
+      document.getElementById('quizSuccess').style.display='block';
+      track('quiz_success', {id:id, branch:quizState.branch});
+    }, delay);
+  }
+
+  document.getElementById('retrySend').addEventListener('click', function(){
+    lastSendWasError = false;
+    document.getElementById('quizErrorState').style.display='none';
+    submitQuiz();
+  });
+  document.getElementById('simulateErrorBtn').addEventListener('click', function(){
+    lastSendWasError = true;
+    if(document.getElementById('quizSuccess').style.display==='none' || !quizForm.style.display){
+      // force into step 7 context then submit as error for demonstration
+    }
+    currentStep = TOTAL_STEPS;
+    showStep(TOTAL_STEPS);
+    document.getElementById('q-consent').checked = true;
+    quizState.consent = true;
+    submitQuiz();
+  });
+
+  showStep(1);
+
+  /* =====================================================================
+     ADMIN VIEW
+  ===================================================================== */
+  var mainWrapper = document.getElementById('mainWrapper');
+  var adminView = document.getElementById('adminView');
+  var adminGate = document.getElementById('adminGate');
+  var adminMain = document.getElementById('adminMain');
+  var adminTimerEl = document.getElementById('adminTimer');
+  var adminTimerInterval = null;
+  var adminStartTime = null;
+
+  function openAdmin(){
+    mainWrapper.classList.add('hidden-by-admin');
+    adminView.classList.add('open');
+    window.scrollTo(0,0);
+  }
+  function closeAdmin(){
+    adminView.classList.remove('open');
+    mainWrapper.classList.remove('hidden-by-admin');
+    adminGate.style.display='flex';
+    adminMain.classList.remove('open');
+    if(adminTimerInterval){ clearInterval(adminTimerInterval); adminTimerInterval=null; }
+  }
+  document.getElementById('openAdminLink').addEventListener('click', function(e){ e.preventDefault(); openAdmin(); });
+  document.getElementById('adminBackLink').addEventListener('click', function(e){ e.preventDefault(); closeAdmin(); });
+
+  document.getElementById('adminLoginBtn').addEventListener('click', function(){
+    adminGate.style.display='none';
+    adminMain.classList.add('open');
+    adminStartTime = Date.now();
+    adminTimerInterval = setInterval(function(){
+      var sec = Math.floor((Date.now()-adminStartTime)/1000);
+      adminTimerEl.textContent = sec + ' с';
+      adminTimerEl.style.color = sec>60 ? 'var(--error)' : 'var(--accent)';
+    }, 500);
+  });
+
+  /* file preview (local only, no upload) */
+  var fileInput = document.getElementById('adminFileInput');
+  var uploadPreview = document.getElementById('uploadPreview');
+  fileInput.addEventListener('change', function(){
+    var file = fileInput.files[0];
+    if(!file) return;
+    if('FileReader' in window){
+      var reader = new FileReader();
+      reader.onload = function(e){
+        uploadPreview.style.display='flex';
+        uploadPreview.innerHTML = '<img src="'+e.target.result+'" alt="Превью загруженного файла" style="width:100%;height:100%;object-fit:cover;">';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  var weakNetToggle = document.getElementById('weakNetToggle');
+  var queueStatus = document.getElementById('queueStatus');
+  var publishBtn = document.getElementById('publishBtn');
+
+  function doPublish(){
+    var caption = document.getElementById('pubCaption').value.trim() || 'Новая работа';
+    var category = document.getElementById('pubCategory').value;
+    galleryItems.unshift({
+      cat:category, caption:caption, badge:'новое', kind:'photo',
+      color1:'#2b3237', color2:'#11151a'
+    });
+    renderGallery();
+    queueStatus.className = 'queue-status show ok';
+    queueStatus.textContent = 'Опубликовано и уже появилось в разделе «Галерея» на сайте.';
+    document.getElementById('pubCaption').value='';
+    uploadPreview.style.display='none';
+    uploadPreview.innerHTML='';
+  }
+
+  publishBtn.addEventListener('click', function(){
+    queueStatus.className = 'queue-status show';
+    if(!weakNetToggle.checked){
+      doPublish();
+      return;
+    }
+    /* simulate weak network: queue + retries, matching the reliability plan from the concept */
+    var attempt = 0;
+    var maxAttempts = 3;
+    function tryAttempt(){
+      attempt++;
+      queueStatus.className = 'queue-status show waiting';
+      queueStatus.textContent = 'Нет стабильной сети — добавлено в очередь. Повторная попытка '+attempt+' из '+maxAttempts+'…';
+      setTimeout(function(){
+        var success = attempt >= 2; // succeed on 2nd retry for demonstration
+        if(success){
+          doPublish();
+        } else if(attempt < maxAttempts){
+          tryAttempt();
+        } else {
+          queueStatus.className = 'queue-status show waiting';
+          queueStatus.textContent = 'Не удалось опубликовать сейчас. Останется в очереди и отправится автоматически при восстановлении сети.';
+        }
+      }, 1400);
+    }
+    tryAttempt();
+  });
+
+})();
+</script>
+</body>
+</html>

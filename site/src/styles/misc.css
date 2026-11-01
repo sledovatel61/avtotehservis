@@ -1,0 +1,8 @@
+/* ---------- мелочи: инлайновые ссылки-кнопки, черновик ---------- */
+.linklike{
+  background:none;border:0;color:var(--brass);font:inherit;font-size:inherit;cursor:pointer;
+  padding:0;border-bottom:1px dashed rgba(224,169,109,.55);min-height:auto;
+}
+.linklike:hover{color:var(--ivory);border-color:var(--ivory)}
+#draft-note{display:none}
+#draft-note.is-on{display:flex}

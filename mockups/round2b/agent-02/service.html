@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F7F3EB" />
+    <meta
+      name="description"
+      content="Демонстрационная страница услуги. Стоимость определяется после осмотра, прайс не опубликован."
+    />
+    <title>Ремонт ходовой части · АвтоТехСервис</title>
+    <link rel="icon" href="assets/brand.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/style.css" />
+    <script src="assets/app.js" defer></script>
+  </head>
+  <body data-page="services">
+    <a class="skip-link" href="#main">К содержанию</a>
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="index.html" aria-label="АвтоТехСервис — главная"
+          ><img src="assets/brand.svg" width="44" height="44" alt="" /><span class="brand-name"
+            >АвтоТехСервис<span class="brand-sub">Портовая · Ростов-на-Дону</span></span
+          ></a
+        >
+        <nav class="main-nav" aria-label="Основная навигация">
+          <a href="index.html">Главная</a><a href="about.html">О компании</a
+          ><a href="services.html" aria-current="page">Услуги</a
+          ><a href="appointment.html">Запись</a><a href="news.html">Новости</a
+          ><a href="contacts.html">Контакты</a>
+        </nav>
+        <div class="header-actions">
+          <a class="header-phone" href="tel:+79289065700">+7 (928) 906-57-00</a
+          ><a class="button" href="appointment.html">Записаться</a
+          ><button
+            id="menuToggle"
+            class="menu-toggle"
+            type="button"
+            aria-label="Открыть меню"
+            aria-controls="mobileMenu"
+            aria-expanded="false"
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <div
+      class="mobile-menu"
+      id="mobileMenu"
+      inert
+      role="dialog"
+      aria-modal="true"
+      aria-label="Меню сайта"
+      aria-hidden="true"
+    >
+      <div class="mobile-menu-head">
+        <a class="brand" href="index.html"
+          ><img src="assets/brand.svg" width="40" height="40" alt="" /><span class="brand-name"
+            >АвтоТехСервис<span class="brand-sub">Портовая · Ростов-на-Дону</span></span
+          ></a
+        ><button id="menuClose" class="icon-button" type="button" aria-label="Закрыть меню">
+          ×
+        </button>
+      </div>
+      <nav aria-label="Мобильная навигация">
+        <a href="index.html">Главная</a><a href="about.html">О компании</a
+        ><a href="services.html" aria-current="page">Услуги</a><a href="appointment.html">Запись</a
+        ><a href="news.html">Новости</a><a href="contacts.html">Контакты</a>
+      </nav>
+      <div class="mobile-menu-actions">
+        <a class="button-secondary" href="tel:+79289065700">Позвонить</a
+        ><a class="button" href="appointment.html">Записаться</a>
+      </div>
+    </div>
+    <div class="sticky-cta" id="stickyCta">
+      <a class="button-secondary" href="tel:+79289065700">Позвонить</a
+      ><a class="button" href="appointment.html">Записаться</a>
+    </div>
+    <main id="main" class="page-main">
+      <section class="page-hero">
+        <div class="wrap">
+          <nav class="breadcrumbs" aria-label="Хлебные крошки">
+            <a href="index.html">Главная</a><span class="sep">/</span
+            ><a href="services.html">Услуги</a><span class="sep">/</span
+            ><span aria-current="page">Ремонт ходовой</span>
+          </nav>
+          <div class="page-title-wrap">
+            <span class="eyebrow">Страница услуги · демо</span>
+            <h1 class="page-title">Ремонт ходовой части</h1>
+            <p class="page-intro">
+              Демонстрационный шаблон подробной услуги. Точный состав диагностики и работ
+              согласуется с владельцем после осмотра.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="section">
+        <div class="wrap service-page-grid">
+          <div>
+            <div class="service-detail-visual">
+              <img
+                src="assets/service-illustration.svg"
+                alt="Абстрактная векторная схема инструмента, не фотография"
+              />
+            </div>
+            <div class="service-detail-copy">
+              <h2>Как начать</h2>
+              <p>
+                Опишите, что изменилось в поведении автомобиля: звук, вибрация или другое
+                наблюдение. Это не диагностическое заключение и не заменяет осмотр специалиста.
+              </p>
+              <h2>Что можно указать в заявке</h2>
+              <ul class="service-list">
+                <li>Марку и модель автомобиля</li>
+                <li>Год выпуска — если известен</li>
+                <li>Короткое описание симптома</li>
+                <li>Предпочтительное время контакта</li>
+              </ul>
+              <h2>Стоимость</h2>
+              <p>
+                Публичного прайса нет.
+                <strong>Стоимость — после осмотра и согласования объёма работ.</strong>
+                Необходимость и условия гарантии уточняются по заказ-наряду.
+              </p>
+              <h2>Другие направления</h2>
+              <p>
+                Шины и диски, ТО, тормоза, рулевое управление, двигатель, трансмиссия,
+                автоэлектрика, кондиционеры и автостекло — согласно сведениям проектного досье.
+                Наличие услуги нужно подтвердить перед публикацией.
+              </p>
+            </div>
+          </div>
+          <aside class="service-aside">
+            <span class="eyebrow light">Следующий шаг</span>
+            <h2>Запросить контакт</h2>
+            <p>
+              Форма — демонстрационная. В реальном сервисе доступность и время нужно подтвердить до
+              визита.
+            </p>
+            <a class="button" href="appointment.html">Записаться</a>
+            <p style="margin-top: 16px">
+              Или позвонить: <a href="tel:+79289065700">+7 (928) 906-57-00</a>
+            </p>
+          </aside>
+        </div>
+      </section>
+      <section class="section" style="background: #efe9df">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Ещё направления</span>
+              <h2>Похожие страницы услуги</h2>
+            </div>
+            <p>Все карточки ведут на демонстрационный шаблон.</p>
+          </div>
+          <div class="other-services">
+            <article class="other-service-card">
+              <h3>Шины и диски</h3>
+              <p>Шиномонтаж, балансировка, правка.</p>
+            </article>
+            <article class="other-service-card">
+              <h3>ТО и масло</h3>
+              <p>Обслуживание и расходные материалы.</p>
+            </article>
+            <article class="other-service-card">
+              <h3>Тормозная система</h3>
+              <p>Уточнить симптом и назначение осмотра.</p>
+            </article>
+          </div>
+          <div class="form-actions">
+            <a class="button-quiet" href="services.html">Ко всем услугам</a>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a class="brand" href="index.html"
+              ><img src="assets/brand.svg" width="44" height="44" alt="" /><span class="brand-name"
+                >АвтоТехСервис<span class="brand-sub">Портовая · Ростов-на-Дону</span></span
+              ></a
+            >
+            <p class="footer-copy">
+              Автосервис и шиномонтаж. Состав работ и доступность конкретной услуги уточняются при
+              обращении.
+            </p>
+          </div>
+          <div class="footer-col">
+            <h2>Разделы</h2>
+            <ul>
+              <li><a href="about.html">О компании</a></li>
+              <li><a href="services.html">Услуги</a></li>
+              <li><a href="appointment.html">Запись</a></li>
+              <li><a href="news.html">Новости и акции</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Контакты</h2>
+            <ul>
+              <li><a href="contacts.html">ул. Портовая, 439</a></li>
+              <li><a href="tel:+79289065700">+7 (928) 906-57-00</a></li>
+              <li><a href="mailto:avtotehservis439@mail.ru">avtotehservis439@mail.ru</a></li>
+              <li><span>Ежедневно, 09:00–19:00</span></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2>Документы</h2>
+            <ul>
+              <li><a href="#privacy" data-policy>Политика · демо-заглушка</a></li>
+              <li><a href="#consent" data-policy>Согласие · демо-заглушка</a></li>
+              <li><a href="admin.html">Админка · демонстрация</a></li>
+            </ul>
+            <p style="margin-top: 14px">
+              ИП Яковенко Павел Иванович<br />ИНН 341010400388<br />ОГРНИП 324619600117335
+            </p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 АвтоТехСервис · демонстрационный макет</span
+          ><span class="footer-legal"
+            >Демо-контент и графические заглушки не являются подтверждением выполненных работ,
+            отзывов или доступности услуг. <a href="#privacy" data-policy>О документах</a></span
+          >
+        </div>
+      </div>
+    </footer>
+    <div class="modal-backdrop" id="modalBackdrop" inert aria-hidden="true">
+      <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+          <h2 id="modalTitle">Демо</h2>
+          <button id="modalClose" class="icon-button" type="button" aria-label="Закрыть окно">
+            ×
+          </button>
+        </div>
+        <div id="modalBody"></div>
+        <div class="review-controls" data-lightbox-controls hidden>
+          <button id="modalPrev" class="icon-button" type="button" aria-label="Предыдущая работа">
+            ←</button
+          ><button id="modalNext" class="icon-button" type="button" aria-label="Следующая работа">
+            →
+          </button>
+        </div>
+      </section>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

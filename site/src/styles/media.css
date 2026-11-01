@@ -1,0 +1,118 @@
+/* ---------- Медиазапросы ---------- */
+@media (max-width:1024px){
+  /* раунд 20 (A2): при схлопывании .about-grid мера колонки и фото ограничена */
+  .about-grid>*{max-width:680px}
+  .about-media{max-width:720px;margin-inline:auto}
+  .tri{grid-template-columns:1fr;gap:14px}
+  .tri-card{min-height:0}
+  .about-grid,.est-grid,.svc-detail,.contacts-grid,.post-layout,.adm-grid{grid-template-columns:1fr;gap:30px}
+  .svc-side,.post-side{position:static}
+  .feats{grid-template-columns:1fr 1fr}
+  .svc-card,.gal-card,.rev-card{flex-basis:calc((100% - 18px)/2)}
+  .ftr-grid{grid-template-columns:1fr 1fr;gap:30px}
+  .news-grid{grid-template-columns:1fr}
+  .slots{grid-template-columns:repeat(4,1fr)}
+  .hdr-phone span{display:none}
+}
+/* раунд 15: порог опущен с 860 до 1023 — в рендере шапка на 926 px была шириной 1146 px
+   (меню + телефон + CTA не помещались, .burger уходил за правый край) */
+@media (max-width:1023px){
+  .nav{display:none}
+  .burger{display:block;margin-left:auto}
+  .hdr-cta .btn{display:none}
+  .sec{padding:54px 0}
+  .dock{display:flex}
+  body.has-dock .ftr{padding-bottom:10px}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  .fields{grid-template-columns:1fr}
+  .feats{grid-template-columns:1fr}
+  .facts{grid-template-columns:1fr}
+  .rates{grid-template-columns:1fr}
+  .svc-card,.gal-card,.rev-card{flex-basis:100%}
+  .ftr-grid{grid-template-columns:1fr;gap:26px}
+  .slots{grid-template-columns:repeat(3,1fr)}
+  .wiz-body{padding:20px 18px}
+  .wiz-top{padding:18px 18px 0}
+  .wiz-foot{padding:16px 18px}
+  .payload-btn{padding:13px 18px}
+  .payload pre{padding:0 18px 18px}
+  .news-card{flex-direction:column}
+  .news-img{flex-basis:auto;aspect-ratio:16/9}
+  .news-body{padding:0 18px 18px}
+  .sum-row{flex-wrap:wrap}
+  .sum-row .k{flex-basis:100%}
+  .lb-arrow{width:44px;height:44px}
+  .lb-prev{left:8px}.lb-next{right:8px}
+  /* раунд 15 / патч оркестратора: высоту мобильного героя задают фото и текст,
+     а не окно — иначе под контролами остаётся пустая полоса */
+  .hero{min-height:0}
+  .hero-ui .container{gap:12px}
+  .hero-note{display:none}
+  .cform{padding:20px 18px}
+}
+@media (max-width:380px){
+  .container{padding:0 14px}
+  .slots{grid-template-columns:repeat(2,1fr)}
+  .cal-day{flex-basis:68px}
+  .logo-t{font-size:15px}
+}
+
+/* ---------- prefers-reduced-motion ---------- */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  .marq-in{animation:none;transform:none}
+  .marq{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+  .slide{transition:none}
+  .slide.is-active .slide-in{animation:none}
+  .reveal{opacity:1;transform:none;transition:none}
+  .carousel-track{transition:none}
+}
+
+
+/* ---------- раунд 20 (A2/B4): переопределения ПОСЛЕ исходных медиаблоков ---------- */
+@media (min-width:900px) and (max-width:1024px){
+  /* секция «О компании» на 1024 ≤ 1500 px: карточки в один ряд */
+  .feats{grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px}
+}
+@media (max-width:1024px){
+  .about{padding-block:56px}
+  .about-media{max-width:640px}   /* фактическая мера фото на планшете; предел задания 720 */
+  .about-grid{gap:26px}
+  .facts{margin-top:20px}
+}
+@media (max-width:960px){
+  /* about ≤ 1500 px и на 900: компактнее хром карточек и отступы секции */
+  .about{padding-block:48px}
+  .about-grid{gap:22px}
+  .facts{margin-top:14px}
+  .feat{padding:16px 14px}
+}
+@media (max-width:640px){
+  .est-panels{grid-template-columns:1fr;gap:16px}
+  /* секция на 390 ≤ 1450 px: компактнее хром панелей, кегли и тексты не тронуты */
+  .est-sec{padding-block:44px}
+  .est-sec .sec-head{margin-bottom:26px}
+  .est-sec .est-grid{gap:24px}
+  .est-step{padding:10px 16px 12px}
+  .est-step p{line-height:1.5}
+  .est-step .n{font-size:34px;padding-bottom:4px;margin-bottom:6px}
+  .est-aside{padding:16px 18px 14px}
+}
+
+/* ---------- раунд 21 (задание №23): стрелки карусели «Услуги» ---------- */
+@media (min-width:1280px){
+  .svc-body h3{font-size:19px}
+}
+@media (max-width:1023px){
+  /* своя строка, но по правому краю контейнера */
+  .slider-sec .sec-head{flex-wrap:wrap}
+  .slider-sec .slider-nav{width:auto;margin-left:auto;justify-content:flex-end}
+}
+@media (max-width:640px){
+  .slider-hint{display:block}
+  .slider-sec .slider-nav{width:auto;gap:10px;margin-left:auto}
+  .slider-sec .hero-arrow{width:44px;height:44px}
+}
