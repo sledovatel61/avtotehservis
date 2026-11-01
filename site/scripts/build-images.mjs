@@ -103,6 +103,16 @@ const CAPS = {
   'est-aside-1000': { avif: 18, webp: 24 },
   /* раунд 21: «Услуги» — фон секции и шесть карточек */
   'svc-bg-1600': { avif: 15, webp: 30 }, 'svc-bg-m-960': { avif: 11, webp: 20 },
+  'svc-bg-1280': { avif: 16, webp: 30 }, 'svc-bg-960': { avif: 14, webp: 26 }, 'svc-bg-1024': { avif: 16, webp: 30 },
+  /* раунд 22: страница «О компании» */
+  /* капсы подобраны под бюджет C8 (base+60 КБ): три фоновых слоя + фото-карточки + .about-media
+     грузятся на каждой ширине, поэтому сумма кадров — не больше ~57…60 КБ */
+  'ab-head-1600': { avif: 13, webp: 24 }, 'ab-head-m-960': { avif: 10, webp: 16 },
+  'ab-feats-1600': { avif: 13, webp: 24 }, 'ab-feats-m-960': { avif: 10, webp: 16 },
+  'ab-t-1440': { avif: 14, webp: 26 }, 'ab-t-m-960': { avif: 11, webp: 18 },
+  'ab-media-1080': { avif: 8, webp: 14 }, 'ab-media-720': { avif: 5, webp: 10 }, 'ab-media-480': { avif: 4, webp: 7 },
+  'ab-f1-480': { avif: 3.5, webp: 6 }, 'ab-f2-480': { avif: 3.5, webp: 6 },
+  'ab-f3-480': { avif: 3.5, webp: 6 }, 'ab-f4-480': { avif: 3.5, webp: 6 },
   'svc-1-640': { avif: 5, webp: 7 }, 'svc-2-640': { avif: 5, webp: 7 }, 'svc-3-640': { avif: 5, webp: 7 },
   'svc-4-640': { avif: 5, webp: 7 }, 'svc-5-640': { avif: 5, webp: 7 }, 'svc-6-640': { avif: 5, webp: 7 },
   'svc-1-960': { avif: 7, webp: 9 }, 'svc-2-960': { avif: 7, webp: 9 }, 'svc-3-960': { avif: 7, webp: 9 },
@@ -688,11 +698,138 @@ async function main() {
     await lift(join(R21, 'gen-elec.jpg'), 30)];
   for (const r of await Promise.all([
     encodeSet('svc-bg-1600', sharp(bgMaster).resize(1500, 844), 1500, 844, false),
+    /* раунд 22 (A1): кропы под 1280/1024–768 — та же кадра без усреднения фактуры */
+    encodeSet('svc-bg-1280', sharp(bgMaster).extract({ left: 163, top: 0, width: 1174, height: 844 }).resize(1280, 920), 1280, 920, false),
+    encodeSet('svc-bg-960', sharp(bgMaster).extract({ left: 316, top: 0, width: 868, height: 844 }).resize(960, 933), 960, 933, false),
+    encodeSet('svc-bg-1024', sharp(bgMaster).extract({ left: 316, top: 0, width: 868, height: 844 }).resize(1024, 995), 1024, 995, false),
     encodeSet('svc-bg-m-960', sharp(bgMaster).resize(960, 1200, { fit: 'cover' }), 960, 1200, false),
     ...CARD_M.flatMap((m, i) => [
       encodeSet(`svc-${i + 1}-640`, sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
       encodeSet(`svc-${i + 1}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
     ]),
+  ])) report.push(...r);
+
+  /* ----- 10d. раунд 22 (задание №24): фоны и карточки страницы «О компании» ----- */
+  const R22 = join(HERE, '../../docs/photos-source/r22-about');
+  const lift22 = async (pipe, add, out) => {
+    const im = await pipe.raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let i = 0; i < d.length; i += c) for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] + add)));
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  };
+  /* раунд 22: тон-маппинг фонов страницы «О компании».
+     Шаг 1 — 2D-флэттенинг освещения (сетка G×G, билинейно) к уровню T: cover-зум на разных
+     ширинах выхватывает разные полосы, без флэттенинга mean фона гуляет 23…55.
+     Шаг 2 — управляемая модуляция: медленные треть-волны dx/dy (попарная разница третей ≥ 3
+     на десктопе) + быстрая синусоида fx (разница сохраняется и на мобильных кропах). */
+  const tone22 = async (pipe, T, out, opts = {}) => {
+    const { k = 1, G = 16, dx = [13, -13, 2], dy = [4, -4, 2], fx = 7, fy = 5, fN = 3 } = opts;
+    const im = await pipe.raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    const grid = new Float64Array(G * G);
+    for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) {
+      const x0 = Math.floor(gx * w / G), x1 = Math.max(x0 + 1, Math.floor((gx + 1) * w / G));
+      const y0 = Math.floor(gy * h / G), y1 = Math.max(y0 + 1, Math.floor((gy + 1) * h / G));
+      let sum = 0, n = 0;
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = (y * w + x) * c; sum += (d[i] + d[i + 1] + d[i + 2]) / 3; n++; }
+      grid[gy * G + gx] = sum / n;
+    }
+    const at = (gx, gy) => grid[Math.min(G - 1, Math.max(0, gy)) * G + Math.min(G - 1, Math.max(0, gx))];
+    const third = (ctl, t) => {
+      const pts = [1 / 6, 3 / 6, 5 / 6];
+      if (t <= pts[0]) return ctl[0];
+      if (t >= pts[2]) return ctl[2];
+      for (let i = 0; i < 2; i++) if (t >= pts[i] && t <= pts[i + 1])
+        return ctl[i] + (ctl[i + 1] - ctl[i]) * (t - pts[i]) / (pts[i + 1] - pts[i]);
+      return ctl[2];
+    };
+    for (let y = 0; y < h; y++) {
+      const fy = (y + 0.5) * G / h - 0.5, gy0 = Math.floor(fy), ty = fy - gy0;
+      for (let x = 0; x < w; x++) {
+        const fxg = (x + 0.5) * G / w - 0.5, gx0 = Math.floor(fxg), tx = fxg - gx0;
+        const illum = at(gx0, gy0) * (1 - tx) * (1 - ty) + at(gx0 + 1, gy0) * tx * (1 - ty)
+                    + at(gx0, gy0 + 1) * (1 - tx) * ty + at(gx0 + 1, gy0 + 1) * tx * ty;
+        const mod = third(dx, (x + 0.5) / w) + third(dy, (y + 0.5) / h)
+                  + fx * Math.sin(2 * Math.PI * fN * (x + 0.5) / w)
+                  + fy * Math.sin(2 * Math.PI * fN * (y + 0.5) / h);
+        const add = Math.round((T - illum) * k + mod);
+        const i = (y * w + x) * c;
+        for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, d[i + q] + add));
+      }
+    }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  };
+  const mediaM = join(R22, 'media-raw.jpg'), deskM = join(R22, 'desk-raw.jpg');
+  const headM = await lift22(sharp(join(R22, 'head-raw.jpg')).resize(1600, 900, { fit: 'cover' }), 8, join(R22, 'head-lift.jpg'));
+  /* ПРИЁМКА КРУГА 22. Было две проблемы:
+     (1) фон отдавался файлом 620×795 в слот 1440×375 — растяжение 2,32× по X, кадр мыльный;
+     (2) tone22 вычитал освещение и добавлял синусоиды по всему кадру — фотография превращалась
+         в «градиент с разводами» (та же ошибка, что в круге 21: метрика требовала одного,
+         кадр при этом умирал).
+     Теперь: файл по размеру слота (без апскейла), геометрия под ratio секции, а контраст текста
+     обеспечивается скримом в CSS (градиент под текстовым блоком), а не «выравниванием» фото. */
+  const frame = async (pipe, ox, oy, out) => {   /* лёгкая экспозиция без потери деталей */
+    /* яркость поднята до mean 55…80: кадр должен читаться как фактура, а не как чёрный фон;
+       мягкая виньетка вниз — чтобы секция не «светилась» к подвалу */
+    const im = await pipe.modulate({ brightness: 1.24, saturation: 0.95 }).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let y = 0; y < h; y++) {
+      const v = 1 - 0.12 * (y / Math.max(1, h - 1));
+      for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+        for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] * v))); }
+    }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    void ox; void oy;
+    return out;
+  };
+  /* шапка: слот 1440×374 (ratio 3,85) — берём широкую полосу бокса, 1600×1000 даёт запас на 4:1 */
+  const headBg = await frame(sharp(headM).extract({ left: 0, top: 250, width: 1376, height: 430 })
+    .resize(1600, 1000, { fit: 'cover' }), 0, 0, join(R22, 'bg-head.jpg'));
+  /* текстовая: слот 1440×1037 (ratio 1,39) — верстак, вертикальный кроп */
+  const textBg = await frame(sharp(deskM).extract({ left: 300, top: 0, width: 800, height: 768 })
+    .resize(1440, 1040, { fit: 'cover' }), 0, 0, join(R22, 'bg-text.jpg'));
+  /* feats: слот 1440×528 (ratio 2,73) — подъёмник крупно */
+  const featsBg = await frame(sharp(headM).extract({ left: 0, top: 180, width: 1376, height: 500 })
+    .resize(1600, 900, { fit: 'cover' }), 0, 0, join(R22, 'bg-feats.jpg'));
+  /* мобильные кадры: слот 390×474 / 390×1334 / 390×600 — отдельные портретные кропы */
+  const headBgM = await frame(sharp(headM).extract({ left: 380, top: 120, width: 620, height: 640 })
+    .resize(780, 960, { fit: 'cover' }), 0, 0, join(R22, 'bg-head-m.jpg'));
+  const textBgM = await frame(sharp(deskM).extract({ left: 430, top: 0, width: 620, height: 768 })
+    .resize(680, 1400, { fit: 'cover' }), 0, 0, join(R22, 'bg-text-m.jpg'));
+  const featsBgM = await frame(sharp(headM).extract({ left: 500, top: 60, width: 560, height: 640 })
+    .resize(720, 1440, { fit: 'cover' }), 0, 0, join(R22, 'bg-feats-m.jpg'));
+  /* f1 «смета»: прежний кроп был почти целиком белым листом — на карточке он превращался
+     в светящуюся диагональ. Теперь в кадре край листа + связка ключей с брелоком, и кадр
+     притушен, чтобы карточка читалась как фактура, а не как засветка. */
+  /* четыре карточки должны заметно отличаться средней яркостью (Δ ≥ 6 на каждой ширине):
+     смета (светлая бумага) → связка ключей (тёмная) → часы/верстак (светлый) → фасад (средний) */
+  /* карточка «смета»: в кадре нужен край листа + связка ключей, иначе белая бумага
+     занимает всю карточку и читается как засветка */
+  const f1M = await lift22(sharp(deskM).extract({ left: 450, top: 140, width: 600, height: 450 })
+    .modulate({ brightness: .74, saturation: .95 }), 70, join(R22, "f1-docs.jpg"));
+  const f2M = await lift22(sharp(deskM).extract({ left: 700, top: 180, width: 600, height: 450 }), 26, join(R22, 'f2-keys.jpg'));
+  const f3M = await lift22(sharp(headM).extract({ left: 400, top: 200, width: 600, height: 450 }), 82, join(R22, 'f3-bench.jpg'));
+  const f4M = await lift22(sharp(mediaM).extract({ left: 400, top: 150, width: 600, height: 450 }), 32, join(R22, 'f4-fleet.jpg'));
+  void tone22;
+  for (const r of await Promise.all([
+    encodeSet('ab-head-1600', sharp(headBg).resize(1600, 1000), 1600, 1000, false),
+    encodeSet('ab-head-m-960', sharp(headBgM).resize(780, 960), 780, 960, false),
+    encodeSet('ab-t-1440', sharp(textBg).resize(1440, 1040), 1440, 1040, false),
+    encodeSet('ab-t-m-960', sharp(textBgM).resize(680, 1400), 680, 1400, false),
+    encodeSet('ab-feats-1600', sharp(featsBg).resize(1600, 900), 1600, 900, false),
+    encodeSet('ab-feats-m-960', sharp(featsBgM).resize(720, 1440), 720, 1440, false),
+    encodeSet('ab-media-1080', sharp(mediaM).resize(1080, 675, { fit: 'cover' }), 1080, 675, false),
+    encodeSet('ab-media-720', sharp(mediaM).resize(720, 450, { fit: 'cover' }), 720, 450, false),
+    encodeSet('ab-media-480', sharp(mediaM).resize(480, 300, { fit: 'cover' }), 480, 300, false),
+    encodeSet('ab-f1-480', sharp(f1M).resize(480, 360), 480, 360, false),
+    encodeSet('ab-f2-480', sharp(f2M).resize(480, 360), 480, 360, false),
+    encodeSet('ab-f3-480', sharp(f3M).resize(480, 360), 480, 360, false),
+    encodeSet('ab-f4-480', sharp(f4M).resize(480, 360), 480, 360, false),
   ])) report.push(...r);
 
   /* ----- 11. текстура ≤100 КБ ----- */
@@ -709,6 +846,16 @@ async function main() {
       writeFileSync(src, buf);
       report.push({ file: 'texture-metal-1600.webp', kb: +(buf.length / 1024).toFixed(1), cap: 100 });
     } else report.push({ file: 'texture-metal-1600.webp', kb: +cur.toFixed(1), cap: 100 });
+    /* раунд 22 (A2): футер закрыт чёрным на 93–97 % — текстуру можно жать сильно без потери вида */
+    for (const [f, capKb] of [['texture-metal-1600.webp', 30], ['texture-metal-960.webp', 16]]) {
+      const path = join(OUT, f);
+      if (statSync(path).size / 1024 <= capKb) continue;
+      let q = 30, buf;
+      for (;;) { buf = await sharp(path).webp({ quality: q }).toBuffer();
+        if (buf.length / 1024 <= capKb || q <= 8) break; q -= 5; }
+      writeFileSync(path + '.tmp', buf); renameSync(path + '.tmp', path);
+      report.push({ file: f, kb: +(buf.length / 1024).toFixed(1), cap: capKb });
+    }
   }
 
   /* ----- 12. геометрия для check-safe-zone ----- */

@@ -116,3 +116,19 @@
   .slider-sec .slider-nav{width:auto;gap:10px;margin-left:auto}
   .slider-sec .hero-arrow{width:44px;height:44px}
 }
+/* ---------- раунд 22 (задание №24): ритм текста и медиа страницы «О компании» ---------- */
+@media (max-width:1023px){
+  .about-media{max-width:720px;width:100%;margin-inline:auto}
+}
+@media (max-width:640px){
+  .facts{grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .ab-acc{margin-top:4px}
+  .about-grid .lead{margin-bottom:10px}
+  section[aria-labelledby="ab-text-h"]{padding-block:44px}
+  .about-grid{gap:20px}
+  .about-grid h2{margin-top:18px;font-size:20px}
+  .about-grid .lead{font-size:15px;line-height:1.52}
+  .facts .fact b{font-size:14px}
+  .facts .fact span{font-size:12px}
+  .about-media figcaption{font-size:12.5px}
+}

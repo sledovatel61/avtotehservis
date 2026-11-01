@@ -25,7 +25,7 @@ const IMG = join(SITE, 'public', 'img');
 
 const SEC_H = { 1440: [920, 1040], 1280: [920, 1040], 1024: [0, 1080], 768: [0, 960], 390: [0, 1000] };
 const ORCH_BASE = { 1440: 691, 1280: 671, 1024: 680, 768: 562, 390: 482 };
-const ORCH_CAP = { 1440: 740, 1280: 720, 1024: 720, 768: 600, 390: 520 };
+const ORCH_CAP = { 1440: 725, 1280: 705, 1024: 705, 768: 585, 390: 505 };  /* круг 22 (A2): запас ≥15 КБ */
 
 const rule = (css, sel) => { const i = css.indexOf(sel + '{'); if (i < 0) return null;
   const j = css.indexOf('}', i); return css.slice(i + sel.length + 1, j); };
@@ -35,6 +35,8 @@ export async function checkSvcBg(opts = {}) {
   const css = opts.css ?? readFileSync(join(SITE, 'src/styles/sections.css'), 'utf8')
     + '\n' + readFileSync(join(SITE, 'src/styles/media.css'), 'utf8');
   const astro = opts.astro ?? readFileSync(join(SITE, 'src/pages/index.astro'), 'utf8');
+  const svcimg = opts.svcimg ?? readFileSync(join(SITE, 'src/server/svc-img.ts'), 'utf8');
+  const pages = astro + '\n' + (opts.services ?? readFileSync(join(SITE, 'src/pages/services.astro'), 'utf8'));
   const geom = opts.geom ?? JSON.parse(readFileSync(join(SITE, 'data', 'svc-geom.json'), 'utf8'));
   const svgs = opts.svgs ?? [1, 2, 3, 4, 5, 6].map(i => readFileSync(join(IMG, `svc-${i}.svg`), 'utf8'));
 
@@ -95,9 +97,10 @@ export async function checkSvcBg(opts = {}) {
   const sha = (f) => createHash('sha256').update(readFileSync(join(IMG, f))).digest('hex').slice(0, 12);
   const pSha = [1, 2, 3, 4, 5, 6].map(i => sha(`svc-${i}-640.avif`));
   if (new Set(pSha).size !== 6) fails.push(`C3 sha256 производных карточек не уникальны`);
-  const astroCards = [...new Set([...astro.matchAll(/:\s*'svc-(\d)'/g)].map(m => m[1]))];
-  if (astroCards.length !== 6) fails.push(`C3 в карте SVC_IMG разметки ${astroCards.length} файлов вместо 6`);
-  if (!/\$\{k\}-640\.avif/.test(astro) || !/\$\{k\}-960\.webp/.test(astro)) fails.push('C3 picture карточки не использует srcset 640/960');
+  const astroCards = [...new Set([...svcimg.matchAll(/:\s*'svc-(\d)'/g)].map(m => m[1]))];
+  if (astroCards.length !== 6) fails.push(`C3 в карте svc-img.ts ${astroCards.length} файлов вместо 6`);
+  if (!/svcImgKey|SVC_IMG/.test(pages)) fails.push('C3 страницы услуг не используют карту svc-img');
+  if (!/\$\{svcImgKey\([^)]*\)\}-640\.avif/.test(pages)) fails.push('C3 picture карточек не использует srcset 640/960');
 
   /* 4. нет текста в картинках */
   svgs.forEach((t, i) => { if (/<text[\s>]/i.test(t)) fails.push(`C4 svc-${i + 1}.svg содержит <text>`); });
@@ -169,7 +172,7 @@ export async function checkSvcBg(opts = {}) {
 const MUTANTS = {
   'фон-display-none': ({ o }) => { o.css += '\n.svc-bg{display:none}\n'; },
   'фон-плоской-заливкой': ({ o }) => { o.astro = o.astro.replace(/<div class="svc-bg"[\s\S]*?<\/div>\n  <div class="container">/, '<div class="container">'); },
-  'одна-фактура-на-все': ({ o }) => { o.astro = o.astro.replace(/'svc-[2-6]'/g, "'svc-1'"); },
+  'одна-фактура-на-все': ({ o }) => { o.svcimg = o.svcimg.replace(/'svc-[2-6]'/g, "'svc-1'"); },
   'карточка-выбелена-120': ({ G }) => { G.widths['1440'].cardZones[1].mean = 120; },
   'разброс-зоны-12': ({ G }) => { G.widths['1440'].cardZones[0].spread = 12; },
   'h3-снова-медный': ({ o }) => { o.css = o.css.replace('.svc-body h3{color:var(--ivory)}', '.svc-body h3{color:var(--brass)}'); },
@@ -187,6 +190,7 @@ const MUTANTS = {
 const load = () => ({
   css: readFileSync(join(SITE, 'src/styles/sections.css'), 'utf8') + '\n' + readFileSync(join(SITE, 'src/styles/media.css'), 'utf8'),
   astro: readFileSync(join(SITE, 'src/pages/index.astro'), 'utf8'),
+  svcimg: readFileSync(join(SITE, 'src/server/svc-img.ts'), 'utf8'),
   geom: JSON.parse(readFileSync(join(SITE, 'data', 'svc-geom.json'), 'utf8')),
   svgs: [1, 2, 3, 4, 5, 6].map(i => readFileSync(join(IMG, `svc-${i}.svg`), 'utf8')),
 });

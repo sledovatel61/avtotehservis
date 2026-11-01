@@ -106,7 +106,9 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   const sec = await page.$('section[aria-labelledby="svc-h"]');
   await sec.screenshot({ path: join(ASSETS, `svc-${w}.png`) });
 
-  /* notext-кадр для фоновых метрик */
+  /* notext-кадр для фоновых метрик — DPR 1, как в методике приёмки круга 21 */
+  await page.setViewport({ width: w, height: 1000, deviceScaleFactor: 1 });
+  await new Promise(r => setTimeout(r, 200));
   await page.evaluate(() => {
     const st = document.createElement('style');
     st.textContent = 'section[aria-labelledby="svc-h"] h2,section[aria-labelledby="svc-h"] .eyebrow,section[aria-labelledby="svc-h"] .svc-tag,section[aria-labelledby="svc-h"] .svc-body h3,section[aria-labelledby="svc-h"] .svc-body p,section[aria-labelledby="svc-h"] .link-more,section[aria-labelledby="svc-h"] .slider-hint{visibility:hidden !important}';
@@ -139,20 +141,20 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   };
   let s = 0, n = 0, lmn = 1, lmx = 0;
   const rows = new Map();
-  for (let y = 0; y < img.info.height; y += 2) for (let x = 0; x < iw; x += 2) {
-    const px = x / 2, py = y / 2;
+  for (let y = 0; y < img.info.height; y++) for (let x = 0; x < iw; x++) {
+    const px = x, py = y;
     if (!isBg(px, py)) continue;
     const i = (y * iw + x) * ch;
     const v = LUM(d[i], d[i + 1], d[i + 2]) / 255;
     s += v; n++; lmn = Math.min(lmn, v); lmx = Math.max(lmx, v);
-    { const band = Math.floor(py / 40); const key = px < leftW && leftW > 8 ? `L${band}` : (py >= stripB[0] ? `B${band}` : null);
+    { const band = Math.floor(py / 40); const key = px < leftW && leftW > 8 ? `L${band}` : (py >= stripB[0] ? `B${band}` : 'A' + band);
       if (key) { const r = rows.get(key) ?? { s: 0, n: 0 }; r.s += v; r.n++; rows.set(key, r); }
       const ka = `A${band}`; const ra = rows.get(ka) ?? { s: 0, n: 0 }; ra.s += v; ra.n++; rows.set(ka, ra); }
   }
   const mean = (s / n) * 255, spread = (lmx - lmn) * 255;
   const third = (x0, x1) => { let ts = 0, tn = 0;
-    for (let y = 0; y < img.info.height; y += 2) for (let x = Math.round(x0 * 2); x < Math.round(x1 * 2); x += 2) {
-      const px = x / 2, py = y / 2; if (!isBg(px, py)) continue;
+    for (let y = 0; y < img.info.height; y++) for (let x = Math.round(x0); x < Math.round(x1); x++) {
+      const px = x, py = y; if (!isBg(px, py)) continue;
       const i = (y * iw + x) * ch; ts += LUM(d[i], d[i + 1], d[i + 2]); tn++; }
     return (ts / Math.max(1, tn)); };
   const tL = third(0, g.section.w / 3), tC = third(g.section.w / 3, 2 * g.section.w / 3), tR = third(2 * g.section.w / 3, g.section.w);
@@ -173,10 +175,9 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
     if (arr.length) trend = Math.abs(arr[0] - arr[arr.length - 1]);
   }
   let detailX = 0, nx = 0, detailY = 0, ny = 0;
-  for (let y = 0; y < img.info.height; y += 2) for (let x = 0; x < iw - 2; x += 2) {
-    const px = x / 2, py = y / 2; if (!isBg(px, py)) continue;
-    const i = (y * iw + x) * ch, j = (y * iw + x + 2) * ch, k2 = ((y + 2) * iw + x) * ch;
-    if (y + 2 >= img.info.height) continue;
+  for (let y = 0; y < img.info.height - 1; y++) for (let x = 0; x < iw - 1; x++) {
+    const px = x, py = y; if (!isBg(px, py)) continue;
+    const i = (y * iw + x) * ch, j = (y * iw + x + 1) * ch, k2 = ((y + 1) * iw + x) * ch;
     detailX += Math.abs(LUM(d[j], d[j + 1], d[j + 2]) - LUM(d[i], d[i + 1], d[i + 2])); nx++;
     detailY += Math.abs(LUM(d[k2], d[k2 + 1], d[k2 + 2]) - LUM(d[i], d[i + 1], d[i + 2])); ny++;
   }
@@ -184,18 +185,18 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
 
   /* зоны карточек (верх .svc-img) — по notext-кадру */
   const zoneStat = (z) => { let zs = 0, zn = 0, zmn = 255, zmx = 0;
-    const y0 = Math.max(0, Math.round(z.y * 2)), y1 = Math.min(img.info.height, Math.round((z.y + z.h) * 2));
-    const x0 = Math.max(0, Math.round(z.x * 2)), x1 = Math.min(iw, Math.round((z.x + z.w) * 2));
+    const y0 = Math.max(0, Math.round(z.y)), y1 = Math.min(img.info.height, Math.round((z.y + z.h)));
+    const x0 = Math.max(0, Math.round(z.x)), x1 = Math.min(iw, Math.round((z.x + z.w)));
     if (x1 <= x0 || y1 <= y0) return { mean: -1, spread: -1, off: true };
-    for (let y = y0; y < y1; y += 2) for (let x = x0; x < x1; x += 2) {
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
       const i = (y * iw + x) * ch; const v = LUM(d[i], d[i + 1], d[i + 2]); zs += v; zn++; zmn = Math.min(zmn, v); zmx = Math.max(zmx, v); }
     return { mean: +(zs / Math.max(1, zn)).toFixed(1), spread: +(zmx - zmn).toFixed(1) }; };
   const cardZones = g.cards.map(c => zoneStat(c.img));
   /* контрасты: худший пиксель подложки под зонами h3/p/кнопки */
   const worstIn = (z) => { let wm = 1e9;
-    const y0 = Math.max(0, Math.round(z.y * 2)), y1 = Math.min(img.info.height, Math.round((z.y + z.h) * 2));
-    const x0 = Math.max(0, Math.round(z.x * 2)), x1 = Math.min(iw, Math.round((z.x + z.w) * 2));
-    for (let y = y0; y < y1; y += 2) for (let x = x0; x < x1; x += 2) {
+    const y0 = Math.max(0, Math.round(z.y)), y1 = Math.min(img.info.height, Math.round((z.y + z.h)));
+    const x0 = Math.max(0, Math.round(z.x)), x1 = Math.min(iw, Math.round((z.x + z.w)));
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
       const i = (y * iw + x) * ch; wm = Math.min(wm, LUM(d[i], d[i + 1], d[i + 2])); }
     return wm; };
   const c0 = g.cards[0];
