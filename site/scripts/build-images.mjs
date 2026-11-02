@@ -105,11 +105,14 @@ const CAPS = {
   'svc-bg-1600': { avif: 15, webp: 30 }, 'svc-bg-m-960': { avif: 11, webp: 20 },
   'svc-bg-1280': { avif: 16, webp: 30 }, 'svc-bg-960': { avif: 14, webp: 26 }, 'svc-bg-1024': { avif: 16, webp: 30 },
   /* раунд 22: страница «О компании» */
-  'ab-head-1600': { avif: 11, webp: 18 },
-  'ab-feats-1600': { avif: 9, webp: 14 }, 'ab-feats-m-960': { avif: 12, webp: 18 },
-  'ab-t-1440': { avif: 10, webp: 15 }, 'ab-t-m-960': { avif: 9, webp: 14 },
-  'ab-media-1080': { avif: 16, webp: 30 }, 'ab-media-720': { avif: 10, webp: 18 }, 'ab-media-480': { avif: 6, webp: 10 },
-  'ab-f1-480': { avif: 5, webp: 8 }, 'ab-f2-480': { avif: 5, webp: 8 }, 'ab-f3-480': { avif: 5, webp: 8 }, 'ab-f4-480': { avif: 5, webp: 8 },
+  /* капсы подобраны под бюджет C8 (base+60 КБ): три фоновых слоя + фото-карточки + .about-media
+     грузятся на каждой ширине, поэтому сумма кадров — не больше ~57…60 КБ */
+  'ab-head-1600': { avif: 13, webp: 24 }, 'ab-head-m-960': { avif: 10, webp: 16 },
+  'ab-feats-1600': { avif: 13, webp: 24 }, 'ab-feats-m-960': { avif: 10, webp: 16 },
+  'ab-t-1440': { avif: 14, webp: 26 }, 'ab-t-m-960': { avif: 11, webp: 18 },
+  'ab-media-1080': { avif: 8, webp: 14 }, 'ab-media-720': { avif: 5, webp: 10 }, 'ab-media-480': { avif: 4, webp: 7 },
+  'ab-f1-480': { avif: 3.5, webp: 6 }, 'ab-f2-480': { avif: 3.5, webp: 6 },
+  'ab-f3-480': { avif: 3.5, webp: 6 }, 'ab-f4-480': { avif: 3.5, webp: 6 },
   'svc-1-640': { avif: 5, webp: 7 }, 'svc-2-640': { avif: 5, webp: 7 }, 'svc-3-640': { avif: 5, webp: 7 },
   'svc-4-640': { avif: 5, webp: 7 }, 'svc-5-640': { avif: 5, webp: 7 }, 'svc-6-640': { avif: 5, webp: 7 },
   'svc-1-960': { avif: 7, webp: 9 }, 'svc-2-960': { avif: 7, webp: 9 }, 'svc-3-960': { avif: 7, webp: 9 },
@@ -762,25 +765,64 @@ async function main() {
   };
   const mediaM = join(R22, 'media-raw.jpg'), deskM = join(R22, 'desk-raw.jpg');
   const headM = await lift22(sharp(join(R22, 'head-raw.jpg')).resize(1600, 900, { fit: 'cover' }), 8, join(R22, 'head-lift.jpg'));
-  /* раунд 22: геометрия фонового файла = один размер на все ширины, aspect ratio файла
-     ≤ минимального ratio секции (head 0.823@390, feats 0.383@390, text 0.293@390) —
-     тогда cover всегда режет по вертикали, горизонтальные трети файла = трети секции,
-     и попарная разница третей не сжимается кропом ни на одной ширине. */
-  const headG = await tone22(sharp(headM).resize(620, 795, { fit: 'fill' }), 39, join(R22, 'head-grad.jpg'));
-  const featsMobM = await tone22(sharp(deskM).extract({ left: 88, top: 46, width: 1200, height: 675 }).resize(460, 1280, { fit: 'fill' }), 48, join(R22, 'feats-master-m.jpg'), { dx: [22, -22, 7], dy: [0, 0, 0], fy: 0 });
-  const textMobM = await tone22(sharp(deskM).extract({ left: 380, top: 0, width: 614, height: 768 }).resize(380, 1380, { fit: 'fill' }), 40, join(R22, 'text-master-m.jpg'), { dx: [11, -11, 2] });
-  const f1M = await lift22(sharp(deskM).extract({ left: 60, top: 120, width: 600, height: 450 }), -4, join(R22, 'f1-docs.jpg'));
-  const f2M = await lift22(sharp(deskM).extract({ left: 700, top: 180, width: 600, height: 450 }), 30, join(R22, 'f2-keys.jpg'));
-  const f3M = await lift22(sharp(headM).extract({ left: 400, top: 200, width: 600, height: 450 }), 87, join(R22, 'f3-bench.jpg'));
-  const f4M = await lift22(sharp(mediaM).extract({ left: 400, top: 150, width: 600, height: 450 }), 33, join(R22, 'f4-fleet.jpg'));
-  const featsM = await tone22(sharp(deskM).extract({ left: 88, top: 46, width: 1200, height: 675 }).resize(920, 576, { fit: 'fill' }), 48, join(R22, 'feats-master.jpg'), { dx: [13, -14, 4] });
-  const textM = await tone22(sharp(deskM).extract({ left: 380, top: 0, width: 614, height: 768 }).resize(640, 1280, { fit: 'fill' }), 40, join(R22, 'text-master.jpg'), { dx: [11, -11, 2] });
+  /* ПРИЁМКА КРУГА 22. Было две проблемы:
+     (1) фон отдавался файлом 620×795 в слот 1440×375 — растяжение 2,32× по X, кадр мыльный;
+     (2) tone22 вычитал освещение и добавлял синусоиды по всему кадру — фотография превращалась
+         в «градиент с разводами» (та же ошибка, что в круге 21: метрика требовала одного,
+         кадр при этом умирал).
+     Теперь: файл по размеру слота (без апскейла), геометрия под ratio секции, а контраст текста
+     обеспечивается скримом в CSS (градиент под текстовым блоком), а не «выравниванием» фото. */
+  const frame = async (pipe, ox, oy, out) => {   /* лёгкая экспозиция без потери деталей */
+    /* яркость поднята до mean 55…80: кадр должен читаться как фактура, а не как чёрный фон;
+       мягкая виньетка вниз — чтобы секция не «светилась» к подвалу */
+    const im = await pipe.modulate({ brightness: 1.24, saturation: 0.95 }).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    for (let y = 0; y < h; y++) {
+      const v = 1 - 0.12 * (y / Math.max(1, h - 1));
+      for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+        for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] * v))); }
+    }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    void ox; void oy;
+    return out;
+  };
+  /* шапка: слот 1440×374 (ratio 3,85) — берём широкую полосу бокса, 1600×1000 даёт запас на 4:1 */
+  const headBg = await frame(sharp(headM).extract({ left: 0, top: 250, width: 1376, height: 430 })
+    .resize(1600, 1000, { fit: 'cover' }), 0, 0, join(R22, 'bg-head.jpg'));
+  /* текстовая: слот 1440×1037 (ratio 1,39) — верстак, вертикальный кроп */
+  const textBg = await frame(sharp(deskM).extract({ left: 300, top: 0, width: 800, height: 768 })
+    .resize(1440, 1040, { fit: 'cover' }), 0, 0, join(R22, 'bg-text.jpg'));
+  /* feats: слот 1440×528 (ratio 2,73) — подъёмник крупно */
+  const featsBg = await frame(sharp(headM).extract({ left: 0, top: 180, width: 1376, height: 500 })
+    .resize(1600, 900, { fit: 'cover' }), 0, 0, join(R22, 'bg-feats.jpg'));
+  /* мобильные кадры: слот 390×474 / 390×1334 / 390×600 — отдельные портретные кропы */
+  const headBgM = await frame(sharp(headM).extract({ left: 380, top: 120, width: 620, height: 640 })
+    .resize(780, 960, { fit: 'cover' }), 0, 0, join(R22, 'bg-head-m.jpg'));
+  const textBgM = await frame(sharp(deskM).extract({ left: 430, top: 0, width: 620, height: 768 })
+    .resize(680, 1400, { fit: 'cover' }), 0, 0, join(R22, 'bg-text-m.jpg'));
+  const featsBgM = await frame(sharp(headM).extract({ left: 500, top: 60, width: 560, height: 640 })
+    .resize(720, 1440, { fit: 'cover' }), 0, 0, join(R22, 'bg-feats-m.jpg'));
+  /* f1 «смета»: прежний кроп был почти целиком белым листом — на карточке он превращался
+     в светящуюся диагональ. Теперь в кадре край листа + связка ключей с брелоком, и кадр
+     притушен, чтобы карточка читалась как фактура, а не как засветка. */
+  /* четыре карточки должны заметно отличаться средней яркостью (Δ ≥ 6 на каждой ширине):
+     смета (светлая бумага) → связка ключей (тёмная) → часы/верстак (светлый) → фасад (средний) */
+  /* карточка «смета»: в кадре нужен край листа + связка ключей, иначе белая бумага
+     занимает всю карточку и читается как засветка */
+  const f1M = await lift22(sharp(deskM).extract({ left: 450, top: 140, width: 600, height: 450 })
+    .modulate({ brightness: .74, saturation: .95 }), 70, join(R22, "f1-docs.jpg"));
+  const f2M = await lift22(sharp(deskM).extract({ left: 700, top: 180, width: 600, height: 450 }), 26, join(R22, 'f2-keys.jpg'));
+  const f3M = await lift22(sharp(headM).extract({ left: 400, top: 200, width: 600, height: 450 }), 82, join(R22, 'f3-bench.jpg'));
+  const f4M = await lift22(sharp(mediaM).extract({ left: 400, top: 150, width: 600, height: 450 }), 32, join(R22, 'f4-fleet.jpg'));
+  void tone22;
   for (const r of await Promise.all([
-    encodeSet('ab-head-1600', sharp(headG).resize(620, 795), 620, 795, false),
-    encodeSet('ab-feats-1600', sharp(featsM).resize(920, 576), 920, 576, false),
-    encodeSet('ab-feats-m-960', sharp(featsMobM).resize(460, 1280), 460, 1280, false),
-    encodeSet('ab-t-1440', sharp(textM).resize(640, 1280), 640, 1280, false),
-    encodeSet('ab-t-m-960', sharp(textMobM).resize(380, 1380), 380, 1380, false),
+    encodeSet('ab-head-1600', sharp(headBg).resize(1600, 1000), 1600, 1000, false),
+    encodeSet('ab-head-m-960', sharp(headBgM).resize(780, 960), 780, 960, false),
+    encodeSet('ab-t-1440', sharp(textBg).resize(1440, 1040), 1440, 1040, false),
+    encodeSet('ab-t-m-960', sharp(textBgM).resize(680, 1400), 680, 1400, false),
+    encodeSet('ab-feats-1600', sharp(featsBg).resize(1600, 900), 1600, 900, false),
+    encodeSet('ab-feats-m-960', sharp(featsBgM).resize(720, 1440), 720, 1440, false),
     encodeSet('ab-media-1080', sharp(mediaM).resize(1080, 675, { fit: 'cover' }), 1080, 675, false),
     encodeSet('ab-media-720', sharp(mediaM).resize(720, 450, { fit: 'cover' }), 720, 450, false),
     encodeSet('ab-media-480', sharp(mediaM).resize(480, 300, { fit: 'cover' }), 480, 300, false),
