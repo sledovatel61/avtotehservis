@@ -20,7 +20,8 @@ import sharp from 'sharp';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'site', 'pages-dist');
-const ASSETS = join(ROOT, 'evaluation', 'assets', 'r22-about');
+/* круг 23: «после»-скрины всех секций (1440 и 390) — в reviews/assets-round23 (§F) */
+const ASSETS = join(ROOT, 'reviews', 'assets-round23');
 if (!existsSync(ASSETS)) await mkdir(ASSETS, { recursive: true });
 
 const server = createServer(async (req, res) => {
@@ -114,9 +115,20 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   geom.scroll[w] = g.scrollW <= g.innerW;
 
   await page.screenshot({ path: join(ASSETS, `about-${w}.png`), fullPage: true });
-  if (w === 1440) {
-    await (await page.$('.page-head')).screenshot({ path: join(ASSETS, 'about-head-1440.png') });
-    await (await page.$('.ab-feats')).screenshot({ path: join(ASSETS, 'about-feats-1440.png') });
+  if (w === 1440 || w === 390) {
+    const SECS = [['head', '.page-head'], ['text', 'section[aria-labelledby="ab-text-h"]'],
+      ['feats', '.ab-feats'], ['b2b', 'section[aria-labelledby="ab-b2b-h"]'],
+      ['cases', 'section[aria-labelledby="ab-gal-h"]'], ['reviews', 'section[aria-labelledby="ab-rev-h"]'],
+      ['brands', 'section[aria-labelledby="brands-h"]']];
+    for (const [name, sel] of SECS) {
+      const el = await page.$(sel);
+      if (el) await el.screenshot({ path: join(ASSETS, `about-${name}-${w}.png`) });
+      else console.error(`нет секции ${name} (${sel}) для скрина ${w}`);
+    }
+    if (w === 1440) {
+      await (await page.$('.page-head')).screenshot({ path: join(ASSETS, 'about-head-1440.png') });
+      await (await page.$('.ab-feats')).screenshot({ path: join(ASSETS, 'about-feats-1440.png') });
+    }
   }
 
   /* notext-кадр: метрики фонов и подложек */
@@ -194,7 +206,9 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
     return { h1: z(h.querySelector('h1')), lead: z(h.querySelector('.lead')),
       fh3: z(document.querySelector('.ab-feats .feat h3')), fp: z(document.querySelector('.ab-feats .feat p')),
       th2: z(t.querySelector('h2')), tlead: z(t.querySelector('.lead')),
-      ash3: z(document.querySelector('.est-aside h3')), asp: z(document.querySelector('.est-aside p')) }; });
+      ash3: z(document.querySelector('.est-aside h3')), asp: z(document.querySelector('.est-aside p')),
+      fics: [...document.querySelectorAll('.ab-feats .feat-ic')].map((e) => {
+        const b = box(e); b.col = getComputedStyle(e.querySelector('svg')).stroke; return b; }) }; });
   /* Худшая подложка зависит от направления контраста: для СВЕТЛОГО текста это самый
      светлый пиксель, для тёмного — самый тёмный. Направление определяется по реальному
      цвету из CSS, поэтому правило больше не «зашито» под одну страницу. */
@@ -202,15 +216,25 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   const relRGB = ([r, g, b]) => 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b);
   const parseRGB = (c) => { const m = String(c).match(/\d+(\.\d+)?/g) || ['255', '255', '255']; return m.slice(0, 3).map(Number); };
   const mk = (v) => relLum(v, v, v);
+  /* ПРИЁМКА КРУГА 23 (ревью A6, major 1 — мой же баг круга 22). `L` — яркость ЦВЕТА ТЕКСТА.
+     Было `L > 0.25`: у светлого ivory L≈0,87, флаг «тёмный текст» поднимался, и worst() брал
+     МИНИМУМ яркости подложки — то есть для светлого текста ЛУЧШИЙ случай (чем темнее подложка,
+     тем выше контраст). Гейт рапортовал h1 17,41 при фактических 2,07.
+     Теперь «тёмный текст» = L < 0.25; у светлого текста флаг снят → worst() берёт МАКСИМУМ. */
   const ctr = (zone) => {
     const L = relRGB(parseRGB(zone.col));
-    const darkText = L > 0.25;                 /* тёмный текст на светлой подложке */
+    const darkText = L < 0.25;
     const bg = worst(zone, [], darkText);
-    return { v: +ratio(L, mk(bg)).toFixed(2), bg: Math.round(bg), col: zone.col };
+    return { v: +ratio(L, mk(bg)).toFixed(2), bg: Math.round(bg), col: zone.col, dark: darkText };
   };
+  /* круг 23: иконка .feat-ic — латунный штрих по худшему (самому светлому) пикселю
+     фото+градиента под боксом иконки; чипа-подложки в текущем CSS нет */
+  const featIcons = h1z.fics.map((z0) => { const bg = worst(z0); const L = relRGB(parseRGB(z0.col));
+    return +ratio(L, mk(bg)).toFixed(2); });
+  const featIcon = { v: featIcons.length ? Math.min(...featIcons) : null };
   const C = { h1: ctr(h1z.h1), lead: ctr(h1z.lead), featH3: ctr(h1z.fh3), featP: ctr(h1z.fp),
-    textH2: ctr(h1z.th2), textLead: ctr(h1z.tlead), asideH3: ctr(h1z.ash3), asideP: ctr(h1z.asp) };
-  geom.contrast[w] = Object.fromEntries(Object.entries(C).map(([k, o]) => [k, o.v]));
+    textH2: ctr(h1z.th2), textLead: ctr(h1z.tlead), asideH3: ctr(h1z.ash3), asideP: ctr(h1z.asp), featIcon, featIcons };
+  geom.contrast[w] = Object.fromEntries(Object.entries(C).map(([k, o]) => [k, Array.isArray(o) ? o : o.v]));
   /* для справки: худшая подложка (0…255) и реальный цвет текста под каждой зоной */
   geom.contrastBgs = geom.contrastBgs || {};
   geom.contrastBgs[w] = Object.fromEntries(Object.entries(C).map(([k, o]) => [k, { bg: o.bg, col: o.col }]));

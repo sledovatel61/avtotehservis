@@ -218,24 +218,28 @@ for (const [key, file, H] of [['section_desktop', join(R19, 'sec-bg-2560.jpg'), 
   row(`секция ${lab}`, `h2 ivory (крупный) по худшему пикселю union текста (${t.wx},${t.wy})`, IVORY, t.worst, 3);
 }
 /* B: четыре карточки — полоса текста h3+p (y 791…1147 мастера) и иконка */
-const cardFiles = ['card-1-estimate-2400.jpg', 'card-2-warranty-2400.jpg', 'card-3-schedule-2400.jpg', 'card-4-fleet-2400.jpg'];
-const cardNames = ['B1 Смета', 'B2 Гарантия', 'B3 График', 'B4 Парк'];
-/* раунд 20: худший пиксель — по union фактических лин-боксов текста и bbox иконки
-   (zones.feats, снято рендером measure-feats-zones.mjs); подложка чипа .feat-ic
-   rgba(200,127,69,.14) учитывается в фоне иконки */
-for (let i = 0; i < 4; i++) {
-  const f = join(R19, cardFiles[i]);
-  const zr = (Z19.feats && Z19.feats[i]) || { text: { h3: [[Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1]], p: [[Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1]] }, icon: [335, 181, 726, 571] };
-  const worstOf = async (rects) => { let b = null;
-    for (const r of rects) { const c = await worstInZone(f, r, [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
-      if (!b || lum(c.worst) > lum(b.worst)) b = c; } return b; };
-  const band = await worstOf(zr.text.h3);
-  const bandP = await worstOf(zr.text.p);
-  row(`карточка ${cardNames[i]}`, `h3 ivory по худшему пикселю union строк h3 (${band.wx},${band.wy})`, IVORY, band.worst, 4.5);
-  row(`карточка ${cardNames[i]}`, `p mist по худшему пикселю union строк p (${bandP.wx},${bandP.wy})`, MIST, bandP.worst, 4.5);
-  const ic0 = await worstInZone(f, zr.icon, [[0, 0], [1, 0]], (t) => stopA(F_STOPS, t));
-  const ic = { ...ic0, worst: over(ic0.worst, 0.26, [11, 20, 16]) };
-  row(`карточка ${cardNames[i]}`, `штрих иконки brass по худшему пикселю иконки с чипом (${ic.wx},${ic.wy})`, BRASS, ic.worst, 3);
+/* B: четыре карточки «Как мы работаем» — круг 23: с раунда 22 фото и раскладка карточек
+   другие (ab-fN-640 из мастеров r23-about, градиент .feat-bg::after .44/.54/.74), поэтому
+   полоса B меряется по ЖИВОМУ рендеру Chromium (render-about.mjs → site/data/about-geom.json,
+   худший пиксел под h3/p/иконкой с фактическим градиентом). Прокси r19-мастер + зоны 2400
+   измерял бы не ту раскладку. Нормы прежние: h3 ≥4.5, p ≥4.5, штрих иконки ≥3. */
+const GEOM23 = JSON.parse(readCss(join(HERE, '../data/about-geom.json'), 'utf8'));
+for (const w of ['1440', '768']) {
+  const c = GEOM23.contrast?.[w];
+  if (!c || c.featH3 == null || c.featP == null || c.featIcon == null) {
+    console.log(`FAIL карточки B @${w}: в about-geom.json нет contrast.featH3/featP/featIcon — сначала render-about.mjs`);
+    fail = 1; continue;
+  }
+  const chk = (label, v, norm) => { const bad = !(v >= norm); if (bad) fail = 1;
+    console.log(`${bad ? 'FAIL' : 'ok  '} карточки B @${w}: ${label} ${(+v).toFixed(2)}:1 (норма ≥${norm})`); };
+  chk('h3 ivory по худшему пикселю (живой рендер, градиент .feat-bg::after)', c.featH3, 4.5);
+  chk('p mist по худшему пикселю (живой рендер, градиент .feat-bg::after)', c.featP, 4.5);
+  /* иконки .feat-ic — декоративные (svg aria-hidden="true"), в жёсткий список §E круга 23
+     (h1/lead/h3/aside) не входят: печатаются справочно, WARN при <3 (старая норма r19 с чипом) */
+  (c.featIcons || [c.featIcon]).forEach((v, i) => {
+    const low = !(v >= 3);
+    console.log(`${low ? 'WARN' : 'ok  '} карточки B @${w}: штрих иконки B${i + 1} brass (декор., aria-hidden) ${(+v).toFixed(2)}:1 (справочно, порог 3)`);
+  });
 }
 /* C: четыре плашки — зона x221…1379 y151…382, градиент 95deg по X */
 const factFiles = ['fact-1-address-1600.jpg', 'fact-2-hours-1600.jpg', 'fact-3-warranty-1600.jpg', 'fact-4-fleet-1600.jpg'];
@@ -258,7 +262,7 @@ for (let i = 0; i < 4; i++) {
 {
   const e = await worstInZone(join(R19, 'sec-bg-2560.jpg'), rect(GEOM19.section_desktop.eyebrow_union_master), [[0, 0], [1, 0]], () => 0);
   const rE = ratio([0xc8, 0x7f, 0x45], e.worst);
-  const b = await worstInZone(join(R19, cardFiles[0]), [Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1], [[0, 0], [1, 0]], () => 0);
+  const b = await worstInZone(join(R19, 'card-1-estimate-2400.jpg'), [Z19.card2400.x, Z19.cardTextBand.y0, Z19.card2400.x + Z19.card2400.w, Z19.cardTextBand.y1], [[0, 0], [1, 0]], () => 0);
   const rB = ratio(MIST, b.worst);
   const fell = rE < 4.5 || rB < 4.5; if (!fell) fail = 1;
   console.log(`${fell ? 'ok  ' : 'FAIL'} мутант «скримы раунда 18 сняты»: copper ${rE.toFixed(2)}:1, mist карточки ${rB.toFixed(2)}:1 — гейт ${fell ? 'упал' : 'НЕ УПАЛ'}`);

@@ -28,19 +28,20 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SITE = join(ROOT, 'site');
 const IMG = join(SITE, 'public', 'img');
 const WIDTHS = ['1440', '1280', '1024', '768', '390'];
-/* Потолки веса (группа 8): base-проход render-about.mjs (страница без новых ab-картинок)
-   + 60 КБ. Base: 1440/1280 = 242, 1024 = 232, 768 = 234, 390 = 226 КБ. */
-const WEIGHT_CAP = { 1440: 302, 1280: 302, 1024: 292, 768: 294, 390: 286 };
+/* Потолки веса (группа 8, круг 23 §A1): те же, что у /services с круга 21; правило base+60
+   отменено оркестратором, база остаётся справочно в geom.weightsBase. Требование: запас ≥ 20 КБ. */
+const WEIGHT_CAP = { 1440: 740, 1280: 720, 1024: 720, 768: 600, 390: 520 };
+const WEIGHT_MARGIN = 20;
 /* геометрия файлов-слоёв (производные r22, блок «10d» build-images) */
 /* приёмка к22: кадры кроятся ПОД СЛОТ (ревью, major 3 — растяжение 2,3×), поэтому
    ожидаемые габариты равны реальным слотам, а не «портретным» исходникам A5. */
 const BG_FILES = [
-  ['ab-head-1600.avif', 1600, 1000], ['ab-head-1600.webp', 1600, 1000],
-  ['ab-head-m-960.avif', 780, 960], ['ab-head-m-960.webp', 780, 960],
-  ['ab-feats-1600.avif', 1600, 900], ['ab-feats-1600.webp', 1600, 900],
-  ['ab-feats-m-960.avif', 720, 1440], ['ab-feats-m-960.webp', 720, 1440],
-  ['ab-t-1440.avif', 1440, 1040], ['ab-t-1440.webp', 1440, 1040],
-  ['ab-t-m-960.avif', 680, 1400], ['ab-t-m-960.webp', 680, 1400],
+  ['ab-head.avif', 1376, 688], ['ab-head.webp', 1376, 688],
+  ['ab-head-m.avif', 780, 960], ['ab-head-m.webp', 780, 960],
+  ['ab-feats.avif', 1365, 768], ['ab-feats.webp', 1365, 768],
+  ['ab-feats-m.avif', 720, 1400], ['ab-feats-m.webp', 720, 1400],
+  ['ab-t.avif', 1068, 768], ['ab-t.webp', 1068, 768],
+  ['ab-t-m.avif', 700, 1020], ['ab-t-m.webp', 700, 1020],
 ];
 /* Допустимый апскейл слоя: object-fit:cover растягивает кадр на max(scaleX, scaleY).
    Шапка и «Как мы работаем» — строго ≤1,15 (кадры кроятся под слот). Текстовая секция на
@@ -70,9 +71,9 @@ export async function checkAboutPage(opts = {}) {
 
   /* ---------- 1. фоны трёх секций ---------- */
   const BG = [
-    ['.abh-bg', '.page-head', 'ab-head-1600', 'headBg', 'coverHead'],
-    ['.ab-text-bg', 'section[aria-labelledby="ab-text-h"]', 'ab-t-1440', 'textBg', 'coverText'],
-    ['.ab-feats-bg', '.ab-feats', 'ab-feats-1600', 'featsBg', 'coverFeats'],
+    ['.abh-bg', '.page-head', 'ab-head', 'headBg', 'coverHead'],
+    ['.ab-text-bg', 'section[aria-labelledby="ab-text-h"]', 'ab-t', 'textBg', 'coverText'],
+    ['.ab-feats-bg', '.ab-feats', 'ab-feats', 'featsBg', 'coverFeats'],
   ];
   for (const [cls, , file] of BG) {
     const re = new RegExp(`<div class="${cls.slice(1)}" aria-hidden="true">\\s*<picture>[\\s\\S]*?${file}\\.(avif|webp)`);
@@ -148,15 +149,18 @@ export async function checkAboutPage(opts = {}) {
 
   /* ---------- 1b. кадр обязан покрывать слот без заметного апскейла (ревью, major 3) ---------- */
   const SLOT_FILES = {
-    desktop: { head: [1600, 1000, 'ab-head-1600'], text: [1440, 1040, 'ab-t-1440'], feats: [1600, 900, 'ab-feats-1600'] },
-    mobile: { head: [780, 960, 'ab-head-m-960'], text: [680, 1400, 'ab-t-m-960'], feats: [720, 1440, 'ab-feats-m-960'] },
+    desktop: { head: [1376, 688, 'ab-head'], text: [1068, 768, 'ab-t'], feats: [1365, 768, 'ab-feats'] },
+    mobile: { head: [780, 960, 'ab-head-m'], text: [700, 1020, 'ab-t-m'], feats: [720, 1400, 'ab-feats-m'] },
   };
   for (const w of WIDTHS) {
     const zones = geom.widths?.[w]?.bgZones;
     if (!zones) { fails.push(`C1 ${w}: нет bgZones для проверки покрытия слота`); continue; }
-    const set = +w <= 900 ? SLOT_FILES.mobile : SLOT_FILES.desktop;
+    /* круг 23: брейкпоинты picture в about.astro — head/feats переключаются на мобильные
+       файлы при ≤640, текстовый фон — при ≤1180 (портретный слот 1024×1504 иначе требовал
+       бы растяжения 1,96× из горизонтального мастера) */
+    const setFor = (key) => (+w <= (key === 'text' ? 1180 : 640) ? SLOT_FILES.mobile : SLOT_FILES.desktop);
     for (const key of ['head', 'text', 'feats']) {
-      const box = zones[key]; const [fw, fh, name] = set[key];
+      const box = zones[key]; const [fw, fh, name] = setFor(key)[key];
       if (!box || !box.w || !box.h) { fails.push(`C1 ${w}: нет слота ${key}`); continue; }
       const k = Math.max(box.w / fw, box.h / fh);
       if (k > MAX_SCALE[key])
@@ -195,7 +199,7 @@ export async function checkAboutPage(opts = {}) {
   /* ---------- 3. карточки .feat ---------- */
   const featImgs = [...astro.matchAll(/<div class="feat-bg"[^>]*>\s*<picture>[\s\S]*?src="\/img\/([\w.-]+)"/g)].map((m) => m[1]);
   if (featImgs.length !== 4) fails.push(`C3 в разметке ${featImgs.length} слоёв .feat-bg, ждал 4`);
-  const want = ['ab-f1-480', 'ab-f2-480', 'ab-f3-480', 'ab-f4-480'];
+  const want = ['ab-f1-640', 'ab-f2-640', 'ab-f3-640', 'ab-f4-640'];
   featImgs.forEach((f, i) => { if (!f.startsWith(want[i])) fails.push(`C3 карточка ${i + 1}: кадр ${f}, ждал ${want[i]}.*`); });
   for (const f of featImgs) if (/about-c[1-4]/.test(f)) fails.push(`C3 карточка переиспользует ${f} с главной`);
   if (!opts.skipFiles) {
@@ -270,13 +274,20 @@ export async function checkAboutPage(opts = {}) {
     if (n !== 1) fails.push(`C7 ${w}: rate-note встречается ${n} раз, ждал 1 (B4)`);
   }
 
-  /* ---------- 8. вес ---------- */
+  /* ---------- 8. вес: потолок из §A1 + запас ≥ 20 КБ ---------- */
   for (const w of WIDTHS) {
     const wAbs = geom.weights?.[w]; const base = geom.weightsBase?.[w];
-    if (wAbs == null || base == null) { fails.push(`C8 нет замеров веса для ${w}`); continue; }
-    const cap = Math.min(WEIGHT_CAP[w], base + 60);
-    if (wAbs > cap) fails.push(`C8 ${w}: вес ${wAbs} КБ > потолка ${cap} (база ${base} + 60)`);
+    if (wAbs == null) { fails.push(`C8 нет замеров веса для ${w}`); continue; }
+    const cap = WEIGHT_CAP[w] - WEIGHT_MARGIN;
+    if (wAbs > cap) fails.push(`C8 ${w}: вес ${wAbs} КБ > потолка ${WEIGHT_CAP[w]} − запаса ${WEIGHT_MARGIN} (база справочно ${base})`);
   }
+  /* ---------- 9. кейсы на about: фото-обложки, без «до / после» (§D) ---------- */
+  for (let i = 1; i <= 6; i++)
+    if (!astro.includes(`/img/ab-case-${i}-640.avif`) || !astro.includes(`/img/ab-case-${i}-640.webp`))
+      fails.push(`C9 у кейса ${i} нет фото-обложки ab-case-${i}-640 (avif+webp)`);
+  if (/class="ba">до \/ после</.test(astro)) fails.push('C9 на about остался бейдж «до / после»');
+  if (!/class="ba">пример работы</.test(astro)) fails.push('C9 на about нет ярлыка «пример работы»');
+  if (/gal-card[\s\S]{0,400}?\.svg/.test(astro)) fails.push('C9 в галерее about осталась SVG-заглушка');
   return { fails, warns };
 }
 
@@ -286,7 +297,7 @@ const MUTANTS = {
   'фон-display-none': ({ o }) => { o.css += '\n.abh-bg{display:none}\n'; },
   'фон-сплошной-заливкой': ({ o }) => { o.astro = o.astro.replace(/<div class="abh-bg"[\s\S]*?<\/picture>\s*<\/div>/, ''); },
   'фото-в-полосы-0.2': ({ G }) => { G.widths['1440'].headBg.detailX = 0.2; },
-  'одна-картинка-на-4-карточки': ({ o }) => { o.astro = o.astro.replace(/ab-f[2-4]-480/g, 'ab-f1-480'); },
+  'одна-картинка-на-4-карточки': ({ o }) => { o.astro = o.astro.replace(/ab-f[2-4]-640/g, 'ab-f1-640'); },
   'карточка-mean-120': ({ G }) => { G.widths['1440'].featZones[2].mean = 120; },
   'rate-note-продублирован': ({ G }) => { for (const w of Object.keys(G.widths)) G.widths[w].rateNotes = 2; },
   'about-media-вернулась-на-svg': ({ o }) => { o.astro = o.astro.replace(/<figure class="about-media[\s\S]*?<\/figure>/, '<figure class="about-media"><img src="/img/svc-4.svg" alt="схема"></figure>'); },
@@ -302,6 +313,8 @@ const MUTANTS = {
   'вес-сверх-потолка': ({ G }) => { G.weights['1440'] = G.weightsBase['1440'] + 61; },
   'media-50-процентов-колонки': ({ G }) => { G.widths['768'].media.colRatio = 0.5; },
   'стык-без-разделителя': ({ o }) => { o.css = o.css.replace(/border-top:1px solid var\(--line\)/g, ''); },
+  'кейсы-вернулись-на-svg': ({ o }) => { o.astro = o.astro.replace('/img/ab-case-1-640.webp', '/img/case-1.svg'); },
+  'бейдж-до-после-вернулся': ({ o }) => { o.astro = o.astro.replace('class="ba">пример работы', 'class="ba">до / после'); },
 };
 
 const load = () => ({
