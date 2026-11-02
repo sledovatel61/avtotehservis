@@ -2,7 +2,16 @@
 import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import { listCatalogServices } from '../server/services.ts';
-import { listPublishedCases, listPublishedReviews, coverInfo } from '../server/content.ts';
+import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
+/* круг 23 (§D): шесть фото-обложек кейсов только для «О компании» (галерея главной не тронута) */
+const CASE_COVERS: Record<string, { avif: string; webp: string; alt: string }> = {
+  'case-1': { avif: '/img/ab-case-1-640.avif', webp: '/img/ab-case-1-640.webp', alt: 'Иллюстрация: боковой порез шины на монтажном станке' },
+  'case-2': { avif: '/img/ab-case-2-640.avif', webp: '/img/ab-case-2-640.webp', alt: 'Иллюстрация: грыжа на боковине шины перед вулканизацией' },
+  'case-3': { avif: '/img/ab-case-3-640.avif', webp: '/img/ab-case-3-640.webp', alt: 'Иллюстрация: литой диск на станке правки' },
+  'case-4': { avif: '/img/ab-case-4-640.avif', webp: '/img/ab-case-4-640.webp', alt: 'Иллюстрация: суппорт и тормозные колодки при замене' },
+  'case-5': { avif: '/img/ab-case-5-640.avif', webp: '/img/ab-case-5-640.webp', alt: 'Иллюстрация: слив отработанного масла и фильтр при ТО' },
+  'case-6': { avif: '/img/ab-case-6-640.avif', webp: '/img/ab-case-6-640.webp', alt: 'Иллюстрация: проём лобового стекла с герметиком' },
+};
 import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
@@ -29,10 +38,10 @@ const jsonLd = {
 <section class="page-head">
   <div class="abh-bg" aria-hidden="true">
     <picture>
-      <source media="(max-width:640px)" srcset="/img/ab-head-m-960.avif" type="image/avif">
-      <source media="(max-width:640px)" srcset="/img/ab-head-m-960.webp" type="image/webp">
-      <source srcset="/img/ab-head-1600.avif" type="image/avif">
-      <img src="/img/ab-head-1600.webp" alt="" width="1600" height="1000" loading="eager" fetchpriority="high" decoding="async">
+      <source media="(max-width:900px)" srcset="/img/ab-head-m.avif" type="image/avif">
+      <source media="(max-width:900px)" srcset="/img/ab-head-m.webp" type="image/webp">
+      <source srcset="/img/ab-head.avif" type="image/avif">
+      <img src="/img/ab-head.webp" alt="" width="1376" height="688" loading="eager" fetchpriority="high" decoding="async">
     </picture>
   </div>
   <div class="container">
@@ -44,10 +53,10 @@ const jsonLd = {
 <section class="sec" aria-labelledby="ab-text-h">
   <div class="ab-text-bg" aria-hidden="true">
     <picture>
-      <source media="(max-width:640px)" srcset="/img/ab-t-m-960.avif" type="image/avif">
-      <source media="(max-width:640px)" srcset="/img/ab-t-m-960.webp" type="image/webp">
-      <source srcset="/img/ab-t-1440.avif" type="image/avif">
-      <img src="/img/ab-t-1440.webp" alt="" width="1440" height="1040" loading="lazy" decoding="async">
+      <source media="(max-width:1180px)" srcset="/img/ab-t-m.avif" type="image/avif">
+      <source media="(max-width:1180px)" srcset="/img/ab-t-m.webp" type="image/webp">
+      <source srcset="/img/ab-t.avif" type="image/avif">
+      <img src="/img/ab-t.webp" alt="" width="1068" height="768" loading="lazy" decoding="async">
     </picture>
   </div>
   <div class="container about-grid">
@@ -72,19 +81,19 @@ const jsonLd = {
       <picture>
         <source type="image/avif" srcset="/img/ab-media-480.avif 480w, /img/ab-media-720.avif 720w, /img/ab-media-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 46vw, 526px">
         <source type="image/webp" srcset="/img/ab-media-480.webp 480w, /img/ab-media-720.webp 720w, /img/ab-media-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 46vw, 526px">
-        <img src="/img/ab-media-720.webp" alt="Бокс сервиса на Портовой, 439: открытые ворота и рабочий пост внутри" width="1080" height="675" loading="lazy" decoding="async">
+        <img src="/img/ab-media-720.webp" alt="Автомобиль на подъёмнике в боксе сервиса" width="1080" height="675" loading="lazy" decoding="async">
       </picture>
-      <figcaption>Портовая, 439 — бокс и зона выдачи: сюда можно приехать без записи через центр</figcaption>
+      <figcaption>Иллюстрация: рабочий пост на два подъёмника</figcaption>
     </figure>
   </div>
 </section>
 <section class="sec sec--deep ab-feats" aria-labelledby="ab-feats-h">
   <div class="ab-feats-bg" aria-hidden="true">
     <picture>
-      <source media="(max-width:640px)" srcset="/img/ab-feats-m-960.avif" type="image/avif">
-      <source media="(max-width:640px)" srcset="/img/ab-feats-m-960.webp" type="image/webp">
-      <source srcset="/img/ab-feats-1600.avif" type="image/avif">
-      <img src="/img/ab-feats-1600.webp" alt="" width="1600" height="900" loading="lazy" decoding="async">
+      <source media="(max-width:640px)" srcset="/img/ab-feats-m.avif" type="image/avif">
+      <source media="(max-width:640px)" srcset="/img/ab-feats-m.webp" type="image/webp">
+      <source srcset="/img/ab-feats.avif" type="image/avif">
+      <img src="/img/ab-feats.webp" alt="" width="1365" height="768" loading="lazy" decoding="async">
     </picture>
   </div>
   <div class="container">
@@ -93,10 +102,10 @@ const jsonLd = {
       <h2 id="ab-feats-h">Четыре причины записаться именно сюда</h2>
     </div>
     <div class="feats u-mt0">
-      <div class="feat reveal" data-d="0"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f1-480.avif"><source type="image/webp" srcset="/img/ab-f1-480.webp"><img src="/img/ab-f1-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><h3>Смета до начала работ</h3><p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p></div>
-      <div class="feat reveal" data-d="1"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f2-480.avif"><source type="image/webp" srcset="/img/ab-f2-480.webp"><img src="/img/ab-f2-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><h3>Гарантия на работы</h3><p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p></div>
-      <div class="feat reveal" data-d="2"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f3-480.avif"><source type="image/webp" srcset="/img/ab-f3-480.webp"><img src="/img/ab-f3-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><h3>{S.hours}</h3><p>Один график всю неделю — удобно планировать визит до или после работы.</p></div>
-      <div class="feat reveal" data-d="3"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f4-480.avif"><source type="image/webp" srcset="/img/ab-f4-480.webp"><img src="/img/ab-f4-480.webp" alt="" width="480" height="360" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span><h3>Легковые и коммерческие</h3><p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p></div>
+      <div class="feat reveal" data-d="0"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f1-640.avif"><source type="image/webp" srcset="/img/ab-f1-640.webp"><img src="/img/ab-f1-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><h3>Смета до начала работ</h3><p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p></div>
+      <div class="feat reveal" data-d="1"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f2-640.avif"><source type="image/webp" srcset="/img/ab-f2-640.webp"><img src="/img/ab-f2-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><h3>Гарантия на работы</h3><p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p></div>
+      <div class="feat reveal" data-d="2"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f3-640.avif"><source type="image/webp" srcset="/img/ab-f3-640.webp"><img src="/img/ab-f3-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><h3>{S.hours}</h3><p>Один график всю неделю — удобно планировать визит до или после работы.</p></div>
+      <div class="feat reveal" data-d="3"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f4-640.avif"><source type="image/webp" srcset="/img/ab-f4-640.webp"><img src="/img/ab-f4-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span><h3>Легковые и коммерческие</h3><p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p></div>
     </div>
   </div>
 </section>
@@ -134,11 +143,16 @@ const jsonLd = {
     <div class="carousel reveal" data-carousel>
       <div class="carousel-win"><div class="carousel-track gal-track">
           {cases.map((c, ci) => {
-            const cov = coverInfo(c, '/img/case-1.svg', c.title, `${c.title} — фото «до/после» появится после съёмки`);
+            /* круг 23 (§D): обложки кейсов на «О компании» — фото-иллюстрации работы по теме
+               кейса; бейдж «до / после» убран (обложка не обещает фото конкретной машины) */
+            const cv = CASE_COVERS[c.slug] ?? CASE_COVERS['case-1'];
             return (
-              <button class="gal-card" type="button" data-gal={ci} data-img={cov.lg} data-title={c.title} data-sub={c.description ?? ''} aria-label={`Открыть кейс: ${c.title}`}>
-                <span class="gal-img"><img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cov.alt} width="800" height="600" loading="lazy"></span>
-                <span class="gal-cap"><span>{c.title}</span><span class="ba">до / после</span></span>
+              <button class="gal-card" type="button" data-gal={ci} data-img={cv.webp} data-title={c.title} data-sub={c.description ?? ''} aria-label={`Открыть кейс: ${c.title}`}>
+                <span class="gal-img"><picture>
+                  <source type="image/avif" srcset={cv.avif}>
+                  <img src={cv.webp} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cv.alt} width="640" height="480" loading="lazy" decoding="async">
+                </picture></span>
+                <span class="gal-cap"><span>{c.title}</span><span class="ba">пример работы</span></span>
               </button>
             );
           })}

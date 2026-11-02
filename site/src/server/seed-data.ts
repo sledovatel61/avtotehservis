@@ -244,7 +244,7 @@ export const SEED = {
   {
    "slug": "case-1",
    "title": "Боковой порез шины — ремонт, R16",
-   "description": "Колёса · вулканизация. Фото появится после съёмки в сервисе.",
+   "description": "Колёса · вулканизация.",
    "service_slug": "remont-shin",
    "cover_static": "/img/case-1.svg",
    "sort": 1
@@ -252,7 +252,7 @@ export const SEED = {
   {
    "slug": "case-2",
    "title": "Грыжа на боковине — восстановили",
-   "description": "Колёса · ремонт шин. Фото появится после съёмки в сервисе.",
+   "description": "Колёса · ремонт шин.",
    "service_slug": "remont-shin",
    "cover_static": "/img/case-2.svg",
    "sort": 2
@@ -260,7 +260,7 @@ export const SEED = {
   {
    "slug": "case-3",
    "title": "Правка литого диска, R17",
-   "description": "Колёса · правка и прокатка. Фото появится после съёмки в сервисе.",
+   "description": "Колёса · правка и прокатка.",
    "service_slug": "balansirovka",
    "cover_static": "/img/case-3.svg",
    "sort": 3
@@ -268,7 +268,7 @@ export const SEED = {
   {
    "slug": "case-4",
    "title": "Замена тормозных колодок",
-   "description": "Ходовая и тормоза. Фото появится после съёмки в сервисе.",
+   "description": "Ходовая и тормоза.",
    "service_slug": "hodovaya-tormoza",
    "cover_static": "/img/case-4.svg",
    "sort": 4
@@ -276,7 +276,7 @@ export const SEED = {
   {
    "slug": "case-5",
    "title": "ТО: масло и фильтры",
-   "description": "ТО и расходники. Фото появится после съёмки в сервисе.",
+   "description": "ТО и расходники.",
    "service_slug": "to-maslo",
    "cover_static": "/img/case-5.svg",
    "sort": 5
@@ -284,7 +284,7 @@ export const SEED = {
   {
    "slug": "case-6",
    "title": "Замена лобового стекла",
-   "description": "Стёкла. Фото появится после съёмки в сервисе.",
+   "description": "Стёкла.",
    "service_slug": "elektrika",
    "cover_static": "/img/case-6.svg",
    "sort": 6
