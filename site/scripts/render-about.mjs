@@ -20,7 +20,8 @@ import sharp from 'sharp';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'site', 'pages-dist');
-const ASSETS = join(ROOT, 'evaluation', 'assets', 'r22-about');
+/* круг 23: «после»-скрины всех секций (1440 и 390) — в reviews/assets-round23 (§F) */
+const ASSETS = join(ROOT, 'reviews', 'assets-round23');
 if (!existsSync(ASSETS)) await mkdir(ASSETS, { recursive: true });
 
 const server = createServer(async (req, res) => {
@@ -114,9 +115,20 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   geom.scroll[w] = g.scrollW <= g.innerW;
 
   await page.screenshot({ path: join(ASSETS, `about-${w}.png`), fullPage: true });
-  if (w === 1440) {
-    await (await page.$('.page-head')).screenshot({ path: join(ASSETS, 'about-head-1440.png') });
-    await (await page.$('.ab-feats')).screenshot({ path: join(ASSETS, 'about-feats-1440.png') });
+  if (w === 1440 || w === 390) {
+    const SECS = [['head', '.page-head'], ['text', 'section[aria-labelledby="ab-text-h"]'],
+      ['feats', '.ab-feats'], ['b2b', 'section[aria-labelledby="ab-b2b-h"]'],
+      ['cases', 'section[aria-labelledby="ab-gal-h"]'], ['reviews', 'section[aria-labelledby="ab-rev-h"]'],
+      ['brands', 'section[aria-labelledby="brands-h"]']];
+    for (const [name, sel] of SECS) {
+      const el = await page.$(sel);
+      if (el) await el.screenshot({ path: join(ASSETS, `about-${name}-${w}.png`) });
+      else console.error(`нет секции ${name} (${sel}) для скрина ${w}`);
+    }
+    if (w === 1440) {
+      await (await page.$('.page-head')).screenshot({ path: join(ASSETS, 'about-head-1440.png') });
+      await (await page.$('.ab-feats')).screenshot({ path: join(ASSETS, 'about-feats-1440.png') });
+    }
   }
 
   /* notext-кадр: метрики фонов и подложек */
