@@ -143,12 +143,15 @@ const MUTANTS = [
   }],
   ['2-пережали-media-в-4КБ', async ({ setBuf }) => {
     const b = readFileSync(join(IMG, 'ab-media-1080.avif'));
-    const im = await sharp(b).raw().toBuffer({ resolveWithObject: true });
-    setBuf('ab-media-1080.avif', await sharp(im.data, { raw: im.info }).avif({ quality: 1 }).toBuffer());
+    const m = await sharp(b).metadata();
+    /* цель мутанта — ~4 КБ: жёсткий даунскейл + апскейл обратно + quality 1 (каша) */
+    const tiny = await sharp(b).resize(160, 100).toBuffer();
+    setBuf('ab-media-1080.avif', await sharp(tiny).resize(m.width, m.height).avif({ quality: 1 }).toBuffer());
   }],
   ['3-апскейл-1-5x', async ({ setBuf }) => {
     const b = readFileSync(join(IMG, 'ab-head.avif'));
-    setBuf('ab-head.avif', await sharp(b).resize(1.5).avif({ quality: 60 }).toBuffer());
+    const m = await sharp(b).metadata();
+    setBuf('ab-head.avif', await sharp(b).resize(Math.round(m.width * 1.5), Math.round(m.height * 1.5)).avif({ quality: 60 }).toBuffer());
   }],
   ['4-media-снова-фасад', ({ setAstro }) => {
     setAstro((a) => a.replace('/img/ab-media-1080.webp', '/img/about-service-1600.webp')

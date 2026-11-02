@@ -797,12 +797,35 @@ async function main() {
   const featsBg = await frame(sharp(scFeats).extract({ left: 5, top: 0, width: 1365, height: 768 }), 0, 0, join(R23, 'bg-feats.jpg'), 1.34, 0.08);
   const featsBgM = await frame(sharp(scFeats).extract({ left: 490, top: 0, width: 395, height: 768 })
     .resize(720, 1400, { fit: 'cover' }), 0, 0, join(R23, 'bg-feats-m.jpg'), 1.34, 0.08);
+  /* §2.5 check-about-bg: полоса текста карточки (y 49…72 %) должна быть темнее верха —
+     на светлом капоте card-f1 это не так; мягкий sin-бамп затемняет полосу (производный
+     файл, мастер не тронут) */
+  const bandShade = async (pipe, out, k = 0.36) => {
+    const im = await pipe.raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    const y0 = Math.round(h * 0.40), y1 = Math.round(h * 0.75);
+    for (let y = y0; y <= y1; y++) {
+      const f = 1 - k * Math.sin(Math.PI * (y - y0) / Math.max(1, y1 - y0));
+      for (let x = 0; x < w; x++) { const i = (y * w + x) * c;
+        for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, Math.round(d[i + q] * f))); }
+    }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  };
   /* карточки: лифты подгоняются под mean 34…96 и попарную Δ ≥ 6 замером render-about */
-  const LIFTS = { 1: 3, 2: 35, 3: 8, 4: 110 };
+  /* f4: brightness .93 из CSS-фильтра приёмки r22 перенесён в файл (антиобход A6 запрещает
+     filter на слое); (v+110)×0,93 = v×0,93+102,3 — modulate до лифта, лифт 102 */
+  const LIFTS = { 1: 7, 2: 41, 3: 8, 4: 102 };
   const cardSrc = { 1: 'card-f1.jpg', 2: 'card-f2.jpg', 3: 'card-f3.jpg', 4: 'card-f4.jpg' };
   const cardM = {};
-  for (const i of [1, 2, 3, 4])
-    cardM[i] = await lift22(sharp(join(R23, cardSrc[i])).resize(640, 480, { fit: 'cover' }), LIFTS[i], join(R23, `f${i}.jpg`));
+  for (const i of [1, 2, 3, 4]) {
+    let pipe = sharp(join(R23, cardSrc[i])).resize(640, 480, { fit: 'cover' });
+    if (i === 4) pipe = pipe.modulate({ brightness: 0.93 });
+    const lifted = await lift22(pipe, LIFTS[i], join(R23, `f${i}-lift.jpg`));
+    if (i === 1) cardM[i] = await bandShade(sharp(lifted), join(R23, `f${i}.jpg`));
+    else { renameSync(lifted, join(R23, `f${i}.jpg`)); cardM[i] = join(R23, `f${i}.jpg`); }
+  }
   const caseSrc = ['case-1-tyre-cut.jpg', 'case-2-tyre-hernia.jpg', 'case-3-rim-straight.jpg',
     'case-4-brake-pads.jpg', 'case-5-oil.jpg', 'case-6-glass.jpg'];
   const enc = [];

@@ -206,7 +206,9 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
     return { h1: z(h.querySelector('h1')), lead: z(h.querySelector('.lead')),
       fh3: z(document.querySelector('.ab-feats .feat h3')), fp: z(document.querySelector('.ab-feats .feat p')),
       th2: z(t.querySelector('h2')), tlead: z(t.querySelector('.lead')),
-      ash3: z(document.querySelector('.est-aside h3')), asp: z(document.querySelector('.est-aside p')) }; });
+      ash3: z(document.querySelector('.est-aside h3')), asp: z(document.querySelector('.est-aside p')),
+      fics: [...document.querySelectorAll('.ab-feats .feat-ic')].map((e) => {
+        const b = box(e); b.col = getComputedStyle(e.querySelector('svg')).stroke; return b; }) }; });
   /* Худшая подложка зависит от направления контраста: для СВЕТЛОГО текста это самый
      светлый пиксель, для тёмного — самый тёмный. Направление определяется по реальному
      цвету из CSS, поэтому правило больше не «зашито» под одну страницу. */
@@ -220,9 +222,14 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
     const bg = worst(zone, [], darkText);
     return { v: +ratio(L, mk(bg)).toFixed(2), bg: Math.round(bg), col: zone.col };
   };
+  /* круг 23: иконка .feat-ic — латунный штрих по худшему (самому светлому) пикселю
+     фото+градиента под боксом иконки; чипа-подложки в текущем CSS нет */
+  const featIcons = h1z.fics.map((z0) => { const bg = worst(z0); const L = relRGB(parseRGB(z0.col));
+    return +ratio(L, mk(bg)).toFixed(2); });
+  const featIcon = { v: featIcons.length ? Math.min(...featIcons) : null };
   const C = { h1: ctr(h1z.h1), lead: ctr(h1z.lead), featH3: ctr(h1z.fh3), featP: ctr(h1z.fp),
-    textH2: ctr(h1z.th2), textLead: ctr(h1z.tlead), asideH3: ctr(h1z.ash3), asideP: ctr(h1z.asp) };
-  geom.contrast[w] = Object.fromEntries(Object.entries(C).map(([k, o]) => [k, o.v]));
+    textH2: ctr(h1z.th2), textLead: ctr(h1z.tlead), asideH3: ctr(h1z.ash3), asideP: ctr(h1z.asp), featIcon, featIcons };
+  geom.contrast[w] = Object.fromEntries(Object.entries(C).map(([k, o]) => [k, Array.isArray(o) ? o : o.v]));
   /* для справки: худшая подложка (0…255) и реальный цвет текста под каждой зоной */
   geom.contrastBgs = geom.contrastBgs || {};
   geom.contrastBgs[w] = Object.fromEntries(Object.entries(C).map(([k, o]) => [k, { bg: o.bg, col: o.col }]));

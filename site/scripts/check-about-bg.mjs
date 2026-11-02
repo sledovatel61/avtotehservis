@@ -190,18 +190,19 @@ function gate({ css: C, astro: A, zones: z, files, geom, ...opts }) {
       const t = dir === 'x' ? x / (w - 1) : y / (h - 1);
       const a = stopAt(stops, t); const i = (y * w + x) * c;
       let v = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
-      if (bandMul && y >= 791 && y <= 1147) v *= bandMul;
+      const by0 = Math.round(h * 791 / 1600), by1 = Math.round(h * 1147 / 1600);
+      if (bandMul && y >= by0 && y <= by1) v *= bandMul;
       const r = v * (1 - a) + 15.8 * a;
       sum += r; n++; if (r < mn) mn = r; if (r > mx) mx = r;
-      if (y >= 791 && y <= 1147) { bandS += r; bandN++; } else if (y < 791) { topS += r; topN++; } else { botS += r; botN++; }
+      if (y >= by0 && y <= by1) { bandS += r; bandN++; } else if (y < by0) { topS += r; topN++; } else { botS += r; botN++; }
     }
     return { mean: sum / n, spread: mx - mn, band: bandS / Math.max(1, bandN), top: topS / Math.max(1, topN), bot: botS / Math.max(1, botN) };
   };
   const FLOOR_MEAN = 3.0, FLOOR_SPREAD = 40;
   const floorRows = [
-    ['A секция', 'sec-bg-2560.jpg', A_ST, 'y'], ['B1', 'card-1-estimate-2400.jpg', F_ST, 'y'],
-    ['B2', 'card-2-warranty-2400.jpg', F_ST, 'y'], ['B3', 'card-3-schedule-2400.jpg', F_ST, 'y'],
-    ['B4', 'card-4-fleet-2400.jpg', F_ST, 'y'], ['C1', 'fact-1-address-1600.jpg', FC_ST, 'x'],
+    ['A секция', 'sec-bg-2560.jpg', A_ST, 'y'], ['B1', 'card-1-r23.jpg', F_ST, 'y'],
+    ['B2', 'card-2-r23.jpg', F_ST, 'y'], ['B3', 'card-3-r23.jpg', F_ST, 'y'],
+    ['B4', 'card-4-r23.jpg', F_ST, 'y'], ['C1', 'fact-1-address-1600.jpg', FC_ST, 'x'],
     ['C2', 'fact-2-hours-1600.jpg', FC_ST, 'x'], ['C3', 'fact-3-warranty-1600.jpg', FC_ST, 'x'],
     ['C4', 'fact-4-fleet-1600.jpg', FC_ST, 'x'], ['D кнопка', 'btn-cta-1200.jpg', BN_ST, 'x'],
   ];
@@ -214,7 +215,7 @@ function gate({ css: C, astro: A, zones: z, files, geom, ...opts }) {
   }
   /* §2.5: полоса текста B1 темнее верха кадра ≥3 единицы на рендере */
   {
-    const mp = files.mp['card-1-estimate-2400.jpg'];
+    const mp = files.mp['card-1-r23.jpg'];
     if (mp) { const ls = layerStats(mp, F_ST, 'y', opts.bandMul ?? 1);
       if (ls.band > ls.top - 3) bad.push(`§2.5: полоса текста B1 ${ls.band.toFixed(1)} не темнее верха ${ls.top.toFixed(1)} − 3`);
       if (ls.bot > ls.band + 3) bad.push(`§2.5: низ карточки B1 ${ls.bot.toFixed(1)} светлее полосы текста ${ls.band.toFixed(1)} + 3 (скрим не монотонный)`);
@@ -336,6 +337,13 @@ async function collect() {
     const rp = join(R19, f.replace('.jpg', '-raw.jpg'));
     if (existsSync(rp)) files.raw[f.replace('.jpg', '-raw.jpg')] = true;
     if (existsSync(p)) files.mp[f] = await sharp(p).raw().toBuffer({ resolveWithObject: true });
+  }
+  /* круг 23: строки пола/§2.5 для карточек B1…B4 меряются по АКТУАЛЬНЫМ производным
+     r23-about/fN.jpg (640×480, лифтованные кропы новых мастеров), а не по r19-мастерам:
+     фото карточек с раунда 22 другие, r19-прокси измерял несуществующую раскладку */
+  for (let i = 1; i <= 4; i++) {
+    const cp = join(HERE, '../../docs/photos-source/r23-about', `f${i}.jpg`);
+    if (existsSync(cp)) files.mp[`card-${i}-r23.jpg`] = await sharp(cp).raw().toBuffer({ resolveWithObject: true });
   }
   for (const name of Object.keys(DERIV)) for (const fmt of ['avif', 'webp']) {
     const p = join(IMG, `${name}.${fmt}`);

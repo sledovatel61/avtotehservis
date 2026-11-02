@@ -430,4 +430,3 @@ section[aria-labelledby="ab-text-h"] .about-grid>div:first-child{max-width:640px
 }
 /* приёмка к22: на 1024 и 390 четвёртая карточка (фасад) выходит ярче третьей почти вплотную —
    экспозиция кадра гасится чуть сильнее, чтобы четыре карточки читались как разные кадры */
-.ab-feats .feat:nth-child(4) .feat-bg img{filter:brightness(.93)}
