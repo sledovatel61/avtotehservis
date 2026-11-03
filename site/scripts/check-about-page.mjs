@@ -178,7 +178,9 @@ export async function checkAboutPage(opts = {}) {
     if (/\.svg/.test(fb)) fails.push('C2 .about-media снова SVG');
     for (const n of [480, 720, 1080]) if (!fb.includes(`ab-media-${n}.avif`) || !fb.includes(`ab-media-${n}.webp`))
       fails.push(`C2 в picture нет источника ab-media-${n} (avif+webp)`);
-    if (!fb.includes('sizes="(max-width:768px) 92vw, (max-width:1024px) 46vw, 526px"'))
+    /* 23.11 (приёмка r24): на 1024 бокс media = 638 px, а sizes 46vw давал 471 → браузер брал
+       480-й файл и картинка мылила. Просим 64vw, чтобы выбирался 720-й. */
+    if (!fb.includes('sizes="(max-width:768px) 92vw, (max-width:1024px) 64vw, 526px"'))
       fails.push('C2 sizes не соответствует заданию B2');
     const alt = fb.match(/alt="([^"]*)"/);
     if (!alt || alt[1].trim().length < 12 || /появится/i.test(alt[1])) fails.push(`C2 alt не осмысленный: ${alt ? alt[1] : 'нет'}`);
@@ -191,7 +193,7 @@ export async function checkAboutPage(opts = {}) {
     const m = await sharp(p).metadata();
     if (m.width !== w) fails.push(`C2 ${f}: ширина ${m.width}, ждал ${w}`);
   }
-  for (const w of ['1440', '1280']) {
+  for (const w of ['1440', '1280', '1024']) {
     const sel = geom.widths?.[w]?.media?.sel;
     if (!(sel >= 640)) fails.push(`C2 ${w}: выбранный файл ${sel} px < 640 (naturalWidth для srcset — density-corrected, проверяем ширину выбранного кадра)`);
   }

@@ -88,8 +88,8 @@
 .feat-bg img{object-fit:cover;object-position:50% 50%;transition:transform 600ms var(--ease)}
 .feat-bg::after{
   content:'';position:absolute;inset:0;
-  background:radial-gradient(120% 62% at 14% 88%,rgba(11,20,16,var(--fd1,.86)) 0%,rgba(11,20,16,var(--fd2,.60)) 48%,rgba(11,20,16,var(--fd3,.10)) 82%),
-    linear-gradient(180deg,rgba(11,20,16,var(--fc1,.14)) 0%,rgba(11,20,16,var(--fc2,.24)) 20%,rgba(11,20,16,.70) 34%,rgba(11,20,16,.86) 52%,rgba(11,20,16,var(--fc3,.90)) 100%);
+  background:radial-gradient(120% 58% at 14% 90%,rgba(11,20,16,var(--fd1,.66)) 0%,rgba(11,20,16,var(--fd2,.36)) 48%,rgba(11,20,16,var(--fd3,.06)) 82%),
+    linear-gradient(180deg,rgba(11,20,16,var(--fc1,.10)) 0%,rgba(11,20,16,var(--fc2,.20)) 22%,rgba(11,20,16,.72) 36%,rgba(11,20,16,.86) 54%,rgba(11,20,16,var(--fc3,.84)) 100%);
 }
 .feat>*:not(.feat-bg){position:relative;z-index:1}
 .feat:hover{--fc1:.50;--fc2:.60;--fc3:.80}
@@ -239,6 +239,9 @@
 }
 /* Подпись в одну строку с многоточием; полный заголовок — в лайтбоксе */
 .gal-cap{position:absolute;left:0;right:0;bottom:0;padding:34px 18px 14px;background:linear-gradient(transparent,rgba(11,20,16,.92));color:var(--ivory);font-size:14px;font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gal-cap--case{display:flex;align-items:baseline;gap:10px;white-space:normal;padding-bottom:12px}
+.gal-cap--case>span:first-child{min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gal-cap--case .ba{flex:none;color:var(--brass);font-size:11px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;opacity:.9}
 .gal-note{font-size:13.5px;color:var(--mist);margin-top:18px;max-width:80ch;border-left:2px solid var(--brass);padding-left:14px}
 .lightbox{
   position:fixed;inset:0;z-index:120;background:rgba(6,11,9,.94);
@@ -249,7 +252,7 @@
 .lb-box{max-width:920px;width:100%;transform:scale(.98);opacity:0;transition:transform var(--t-mid) var(--ease),opacity var(--t-mid) var(--ease)}
 .lightbox.is-open .lb-box{transform:scale(1);opacity:1}
 .lb-img{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--deep2)}
-.lb-img img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.lb-img img{display:block;width:auto;height:auto;max-width:100%;max-height:72vh;margin:0 auto}
 .lb-cap{color:var(--mist);font-size:15px;margin-top:14px;display:flex;justify-content:space-between;gap:16px;align-items:center}
 .lb-cap b{color:var(--ivory)}
 .lb-close{position:absolute;top:18px;right:18px;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:rgba(16,32,26,.8);color:var(--ivory);font-size:20px;cursor:pointer}
@@ -362,7 +365,9 @@ section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
   .abh-bg::after{background:
     radial-gradient(78% 46% at 82% 10%,rgba(78,158,116,.20) 0%,rgba(78,158,116,.06) 46%,rgba(78,158,116,0) 72%),
     radial-gradient(60% 34% at 6% 34%,rgba(200,127,69,.10) 0%,rgba(200,127,69,0) 70%),
-    linear-gradient(180deg,var(--deep) 0%,var(--deep) 84%,rgba(16,32,26,.88) 90%,rgba(16,32,26,.45) 96%,rgba(16,32,26,.20) 100%)}}
+    linear-gradient(90deg,rgba(11,20,16,.80) 0%,rgba(11,20,16,.44) 42%,rgba(11,20,16,.06) 64%,rgba(11,20,16,0) 82%),
+    radial-gradient(64% 26% at 24% 66%,rgba(11,20,16,.55) 0%,rgba(11,20,16,0) 82%),
+    linear-gradient(180deg,var(--deep) 0%,var(--deep) 81%,rgba(16,32,26,.84) 87%,rgba(16,32,26,.38) 93%,rgba(16,32,26,.08) 100%)}}
 section[aria-labelledby="ab-text-h"]{position:relative;overflow:hidden;border-top:1px solid var(--line)}
 section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
 
@@ -400,10 +405,11 @@ section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
 .feat .feat-ic,.feat h3,.feat p{position:relative;z-index:2}
 .ab-acc summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
 .ab-acc summary::-webkit-details-marker{display:none}
-.ab-acc summary::before{content:'';flex:0 0 auto;width:14px;height:14px;border-radius:3px;
-  background:linear-gradient(var(--brass),var(--brass)) center/14px 2px no-repeat,
-             linear-gradient(var(--brass),var(--brass)) center/2px 14px no-repeat}
-.ab-acc[open] summary::before{background:linear-gradient(var(--brass),var(--brass)) center/14px 2px no-repeat}
+.ab-acc summary::before{content:'';flex:0 0 auto;width:16px;height:16px;border-radius:50%;
+  border:1px solid rgba(224,169,109,.45);opacity:.75;
+  background:linear-gradient(var(--brass),var(--brass)) center/8px 1.5px no-repeat,
+             linear-gradient(var(--brass),var(--brass)) center/1.5px 8px no-repeat}
+.ab-acc[open] summary::before{opacity:1;background:linear-gradient(var(--brass),var(--brass)) center/8px 1.5px no-repeat}
 .ab-acc summary h2{margin:0}
 .ab-acc summary:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:6px}
 .ab-aside-tag{display:inline-block;margin-bottom:10px;padding:3px 10px;border:1px solid rgba(224,169,109,.4);border-radius:999px;color:var(--brass);font-size:11px;letter-spacing:.12em;text-transform:uppercase}

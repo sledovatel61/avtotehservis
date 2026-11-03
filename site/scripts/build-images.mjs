@@ -816,10 +816,10 @@ async function main() {
   /* карточки: лифты подгоняются под mean 34…96 и попарную Δ ≥ 6 замером render-about */
   /* f4: brightness .93 из CSS-фильтра приёмки r22 перенесён в файл (антиобход A6 запрещает
      filter на слое); (v+110)×0,93 = v×0,93+102,3 — modulate до лифта, лифт 102 */
-  const LIFTS = { 1: 7, 2: 41, 3: 8, 4: 102 };
+  const LIFTS = { 1: 22, 2: 58, 3: 18, 4: 110 };
   /* приёмка r23: экспозиция кадров 1 и 3 жила в CSS-фильтре слоя (обходит гейты) —
      перенесена в файл; множитель применяется после lift22, как это делал filter:brightness() */
-  const EXPOS = { 1: 1.86, 3: 1.40 };
+  const EXPOS = { 1: 1.05, 3: 1.00 };
   const cardSrc = { 1: 'card-f1.jpg', 2: 'card-f2.jpg', 3: 'card-f3.jpg', 4: 'card-f4.jpg' };
   const cardM = {};
   for (const i of [1, 2, 3, 4]) {

@@ -79,8 +79,8 @@ const jsonLd = {
     </div>
     <figure class="about-media reveal" data-d="1">
       <picture>
-        <source type="image/avif" srcset="/img/ab-media-480.avif 480w, /img/ab-media-720.avif 720w, /img/ab-media-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 46vw, 526px">
-        <source type="image/webp" srcset="/img/ab-media-480.webp 480w, /img/ab-media-720.webp 720w, /img/ab-media-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 46vw, 526px">
+        <source type="image/avif" srcset="/img/ab-media-480.avif 480w, /img/ab-media-720.avif 720w, /img/ab-media-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 64vw, 526px">
+        <source type="image/webp" srcset="/img/ab-media-480.webp 480w, /img/ab-media-720.webp 720w, /img/ab-media-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 64vw, 526px">
         <img src="/img/ab-media-720.webp" alt="Автомобиль на подъёмнике в боксе сервиса" width="1080" height="675" loading="lazy" decoding="async">
       </picture>
       <figcaption>Иллюстрация: рабочий пост на два подъёмника</figcaption>
@@ -152,7 +152,7 @@ const jsonLd = {
                   <source type="image/avif" srcset={cv.avif}>
                   <img src={cv.webp} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cv.alt} width="640" height="480" loading="lazy" decoding="async">
                 </picture></span>
-                <span class="gal-cap"><span>{c.title}</span><span class="ba">пример работы</span></span>
+                <span class="gal-cap gal-cap--case"><span>{c.title}</span><span class="ba">пример работы</span></span>
               </button>
             );
           })}
