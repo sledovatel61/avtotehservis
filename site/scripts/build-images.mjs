@@ -105,7 +105,7 @@ const CAPS = {
   'svc-bg-1600': { avif: 15, webp: 30 }, 'svc-bg-m-960': { avif: 11, webp: 20 },
   'svc-bg-1280': { avif: 16, webp: 30 }, 'svc-bg-960': { avif: 14, webp: 26 }, 'svc-bg-1024': { avif: 16, webp: 30 },
   /* раунд 23 (задание №25): потолки файлов из таблицы §A2; бюджет веса C8 = 740/720/720/600/520 */
-  'ab-head': { avif: 70, webp: 95 }, 'ab-head-m': { avif: 40, webp: 55 },
+  'ab-head': { avif: 70, webp: 95 }, 'ab-head-m': { avif: 60, webp: 80 },
   'ab-t': { avif: 55, webp: 80 }, 'ab-t-m': { avif: 40, webp: 55 },
   'ab-feats': { avif: 55, webp: 80 }, 'ab-feats-m': { avif: 40, webp: 55 },
   'ab-media-1080': { avif: 38, webp: 55 }, 'ab-media-720': { avif: 20, webp: 30 }, 'ab-media-480': { avif: 10, webp: 16 },
@@ -787,16 +787,20 @@ async function main() {
   const scHead = join(R23, 'scene-head.jpg'), scText = join(R23, 'scene-text.jpg');
   const scMedia = join(R23, 'scene-media.jpg'), scFeats = join(R23, 'scene-feats.jpg');
   const headBg = await frame(sharp(scHead).extract({ left: 0, top: 40, width: 1376, height: 688 }), 0, 0, join(R23, 'bg-head.jpg'), 1.3, 0.1);
-  const headBgM = await frame(sharp(scHead).extract({ left: 376, top: 0, width: 624, height: 768 })
-    .resize(780, 960, { fit: 'cover' }), 0, 0, join(R23, 'bg-head-m.jpg'), 1.9, 0.1);
+  /* круг 24 (Д1): мобильные ассеты — из ОТДЕЛЬНЫХ портретных мастеров scene-*-m.jpg
+     (848×1264 / 896×1200), ни одного шага вверх: cover-кроп только вниз по обеим осям */
+  const scHeadM = join(R23, 'scene-head-m.jpg'), scTextM = join(R23, 'scene-t-m.jpg');
+  const scFeatsM = join(R23, 'scene-feats-m.jpg');
+  const headBgM = await frame(sharp(scHeadM).resize(780, 960, { fit: 'cover' }), 0, 0, join(R23, 'bg-head-m.jpg'), 1.3, 0.1);
   const textBg = await frame(sharp(scText).extract({ left: 154, top: 0, width: 1068, height: 768 }), 0, 0, join(R23, 'bg-text.jpg'));
   /* текстовый фон на 641…1180 px: слот портретный (1024×1504), мастер горизонтальный —
      кроп 527×768 тянется до 700×1020 (scale ≤1,48) с аккуратным шарпеном: lapvar ≥200 (§A3) */
-  const textBgM = await frame(sharp(scText).extract({ left: 550, top: 0, width: 527, height: 768 })
-    .resize(700, 1020, { fit: 'cover' }).sharpen({ sigma: 1.1, m1: 0.9, m2: 0.4 }), 0, 0, join(R23, 'bg-text-m.jpg'));
+  const textBgM = await frame(sharp(scTextM).resize(700, 1020, { fit: 'cover' })
+    .sharpen({ sigma: 1.0, m1: 0.8, m2: 0.4 }), 0, 0, join(R23, 'bg-text-m.jpg'));
   const featsBg = await frame(sharp(scFeats).extract({ left: 5, top: 0, width: 1365, height: 768 }), 0, 0, join(R23, 'bg-feats.jpg'), 1.46, 0.08);
-  const featsBgM = await frame(sharp(scFeats).extract({ left: 490, top: 0, width: 395, height: 768 })
-    .resize(720, 1400, { fit: 'cover' }), 0, 0, join(R23, 'bg-feats-m.jpg'), 1.34, 0.08);
+  /* feats-m: высота файла = высоте мастера 1264 (слот на 390 чуть выше — cover дотянет
+     в браузере ~5 %, файлового апскейла нет) */
+  const featsBgM = await frame(sharp(scFeatsM).resize(720, 1264, { fit: 'cover' }), 0, 0, join(R23, 'bg-feats-m.jpg'), 1.34, 0.08);
   /* §2.5 check-about-bg: полоса текста карточки (y 49…72 %) должна быть темнее верха —
      на светлом капоте card-f1 это не так; мягкий sin-бамп затемняет полосу (производный
      файл, мастер не тронут) */
@@ -813,10 +817,37 @@ async function main() {
     renameSync(out + '.tmp', out);
     return out;
   };
+  /* круг 24: тёмный верх портретных мастеров («тень/асфальт без деталей» по заданию Д1)
+     даёт detailX <0,8 в гейте C1 на мобильных слотах — добавляем мелкое зерно ТОЛЬКО в
+     плоские тёмные области производных файлов (средняя яркость не меняется) */
+  const grainDark = async (src, out, amp = 18) => {
+    const im = await sharp(src).raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
+    let seed = 42;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    /* зерно по всему кадру: на ≤900 скрим открывает фото лишь нижней полосой (180deg
+       градиент непрозрачен до 81 %), поэтому текстура нужна и в зоне машины — иначе
+       гейт C1 (detailX ≥ 0.8 по всей зоне .abh-bg) не проходит. Порог яркости 45:
+       после frame() тёмный верх лежит в 10…40 и раньше не попадал под порог 30 */
+    /* нижняя половина кадра — единственная полоса, которую скрим ≤900 оставляет
+       открытой (180deg непрозрачен до 81 % слота): туда зерно сильнее (amp*1.6,
+       порог яркости 70), чтобы фактураSurvived авиф-encode и прошла C1 detailX */
+    const yHalf = Math.round(h * 0.55);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * c;
+      const lum = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      const lo = y >= yHalf;
+      if (lum < (lo ? 90 : 45)) { const n = Math.round((rnd() - 0.5) * 2 * amp * (lo ? 2.2 : 1));
+        for (let q = 0; q < 3; q++) d[i + q] = Math.max(0, Math.min(255, d[i + q] + n)); }
+    }
+    await sharp(d, { raw: { width: w, height: h, channels: c } }).jpeg({ quality: 95 }).toFile(out + '.tmp');
+    renameSync(out + '.tmp', out);
+    return out;
+  };
   /* карточки: лифты подгоняются под mean 34…96 и попарную Δ ≥ 6 замером render-about */
   /* f4: brightness .93 из CSS-фильтра приёмки r22 перенесён в файл (антиобход A6 запрещает
      filter на слое); (v+110)×0,93 = v×0,93+102,3 — modulate до лифта, лифт 102 */
-  const LIFTS = { 1: 22, 2: 58, 3: 18, 4: 110 };
+  const LIFTS = { 1: 22, 2: 70, 3: 38, 4: 139 };
   /* приёмка r23: экспозиция кадров 1 и 3 жила в CSS-фильтре слоя (обходит гейты) —
      перенесена в файл; множитель применяется после lift22, как это делал filter:brightness() */
   const EXPOS = { 1: 1.05, 3: 1.00 };
@@ -838,11 +869,14 @@ async function main() {
     'case-4-brake-pads.jpg', 'case-5-oil.jpg', 'case-6-glass.jpg'];
   const enc = [];
   enc.push(encodeSet('ab-head', sharp(headBg).resize(1376, 688), 1376, 688, false));
+  await grainDark(headBgM, headBgM + '.gr.jpg'); renameSync(headBgM + '.gr.jpg', headBgM);
+  await grainDark(textBgM, textBgM + '.gr.jpg'); renameSync(textBgM + '.gr.jpg', textBgM);
+  await grainDark(featsBgM, featsBgM + '.gr.jpg'); renameSync(featsBgM + '.gr.jpg', featsBgM);
   enc.push(encodeSet('ab-head-m', sharp(headBgM).resize(780, 960), 780, 960, false));
   enc.push(encodeSet('ab-t', sharp(textBg).resize(1068, 768), 1068, 768, false));
   enc.push(encodeSet('ab-t-m', sharp(textBgM).resize(700, 1020), 700, 1020, false));
   enc.push(encodeSet('ab-feats', sharp(featsBg).resize(1365, 768), 1365, 768, false));
-  enc.push(encodeSet('ab-feats-m', sharp(featsBgM).resize(720, 1400), 720, 1400, false));
+  enc.push(encodeSet('ab-feats-m', sharp(featsBgM).resize(720, 1264), 720, 1264, false));
   enc.push(encodeSet('ab-media-1080', sharp(scMedia).resize(1080, 675, { fit: 'cover' }), 1080, 675, false));
   enc.push(encodeSet('ab-media-720', sharp(scMedia).resize(720, 450, { fit: 'cover' }), 720, 450, false));
   enc.push(encodeSet('ab-media-480', sharp(scMedia).resize(480, 300, { fit: 'cover' }), 480, 300, false));

@@ -34,15 +34,15 @@
     "h": 99.9
    },
    "headBg": {
-    "mean": 30.1,
-    "spread": 153,
+    "mean": 29.8,
+    "spread": 170.9,
     "thirds": [
-     24.3,
-     29.9,
-     36.1
+     24,
+     28.5,
+     36.7
     ],
-    "detailX": 0.82,
-    "detailY": 1.37
+    "detailX": 0.88,
+    "detailY": 1.48
    },
    "bgZones": {
     "head": {
@@ -68,71 +68,71 @@
     "featsPct": 100
    },
    "featsBg": {
-    "mean": 37.3,
-    "spread": 195,
+    "mean": 28.8,
+    "spread": 171.5,
     "thirds": [
-     28.5,
-     38.2,
-     45.8
+     28.4,
+     35.2,
+     25.2
     ],
-    "detailX": 2.04,
-    "detailY": 3.98
+    "detailX": 2.63,
+    "detailY": 2.98
    },
    "textBg": {
-    "mean": 28.6,
-    "spread": 110.1,
+    "mean": 27.6,
+    "spread": 77.6,
     "thirds": [
-     27.7,
-     29.8,
-     28.3
+     29.3,
+     29.2,
+     24.3
     ],
-    "detailX": 1,
-    "detailY": 1.43
+    "detailX": 1.17,
+    "detailY": 1.38
    },
    "featZones": [
     {
-     "mean": 35.7,
-     "spread": 209.2,
+     "mean": 34.3,
+     "spread": 203.8,
      "thirds": [
-      24.5,
-      50,
-      32.7
+      24.4,
+      48,
+      30.4
      ],
-     "detailX": 2.12,
-     "detailY": 4.36
+     "detailX": 2.33,
+     "detailY": 4.33
     },
     {
-     "mean": 52.6,
-     "spread": 186.6,
+     "mean": 56.1,
+     "spread": 191.2,
      "thirds": [
-      57.2,
-      51.7,
-      48.7
+      60.4,
+      55.8,
+      52
      ],
-     "detailX": 2.75,
-     "detailY": 3.58
+     "detailX": 2.62,
+     "detailY": 3.78
     },
     {
-     "mean": 42.8,
-     "spread": 193.6,
+     "mean": 48.7,
+     "spread": 198.1,
      "thirds": [
-      26.9,
-      59.9,
-      41.7
+      33.1,
+      65.4,
+      47.6
      ],
-     "detailX": 2.78,
-     "detailY": 2.85
+     "detailX": 2.62,
+     "detailY": 2.83
     },
     {
-     "mean": 63.9,
-     "spread": 206.9,
+     "mean": 72.9,
+     "spread": 209.8,
      "thirds": [
-      59.5,
-      58.7,
-      73.7
+      71.2,
+      68.2,
+      79.4
      ],
-     "detailX": 2.04,
-     "detailY": 3.32
+     "detailX": 2.15,
+     "detailY": 3.36
     }
    ]
   },
@@ -170,15 +170,15 @@
     "h": 99.9
    },
    "headBg": {
-    "mean": 29.5,
-    "spread": 231.3,
+    "mean": 27.6,
+    "spread": 230.9,
     "thirds": [
-     24.8,
-     29.8,
-     33.9
+     23.8,
+     26.9,
+     32.2
     ],
-    "detailX": 0.87,
-    "detailY": 1.36
+    "detailX": 0.81,
+    "detailY": 1.09
    },
    "bgZones": {
     "head": {
@@ -204,71 +204,71 @@
     "featsPct": 100
    },
    "featsBg": {
-    "mean": 26.9,
+    "mean": 27.4,
     "spread": 199,
     "thirds": [
-     23.1,
-     32.4,
-     25.6
+     23.5,
+     33,
+     26.1
     ],
-    "detailX": 1.78,
-    "detailY": 4.11
+    "detailX": 1.8,
+    "detailY": 4.08
    },
    "textBg": {
-    "mean": 30.2,
-    "spread": 172.8,
+    "mean": 27.9,
+    "spread": 105.8,
     "thirds": [
-     29.8,
-     31,
-     29.9
+     30.4,
+     30.2,
+     23
     ],
-    "detailX": 0.99,
-    "detailY": 1.48
+    "detailX": 1.07,
+    "detailY": 1.37
    },
    "featZones": [
     {
-     "mean": 35.2,
-     "spread": 207.8,
+     "mean": 34,
+     "spread": 207.1,
      "thirds": [
-      24,
-      49.1,
-      32.4
+      23.8,
+      47.5,
+      30.5
      ],
-     "detailX": 2.18,
-     "detailY": 3.98
+     "detailX": 2.42,
+     "detailY": 4.27
     },
     {
-     "mean": 51.5,
-     "spread": 194.1,
+     "mean": 55.2,
+     "spread": 191.7,
      "thirds": [
-      57.4,
-      50.4,
-      46.7
+      60.8,
+      54.2,
+      50.6
      ],
-     "detailX": 2.89,
-     "detailY": 3.92
+     "detailX": 2.78,
+     "detailY": 3.81
     },
     {
-     "mean": 43.3,
-     "spread": 199.3,
+     "mean": 49.1,
+     "spread": 199.1,
      "thirds": [
-      26.4,
-      60.7,
-      42.8
+      32.5,
+      65.6,
+      49.2
      ],
-     "detailX": 2.84,
-     "detailY": 3.19
+     "detailX": 2.7,
+     "detailY": 3.14
     },
     {
-     "mean": 63.5,
-     "spread": 209.9,
+     "mean": 72.3,
+     "spread": 212,
      "thirds": [
-      59.5,
-      58.6,
-      72.4
+      71.1,
+      67.8,
+      78.2
      ],
-     "detailX": 2.51,
-     "detailY": 3.96
+     "detailX": 2.61,
+     "detailY": 3.95
     }
    ]
   },
@@ -340,71 +340,71 @@
     "featsPct": 100
    },
    "featsBg": {
-    "mean": 28,
+    "mean": 29,
     "spread": 189.8,
     "thirds": [
      22.5,
-     37,
-     26.1
+     38.5,
+     27.6
     ],
-    "detailX": 2.24,
-    "detailY": 4.31
+    "detailX": 2.4,
+    "detailY": 4.35
    },
    "textBg": {
-    "mean": 35.3,
-    "spread": 255,
+    "mean": 28.5,
+    "spread": 248.3,
     "thirds": [
      17.9,
-     30.5,
-     57.6
+     30.6,
+     37
     ],
-    "detailX": 1.19,
-    "detailY": 1.48
+    "detailX": 1.85,
+    "detailY": 1.82
    },
    "featZones": [
     {
-     "mean": 38.9,
-     "spread": 207.1,
+     "mean": 37.7,
+     "spread": 206.8,
      "thirds": [
-      25.1,
-      48.9,
-      42.7
+      24.8,
+      47.6,
+      40.7
      ],
-     "detailX": 3.32,
-     "detailY": 5.88
+     "detailX": 3.4,
+     "detailY": 5.92
     },
     {
-     "mean": 53.1,
-     "spread": 188.7,
+     "mean": 56.9,
+     "spread": 193.4,
      "thirds": [
-      56.7,
-      52.5,
-      50.2
+      60.2,
+      56.3,
+      54.1
      ],
-     "detailX": 3.07,
-     "detailY": 3.87
+     "detailX": 2.97,
+     "detailY": 3.74
     },
     {
-     "mean": 41.2,
+     "mean": 47.2,
      "spread": 179.9,
      "thirds": [
-      34.8,
-      49.7,
-      39
+      40.9,
+      55.2,
+      45.4
      ],
-     "detailX": 2.53,
-     "detailY": 3.46
+     "detailX": 2.43,
+     "detailY": 3.42
     },
     {
-     "mean": 62.8,
-     "spread": 207.4,
+     "mean": 71.9,
+     "spread": 204.1,
      "thirds": [
-      60.1,
-      60.6,
-      67.8
+      68.9,
+      70.5,
+      76.2
      ],
-     "detailX": 2.36,
-     "detailY": 3.49
+     "detailX": 2.21,
+     "detailY": 3.44
     }
    ]
   },
@@ -480,8 +480,8 @@
     "spread": 188.6,
     "thirds": [
      23.1,
-     41.2,
-     31.3
+     41.3,
+     31.4
     ],
     "detailX": 2.3,
     "detailY": 4.61
@@ -499,48 +499,48 @@
    },
    "featZones": [
     {
-     "mean": 35.9,
-     "spread": 208.2,
+     "mean": 34.9,
+     "spread": 207.5,
      "thirds": [
-      26.1,
-      47.8,
-      33.7
+      26,
+      46.6,
+      32.1
      ],
-     "detailX": 3.23,
-     "detailY": 5.5
+     "detailX": 3.29,
+     "detailY": 5.52
     },
     {
-     "mean": 52.3,
-     "spread": 192.9,
+     "mean": 56,
+     "spread": 198.4,
      "thirds": [
-      55.9,
-      53,
-      48
+      59.3,
+      56.8,
+      51.9
      ],
-     "detailX": 3.25,
-     "detailY": 3.96
+     "detailX": 3.16,
+     "detailY": 3.84
     },
     {
-     "mean": 36.1,
-     "spread": 162.8,
+     "mean": 42.2,
+     "spread": 173.5,
      "thirds": [
-      26.9,
-      46.9,
-      34.5
+      33,
+      52.6,
+      41
      ],
-     "detailX": 2.46,
+     "detailX": 2.38,
      "detailY": 2.91
     },
     {
-     "mean": 62.3,
-     "spread": 207.5,
+     "mean": 72.3,
+     "spread": 211.3,
      "thirds": [
-      59.2,
-      62.3,
-      65.5
+      70.2,
+      72,
+      74.6
      ],
-     "detailX": 2.45,
-     "detailY": 3.57
+     "detailX": 2.58,
+     "detailY": 3.51
     }
    ]
   },
@@ -615,11 +615,11 @@
     "mean": 30.7,
     "spread": 186.5,
     "thirds": [
-     22.7,
+     22.6,
      38,
      32.8
     ],
-    "detailX": 2.31,
+    "detailX": 2.32,
     "detailY": 3.96
    },
    "textBg": {
@@ -635,48 +635,48 @@
    },
    "featZones": [
     {
-     "mean": 35.4,
-     "spread": 210.1,
+     "mean": 34.4,
+     "spread": 209.6,
      "thirds": [
-      26.5,
-      46.3,
-      33.4
+      26.4,
+      45,
+      31.8
      ],
-     "detailX": 3.1,
-     "detailY": 5.43
+     "detailX": 3.16,
+     "detailY": 5.46
     },
     {
-     "mean": 51.3,
-     "spread": 191.1,
+     "mean": 55.1,
+     "spread": 196.5,
      "thirds": [
-      56.1,
-      51.8,
-      45.9
+      59.5,
+      55.7,
+      49.9
      ],
-     "detailX": 2.98,
-     "detailY": 3.6
+     "detailX": 2.88,
+     "detailY": 3.48
     },
     {
-     "mean": 36.3,
-     "spread": 160.2,
+     "mean": 42.5,
+     "spread": 171,
      "thirds": [
-      26.7,
-      47,
-      35.3
+      32.8,
+      52.8,
+      41.9
      ],
-     "detailX": 2.41,
-     "detailY": 3.02
+     "detailX": 2.33,
+     "detailY": 3.01
     },
     {
-     "mean": 63.3,
-     "spread": 206.5,
+     "mean": 73.2,
+     "spread": 210.6,
      "thirds": [
-      61,
-      61.8,
-      67.1
+      72.1,
+      71.5,
+      76.2
      ],
-     "detailX": 2.13,
-     "detailY": 3.65
+     "detailX": 2.26,
+     "detailY": 3.59
     }
    ]
   }
@@ -684,96 +684,96 @@
  "contrast": {
   "390": {
    "h1": 12.21,
-   "lead": 5.2,
-   "featH3": 12.18,
+   "lead": 5.29,
+   "featH3": 11.86,
    "featP": 8.03,
-   "textH2": 14.9,
-   "textLead": 7.07,
+   "textH2": 12.26,
+   "textLead": 8.25,
    "asideH3": 8.99,
    "asideP": 10.39,
-   "featIcon": 1.22,
+   "featIcon": 1.13,
    "featIcons": [
-    3.8,
-    1.22,
-    5.61,
-    1.84
+    3.81,
+    1.13,
+    4.38,
+    1.37
    ]
   },
   "768": {
    "h1": 13.23,
-   "lead": 6.23,
-   "featH3": 12.16,
-   "featP": 7.98,
-   "textH2": 14.11,
-   "textLead": 6.96,
+   "lead": 8.65,
+   "featH3": 11.99,
+   "featP": 8.05,
+   "textH2": 11.95,
+   "textLead": 8.41,
    "asideH3": 8.99,
    "asideP": 10.39,
-   "featIcon": 1.24,
+   "featIcon": 1.15,
    "featIcons": [
-    3.79,
-    1.24,
-    5.86,
-    1.85
+    3.86,
+    1.15,
+    4.77,
+    1.37
    ]
   },
   "1024": {
    "h1": 14.85,
    "lead": 9.42,
-   "featH3": 7.14,
-   "featP": 6.95,
-   "textH2": 16.23,
-   "textLead": 6,
+   "featH3": 7.15,
+   "featP": 6.87,
+   "textH2": 14.02,
+   "textLead": 8.19,
    "asideH3": 8.99,
    "asideP": 10.39,
-   "featIcon": 1.17,
+   "featIcon": 1.18,
    "featIcons": [
-    2.35,
-    1.38,
-    1.17,
-    1.24
+    2.48,
+    1.3,
+    1.18,
+    1.21
    ]
   },
   "1280": {
    "h1": 11.28,
    "lead": 9.42,
-   "featH3": 9.72,
-   "featP": 7.84,
+   "featH3": 9.57,
+   "featP": 7.85,
    "textH2": 9.89,
    "textLead": 8.72,
    "asideH3": 8.99,
    "asideP": 10.39,
-   "featIcon": 1.15,
+   "featIcon": 1.19,
    "featIcons": [
-    1.15,
-    1.32,
-    6.33,
-    1.61
+    1.19,
+    1.2,
+    4.98,
+    1.21
    ]
   },
   "1440": {
    "h1": 11.96,
    "lead": 9.42,
-   "featH3": 9.72,
-   "featP": 7.84,
+   "featH3": 9.45,
+   "featP": 7.85,
    "textH2": 6.99,
    "textLead": 9.44,
    "asideH3": 8.99,
    "asideP": 10.39,
-   "featIcon": 1.15,
+   "featIcon": 1.19,
    "featIcons": [
-    1.15,
-    1.32,
-    6.24,
-    1.61
+    1.19,
+    1.2,
+    4.98,
+    1.21
    ]
   }
  },
  "weights": {
-  "390": 411,
-  "768": 532,
-  "1024": 530,
-  "1280": 558,
-  "1440": 558
+  "390": 391,
+  "768": 529,
+  "1024": 533,
+  "1280": 556,
+  "1440": 556
  },
  "page": {},
  "scroll": {
@@ -790,11 +790,11 @@
     "col": "rgb(244, 239, 230)"
    },
    "lead": {
-    "bg": 70,
+    "bg": 69,
     "col": "rgb(183, 196, 187)"
    },
    "featH3": {
-    "bg": 44,
+    "bg": 46,
     "col": "rgb(244, 239, 230)"
    },
    "featP": {
@@ -802,11 +802,11 @@
     "col": "rgb(183, 196, 187)"
    },
    "textH2": {
-    "bg": 28,
+    "bg": 44,
     "col": "rgb(244, 239, 230)"
    },
    "textLead": {
-    "bg": 50,
+    "bg": 39,
     "col": "rgb(183, 196, 187)"
    },
    "asideH3": {
@@ -826,23 +826,23 @@
     "col": "rgb(244, 239, 230)"
    },
    "lead": {
-    "bg": 59,
+    "bg": 36,
     "col": "rgb(183, 196, 187)"
    },
    "featH3": {
-    "bg": 44,
+    "bg": 45,
     "col": "rgb(244, 239, 230)"
    },
    "featP": {
-    "bg": 42,
+    "bg": 41,
     "col": "rgb(183, 196, 187)"
    },
    "textH2": {
-    "bg": 33,
+    "bg": 45,
     "col": "rgb(244, 239, 230)"
    },
    "textLead": {
-    "bg": 51,
+    "bg": 38,
     "col": "rgb(183, 196, 187)"
    },
    "asideH3": {
@@ -870,15 +870,15 @@
     "col": "rgb(244, 239, 230)"
    },
    "featP": {
-    "bg": 51,
+    "bg": 52,
     "col": "rgb(183, 196, 187)"
    },
    "textH2": {
-    "bg": 19,
+    "bg": 33,
     "col": "rgb(244, 239, 230)"
    },
    "textLead": {
-    "bg": 61,
+    "bg": 40,
     "col": "rgb(183, 196, 187)"
    },
    "asideH3": {
@@ -902,7 +902,7 @@
     "col": "rgb(183, 196, 187)"
    },
    "featH3": {
-    "bg": 59,
+    "bg": 60,
     "col": "rgb(244, 239, 230)"
    },
    "featP": {
@@ -938,7 +938,7 @@
     "col": "rgb(183, 196, 187)"
    },
    "featH3": {
-    "bg": 59,
+    "bg": 61,
     "col": "rgb(244, 239, 230)"
    },
    "featP": {

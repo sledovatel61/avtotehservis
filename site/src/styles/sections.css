@@ -360,7 +360,7 @@ section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
 .abh-bg img{object-position:74% 45%;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,transparent 22%,rgba(0,0,0,.55) 40%,#000 60%);
   mask-image:linear-gradient(90deg,transparent 0,transparent 22%,rgba(0,0,0,.55) 40%,#000 60%)}
-@media (max-width:900px){.abh-bg img{object-position:34% 44%;
+@media (max-width:900px){.abh-bg img{object-position:38% 52%;
   -webkit-mask-image:none;mask-image:none}
   .abh-bg::after{background:
     radial-gradient(78% 46% at 82% 10%,rgba(78,158,116,.20) 0%,rgba(78,158,116,.06) 46%,rgba(78,158,116,0) 72%),
