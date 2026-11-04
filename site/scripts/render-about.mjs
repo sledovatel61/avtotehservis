@@ -216,11 +216,16 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   const relRGB = ([r, g, b]) => 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b);
   const parseRGB = (c) => { const m = String(c).match(/\d+(\.\d+)?/g) || ['255', '255', '255']; return m.slice(0, 3).map(Number); };
   const mk = (v) => relLum(v, v, v);
+  /* ПРИЁМКА КРУГА 23 (ревью A6, major 1 — мой же баг круга 22). `L` — яркость ЦВЕТА ТЕКСТА.
+     Было `L > 0.25`: у светлого ivory L≈0,87, флаг «тёмный текст» поднимался, и worst() брал
+     МИНИМУМ яркости подложки — то есть для светлого текста ЛУЧШИЙ случай (чем темнее подложка,
+     тем выше контраст). Гейт рапортовал h1 17,41 при фактических 2,07.
+     Теперь «тёмный текст» = L < 0.25; у светлого текста флаг снят → worst() берёт МАКСИМУМ. */
   const ctr = (zone) => {
     const L = relRGB(parseRGB(zone.col));
-    const darkText = L > 0.25;                 /* тёмный текст на светлой подложке */
+    const darkText = L < 0.25;
     const bg = worst(zone, [], darkText);
-    return { v: +ratio(L, mk(bg)).toFixed(2), bg: Math.round(bg), col: zone.col };
+    return { v: +ratio(L, mk(bg)).toFixed(2), bg: Math.round(bg), col: zone.col, dark: darkText };
   };
   /* круг 23: иконка .feat-ic — латунный штрих по худшему (самому светлому) пикселю
      фото+градиента под боксом иконки; чипа-подложки в текущем CSS нет */

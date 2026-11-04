@@ -788,13 +788,13 @@ async function main() {
   const scMedia = join(R23, 'scene-media.jpg'), scFeats = join(R23, 'scene-feats.jpg');
   const headBg = await frame(sharp(scHead).extract({ left: 0, top: 40, width: 1376, height: 688 }), 0, 0, join(R23, 'bg-head.jpg'), 1.3, 0.1);
   const headBgM = await frame(sharp(scHead).extract({ left: 376, top: 0, width: 624, height: 768 })
-    .resize(780, 960, { fit: 'cover' }), 0, 0, join(R23, 'bg-head-m.jpg'), 1.3, 0.1);
+    .resize(780, 960, { fit: 'cover' }), 0, 0, join(R23, 'bg-head-m.jpg'), 1.9, 0.1);
   const textBg = await frame(sharp(scText).extract({ left: 154, top: 0, width: 1068, height: 768 }), 0, 0, join(R23, 'bg-text.jpg'));
   /* текстовый фон на 641…1180 px: слот портретный (1024×1504), мастер горизонтальный —
      кроп 527×768 тянется до 700×1020 (scale ≤1,48) с аккуратным шарпеном: lapvar ≥200 (§A3) */
   const textBgM = await frame(sharp(scText).extract({ left: 550, top: 0, width: 527, height: 768 })
     .resize(700, 1020, { fit: 'cover' }).sharpen({ sigma: 1.1, m1: 0.9, m2: 0.4 }), 0, 0, join(R23, 'bg-text-m.jpg'));
-  const featsBg = await frame(sharp(scFeats).extract({ left: 5, top: 0, width: 1365, height: 768 }), 0, 0, join(R23, 'bg-feats.jpg'), 1.34, 0.08);
+  const featsBg = await frame(sharp(scFeats).extract({ left: 5, top: 0, width: 1365, height: 768 }), 0, 0, join(R23, 'bg-feats.jpg'), 1.46, 0.08);
   const featsBgM = await frame(sharp(scFeats).extract({ left: 490, top: 0, width: 395, height: 768 })
     .resize(720, 1400, { fit: 'cover' }), 0, 0, join(R23, 'bg-feats-m.jpg'), 1.34, 0.08);
   /* §2.5 check-about-bg: полоса текста карточки (y 49…72 %) должна быть темнее верха —
@@ -816,13 +816,21 @@ async function main() {
   /* карточки: лифты подгоняются под mean 34…96 и попарную Δ ≥ 6 замером render-about */
   /* f4: brightness .93 из CSS-фильтра приёмки r22 перенесён в файл (антиобход A6 запрещает
      filter на слое); (v+110)×0,93 = v×0,93+102,3 — modulate до лифта, лифт 102 */
-  const LIFTS = { 1: 7, 2: 41, 3: 8, 4: 102 };
+  const LIFTS = { 1: 22, 2: 58, 3: 18, 4: 110 };
+  /* приёмка r23: экспозиция кадров 1 и 3 жила в CSS-фильтре слоя (обходит гейты) —
+     перенесена в файл; множитель применяется после lift22, как это делал filter:brightness() */
+  const EXPOS = { 1: 1.05, 3: 1.00 };
   const cardSrc = { 1: 'card-f1.jpg', 2: 'card-f2.jpg', 3: 'card-f3.jpg', 4: 'card-f4.jpg' };
   const cardM = {};
   for (const i of [1, 2, 3, 4]) {
     let pipe = sharp(join(R23, cardSrc[i])).resize(640, 480, { fit: 'cover' });
     if (i === 4) pipe = pipe.modulate({ brightness: 0.93 });
-    const lifted = await lift22(pipe, LIFTS[i], join(R23, `f${i}-lift.jpg`));
+    let lifted = await lift22(pipe, LIFTS[i], join(R23, `f${i}-lift.jpg`));
+    if (EXPOS[i]) {
+      const t = join(R23, `f${i}-exp.jpg`);
+      await sharp(lifted).modulate({ brightness: EXPOS[i] }).jpeg({ quality: 95 }).toFile(t + '.tmp');
+      renameSync(t + '.tmp', t); lifted = t;
+    }
     if (i === 1) cardM[i] = await bandShade(sharp(lifted), join(R23, `f${i}.jpg`));
     else { renameSync(lifted, join(R23, `f${i}.jpg`)); cardM[i] = join(R23, `f${i}.jpg`); }
   }
