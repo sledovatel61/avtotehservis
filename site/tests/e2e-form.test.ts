@@ -139,7 +139,7 @@ test('визард: 5 экранов до успеха с серверным т�
   // шаг 4
   $('#wiz-next', doc)?.click(); // пусто — не пускает
   assert.equal($('#wiz-step-label', doc)?.textContent, 'Контакты', 'без данных шаг не проходит');
-  assert.ok(($('#f-name', doc)?.closest('.field')?.textContent ?? '').includes('Укажите имя'), 'ошибка под полем имени');
+  assert.ok(($('#f-name', doc)?.closest('.field')?.textContent ?? '').includes('Заполните это поле.'), 'ошибка под полем имени');
   setVal($('#f-name', doc), 'Анна');
   setVal($('#f-phone', doc), '89289065700');
   assert.equal(($('#f-phone', doc) as HTMLInputElement).value, '+7 (928) 906-57-00', 'маска телефона');
@@ -171,8 +171,8 @@ test('визард: 5 экранов до успеха с серверным т�
 });
 
 test('визард: prefill ?s=, «не знаю», ASAP, ошибка телефона с сервера не теряет данные', async () => {
-  const { doc } = await loadWizard('?s=elektrika');
-  const chip = $$('#svc-chips input[name="svc"]', doc).find((i) => (i as HTMLInputElement).value === 'elektrika') as HTMLInputElement | undefined;
+  const { doc } = await loadWizard('?s=diagnostika');
+  const chip = $$('#svc-chips input[name="svc"]', doc).find((i) => (i as HTMLInputElement).value === 'diagnostika') as HTMLInputElement | undefined;
   assert.ok(chip?.checked, 'услуга из ?s= предвыбрана');
   setVal($('#f-brand', doc), 'Kia Rio');
   $('#wiz-next', doc)?.click();

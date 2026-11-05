@@ -4,9 +4,12 @@ import { getSettings } from '../../server/settings.ts';
 import { getService, otherServices } from '../../server/services.ts';
 import { mdToHtml } from '../../server/markdown.ts';
 import { svcImgKey } from '../../server/svc-img.ts';
+import { SVC_ALIASES, PRICE_ANCHOR } from '../../server/svc-aliases.ts';
 
 const S = getSettings();
 const { slug } = Astro.params;
+/* круг 26: старые адреса расформированных услуг уходят 301 на преемников */
+if (slug && SVC_ALIASES[slug]) return Astro.redirect('/services/' + SVC_ALIASES[slug], 301);
 const svc = slug ? getService(slug) : undefined;
 if (!svc) Astro.response.status = 404;
 const others = svc ? otherServices(svc.slug, 3) : [];
@@ -46,6 +49,7 @@ const jsonLd = svc ? [
     <div class="container">
       <span class="eyebrow" id="svc-tag">{svc.tag ?? svc.grp}</span>
       <h1 id="svc-title">{svc.title}</h1>
+      {svc.price_from ? <p class="svc-price svc-price--head" id="svc-price">{svc.price_from} — за работу</p> : null}
       <p class="lead" id="svc-lead">{svc.short}</p>
     </div>
   </section>
@@ -61,8 +65,8 @@ const jsonLd = svc ? [
         </div>
         <div id="svc-body" set:html={mdToHtml(svc.description ?? '')} />
         <div class="price-note">
-          <b>Стоимость — после осмотра</b>
-          <p>Прайса нет: цена зависит от состояния автомобиля и объёма работ. Сначала осмотр и смета, потом — решение владельца. Цифры называем до начала работ.</p>
+          <b>Цены — за работу</b>
+          <p>Запчасти и расходники в стоимость не входят. Диапазон означает разную сложность и крепление на разных машинах: точную сумму называем до начала работ, после осмотра. Полный прайс — в разделе <a href={`/prices#${PRICE_ANCHOR[svc.slug] ?? 'to'}`} class="u-brass">«Прайс»</a>.</p>
         </div>
       </div>
       <aside class="svc-side reveal" data-d="1">

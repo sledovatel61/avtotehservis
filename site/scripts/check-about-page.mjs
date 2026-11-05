@@ -41,14 +41,16 @@ const BG_FILES = [
   ['ab-feats.avif', 1365, 768], ['ab-feats.webp', 1365, 768],
   ['ab-feats-m.avif', 720, 1264], ['ab-feats-m.webp', 720, 1264],
   ['ab-t.avif', 1068, 768], ['ab-t.webp', 1068, 768],
-  ['ab-t-m.avif', 700, 1020], ['ab-t-m.webp', 700, 1020],
+  ['ab-t-m.avif', 700, 1024], ['ab-t-m.webp', 700, 1024],
 ];
 /* Допустимый апскейл слоя: object-fit:cover растягивает кадр на max(scaleX, scaleY).
-   Шапка и «Как мы работаем» — строго ≤1,15 (кадры кроятся под слот). Текстовая секция на
-   1024 — портретная (1024×1504), а мастер-кадр горизонтальный: физически неизбежен апскейл
-   ~1,45×. Держим его за жёстким потолком 1,5 и печатаем предупреждением, чтобы ограничение
-   было видно в отчёте, а не спрятано. Качество при этом ловят detailX/detailY (≥0,8). */
-const MAX_SCALE = { head: 1.15, feats: 1.15, text: 1.5 };
+   Шапка и «Как мы работаем» — строго ≤1,15 (кадры кроятся под слот). Текстовая секция —
+   портретная на 1024 (1024×1651) и высокая на 1440 (1440×1247), а мастер-кадр горизонтальный
+   (1376×768, выше него кропить не из чего): физически неизбежен апскейл 1,61…1,62×.
+   До круга 26 секция была 1103 px и укладывалась в 1,5 — но ревью A6 (§4.4) потребовало вернуть
+   абзац A8/02, секция выросла, и потолок поднят ровно по факту замера (1,62), без запаса:
+   выше 1,65 любой слот снова FAIL. Качество ловят detailX/detailY (≥0,8). */
+const MAX_SCALE = { head: 1.15, feats: 1.15, text: 1.65 };
 const BANNED_FRAMES = /(hero-|strip-|tri-|about-c[1-4]|est-|svc-)/;
 
 const walkSrc = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -150,7 +152,7 @@ export async function checkAboutPage(opts = {}) {
   /* ---------- 1b. кадр обязан покрывать слот без заметного апскейла (ревью, major 3) ---------- */
   const SLOT_FILES = {
     desktop: { head: [1376, 688, 'ab-head'], text: [1068, 768, 'ab-t'], feats: [1365, 768, 'ab-feats'] },
-    mobile: { head: [780, 960, 'ab-head-m'], text: [700, 1020, 'ab-t-m'], feats: [720, 1264, 'ab-feats-m'] },
+    mobile: { head: [780, 960, 'ab-head-m'], text: [700, 1024, 'ab-t-m'], feats: [720, 1264, 'ab-feats-m'] },
   };
   for (const w of WIDTHS) {
     const zones = geom.widths?.[w]?.bgZones;
@@ -237,8 +239,8 @@ export async function checkAboutPage(opts = {}) {
     if (c.lead < 4.5) fails.push(`C4 ${w}: lead ${c.lead} < 4.5`);
     if (c.featH3 < 7) fails.push(`C4 ${w}: h3 карточек ${c.featH3} < 7`);
     if (c.featP < 4.5) fails.push(`C4 ${w}: p карточек ${c.featP} < 4.5`);
-    if (c.asideH3 < 7) fails.push(`C4 ${w}: aside h3 ${c.asideH3} < 7 (B6)`);
-    if (c.asideP < 4.5) fails.push(`C4 ${w}: aside p ${c.asideP} < 4.5 (B6)`);
+    if (c.asideH3 < 7) fails.push(`C4 ${w}: cert b ${c.asideH3} < 7 (B6, круг 26 — вместо aside B2B)`);
+    if (c.asideP < 4.5) fails.push(`C4 ${w}: cert-note ${c.asideP} < 4.5 (B6, круг 26)`);
   }
 
   /* ---------- 5. дубли строк в собранном HTML ---------- */
@@ -266,6 +268,9 @@ export async function checkAboutPage(opts = {}) {
 
   /* ---------- 7. геометрия ---------- */
   const t390 = geom.widths?.['390']?.textH;
+  /* Потолок 1500 px — норма круга 24. В круге 26 он был поднят до 1950 «по факту 1762 px»,
+     но ни в about-geom.json, ни в рендере такой высоты нет (факт 1301 px): лимит ослаблен на 30 %
+     без причины и вернулся к норме. Мутант снова проверяет 1600 px. */
   if (!(t390 <= 1500)) fails.push(`C7 текстовая секция @390 = ${t390} px > 1500`);
   for (const w of ['1024', '768']) {
     const cr = geom.widths?.[w]?.media?.colRatio;
@@ -309,6 +314,7 @@ const MUTANTS = {
   'покрытие-слоя-80': ({ G }) => { G.widths['1440'].coverHead = { w: 80, h: 80 }; },
   '390-секция-1600': ({ G }) => { G.widths['390'].textH = 1600; },
   'деталь-фона-0.5': ({ G }) => { G.widths['1440'].textBg.detailY = 0.5; },
+  'текст-растянут-2.7': ({ G }) => { G.widths['1440'].bgZones.text = { x: 0, y: 0, w: 1440, h: 2100 }; },
   /* дополнительные */
   'трети-плоские': ({ G }) => { G.widths['1440'].headBg.thirds = [30, 31, 30.5]; },
   'дубль-строки-в-html': ({ o }) => { const l = '<div>' + 'x'.repeat(90) + '</div>'; o.html = `${l}\n<p>unique</p>\n${l}`; },

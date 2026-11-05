@@ -31,7 +31,9 @@ export interface Props {
 const { page, title, description, jsonLd, noindex = false, ogType = 'website', publishedTime } = Astro.props;
 const S = getSettings();
 const siteOrigin = Astro.site?.origin ?? Astro.url.origin;
-const canonical = new URL(Astro.url.pathname + Astro.url.search, siteOrigin).href;
+/* круг 26 (a9/03-structure §5.1): canonical без query-строки — фильтры /news?cat=… и пагинация
+   не должны объявлять себя отдельными страницами */
+const canonical = new URL(Astro.url.pathname, siteOrigin).href;
 const ogImage = new URL('/img/og.png', siteOrigin).href;
 const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---

@@ -36,7 +36,7 @@ await new Promise(r => server.listen(4323, '127.0.0.1', r));
 
 const browser = await puppeteer.launch({ executablePath: await chromium.executablePath(),
   args: [...chromium.args, '--no-sandbox'], headless: 'shell',
-  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/al2023-libs/lib:/tmp/al2-libs/lib:${process.env.LD_LIBRARY_PATH || ''}` },
+  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/nss-libs:/tmp/al2023-libs/lib:/tmp/al2-libs/lib:${process.env.LD_LIBRARY_PATH || ''}` },
   protocolTimeout: 600000 });
 
 const LUM = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -111,7 +111,7 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   await new Promise(r => setTimeout(r, 200));
   await page.evaluate(() => {
     const st = document.createElement('style');
-    st.textContent = 'section[aria-labelledby="svc-h"] h2,section[aria-labelledby="svc-h"] .eyebrow,section[aria-labelledby="svc-h"] .svc-tag,section[aria-labelledby="svc-h"] .svc-body h3,section[aria-labelledby="svc-h"] .svc-body p,section[aria-labelledby="svc-h"] .link-more,section[aria-labelledby="svc-h"] .slider-hint{visibility:hidden !important}';
+    st.textContent = 'section[aria-labelledby="svc-h"] h2,section[aria-labelledby="svc-h"] .eyebrow,section[aria-labelledby="svc-h"] .svc-tag,section[aria-labelledby="svc-h"] .svc-body h3,section[aria-labelledby="svc-h"] .svc-body p,section[aria-labelledby="svc-h"] .link-more,section[aria-labelledby="svc-h"] .slider-hint,section[aria-labelledby="svc-h"] .svc-price,section[aria-labelledby="svc-h"] .svc-intro,section[aria-labelledby="svc-h"] .btn{visibility:hidden !important}';
     document.head.appendChild(st);
   });
   await new Promise(r => setTimeout(r, 120));

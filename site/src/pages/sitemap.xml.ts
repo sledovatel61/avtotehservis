@@ -8,7 +8,7 @@ function esc(s: string): string {
 
 export const GET: APIRoute = ({ site }) => {
   const base = (site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
-  const statics = ['/', '/about', '/services', '/appointment', '/news', '/contacts', '/privacy'];
+  const statics = ['/', '/about', '/services', '/prices', '/garantii', '/appointment', '/news', '/contacts', '/privacy'];
   const urls: { loc: string; lastmod?: string }[] = statics.map((p) => ({ loc: base + p }));
   try {
     for (const s of listCatalogServices()) urls.push({ loc: `${base}/services/${s.slug}` });
