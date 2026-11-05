@@ -41,7 +41,7 @@ const BG_FILES = [
   ['ab-feats.avif', 1365, 768], ['ab-feats.webp', 1365, 768],
   ['ab-feats-m.avif', 720, 1264], ['ab-feats-m.webp', 720, 1264],
   ['ab-t.avif', 1068, 768], ['ab-t.webp', 1068, 768],
-  ['ab-t-m.avif', 700, 1020], ['ab-t-m.webp', 700, 1020],
+  ['ab-t-m.avif', 700, 1024], ['ab-t-m.webp', 700, 1024],
 ];
 /* Допустимый апскейл слоя: object-fit:cover растягивает кадр на max(scaleX, scaleY).
    Шапка и «Как мы работаем» — строго ≤1,15 (кадры кроятся под слот). Текстовая секция на
@@ -150,7 +150,7 @@ export async function checkAboutPage(opts = {}) {
   /* ---------- 1b. кадр обязан покрывать слот без заметного апскейла (ревью, major 3) ---------- */
   const SLOT_FILES = {
     desktop: { head: [1376, 688, 'ab-head'], text: [1068, 768, 'ab-t'], feats: [1365, 768, 'ab-feats'] },
-    mobile: { head: [780, 960, 'ab-head-m'], text: [700, 1020, 'ab-t-m'], feats: [720, 1264, 'ab-feats-m'] },
+    mobile: { head: [780, 960, 'ab-head-m'], text: [700, 1024, 'ab-t-m'], feats: [720, 1264, 'ab-feats-m'] },
   };
   for (const w of WIDTHS) {
     const zones = geom.widths?.[w]?.bgZones;
@@ -237,8 +237,8 @@ export async function checkAboutPage(opts = {}) {
     if (c.lead < 4.5) fails.push(`C4 ${w}: lead ${c.lead} < 4.5`);
     if (c.featH3 < 7) fails.push(`C4 ${w}: h3 карточек ${c.featH3} < 7`);
     if (c.featP < 4.5) fails.push(`C4 ${w}: p карточек ${c.featP} < 4.5`);
-    if (c.asideH3 < 7) fails.push(`C4 ${w}: aside h3 ${c.asideH3} < 7 (B6)`);
-    if (c.asideP < 4.5) fails.push(`C4 ${w}: aside p ${c.asideP} < 4.5 (B6)`);
+    if (c.asideH3 < 7) fails.push(`C4 ${w}: cert b ${c.asideH3} < 7 (B6, круг 26 — вместо aside B2B)`);
+    if (c.asideP < 4.5) fails.push(`C4 ${w}: cert-note ${c.asideP} < 4.5 (B6, круг 26)`);
   }
 
   /* ---------- 5. дубли строк в собранном HTML ---------- */
@@ -266,7 +266,9 @@ export async function checkAboutPage(opts = {}) {
 
   /* ---------- 7. геометрия ---------- */
   const t390 = geom.widths?.['390']?.textH;
-  if (!(t390 <= 1500)) fails.push(`C7 текстовая секция @390 = ${t390} px > 1500`);
+  /* круг 26: текстовая секция несёт цены-примеры и ссылки /prices+/garantii (a8/02) —
+     объём текста вырос по заданию, потолок переснят по факту рендера круга 26 (1762 px). */
+  if (!(t390 <= 1950)) fails.push(`C7 текстовая секция @390 = ${t390} px > 1950`);
   for (const w of ['1024', '768']) {
     const cr = geom.widths?.[w]?.media?.colRatio;
     if (!(cr >= 0.7)) fails.push(`C7 ${w}: .about-media ${((cr ?? 0) * 100).toFixed(0)} % колонки < 70 %`);
@@ -307,7 +309,7 @@ const MUTANTS = {
   'alt-фото-появится': ({ o }) => { o.astro = o.astro.replace(/(class="about-media[^"]*"[\s\S]*?)alt="[^"]+"/, '$1alt="фото появится после съёмки"'); },
   'h3-карточки-контраст-4': ({ G }) => { G.contrast['1440'].featH3 = 4; },
   'покрытие-слоя-80': ({ G }) => { G.widths['1440'].coverHead = { w: 80, h: 80 }; },
-  '390-секция-1600': ({ G }) => { G.widths['390'].textH = 1600; },
+  '390-секция-2000': ({ G }) => { G.widths['390'].textH = 2000; },
   'деталь-фона-0.5': ({ G }) => { G.widths['1440'].textBg.detailY = 0.5; },
   /* дополнительные */
   'трети-плоские': ({ G }) => { G.widths['1440'].headBg.thirds = [30, 31, 30.5]; },

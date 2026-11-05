@@ -38,7 +38,7 @@ await new Promise(r => server.listen(4326, '127.0.0.1', r));
 
 const browser = await puppeteer.launch({ executablePath: await chromium.executablePath(),
   args: [...chromium.args, '--no-sandbox'], headless: 'shell',
-  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/al2023-libs/lib:/tmp/al2-libs/lib:${process.env.LD_LIBRARY_PATH || ''}` },
+  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/nss-libs:/tmp/al2023-libs/lib:/tmp/al2-libs/lib:${process.env.LD_LIBRARY_PATH || ''}` },
   protocolTimeout: 600000 });
 
 const LUM = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -117,7 +117,7 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
   await page.screenshot({ path: join(ASSETS, `about-${w}.png`), fullPage: true });
   if (w === 1440 || w === 390) {
     const SECS = [['head', '.page-head'], ['text', 'section[aria-labelledby="ab-text-h"]'],
-      ['feats', '.ab-feats'], ['b2b', 'section[aria-labelledby="ab-b2b-h"]'],
+      ['feats', '.ab-feats'], ['certs', 'section[aria-labelledby="ab-cert-h"]'],
       ['cases', 'section[aria-labelledby="ab-gal-h"]'], ['reviews', 'section[aria-labelledby="ab-rev-h"]'],
       ['brands', 'section[aria-labelledby="brands-h"]']];
     for (const [name, sel] of SECS) {
@@ -142,6 +142,7 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
       '.page-head .eyebrow,.page-head h1,.page-head .lead',
       '.ab-feats .eyebrow,.ab-feats h2,.ab-feats .feat h3,.ab-feats .feat p,.ab-feats .feat-ic',
       'section[aria-labelledby="ab-text-h"] .container',
+      'section[aria-labelledby="ab-cert-h"] .eyebrow,section[aria-labelledby="ab-cert-h"] h2,section[aria-labelledby="ab-cert-h"] .lead,.certs figcaption,.cert-note',
       'section[aria-labelledby="ab-b2b-h"] .container > div',
       '.est-aside > *:not(.est-aside-bg)',
     ].join(',') + '{visibility:hidden !important}';
@@ -206,7 +207,9 @@ for (const w of [1440, 1280, 1024, 768, 390]) {
     return { h1: z(h.querySelector('h1')), lead: z(h.querySelector('.lead')),
       fh3: z(document.querySelector('.ab-feats .feat h3')), fp: z(document.querySelector('.ab-feats .feat p')),
       th2: z(t.querySelector('h2')), tlead: z(t.querySelector('.lead')),
-      ash3: z(document.querySelector('.est-aside h3')), asp: z(document.querySelector('.est-aside p')),
+      /* круг 26: B2B-секция с .est-aside удалена по заданию №30 — контраст C4 теперь
+         измеряется на блоке «Сертификаты» (figcaption b и .cert-note на светлом фоне). */
+      ash3: z(document.querySelector('.cert figcaption b')), asp: z(document.querySelector('.cert-note')),
       fics: [...document.querySelectorAll('.ab-feats .feat-ic')].map((e) => {
         const b = box(e); b.col = getComputedStyle(e.querySelector('svg')).stroke; return b; }) }; });
   /* Худшая подложка зависит от направления контраста: для СВЕТЛОГО текста это самый

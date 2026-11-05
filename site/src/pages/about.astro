@@ -7,10 +7,10 @@ import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
 const CASE_COVERS: Record<string, { avif: string; webp: string; alt: string }> = {
   'case-1': { avif: '/img/ab-case-1-640.avif', webp: '/img/ab-case-1-640.webp', alt: 'Иллюстрация: боковой порез шины на монтажном станке' },
   'case-2': { avif: '/img/ab-case-2-640.avif', webp: '/img/ab-case-2-640.webp', alt: 'Иллюстрация: грыжа на боковине шины перед вулканизацией' },
-  'case-3': { avif: '/img/ab-case-3-640.avif', webp: '/img/ab-case-3-640.webp', alt: 'Иллюстрация: литой диск на станке правки' },
+  'case-3': { avif: '/img/ab-case-3-640.avif', webp: '/img/ab-case-3-640.webp', alt: 'Иллюстрация: пример работы сервиса — подвеска и колесо' },
   'case-4': { avif: '/img/ab-case-4-640.avif', webp: '/img/ab-case-4-640.webp', alt: 'Иллюстрация: суппорт и тормозные колодки при замене' },
   'case-5': { avif: '/img/ab-case-5-640.avif', webp: '/img/ab-case-5-640.webp', alt: 'Иллюстрация: слив отработанного масла и фильтр при ТО' },
-  'case-6': { avif: '/img/ab-case-6-640.avif', webp: '/img/ab-case-6-640.webp', alt: 'Иллюстрация: проём лобового стекла с герметиком' },
+  'case-6': { avif: '/img/ab-case-6-640.avif', webp: '/img/ab-case-6-640.webp', alt: 'Иллюстрация: пример работы сервиса — узлы трансмиссии' },
 };
 import { fmtDateRu, plural } from '../server/format.ts';
 
@@ -29,8 +29,8 @@ const jsonLd = {
 ---
 <Base
   page="about"
-  title="О компании — АвтоТехСервис, Ростов-на-Дону"
-  description="Автосервис и шиномонтаж на Западном в Ростове-на-Дону: ул. Портовая, 439. Как мы работаем: диагностика, смета до ремонта, согласование, фотоотчёт."
+  title="Как работают мастера АвтоТехСервиса — Портовая, 439"
+  description="Шесть мастеров, понятный порядок работ и сертификаты четырёх брендов. АвтоТехСервис на Портовой, 439, Ростов-на-Дону."
   jsonLd={jsonLd}
 >
 
@@ -46,8 +46,8 @@ const jsonLd = {
   </div>
   <div class="container">
     <span class="eyebrow">О компании</span>
-    <h1>Сервис, где смета приходит раньше счёта</h1>
-    <p class="lead">«АвтоТехСервис» — автосервис и шиномонтаж в Железнодорожном районе Ростова-на-Дону. Мы работаем с легковыми и коммерческими автомобилями и держимся простого правила: владелец машины должен понимать, за что платит, — до начала работ.</p>
+    <h1>Шесть мастеров и понятный порядок работ</h1>
+    <p class="lead">«АвтоТехСервис» — автосервис и шиномонтаж в Ростове-на-Дону: улица Портовая, 439, Западный жилой массив. Работаем ежедневно, без выходных, с 9:00 до 19:00.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="ab-text-h">
@@ -61,20 +61,20 @@ const jsonLd = {
   </div>
   <div class="container about-grid">
     <div class="reveal">
-      <h2 id="ab-text-h">Кто мы и где нас найти</h2>
-      <p class="lead">Сервис находится на улице Портовой, 439 — это Западный жилой массив, примерно 330 метров от остановки «3-й Поселковый», рядом с продуктовой базой «Бум». Заезжать удобно и со стороны Портовой, и из жилых кварталов: не нужно ехать через центр.</p>
-      <p class="lead u-mt14">Мы открыты ежедневно с 9:00 до 19:00. Формально сервис работает как {S.legal.name} — все документы, заказ-наряды и гарантийные обязательства оформляются от индивидуального предпринимателя с ИНН {S.legal.inn}.</p>
-      <h2>Что мы делаем</h2>
-      <p class="lead">В сети точка известна прежде всего как шиномонтаж, но по факту сервис закрывает почти весь цикл обслуживания автомобиля: колёса и диски, ТО и замена масла, ходовая и тормоза, рулевые рейки, развал-схождение, двигатели, АКПП и МКПП, дизельные форсунки, автоэлектрика, кондиционеры и замена лобовых стёкол. Полный перечень — в разделе <a href="/services" class="u-brass">«Услуги»</a>.</p>
+      <h2 id="ab-text-h">АвтоТехСервис на Портовой, 439</h2>
+      <p class="lead">«АвтоТехСервис» — автосервис и шиномонтаж в Ростове-на-Дону по адресу: улица Портовая, 439. Мы на Западном жилом массиве, в Железнодорожном районе. От остановки «3-й Поселковый» до нас около 330 метров; рядом находится продуктовая база «Бум». Работаем ежедневно, без выходных, с 9:00 до 19:00.</p>
+      <h2>Сначала осмотр, затем решение</h2>
+      <p class="lead">Уточняем, что беспокоит, осматриваем автомобиль или предлагаем диагностику. Диагностика ходовой — 500 ₽, компьютерная — 800 ₽. Объясняем результат и называем стоимость работ до начала.</p>
       <details class="ab-acc">
-        <summary><h2>Как мы работаем</h2></summary>
-        <p class="lead">Сначала диагностика и смета, потом ремонт. Мы показываем неисправность на детали, называем перечень работ и стоимость, и начинаем только после согласования. Если что-то может подождать — скажем прямо. На выполненные работы действует гарантия: условия и срок фиксируются в заказ-наряде.</p>
+        <summary><h2>Сервис, в котором всё проговаривают</h2></summary>
+        <p class="lead">Вы описываете проблему, мастер осматривает автомобиль, мы сообщаем результаты и смету. Если обнаружится дополнительная работа, сначала объясним и согласуем её. После ремонта выдаём автомобиль, рассказываем о выполненном и оформляем заказ-наряд. Отделяем необходимое сейчас от того, что можно запланировать. По возможности показываем снятую деталь и объясняем, почему нужна замена. Если причина неочевидна, предлагаем проверку, а не делаем вывод по одному описанию.</p>
       </details>
       <div class="facts">
         <div class="fact"><b>{S.address_full}</b><span>ост. «3-й Поселковый» ~330 м · база «Бум» рядом</span></div>
         <div class="fact"><b>{S.hours}</b><span>без выходных</span></div>
         <div class="fact"><b>ИП Яковенко П. И.</b><span>ИНН {S.legal.inn} · ОГРНИП {S.legal.ogrnip}</span></div>
         <div class="fact"><b>Координаты</b><span>47.193068, 39.648295</span></div>
+        <div class="fact"><b>Шесть мастеров посменно</b><span>состав смены зависит от дня</span></div>
       </div>
     </div>
     <figure class="about-media reveal" data-d="1">
@@ -102,33 +102,56 @@ const jsonLd = {
       <h2 id="ab-feats-h">Четыре причины записаться именно сюда</h2>
     </div>
     <div class="feats u-mt0">
-      <div class="feat reveal" data-d="0"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f1-640.avif"><source type="image/webp" srcset="/img/ab-f1-640.webp"><img src="/img/ab-f1-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><h3>Смета до начала работ</h3><p>Перечень и стоимость — до первого оборота ключа. Согласовали — работаем.</p></div>
-      <div class="feat reveal" data-d="1"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f2-640.avif"><source type="image/webp" srcset="/img/ab-f2-640.webp"><img src="/img/ab-f2-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><h3>Гарантия на работы</h3><p>Гарантия есть; условия и срок фиксируются в заказ-наряде по каждой операции.</p></div>
-      <div class="feat reveal" data-d="2"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f3-640.avif"><source type="image/webp" srcset="/img/ab-f3-640.webp"><img src="/img/ab-f3-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><h3>Работаем без выходных</h3><p>Один график всю неделю — удобно планировать визит до или после работы.</p></div>
-      <div class="feat reveal" data-d="3"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f4-640.avif"><source type="image/webp" srcset="/img/ab-f4-640.webp"><img src="/img/ab-f4-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span><h3>Легковые и коммерческие</h3><p>Грузовой шиномонтаж и обслуживание парков: «Газели», маршрутки, спецтехника.</p></div>
+      <div class="feat reveal" data-d="0"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f1-640.avif"><source type="image/webp" srcset="/img/ab-f1-640.webp"><img src="/img/ab-f1-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><div class="feat-txt"><h3>Цена известна до работ</h3><p>Сначала осматриваем автомобиль и согласуем стоимость. Приступаем только к тому объёму, который вы подтвердили.</p></div></div>
+      <div class="feat reveal" data-d="1"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f2-640.avif"><source type="image/webp" srcset="/img/ab-f2-640.webp"><img src="/img/ab-f2-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><div class="feat-txt"><h3>Официальная точка продаж четырёх брендов</h3><p>Сертификаты LYNXauto, SUFIX, KORSON и NGN действуют до 23.06.2027. Документы подтверждают официальный статус точки продаж.</p></div></div>
+      <div class="feat reveal" data-d="2"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f3-640.avif"><source type="image/webp" srcset="/img/ab-f3-640.webp"><img src="/img/ab-f3-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><div class="feat-txt"><h3>Шесть мастеров работают посменно</h3><p>Команда принимает автомобили в собственном боксе. Состав смены зависит от дня — время визита можно уточнить при записи.</p></div></div>
+      <div class="feat reveal" data-d="3"><div class="feat-bg" aria-hidden="true"><picture><source type="image/avif" srcset="/img/ab-f4-640.avif"><source type="image/webp" srcset="/img/ab-f4-640.webp"><img src="/img/ab-f4-640.webp" alt="" width="640" height="480" loading="lazy" decoding="async"></picture></div><span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span><div class="feat-txt"><h3>Открыты каждый день</h3><p>Работаем без выходных, ежедневно с 9:00 до 19:00. Адрес: Ростов-на-Дону, Портовая, 439, Западный жилой массив.</p></div></div>
     </div>
   </div>
 </section>
-<section class="sec sec--ivory" aria-labelledby="ab-b2b-h">
-  <div class="container est-grid">
-    <div class="reveal">
-      <span class="eyebrow">B2B</span>
-      <h2 id="ab-b2b-h">Паркам и коммерческому транспорту</h2>
-      <p class="u-lead-c">Простой машины стоит дороже ремонта. Для парков, маршруток и коммерческого транспорта мы держим отдельный порядок работы: запись нескольких машин на разные дни, грузовой шиномонтаж, согласование графика в сезон переобувки, документы для бухгалтерии — заказ-наряд и закрывающие по договорённости.</p>
-      <ul class="u-grid8-lead">
-        <li>— планирование визитов парка без простоя всей линейки;</li>
-        <li>— грузовой шиномонтаж и балансировка коммерческих колёс;</li>
-        <li>— смета по каждой машине до начала работ;</li>
-        <li>— один контакт для всех вопросов: {S.phone_main}.</li>
-      </ul>
+<section class="sec sec--ivory" aria-labelledby="ab-cert-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Сертификаты</span><h2 id="ab-cert-h">Официальная точка продаж четырёх брендов</h2></div>
     </div>
-    <aside class="est-aside reveal" data-d="1">
-      <span class="ab-aside-tag" aria-hidden="true">Портовая, 439 · бокс парка</span>
-      <h3>Обсудить обслуживание парка</h3>
-      <p>Позвоните или оставьте заявку — вернёмся с предложением по графику и порядку работ. В форме записи отметьте «грузовой шиномонтаж» и опишите парк в сообщении.</p>
-      <a class="btn btn--copper" href="/appointment?s=shinomontazh-gruz">Записать машину парка</a>
-      <p class="u-mt14-fs13">Telegram для быстрой связи: <a href={`${S.telegram_url}`} data-track="telegram_click" class="u-brass">{S.telegram_phone}</a></p>
-    </aside>
+    <p class="lead">«АвтоТехСервис» — официальная точка продаж четырёх брендов. Сертификаты оформлены на адрес Портовая, 439 и действуют до 23.06.2027. Для клиента это подтверждение официального канала продукции и дополнительный ориентир по качеству расходных материалов и деталей, используемых в сервисе.</p>
+    <div class="certs">
+      <figure class="cert">
+        <picture>
+          <source type="image/avif" srcset="/img/cert-lynxauto-720.avif 720w, /img/cert-lynxauto-1200.avif 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <source type="image/webp" srcset="/img/cert-lynxauto-720.webp 720w, /img/cert-lynxauto-1200.webp 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <img src="/img/cert-lynxauto-720.webp" alt="Иллюстрация: оформленный сертификат LYNXauto" width="720" height="960" loading="lazy" decoding="async">
+        </picture>
+        <figcaption><b>LYNXauto</b><span>Akita Kaihatsu G.K., Япония</span></figcaption>
+      </figure>
+      <figure class="cert">
+        <picture>
+          <source type="image/avif" srcset="/img/cert-sufix-720.avif 720w, /img/cert-sufix-1200.avif 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <source type="image/webp" srcset="/img/cert-sufix-720.webp 720w, /img/cert-sufix-1200.webp 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <img src="/img/cert-sufix-720.webp" alt="Иллюстрация: оформленный сертификат SUFIX" width="720" height="960" loading="lazy" decoding="async">
+        </picture>
+        <figcaption><b>SUFIX</b><span>ООО «ЛН Дистрибьюция»</span></figcaption>
+      </figure>
+      <figure class="cert">
+        <picture>
+          <source type="image/avif" srcset="/img/cert-korson-720.avif 720w, /img/cert-korson-1200.avif 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <source type="image/webp" srcset="/img/cert-korson-720.webp 720w, /img/cert-korson-1200.webp 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <img src="/img/cert-korson-720.webp" alt="Иллюстрация: оформленный сертификат KORSON" width="720" height="960" loading="lazy" decoding="async">
+        </picture>
+        <figcaption><b>KORSON</b><span>TREUS OTOMOTIV, Анталья, Турция</span></figcaption>
+      </figure>
+      <figure class="cert">
+        <picture>
+          <source type="image/avif" srcset="/img/cert-ngn-720.avif 720w, /img/cert-ngn-1200.avif 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <source type="image/webp" srcset="/img/cert-ngn-720.webp 720w, /img/cert-ngn-1200.webp 1200w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 260px">
+          <img src="/img/cert-ngn-720.webp" alt="Иллюстрация: оформленный сертификат NGN" width="720" height="960" loading="lazy" decoding="async">
+        </picture>
+        <figcaption><b>NGN</b><span>официальная точка продаж</span></figcaption>
+      </figure>
+    </div>
+    <p class="lead u-mt14">Цены указаны за работу, без запчастей. Для отдельных операций приведён диапазон: конструкция и крепление узлов на разных автомобилях отличаются. Точную сумму определяем после осмотра. Вы заранее знаете объём и выбираете, какие работы выполнять.</p>
+    <p class="lead u-mt14">Для ориентира: замена масла в двигателе стоит от 1000 ₽ на седане и от 1300 ₽ на кроссовере. Шиномонтаж комплекта R16 — 2200 ₽ за четыре колеса. Это понятные примеры стоимости именно работы; по вашему автомобилю сумму подтвердим до начала. Полный список цифр — в <a href="/prices" class="u-brass">прайсе</a>, правила сервиса — на странице <a href="/garantii" class="u-brass">гарантий</a>.</p>
+    <p class="cert-note">Здесь показаны иллюстрации в стиле сервиса, а не сканы документов: оформленные сертификаты можно посмотреть в сервисе на Портовой, 439.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="ab-gal-h">
@@ -163,7 +186,7 @@ const jsonLd = {
 <section class="sec sec--deep" aria-labelledby="ab-rev-h">
   <div class="container">
     <div class="sec-head reveal">
-      <div><span class="eyebrow">Отзывы</span><h2 id="ab-rev-h">Мнения клиентов</h2></div>
+      <div><span class="eyebrow">Отзывы</span><h2 id="ab-rev-h">Отзывы клиентов на Яндекс Картах</h2></div>
       <div class="slider-nav">
         <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
         <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
@@ -173,10 +196,10 @@ const jsonLd = {
       <div class="carousel-win"><div class="carousel-track">
           {reviews.length === 0 ? (
             <article class="rev-card">
-              <div class="rev-text"><p>Собираем отзывы — пока читайте нас на Яндекс.Картах: там карточка сервиса с оценками реальных клиентов.</p></div>
+              <div class="rev-text"><p>Читайте отзывы на Яндекс.Картах — там же оценки и схема проезда.</p></div>
               <div class="rev-who">
                 <span class="rev-ava" aria-hidden="true">Я</span>
-                <span><b>Яндекс.Карты</b><span><a class="linklike" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer">Открыть карточку организации</a></span></span>
+                <span><b>Яндекс.Карты</b><span><a class="linklike" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer" aria-label="Отзывы об АвтоТехСервис на Яндекс.Картах">Открыть Яндекс Карты</a></span></span>
               </div>
             </article>
           ) : reviews.map((r) => (
@@ -191,14 +214,14 @@ const jsonLd = {
           ))}
           </div></div>
     </div>
-    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы) — это отдельная задача запуска.</p>
+    <p class="rate-note">Своих отзывов не пишем и чужие не переносим. Оценки и живые отзывы о сервисе — на Яндекс.Картах: там же карточка с адресом, часами и схемой проезда.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="brands-h">
   <div class="container">
     <div class="sec-head sec-head--center reveal">
       <span class="eyebrow">Марки</span>
-      <h2 id="brands-h">Обслуживаем легковые и коммерческие автомобили</h2>
+      <h2 id="brands-h">Работаем с легковыми автомобилями</h2>
     </div>
   </div>
   <div class="marq reveal" aria-label="Марки автомобилей (бегущая строка)">
@@ -208,7 +231,7 @@ const jsonLd = {
       ))}
     </div>
   </div>
-  <div class="container"><p class="marq-note">Список не полный — если вашей марки здесь нет, позвоните: {S.phone_main}. Бегущая строка останавливается при наведении; с «уменьшением движения» в настройках системы показывается статичным списком.</p></div>
+  <div class="container"><p class="marq-note">Перед записью позвоните, если хотите уточнить, берёмся ли за нужную вам работу.</p></div>
 </section>
 
   <script>import '../client/lightbox.ts';</script>

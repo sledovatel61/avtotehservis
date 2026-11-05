@@ -32,6 +32,7 @@
   background:linear-gradient(150deg,rgba(200,127,69,.1),rgba(16,32,26,.5));margin:22px 0;
 }
 .price-note b{color:var(--brass);font-size:16px;display:block;margin-bottom:4px}
+.svc-price--head{font-size:15px;font-weight:600;color:var(--brass);margin:6px 0 0}
 .price-note p{color:var(--mist);font-size:14.5px;margin:0}
 .svc-side{
   position:sticky;top:96px;border:1px solid var(--line);border-radius:var(--r);
@@ -140,3 +141,44 @@
 .dock-book{background:var(--copper);color:var(--night)}
 body.has-dock{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 
+
+/* Круг 26: страница /prices — таблицы прайса (a7/02-prices.md). Таблица скроллится
+   внутри обёртки .price-wrap, страница на мобильном не растягивается (гейт check-price-tables). */
+.price-nav{display:flex;flex-wrap:wrap;gap:8px;position:sticky;top:64px;z-index:5;padding:10px 0;background:var(--night)}
+.price-nav-a{font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--brass);border:1px solid rgba(224,169,109,.35);border-radius:999px;padding:7px 14px;text-decoration:none;white-space:nowrap}
+.price-nav-a:hover{border-color:var(--brass)}
+.sec--tight{padding-top:8px}
+.price-grp{margin:0 0 34px}
+.price-grp h3{font-size:20px;margin:0 0 12px;color:var(--ivory)}
+.price-grp h3 .n{color:var(--brass)}
+.price-sub{font-size:14.5px;font-weight:600;color:var(--ivory);margin:14px 0 8px}
+.price-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;background:rgba(16,32,26,.55)}
+.price-tbl{width:100%;border-collapse:collapse;min-width:420px}
+.price-tbl th,.price-tbl td{padding:10px 14px;font-size:14.5px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.price-tbl thead th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);background:rgba(11,20,16,.6)}
+.price-tbl tbody tr:last-child td{border-bottom:0}
+.price-tbl td:last-child{white-space:nowrap;color:var(--brass);font-weight:600}
+.price-note-txt{color:var(--mist);font-size:13.5px;margin:10px 0 0}
+.price-svc{margin:8px 0 0;font-size:14px}
+.price-foot ol{margin:8px 0 0;padding-left:20px;color:var(--mist);font-size:13px;display:flex;flex-direction:column;gap:6px}
+.faq{display:flex;flex-direction:column;gap:10px}
+
+/* Круг 26: страница /garantii — семь пунктов (a8/03-trust.md) */
+.gar-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.gar-item{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(16,32,26,.55)}
+.gar-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid rgba(224,169,109,.45);color:var(--brass);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+.gar-item h3{margin:0 0 6px;font-size:17px;color:var(--ivory)}
+.gar-item p{margin:0;color:var(--mist);font-size:14.5px}
+.gar-note{color:var(--mist);font-size:13.5px;margin-top:18px}
+
+/* Круг 26: блок сертификатов на /about (иллюстрации, не сканы документов) */
+.certs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+/* брейкпоинты держим В ТОМ ЖЕ файле сразу после базы: бандлы Astro могут разложить
+   pages.css и media.css в разные чанки, и чужой чанк перебил бы медиапорядком */
+@media (max-width:1024px){.certs{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.certs{grid-template-columns:1fr}}
+.cert{margin:0}
+.cert picture,.cert img{display:block;width:100%;height:auto;border-radius:12px}
+.cert figcaption{margin-top:8px;font-size:13px;color:#31403A}
+.cert figcaption b{display:block;color:var(--night);font-size:15px;letter-spacing:.04em}
+.cert-note{color:#3F4E47;font-size:13px;margin-top:14px}

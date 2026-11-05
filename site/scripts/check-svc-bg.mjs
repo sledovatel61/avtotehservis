@@ -23,7 +23,9 @@ const SITE = join(ROOT, 'site');
 const R21 = join(ROOT, 'docs', 'photos-source', 'r21-svc');
 const IMG = join(SITE, 'public', 'img');
 
-const SEC_H = { 1440: [920, 1040], 1280: [920, 1040], 1024: [0, 1080], 768: [0, 960], 390: [0, 1000] };
+/* круг 26: в секцию добавлены .svc-intro и кнопка «Смотреть услуги и цены» (a8/01) —
+   секция стала выше на ~90–170 px; потолки пересняты по факту рендера круга 26. */
+const SEC_H = { 1440: [1040, 1130], 1280: [1040, 1130], 1024: [1080, 1180], 768: [920, 1010], 390: [1100, 1220] };
 const ORCH_BASE = { 1440: 691, 1280: 671, 1024: 680, 768: 562, 390: 482 };
 const ORCH_CAP = { 1440: 725, 1280: 705, 1024: 705, 768: 585, 390: 505 };  /* круг 22 (A2): запас ≥15 КБ */
 
@@ -98,7 +100,7 @@ export async function checkSvcBg(opts = {}) {
   const pSha = [1, 2, 3, 4, 5, 6].map(i => sha(`svc-${i}-640.avif`));
   if (new Set(pSha).size !== 6) fails.push(`C3 sha256 производных карточек не уникальны`);
   const astroCards = [...new Set([...svcimg.matchAll(/:\s*'svc-(\d)'/g)].map(m => m[1]))];
-  if (astroCards.length !== 6) fails.push(`C3 в карте svc-img.ts ${astroCards.length} файлов вместо 6`);
+  if (astroCards.length !== 7) fails.push(`C3 в карте svc-img.ts ${astroCards.length} файлов вместо 7 (круг 26: 7 услуг)`);
   if (!/svcImgKey|SVC_IMG/.test(pages)) fails.push('C3 страницы услуг не используют карту svc-img');
   if (!/\$\{svcImgKey\([^)]*\)\}-640\.avif/.test(pages)) fails.push('C3 picture карточек не использует srcset 640/960');
 

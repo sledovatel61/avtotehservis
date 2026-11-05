@@ -93,6 +93,23 @@ try {
     }
   }
   await fixCss(output);
+  /* круг 26 (задание №30): SSR отдаёт 301 со старых слагов услуг (svc-aliases.ts);
+     на статическом хостинге 301 нет, поэтому публикуем meta-refresh-файлы тех же пар */
+  const ALIASES = {
+    '/services/remont-shin': '/services/balansirovka',
+    '/services/hodovaya-tormoza': '/services/podveska',
+    '/services/elektrika': '/services/diagnostika',
+  };
+  for (const [from, to] of Object.entries(ALIASES)) {
+    const dir = join(output, ...from.split('/').filter(Boolean));
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'index.html'),
+      `<!doctype html><html lang="ru"><head><meta charset="utf-8">`
+      + `<meta http-equiv="refresh" content="0; url=${base}${to}">`
+      + `<link rel="canonical" href="${publicOrigin}${base}${to}">`
+      + `<meta name="robots" content="noindex, follow"><title>Переезд страницы: ${to}</title></head>`
+      + `<body><p>Страница переехала: <a href="${base}${to}">${to}</a></p></body></html>`);
+  }
   await writeFile(join(output, '.nojekyll'), '');
   await writeFile(join(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
   console.log(`Exported ${routes.length} public pages + 404 to ${output}`);

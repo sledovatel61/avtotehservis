@@ -13,10 +13,10 @@ const { page } = Astro.props as Props;
     <nav class="nav" id="nav" aria-label="Основное меню">
       <ul>
         <li><a href="/" class:list={[{ 'is-active': page === 'home' }]} aria-current={page === 'home' ? 'page' : undefined}>Главная</a></li>
+        <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги и цены</a></li>
+        <li><a href="/prices" class:list={[{ 'is-active': page === 'prices' }]} aria-current={page === 'prices' ? 'page' : undefined}>Прайс</a></li>
         <li><a href="/about" class:list={[{ 'is-active': page === 'about' }]} aria-current={page === 'about' ? 'page' : undefined}>О компании</a></li>
-        <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги</a></li>
-        <li><a href="/appointment" class:list={[{ 'is-active': page === 'appointment' }]} aria-current={page === 'appointment' ? 'page' : undefined}>Запись</a></li>
-        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Новости и акции</a></li>
+        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Полезное</a></li>
         <li><a href="/contacts" class:list={[{ 'is-active': page === 'contacts' }]} aria-current={page === 'contacts' ? 'page' : undefined}>Контакты</a></li>
       </ul>
     </nav>
@@ -37,11 +37,12 @@ const { page } = Astro.props as Props;
   <nav aria-label="Основное меню (мобильное)">
     <ul>
         <li><a href="/" class:list={[{ 'is-active': page === 'home' }]} aria-current={page === 'home' ? 'page' : undefined}>Главная <span class="n">01</span></a></li>
-        <li><a href="/about" class:list={[{ 'is-active': page === 'about' }]} aria-current={page === 'about' ? 'page' : undefined}>О компании <span class="n">02</span></a></li>
-        <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги <span class="n">03</span></a></li>
-        <li><a href="/appointment" class:list={[{ 'is-active': page === 'appointment' }]} aria-current={page === 'appointment' ? 'page' : undefined}>Запись <span class="n">04</span></a></li>
-        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Новости и акции <span class="n">05</span></a></li>
+        <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги и цены <span class="n">02</span></a></li>
+        <li><a href="/prices" class:list={[{ 'is-active': page === 'prices' }]} aria-current={page === 'prices' ? 'page' : undefined}>Прайс <span class="n">03</span></a></li>
+        <li><a href="/about" class:list={[{ 'is-active': page === 'about' }]} aria-current={page === 'about' ? 'page' : undefined}>О компании <span class="n">04</span></a></li>
+        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Полезное <span class="n">05</span></a></li>
         <li><a href="/contacts" class:list={[{ 'is-active': page === 'contacts' }]} aria-current={page === 'contacts' ? 'page' : undefined}>Контакты <span class="n">06</span></a></li>
+        <li><a href="/garantii" class:list={[{ 'is-active': page === 'garantii' }]} aria-current={page === 'garantii' ? 'page' : undefined}>Гарантии <span class="n">07</span></a></li>
     </ul>
   </nav>
   <div class="m-menu-contacts">

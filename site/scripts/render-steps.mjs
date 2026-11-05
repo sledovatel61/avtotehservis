@@ -40,7 +40,7 @@ const browser = await puppeteer.launch({
   args: [...chromium.args, '--no-sandbox', '--disable-gpu'],
   headless: 'shell',
   protocolTimeout: 600000,
-  env: { ...process.env, LD_LIBRARY_PATH: '/tmp/al2023-libs/lib:/tmp' },
+  env: { ...process.env, LD_LIBRARY_PATH: '/tmp/nss-libs:/tmp/al2023-libs/lib:/tmp' },
 });
 
 const L = (c) => { c /= 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; };
