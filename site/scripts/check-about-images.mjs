@@ -27,9 +27,9 @@ const ASTRO = join(SITE, 'src', 'pages', 'about.astro');
 
 /* пары «ассет → мастер» (§A3). Ключ — имя файла без расширения. */
 const PAIRS = {
-  'ab-head': 'scene-head.jpg', 'ab-head-m': 'scene-head.jpg',
-  'ab-t': 'scene-text.jpg', 'ab-t-m': 'scene-text.jpg',
-  'ab-feats': 'scene-feats.jpg', 'ab-feats-m': 'scene-feats.jpg',
+  'ab-head': 'scene-head.jpg', 'ab-head-m': 'scene-head-m.jpg',
+  'ab-t': 'scene-text.jpg', 'ab-t-m': 'scene-t-m.jpg',
+  'ab-feats': 'scene-feats.jpg', 'ab-feats-m': 'scene-feats-m.jpg',
   'ab-media-1080': 'scene-media.jpg', 'ab-media-720': 'scene-media.jpg', 'ab-media-480': 'scene-media.jpg',
   'ab-f1-640': 'card-f1.jpg', 'ab-f2-640': 'card-f2.jpg', 'ab-f3-640': 'card-f3.jpg', 'ab-f4-640': 'card-f4.jpg',
   'ab-case-1-640': 'case-1-tyre-cut.jpg', 'ab-case-2-640': 'case-2-tyre-hernia.jpg',
@@ -57,10 +57,33 @@ async function lapvar(buf) {
   return s2 / n - mean * mean;
 }
 
-const masterWidth = async (file, cache) => {
+/* Нормированная корреляция Пирсона по серому 24×24 между ассетом и cover-кропом
+   мастера тех же габаритов: ловит подмену исходного кадра (мутант 8 круга 24).
+   Экспозиция/лифт/зерно — низкочастотные или усредняются на 24×24, корреляцию не рушат. */
+const corrCover = async (buf, master, w, h, cache) => {
+  const key = `corr:${master}:${w}x${h}`;
+  let ref = cache[key];
+  if (!ref) {
+    const mp = join(MASTERS, master);
+    /* двухступенчато: в sharp допустим лишь один resize на цепочку, второй заменяет
+       первый — без промежуточного буфера cover-кроп терялся и ref строился искажённым */
+    ref = Float64Array.from(await sharp(await sharp(mp).resize(w, h, { fit: 'cover' }).toBuffer())
+      .greyscale().resize(24, 24, { fit: 'fill' }).raw().toBuffer());
+    cache[key] = ref;
+  }
+  const a = Float64Array.from(await sharp(buf).greyscale().resize(24, 24, { fit: 'fill' }).raw().toBuffer());
+  let ma = 0, mb = 0;
+  for (let i = 0; i < a.length; i++) { ma += a[i]; mb += ref[i]; }
+  ma /= a.length; mb /= ref.length;
+  let s = 0, sa = 0, sb = 0;
+  for (let i = 0; i < a.length; i++) { const x = a[i] - ma, y = ref[i] - mb; s += x * y; sa += x * x; sb += y * y; }
+  return sa && sb ? s / Math.sqrt(sa * sb) : 0;
+};
+
+const masterSize = async (file, cache) => {
   if (cache[file] == null) {
     const p = join(MASTERS, file);
-    cache[file] = existsSync(p) ? (await sharp(p).metadata()).width : -1;
+    cache[file] = existsSync(p) ? (await sharp(p).metadata()) : { width: -1, height: -1 };
   }
   return cache[file];
 };
@@ -93,10 +116,22 @@ export async function checkAboutImages(opts = {}) {
       const dens = buf.length / 1024 / mp;
       if (dens < DENSITY[ext]) fails.push(`I2 ${file}: плотность ${dens.toFixed(1)} КБ/МП < ${DENSITY[ext]} (пережат)`);
       /* I3 апскейл */
-      const mw = master ? await masterWidth(master, mCache) : null;
-      if (mw == null) { fails.push(`I3 ${file}: нет мастера ${master}`); continue; }
+      const ms = master ? await masterSize(master, mCache) : null;
+      if (ms == null) { fails.push(`I3 ${file}: нет мастера ${master}`); continue; }
+      const mw = ms.width, mh = ms.height;
       if (mw < 0) { fails.push(`I3 мастер ${master} для ${file} отсутствует на диске`); continue; }
       if (w > mw) fails.push(`I3 ${file}: ширина ${w} > ширины мастера ${master} (${mw}) — апскейл`);
+      /* круг 24 (Д1): портретные слоты раньше тянулись по ВЕРТИКАЛИ из альбомного мастера —
+         теперь высота ассета тоже обязана быть ≤ высоты мастера */
+      if (h > mh) fails.push(`I3 ${file}: высота ${h} > высоты мастера ${master} (${mh}) — апскейл по вертикали`);
+      /* круг 24 (Д1, мутант 8): размеров мало — ассет мог быть собран cover-кропом из
+         ДРУГОГО (альбомного) мастера тех же габаритов. Проверяем происхождение пикселей:
+         нормированная корреляция 24×24 ассета с cover-кропом своего мастера. Замер круга 24:
+         легитимные ассеты 0.87…0.998, мутант «из альбомного мастера» 0.11 */
+      if (ext === 'avif') {
+        const cc = await corrCover(buf, master, w, h, mCache);
+        if (cc < 0.75) fails.push(`I3 ${file}: корреляция с cover-кропом мастера ${master} = ${cc.toFixed(2)} < 0.75 — пиксели из другого кадра`);
+      }
     }
   }
 
@@ -166,6 +201,12 @@ const MUTANTS = [
       'Портовая, 439 — бокс и зона выдачи: сюда можно приехать без записи через центр'));
   }],
   ['7-мастер-исчез', ({ setPairs }) => { setPairs('ab-f2-640', 'нет-такого-мастера.jpg'); }],
+  ['8-мобильный-из-альбомного-мастера', async ({ setBuf }) => {
+    /* Д1: аб-head-m, собранный cover-кропом из альбомного scene-head.jpg 1376×768:
+       высота 960 > 768 — вертикальный апскейл, гейт обязан упасть */
+    const b = readFileSync(join(MASTERS, 'scene-head.jpg'));
+    setBuf('ab-head-m.avif', await sharp(b).resize(780, 960, { fit: 'cover' }).avif({ quality: 60 }).toBuffer());
+  }],
 ];
 
 async function selfTest() {
