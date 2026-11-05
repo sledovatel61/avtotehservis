@@ -367,7 +367,7 @@ section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
     radial-gradient(60% 34% at 6% 34%,rgba(200,127,69,.10) 0%,rgba(200,127,69,0) 70%),
     linear-gradient(90deg,rgba(11,20,16,.80) 0%,rgba(11,20,16,.44) 42%,rgba(11,20,16,.06) 64%,rgba(11,20,16,0) 82%),
     radial-gradient(64% 26% at 24% 66%,rgba(11,20,16,.55) 0%,rgba(11,20,16,0) 82%),
-    linear-gradient(180deg,var(--deep) 0%,var(--deep) 81%,rgba(16,32,26,.84) 87%,rgba(16,32,26,.38) 93%,rgba(16,32,26,.08) 100%)}}
+    linear-gradient(180deg,var(--deep) 0%,var(--deep) 74%,rgba(16,32,26,.92) 80%,rgba(16,32,26,.72) 88%,rgba(16,32,26,.30) 94%,rgba(16,32,26,.06) 100%)}}
 section[aria-labelledby="ab-text-h"]{position:relative;overflow:hidden;border-top:1px solid var(--line)}
 section[aria-labelledby="ab-text-h"]>.container{position:relative;z-index:2}
 
