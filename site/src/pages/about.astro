@@ -187,10 +187,13 @@ const jsonLd = {
   <div class="container">
     <div class="sec-head reveal">
       <div><span class="eyebrow">Отзывы</span><h2 id="ab-rev-h">Отзывы клиентов на Яндекс Картах</h2></div>
-      <div class="slider-nav">
-        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
-        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
-      </div>
+      {/* круг 26 (minor 5.6 A6): при одной карточке листать нечего — стрелок нет */}
+      {reviews.length > 1 && (
+        <div class="slider-nav">
+          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
+          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
+        </div>
+      )}
     </div>
     <div class="carousel reveal" data-carousel>
       <div class="carousel-win"><div class="carousel-track">
