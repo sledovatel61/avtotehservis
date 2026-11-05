@@ -10,6 +10,12 @@
 
 /* ---------- Сетка услуг (services.html) ---------- */
 .svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+/* приёмка круга 24: у сетки услуг не было ни одного брейкпоинта — на 390 карточки
+   стояли в три колонки по ~110 px, текст рвался и уходил за край экрана.
+   Правила держим ЗДЕСЬ, а не в media.css: бандл pages.css грузится после media.css,
+   и медиазапрос оттуда проигрывал базовому правилу по порядку. */
+@media (max-width:1024px){.svc-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.svc-grid{grid-template-columns:1fr;gap:16px}}
 .svc-grid .svc-card{flex-basis:auto}
 .svc-grid-note{margin-top:26px;color:var(--mist);font-size:14.5px;border-left:2px solid var(--copper);padding-left:16px;max-width:80ch}
 
