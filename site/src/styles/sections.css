@@ -79,6 +79,9 @@
 .feats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px}
 .feat{
   position:relative;overflow:hidden;
+  /* круг 26: колонка с прижимом к низу — текст всегда в плотном скриме нижней части,
+     даже когда карточка выше контента (min-height на ≤1180) */
+  display:flex;flex-direction:column;justify-content:flex-end;
   border:1px solid var(--line-soft);border-radius:var(--r);padding:24px 20px;
   transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);
 }
@@ -93,6 +96,11 @@
 }
 .feat>*:not(.feat-bg){position:relative;z-index:1}
 .feat:hover{--fc1:.50;--fc2:.60;--fc3:.80}
+/* круг 26: тексты карточек a8/04 длиннее прежних — под h3+p кладём локальную тёмную
+   подложку-панель (слой, а не фильтр): худший пиксель под текстом остаётся тёмным при
+   любой высоте карточки; в notext-кадре панель видна (скрыты только h3/p), поэтому
+   гейт контраста считает её частью подложки */
+.feat-txt{background:linear-gradient(180deg,rgba(11,20,16,.42) 0%,rgba(11,20,16,.82) 30%,rgba(11,20,16,.90) 100%);margin:12px -20px -24px;padding:12px 20px 20px;border-radius:14px 14px 0 0}
 .feat:hover .feat-bg img{transform:scale(1.02)}
 @media (prefers-reduced-motion:reduce){.feat:hover .feat-bg img{transform:none}}
 /* раунд 18: фон секции «О компании» — слой .about-bg (НЕ background-image: image-set
@@ -196,7 +204,11 @@
 .svc-body h3{margin:0;font-size:18px}
 .svc-body p{color:var(--mist);font-size:14.5px;flex:1;margin:0}
 .svc-body .link-more{font-size:14px;margin-top:6px}
+.tri-note{color:var(--mist);font-size:13.5px;margin:14px 0 0}
+.svc-intro{color:var(--mist);font-size:14.5px;margin:14px 0 0;max-width:860px}
 .svc-tag{align-self:flex-start;font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);border:1px solid rgba(224,169,109,.35);border-radius:999px;padding:3px 10px;opacity:.9}
+/* круг 26: цена «от» в карточке каталога и на странице услуги (a7, задание №30 §2.2) */
+.svc-price{align-self:flex-start;font-size:14px;font-weight:600;color:var(--brass);margin-top:2px}
 /* ---------- раунд 21 (задание №23): фон секции «Услуги», кнопка, иерархия, стрелки ---------- */
 .slider-sec{position:relative;padding-block:96px}
 [data-carousel-live]{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

@@ -28,7 +28,7 @@ await new Promise((r) => server.listen(4326, '127.0.0.1', r));
 
 const browser = await puppeteer.launch({ executablePath: await chromium.executablePath(),
   args: [...chromium.args, '--no-sandbox'], headless: 'shell',
-  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/al2023/lib:${process.env.LD_LIBRARY_PATH || ''}` },
+  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/nss-libs:/tmp/al2023/lib:${process.env.LD_LIBRARY_PATH || ''}` },
   protocolTimeout: 600000 });
 
 const srgb = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
@@ -40,6 +40,7 @@ const HIDE = [
   '.page-head .eyebrow,.page-head h1,.page-head .lead',
   '.ab-feats .eyebrow,.ab-feats h2,.ab-feats .feat h3,.ab-feats .feat p,.ab-feats .feat-ic',
   'section[aria-labelledby="ab-text-h"] .container',
+      'section[aria-labelledby="ab-cert-h"] .eyebrow,section[aria-labelledby="ab-cert-h"] h2,section[aria-labelledby="ab-cert-h"] .lead,.certs figcaption,.cert-note',
   'section[aria-labelledby="ab-b2b-h"] .container > div',
   '.est-aside > *:not(.est-aside-bg)',
 ].join(',') + '{visibility:hidden !important}';

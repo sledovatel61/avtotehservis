@@ -117,6 +117,16 @@ const CAPS = {
   'svc-4-640': { avif: 5, webp: 7 }, 'svc-5-640': { avif: 5, webp: 7 }, 'svc-6-640': { avif: 5, webp: 7 },
   'svc-1-960': { avif: 7, webp: 9 }, 'svc-2-960': { avif: 7, webp: 9 }, 'svc-3-960': { avif: 7, webp: 9 },
   'svc-4-960': { avif: 7, webp: 9 }, 'svc-5-960': { avif: 7, webp: 9 }, 'svc-6-960': { avif: 7, webp: 9 },
+  /* круг 26: фактуры новых услуг podveska (svc-7) и grm-sceplenie (svc-8) */
+  /* потолки выше, чем у svc-1…6: AI-кадры круга 26 зернистее, при q≤10 качество
+     проседало — подняли бюджет, страница /services остаётся в ~200 КБ картинок */
+  'svc-7-640': { avif: 8, webp: 14 }, 'svc-8-640': { avif: 12, webp: 30 },
+  'svc-7-960': { avif: 12, webp: 24 }, 'svc-8-960': { avif: 20, webp: 48 },
+  /* круг 26: иллюстрации сертификатов (/about) — потолок webp 120 КБ из задания №30 §3 */
+  'cert-lynxauto-720': { avif: 20, webp: 60 }, 'cert-lynxauto-1200': { avif: 45, webp: 120 },
+  'cert-sufix-720': { avif: 20, webp: 60 }, 'cert-sufix-1200': { avif: 45, webp: 120 },
+  'cert-korson-720': { avif: 20, webp: 60 }, 'cert-korson-1200': { avif: 45, webp: 120 },
+  'cert-ngn-720': { avif: 20, webp: 60 }, 'cert-ngn-1200': { avif: 45, webp: 120 },
   'est-aside-640': { avif: 8, webp: 12 },
   /* раунд 12, патч #62: слайды 2–3 в ровно 16:9 (кроп 0 px в рамке героя) */
   'hero-tyre-2032': { avif: 120, webp: 120 },
@@ -652,6 +662,9 @@ async function main() {
 
   /* ----- 10c. раунд 21 (задание №23): фон секции «Услуги» и фактуры карточек ----- */
   const R21 = join(HERE, '../../docs/photos-source/r21-svc');
+  /* круг 26 (задание №30): мастера новых фактур услуг и иллюстраций сертификатов */
+  const R26SVC = join(HERE, '../../docs/photos-source/r26-svc');
+  const R26C = join(HERE, '../../docs/photos-source/r26-certs');
   const lift = async (file, add) => {   /* AI-мастер: аддитивный подъём средней, разброс сохранён */
     const im = await sharp(file).raw().toBuffer({ resolveWithObject: true });
     const { width: w, height: h, channels: c } = im.info; const d = Buffer.from(im.data);
@@ -707,6 +720,22 @@ async function main() {
       encodeSet(`svc-${i + 1}-640`, sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
       encodeSet(`svc-${i + 1}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
     ]),
+    /* круг 26 (задание №30): svc-7 — подвеска на подъёмнике, svc-8 — ремень ГРМ.
+       Мастера 1376×768 (AI-генерация круга), производные 640×480 / 960×720 — кроп, апскейла нет. */
+    ...[join(R26SVC, 'gen-podveska.jpg'), join(R26SVC, 'gen-grm.jpg')].flatMap((m, i) => [
+      encodeSet(`svc-${i + 7}-640`, sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
+      encodeSet(`svc-${i + 7}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
+    ]),
+    /* круг 26 (задание №30 §3): иллюстрации сертификатов — мастера 1200×1600 рендерит
+       render-certs.mjs (Chromium + Unbounded/Golos), здесь только производные 720×960 и
+       перекодировка 1200×1600 в webp/avif. Апскейла нет: ассет ≤ мастера по обеим сторонам. */
+    ...['lynxauto', 'sufix', 'korson', 'ngn'].flatMap((k) => {
+      const m = join(R26C, `cert-${k}.jpg`);
+      return [
+        encodeSet(`cert-${k}-720`, sharp(m).resize(720, 960), 720, 960, false),
+        encodeSet(`cert-${k}-1200`, sharp(m).resize(1200, 1600), 1200, 1600, false),
+      ];
+    }),
   ])) report.push(...r);
 
   /* ----- 10d. раунд 22 (задание №24): фоны и карточки страницы «О компании» ----- */
@@ -850,7 +879,7 @@ async function main() {
   const LIFTS = { 1: 22, 2: 70, 3: 38, 4: 139 };
   /* приёмка r23: экспозиция кадров 1 и 3 жила в CSS-фильтре слоя (обходит гейты) —
      перенесена в файл; множитель применяется после lift22, как это делал filter:brightness() */
-  const EXPOS = { 1: 1.05, 3: 1.00 };
+  const EXPOS = { 1: 1.18, 3: 1.00 };  /* круг 26: +экспозиция card-f1 под панель .feat-txt (C3 mean ≥34) */
   const cardSrc = { 1: 'card-f1.jpg', 2: 'card-f2.jpg', 3: 'card-f3.jpg', 4: 'card-f4.jpg' };
   const cardM = {};
   for (const i of [1, 2, 3, 4]) {
@@ -874,7 +903,7 @@ async function main() {
   await grainDark(featsBgM, featsBgM + '.gr.jpg'); renameSync(featsBgM + '.gr.jpg', featsBgM);
   enc.push(encodeSet('ab-head-m', sharp(headBgM).resize(780, 960), 780, 960, false));
   enc.push(encodeSet('ab-t', sharp(textBg).resize(1068, 768), 1068, 768, false));
-  enc.push(encodeSet('ab-t-m', sharp(textBgM).resize(700, 1020), 700, 1020, false));
+  enc.push(encodeSet('ab-t-m', sharp(textBgM).resize(700, 1024), 700, 1024, false));  /* круг 26: +4 px высоты под слот 1024 (stretch ≤1.5) */
   enc.push(encodeSet('ab-feats', sharp(featsBg).resize(1365, 768), 1365, 768, false));
   enc.push(encodeSet('ab-feats-m', sharp(featsBgM).resize(720, 1264), 720, 1264, false));
   enc.push(encodeSet('ab-media-1080', sharp(scMedia).resize(1080, 675, { fit: 'cover' }), 1080, 675, false));

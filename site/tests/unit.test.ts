@@ -224,12 +224,15 @@ test('seed:demo помечает записи, seed:demo:clear удаляет т
   db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES('nastoyashchaya-novost','Настоящая новость','x','текст','sovety','published',datetime('now'))`).run();
   runSeedDemo();
   runSeedDemo(); // идемпотентно: второй запуск не удваивает набор
-  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), DEMO_REVIEWS.length, 'демо-отзывы помечены source=demo');
+  /* круг 26: демо-отзывы больше не вставляются (решение владельца: отзывы только
+     Яндекс.Карты, выдуманных оценок на сайте нет) — массив DEMO_REVIEWS остаётся
+     справочно, но в базу не пишется. */
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), 0, 'демо-отзывы не вставляются (круг 26)');
   assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug LIKE 'demo-%'`), DEMO_NEWS.length, 'демо-новости помечены slug demo-*');
-  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE status='published'`), DEMO_REVIEWS.length + 1, 'без дублей после повторного запуска');
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE status='published'`), 1, 'без дублей после повторного запуска');
   const res = clearSeedDemo();
   assert.equal(res.news, DEMO_NEWS.length);
-  assert.equal(res.reviews, DEMO_REVIEWS.length);
+  assert.equal(res.reviews, 0);
   assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), 0, 'демо-отзывы удалены');
   assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug LIKE 'demo-%'`), 0, 'демо-новости удалены');
   assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='Яндекс Карты'`), 1, 'реальный отзыв не тронут');

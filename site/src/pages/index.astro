@@ -30,8 +30,8 @@ const jsonLd = {
 ---
 <Base
   page="home"
-  title="АвтоТехСервис — автосервис и шиномонтаж на Портовой, 439 · Ростов-на-Дону"
-  description="Ремонт авто на Портовой, 439: шиномонтаж, балансировка, ремонт шин, ТО, ходовая, тормоза, электрика. Сначала смета — потом ремонт. Ежедневно 9:00–19:00."
+  title="Автосервис на Портовой: цена работы до ремонта"
+  description="Автосервис и шиномонтаж на Западном. Цены на работы до ремонта, диагностика ходовой от 500 ₽. Ежедневно 9:00–19:00."
   jsonLd={jsonLd}
 >
 
@@ -48,12 +48,12 @@ const jsonLd = {
           </picture>
         </div>
         <div class="slide-in container">
-          <span class="slide-eyebrow">Автосервис и шиномонтаж · Западный</span>
-          <h1>Ремонт авто на Портовой — от колеса до двигателя</h1>
-          <p class="slide-sub">{S.address_full}. {S.hours}, остановка «3-й Поселковый» в 330 метрах. Запишитесь на удобное время — без живой очереди.</p>
+          <span class="slide-eyebrow">Автосервис и шиномонтаж на Западном</span>
+          <h1>Автосервис на Портовой, 439 — цена работы до ремонта</h1>
+          <p class="slide-sub">Сначала осмотр и смета. Согласуем стоимость, затем выполняем только те работы, которые вы подтвердили.</p>
           <div class="slide-cta">
-          <a class="btn btn--copper" href="/appointment">Записаться на визит</a>
-          <a class="btn btn--ghost" href="/services">Все услуги</a>
+          <a class="btn btn--copper" href="/appointment">Записаться</a>
+          <a class="btn btn--ghost btn-phone" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить<span class="btn-phone-num">: {S.phone_main}</span></a>
           </div>
         </div>
       </div>
@@ -66,12 +66,12 @@ const jsonLd = {
           </picture>
         </div>
         <div class="slide-in container">
-          <span class="slide-eyebrow">Правило сервиса</span>
+          <span class="slide-eyebrow">Без ремонта вслепую</span>
           <p class="h1">Сначала смета — потом ремонт</p>
-          <p class="slide-sub">Диагностируем, показываем проблему, называем перечень работ и стоимость — и только после вашего согласия начинаем. Никаких работ «втихую» и сюрпризов при выдаче.</p>
+          <p class="slide-sub">Объясним, что обнаружили, назовём стоимость работ до начала и согласуем с вами следующий шаг.</p>
           <div class="slide-cta">
-          <a class="btn btn--copper" href="/appointment?s=diagnostika">Получить смету</a>
-          <a class="btn btn--ghost" href="/about">Как мы работаем</a>
+          <a class="btn btn--copper" href="/appointment?s=diagnostika">Записаться на диагностику</a>
+          <a class="btn btn--ghost" href="/contacts">Узнать адрес</a>
           </div>
         </div>
       </div>
@@ -84,11 +84,11 @@ const jsonLd = {
           </picture>
         </div>
         <div class="slide-in container">
-          <span class="slide-eyebrow">Легковые и коммерческие</span>
-          <p class="h1">Колёса, ходовая, двигатель, электрика</p>
-          <p class="slide-sub">Один сервис закрывает почти весь цикл: шиномонтаж и балансировка, ТО и масло, тормоза и подвеска, АКПП/МКПП, автоэлектрика и кондиционеры, стёкла.</p>
+          <span class="slide-eyebrow">Шиномонтаж на Портовой</span>
+          <p class="h1">Комплект R16 — 2200 ₽ за работу</p>
+          <p class="slide-sub">Цена указана за четыре колеса. Позвоните, чтобы выбрать удобное время и уточнить детали.</p>
           <div class="slide-cta">
-          <a class="btn btn--copper" href="/services">Выбрать услугу</a>
+          <a class="btn btn--copper" href="/appointment?s=shinomontazh">Записаться на шиномонтаж</a>
           <a class="btn btn--ghost btn-phone" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить<span class="btn-phone-num">: {S.phone_main}</span></a>
           </div>
         </div>
@@ -157,24 +157,25 @@ const jsonLd = {
         <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-wheel-1600.avif 1600w, /img/tri-wheel-960.avif 960w, /img/tri-wheel-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-wheel-1600.webp 1600w, /img/tri-wheel-960.webp 960w, /img/tri-wheel-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-wheel-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">01</span>
         <h3>Колёса</h3>
-        <p>Шиномонтаж легковой и грузовой, балансировка, правка и прокатка дисков, ремонт порезов и грыж, вулканизация, сезонное хранение шин. То, с чем приезжают чаще всего — и что нужно сделать быстро и ровно.</p>
-        <a class="link-more" href="/services/shinomontazh">Шиномонтаж и диски <span class="ar" aria-hidden="true">→</span></a>
+        <p>Шиномонтаж комплекта R13 — 1800 ₽, R16 — 2200 ₽, R20 — 3600 ₽. Это стоимость работы за четыре колеса; смена готовых колёс — 1000 ₽ за комплект, ремонт колеса — от 600 ₽ за колесо. Выполняем балансировку.</p>
+        <a class="link-more" href="/services/shinomontazh">Шиномонтаж и колёса <span class="ar" aria-hidden="true">→</span></a>
       </article>
       <article class="tri-card tri-card--accent reveal" data-d="1">
         <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-serv-1600.avif 1600w, /img/tri-serv-960.avif 960w, /img/tri-serv-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-serv-1600.webp 1600w, /img/tri-serv-960.webp 960w, /img/tri-serv-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-serv-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">02</span>
         <h3>Ремонт и ТО</h3>
-        <p>ТО и аппаратная замена масла, ходовая и тормоза, рулевые рейки, развал-схождение, двигатели, АКПП и МКПП, дизельные форсунки, замена лобовых стёкол. Обслуживание, которое не допускает сюрпризов в дороге.</p>
-        <a class="link-more" href="/services/to-maslo">Ремонт и обслуживание <span class="ar" aria-hidden="true">→</span></a>
+        <p>Замена масла в двигателе — от 1000 ₽ на седане и от 1300 ₽ на кроссовере. Тормозные колодки — 1200 ₽; работы с дисками и колодками — 2200–4000 ₽. Также обслуживаем подвеску, сцепление и привод ГРМ.</p>
+        <a class="link-more" href="/services/to-maslo">Ремонт и ТО <span class="ar" aria-hidden="true">→</span></a>
       </article>
       <article class="tri-card reveal" data-d="2">
         <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-diag-1600.avif 1600w, /img/tri-diag-960.avif 960w, /img/tri-diag-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-diag-1600.webp 1600w, /img/tri-diag-960.webp 960w, /img/tri-diag-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-diag-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">03</span>
         <h3>Диагностика</h3>
-        <p>Компьютерная диагностика, автоэлектрика, ремонт и заправка кондиционеров. Начинаем с причины: находим неисправность, показываем её и согласуем смету — до начала работ.</p>
-        <a class="link-more" href="/services/elektrika">Диагностика и электрика <span class="ar" aria-hidden="true">→</span></a>
+        <p>Диагностика ходовой — от 500 ₽, компьютерная диагностика — 800 ₽. Проверим, откуда появился стук или загорелся индикатор; заправляем кондиционеры и обслуживаем систему.</p>
+        <a class="link-more" href="/services/diagnostika">Диагностика и кондиционеры <span class="ar" aria-hidden="true">→</span></a>
       </article>
     </div>
+    <p class="tri-note">Цены указаны за работу, без запчастей. Стоимость зависит от автомобиля и объёма работ; точную сумму согласуем до начала.</p>
   </div>
 </section>
 <section class="sec sec--narrow about" aria-labelledby="about-h">
@@ -194,8 +195,8 @@ const jsonLd = {
     </div>
     <div class="about-grid">
     <div class="reveal">
-      <p class="lead">Мы — автосервис и шиномонтаж на улице Портовой, 439: рядом с остановкой «3-й Поселковый» и базой «Бум». Принимаем легковые и коммерческие автомобили ежедневно, с 9:00 до 19:00.</p>
-      <p class="lead u-mt14">За одним визитом здесь закрывают и «переобуться», и стук в подвеске, и горящий «чек»: от балансировки до ремонта двигателя и АКПП. Правило одно для всех работ — сначала показываем проблему и называем стоимость, потом берёмся за инструмент.</p>
+      <p class="lead">Мы — автосервис и шиномонтаж на улице Портовой, 439: рядом с остановкой «3-й Поселковый» и базой «Бум». Принимаем легковые автомобили, кроссоверы и паркетники ежедневно, с 9:00 до 19:00.</p>
+      <p class="lead u-mt14">За одним визитом здесь закрывают и «переобуться», и стук в подвеске, и горящий «чек»: от балансировки до тормозов, подвески и ГРМ. Правило одно для всех работ — сначала показываем проблему и называем стоимость, потом берёмся за инструмент.</p>
       <p class="u-mt24"><a class="btn btn--ghost" href="/about"><span class="btn-bg" aria-hidden="true"><picture><source srcset="/img/about-btn-320.avif 320w, /img/about-btn-640.avif 640w" sizes="252px" type="image/avif"><source srcset="/img/about-btn-320.webp 320w, /img/about-btn-640.webp 640w" sizes="252px" type="image/webp"><img src="/img/about-btn-320.webp" alt="" loading="lazy" decoding="async"></picture></span>Подробнее о сервисе</a></p>
     </div>
     <figure class="about-media reveal" data-d="1">
@@ -238,8 +239,8 @@ const jsonLd = {
       <div class="feat reveal" data-d="3">
         <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c4-480.avif 480w, /img/about-c4-720.avif 720w, /img/about-c4-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c4-480.webp 480w, /img/about-c4-720.webp 720w, /img/about-c4-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c4-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span>
-        <h3>Грузовой шиномонтаж и парки</h3>
-        <p>Обслуживание парков: «Газели», маршрутки, спецтехника.</p>
+        <h3>Официальная точка продаж четырёх брендов</h3>
+        <p>Сертификаты LYNXauto, SUFIX, KORSON и NGN действуют до 23.06.2027. Документы подтверждают официальный статус точки продаж.</p>
       </div>
     </div>
   </div>
@@ -263,10 +264,10 @@ const jsonLd = {
     </div>
     <div class="est-grid">
     <div class="est-panels reveal">
-      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p1-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p1-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p1-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Заявка или звонок</h3><p>Опишите задачу в форме записи или позвоните — выберем время визита, чтобы вы не сидели в живой очереди.</p></div></div>
-      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p2-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p2-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p2-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Осмотр и диагностика</h3><p>Поднимаем, смотрим, при необходимости считываем ошибки. Показываем проблему вам — на детали, а не «на словах».</p></div></div>
-      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p3-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p3-640.webp 640w" sizes="(max-width:640px) 46vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p3-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Смета и согласование</h3><p>Перечень работ и стоимость — до начала ремонта. Что критично сейчас, а что доживёт до весны — говорим прямо.</p></div></div>
-      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p4-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p4-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p4-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Работы и выдача</h3><p>Делаем согласованное, показываем заменённые детали, выдаём заказ-наряд с гарантией. Дальше — по записи на ТО.</p></div></div>
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p1-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p1-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p1-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Заявка</h3><p>Оставьте телефон в форме или позвоните. Напишите, что беспокоит и когда вам удобно приехать — подскажем свободное время.</p></div></div>
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p2-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p2-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p2-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Осмотр и диагностика</h3><p>Принимаем автомобиль и проверяем узел, на который вы жалуетесь. Если для ответа нужна диагностика, объясним, что именно будем проверять.</p></div></div>
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p3-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p3-640.webp 640w" sizes="(max-width:640px) 46vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p3-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Смета и согласование</h3><p>Расскажем, что нашли, и назовём стоимость работы до её начала. Вы решаете, какие работы выполнять; без согласования к ним не приступаем.</p></div></div>
+      <div class="est-step"><div class="est-bg-p" aria-hidden="true"><picture><source srcset="/img/est-p4-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/avif"><source srcset="/img/est-p4-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 300px" type="image/webp"><img src="/img/est-p4-640.webp" width="640" height="480" alt="" loading="lazy" decoding="async"></picture></div><span class="n" aria-hidden="true"></span><div><h3>Работы и выдача</h3><p>Выполняем согласованный объём, затем выдаём автомобиль и объясняем, что было сделано. По выполненным работам оформляем заказ-наряд.</p></div></div>
     </div>
     <aside class="est-aside reveal" data-d="1">
       <div class="est-aside-bg" aria-hidden="true">
@@ -277,7 +278,7 @@ const jsonLd = {
         </picture>
       </div>
       <h3>Не знаете, что сломалось?</h3>
-      <p>Так бывает чаще, чем кажется: «стучит», «тянет», «горит лампочка». Начните с диагностики — она отвечает на вопрос «что случилось», а смета решает, что делать дальше. Навязывать работы не будем.</p>
+      <p>Опишите симптомы — начнём с диагностики и поможем разобраться, за что браться в первую очередь.</p>
       <div class="est-cta">
         <a class="btn btn--copper" href="/appointment?s=diagnostika">Записаться на диагностику</a>
         <p class="est-tel">Или позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a></p>
@@ -304,8 +305,8 @@ const jsonLd = {
   <div class="container">
     <div class="sec-head reveal">
       <div>
-        <span class="eyebrow">Услуги</span>
-        <h2 id="svc-h">Что делаем — без цен, со сметой по факту осмотра</h2>
+        <span class="eyebrow">Услуги и цены</span>
+        <h2 id="svc-h">Направления и цены на работы</h2>
       </div>
       <div class="slider-nav">
         <span class="slider-hint" aria-hidden="true">листайте</span>
@@ -334,6 +335,8 @@ const jsonLd = {
           </div>
       </div>
     </div>
+    <p class="svc-intro container">На странице услуг собраны направления и цены на работы — без стоимости запчастей. Например, диагностика ходовой — от 500 ₽, замена масла в двигателе — от 1000 ₽. Для других позиций указан ориентир «от» или диапазон там, где цена зависит от автомобиля и крепления узла. После осмотра назовём точную стоимость до начала работ.</p>
+    <p class="u-chips-mt26 container"><a class="btn btn--ghost" href="/services">Смотреть услуги и цены</a></p>
   </div>
 </section>
 <section class="sec" aria-labelledby="gal-h">
@@ -373,22 +376,26 @@ const jsonLd = {
     <div class="sec-head reveal">
       <div>
         <span class="eyebrow">Отзывы</span>
-        <h2 id="rev-h">Что говорят клиенты — и где это проверить</h2>
+        <h2 id="rev-h">Отзывы клиентов на Яндекс Картах</h2>
       </div>
-      <div class="slider-nav">
-        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
-        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
-      </div>
+      {/* круг 26 (ревью A6, minor 5.6): кнопок нет, если листать нечего — при одной
+          карточке-заглушке они были активны и ничего не делали (для скринридера — обман) */}
+      {reviews.length > 1 && (
+        <div class="slider-nav">
+          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
+          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
+        </div>
+      )}
     </div>
     <div class="carousel reveal" data-carousel>
       <div class="carousel-win">
         <div class="carousel-track">
           {reviews.length === 0 ? (
             <article class="rev-card">
-              <div class="rev-text"><p>Собираем отзывы — пока читайте нас на Яндекс.Картах: там карточка сервиса с оценками реальных клиентов.</p></div>
+              <div class="rev-text"><p>Читайте отзывы на Яндекс.Картах — там же оценки и схема проезда.</p></div>
               <div class="rev-who">
                 <span class="rev-ava" aria-hidden="true">Я</span>
-                <span><b>Яндекс.Карты</b><span><a class="linklike" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer">Открыть карточку организации</a></span></span>
+                <span><b>Яндекс.Карты</b><span><a class="linklike" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer" aria-label="Отзывы об АвтоТехСервис на Яндекс.Картах">Открыть Яндекс Карты</a></span></span>
               </div>
             </article>
           ) : reviews.map((r) => (
@@ -414,14 +421,14 @@ const jsonLd = {
         ))}
       </div>
     )}
-    <p class="rate-note">Показываем только реальные отзывы — с источником и датой. Оценки на разных площадках различаются, и мы это не прячем: карточки организации приводятся к единому виду (название, адрес, телефон, часы).</p>
+    <p class="rate-note">Своих отзывов не пишем и чужие не переносим. Оценки и живые отзывы о сервисе — на Яндекс.Картах: там же карточка с адресом, часами и схемой проезда.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="brands-h">
   <div class="container">
     <div class="sec-head sec-head--center reveal">
       <span class="eyebrow">Марки</span>
-      <h2 id="brands-h">Обслуживаем легковые и коммерческие автомобили</h2>
+      <h2 id="brands-h">Работаем с легковыми автомобилями</h2>
     </div>
   </div>
   <div class="marq reveal" aria-label="Марки автомобилей (бегущая строка)">
@@ -431,7 +438,19 @@ const jsonLd = {
       ))}
     </div>
   </div>
-  <div class="container"><p class="marq-note">Список не полный — если вашей марки здесь нет, позвоните: {S.phone_main}. Бегущая строка останавливается при наведении; с «уменьшением движения» в настройках системы показывается статичным списком.</p></div>
+  <div class="container"><p class="marq-note">Перед записью позвоните, если хотите уточнить, берёмся ли за нужную вам работу.</p></div>
+</section>
+<section class="sec sec--deep sec--narrow" aria-labelledby="fin-h">
+  <div class="container">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Адрес</span><h2 id="fin-h">Заезжайте на Портовую, 439</h2></div>
+    </div>
+    <p class="lead">Мы на Западном, рядом с базой «Бум» и примерно в 330 метрах от остановки «3-й Поселковый». Работаем ежедневно с 9:00 до 19:00. Сначала согласуем стоимость работ — затем приступим.</p>
+    <p class="u-chips-mt26">
+      <a class="btn btn--copper" href="/appointment">Записаться</a>
+      <a class="btn btn--ghost btn-phone" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить<span class="btn-phone-num">: {S.phone_main}</span></a>
+    </p>
+  </div>
 </section>
 
   <script>import '../client/hero.ts';</script>
