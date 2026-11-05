@@ -39,7 +39,7 @@ const BG_FILES = [
   ['ab-head.avif', 1376, 688], ['ab-head.webp', 1376, 688],
   ['ab-head-m.avif', 780, 960], ['ab-head-m.webp', 780, 960],
   ['ab-feats.avif', 1365, 768], ['ab-feats.webp', 1365, 768],
-  ['ab-feats-m.avif', 720, 1400], ['ab-feats-m.webp', 720, 1400],
+  ['ab-feats-m.avif', 720, 1264], ['ab-feats-m.webp', 720, 1264],
   ['ab-t.avif', 1068, 768], ['ab-t.webp', 1068, 768],
   ['ab-t-m.avif', 700, 1020], ['ab-t-m.webp', 700, 1020],
 ];
@@ -150,7 +150,7 @@ export async function checkAboutPage(opts = {}) {
   /* ---------- 1b. кадр обязан покрывать слот без заметного апскейла (ревью, major 3) ---------- */
   const SLOT_FILES = {
     desktop: { head: [1376, 688, 'ab-head'], text: [1068, 768, 'ab-t'], feats: [1365, 768, 'ab-feats'] },
-    mobile: { head: [780, 960, 'ab-head-m'], text: [700, 1020, 'ab-t-m'], feats: [720, 1400, 'ab-feats-m'] },
+    mobile: { head: [780, 960, 'ab-head-m'], text: [700, 1020, 'ab-t-m'], feats: [720, 1264, 'ab-feats-m'] },
   };
   for (const w of WIDTHS) {
     const zones = geom.widths?.[w]?.bgZones;
@@ -158,7 +158,8 @@ export async function checkAboutPage(opts = {}) {
     /* круг 23: брейкпоинты picture в about.astro — head/feats переключаются на мобильные
        файлы при ≤640, текстовый фон — при ≤1180 (портретный слот 1024×1504 иначе требовал
        бы растяжения 1,96× из горизонтального мастера) */
-    const setFor = (key) => (+w <= (key === 'text' ? 1180 : 640) ? SLOT_FILES.mobile : SLOT_FILES.desktop);
+    /* круг 24: брейкпоинты picture — head ≤900, text ≤1180, feats ≤640 */
+    const setFor = (key) => (+w <= (key === 'text' ? 1180 : key === 'head' ? 900 : 640) ? SLOT_FILES.mobile : SLOT_FILES.desktop);
     for (const key of ['head', 'text', 'feats']) {
       const box = zones[key]; const [fw, fh, name] = setFor(key)[key];
       if (!box || !box.w || !box.h) { fails.push(`C1 ${w}: нет слота ${key}`); continue; }
