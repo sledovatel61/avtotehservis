@@ -1,0 +1,111 @@
+/* Интро «вход в раздел Voyah Free» (круг 28).
+   Сцена: тёмный кадр → по центру прочерчивается световая линия → от неё
+   разлетаются два «прожектора» → линией собирается силуэт кроссовера →
+   вспышка по линии → шторы разъезжаются в стороны и открывают страницу.
+
+   Принципы:
+     • без JS оверлея нет вообще → нет «вспышки» непростилизованного контента;
+     • играем один раз за сессию (sessionStorage `voyah-intro`);
+     • параметр ?intro=1 — принудительный повтор (для проверки и для владельца);
+     • при reduced-motion / save-data интро не показываем совсем;
+     • прерывается кликом, Esc, колесом и touchmove, тогда шторы уходят сразу.
+
+   Запуск: подключается из voyah-free.astro как module-скрипт. */
+
+const KEY = 'voyah-intro';
+const DURATION = 2680; // 1960 мс сцены + 720 мс разъезда штор
+const SVG_ID = 'vy-intro-svg';
+
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const saveData =
+  (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+const force = new URLSearchParams(location.search).get('intro') === '1';
+
+let seen = false;
+try {
+  seen = sessionStorage.getItem(KEY) === '1';
+} catch {
+  seen = false;
+}
+
+if (!reduced && !saveData && (force || !seen)) {
+  try {
+    sessionStorage.setItem(KEY, '1');
+  } catch {
+    /* приватный режим — просто покажем интро без записи */
+  }
+  start();
+}
+
+function start(): void {
+  if (document.querySelector('.vy-intro')) return;
+
+  document.body.classList.add('vy-lock');
+
+  const root = document.createElement('div');
+  root.className = 'vy-intro';
+  root.setAttribute('role', 'presentation');
+  root.setAttribute('aria-hidden', 'true');
+  root.innerHTML = `
+    <div class="vy-intro-panel vy-intro-panel--l"></div>
+    <div class="vy-intro-panel vy-intro-panel--r"></div>
+    <div class="vy-intro-line"></div>
+    <div class="vy-intro-lamp vy-intro-lamp--l"></div>
+    <div class="vy-intro-lamp vy-intro-lamp--r"></div>
+    <svg class="${SVG_ID}" viewBox="0 0 1180 460" fill="none" aria-hidden="true">
+      <!-- земля -->
+      <path class="ground" d="M60 400h1060" pathLength="1" style="--i:0"></path>
+      <!-- контур кроссовера: длинный капот, ровная крыша, отвесная корма -->
+      <path class="glow" d="M150 300c0-16 8-26 24-30l96-22 56-88c8-13 22-20 38-20h368c16 0 30 7 38 20l58 88 84 24c14 4 22 14 22 28v58h-84M150 358v-58" pathLength="1" style="--i:1"></path>
+      <path d="M150 300c0-16 8-26 24-30l96-22 56-88c8-13 22-20 38-20h368c16 0 30 7 38 20l58 88 84 24c14 4 22 14 22 28v58h-84M150 358v-58" pathLength="1" style="--i:2"></path>
+      <!-- остекление -->
+      <path d="M306 246l52-82c5-8 13-12 22-12h360c10 0 18 5 23 13l52 81z" pathLength="1" style="--i:3"></path>
+      <!-- стойка B и линия дверей -->
+      <path d="M566 152v94" pathLength="1" style="--i:4"></path>
+      <path d="M262 300h506" pathLength="1" style="--i:5"></path>
+      <!-- световые полосы: фара и фонарь -->
+      <path class="bar" d="M176 286h92" pathLength="1" style="--i:6"></path>
+      <path class="bar" d="M880 272h96" pathLength="1" style="--i:7"></path>
+      <!-- арки и колёса 20" -->
+      <path d="M242 358a72 72 0 0 1 144 0" pathLength="1" style="--i:8"></path>
+      <path d="M790 358a72 72 0 0 1 144 0" pathLength="1" style="--i:9"></path>
+      <circle cx="314" cy="358" r="58" pathLength="1" style="--i:10"></circle>
+      <circle cx="314" cy="358" r="24" pathLength="1" style="--i:11"></circle>
+      <circle cx="862" cy="358" r="58" pathLength="1" style="--i:12"></circle>
+      <circle cx="862" cy="358" r="24" pathLength="1" style="--i:13"></circle>
+    </svg>
+    <div class="vy-intro-flash"></div>
+    <span class="vy-intro-tag"><i></i>Voyah Free · клик — пропустить</span>
+  `;
+  document.body.appendChild(root);
+
+  // запускаем анимации на следующем кадре, иначе браузер «схлопнет» начальное состояние
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => root.classList.add('is-play'));
+  });
+
+  const timers: number[] = [];
+  const skip = (): void => {
+    if (!root.isConnected) return;
+    root.classList.add('is-skip');
+    timers.forEach(clearTimeout);
+    document.body.classList.remove('vy-lock');
+    remove();
+  };
+  const remove = (): void => {
+    timers.forEach(clearTimeout);
+    root.remove();
+    document.body.classList.remove('vy-lock');
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape') skip();
+  };
+
+  root.addEventListener('click', skip, { once: true });
+  document.addEventListener('keydown', onKey);
+  window.addEventListener('wheel', skip, { passive: true, once: true });
+  window.addEventListener('touchmove', skip, { passive: true, once: true });
+
+  timers.push(window.setTimeout(remove, DURATION));
+}

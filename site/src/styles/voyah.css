@@ -1,0 +1,485 @@
+/* ==========================================================================
+   Voyah Free — марочный раздел сайта «АвтоТехСервис» (круг 28).
+
+   Источник: принятый мокап A6 (mockups/r28/voyah), перенесён в Astro.
+   Правила:
+     • все токены раздела префиксованы `--v-*`, чтобы не спорить с токенами сайта;
+     • все классы раздела — `.v-*` и `.vy-*`, поэтому файл можно грузить и на главной
+       (там живёт остров `.voyah-isl`), не боясь пересечений;
+     • шапка/мобильное меню из мокапа НЕ перенесены: на сайте свои Header/Dock.
+   ========================================================================== */
+
+/* ---------- Токены ---------- */
+:root{
+  /* палитра «марочного острова»: 6 цветов + 2 нейтрали */
+  --v-ink:#070B12;          /* 1. ночь — фон острова */
+  --v-panel:#0E1622;        /* 2. панель — карточки, полосы */
+  --v-graphite:#2A3442;     /* 3. графит — линии, второстепенные заливки */
+  --v-silver:#C9D3DE;       /* 4. серебро — текст-подпись, кант */
+  --v-cold:#EAF2FF;         /* 5. холодный свет — линии света, акценты */
+  --v-green:#16402F;        /* 6. отражение кузова — только акцент, не фон */
+  --ivory:#F4EFE6;        /* нейтраль 1 — основной текст на тёмном */
+  --brass:#E0A96D;        /* нейтраль 2 — кнопки сайта, из общей палитры */
+
+  /* шкала: 6 размеров */
+  --v-fs-1:12.5px;          /* метки, надзаголовки, номера */
+  --v-fs-2:15px;            /* пояснения, примечания */
+  --v-fs-3:17px;            /* основной текст */
+  --v-fs-4:21px;            /* лид, H3, суммы в прайсе */
+  --v-fs-5:clamp(26px,3vw,34px);      /* H2 */
+  --v-fs-6:clamp(31px,4.4vw,56px);    /* H1, дисплей */
+
+  --font-display:'Unbounded',system-ui,'Segoe UI',sans-serif;
+  --font-text:'Golos Text',system-ui,'Segoe UI',sans-serif;
+
+  --v-wrap:1200px;
+  --v-gap:24px;
+  --r:16px;
+  --r-sm:10px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --t-fast:150ms;
+  --t-mid:250ms;
+  --v-hdr:74px;
+}
+
+/* ---------- Контейнер и типографика раздела ----------
+   .wrap из мокапа переименован в .vy-wrap (на сайте уже есть .container);
+   заголовки раздела наследуют шрифты сайта, но размеры берём из токенов
+   раздела — иначе H1 страницы спорит с H1 главной. */
+.vy-wrap { max-width: var(--v-wrap); margin: 0 auto; padding: 0 20px; }
+.v-hero h1,
+.v-sec h2,
+.v-teaser h2,
+.v-cta h2 { font-family: var(--font-display); font-weight: 600; line-height: 1.12; letter-spacing: -.02em; margin: 0 0 .5em; }
+.v-hero h1 { font-size: var(--v-fs-6); text-wrap: balance; }
+.v-sec h2,
+.v-teaser h2,
+.v-cta h2 { font-size: var(--v-fs-5); text-wrap: balance; }
+.v-sec h3,
+.v-teaser-fact b { font-family: var(--font-display); font-weight: 600; }
+.v-hero p, .v-sec p, .v-teaser p, .v-cta p { margin: 0 0 1em; }
+.v-hero p:last-child, .v-sec p:last-child, .v-teaser p:last-child, .v-cta p:last-child { margin-bottom: 0; }
+.v-hero, .v-sec, .v-teaser { color: var(--ivory); font-family: var(--font-text); font-size: var(--v-fs-3); line-height: 1.62; }
+.v-hero a, .v-sec a, .v-teaser a { color: var(--v-cold); text-decoration: none; }
+.v-hero a:hover, .v-sec a:hover, .v-teaser a:hover { color: #fff; }
+
+/* ---------- Общие элементы «острова» ---------- */
+/* тонкая световая линия — главный декоративный приём раздела */
+.v-rule{height:1px;border:0;margin:0;background:linear-gradient(90deg,transparent,rgba(201,211,222,.42) 18%,rgba(234,242,255,.9) 50%,rgba(201,211,222,.42) 82%,transparent)}
+.v-eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:var(--v-fs-1);font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--v-silver);margin-bottom:14px;
+}
+.v-eyebrow::before{content:"";width:28px;height:1px;background:var(--v-cold);box-shadow:0 0 8px rgba(234,242,255,.8)}
+.v-lead{color:var(--v-silver);font-size:var(--v-fs-4);line-height:1.5;max-width:62ch}
+.v-note{color:rgba(201,211,222,.72);font-size:var(--v-fs-2)}
+.v-sec{padding:clamp(56px,7vw,88px) 0;position:relative}
+.v-sec--v-panel{background:var(--v-panel)}
+.v-sec--flush{padding-top:0}
+
+/* кнопки: латунь сайта остаётся только в CTA, чтобы остров не спорил с шапкой */
+.v-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:50px;padding:12px 26px;border-radius:999px;border:1.5px solid transparent;
+  font-size:var(--v-fs-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  cursor:pointer;text-align:center;
+  transition:transform var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
+}
+.v-btn:active{transform:translateY(1px)}
+.v-btn--brass{background:var(--brass);color:var(--v-ink);box-shadow:0 8px 26px rgba(224,169,109,.22)}
+.v-btn--brass:hover{background:#EEC08C;color:var(--v-ink);transform:translateY(-2px)}
+.v-btn--light{border-color:rgba(234,242,255,.42);color:var(--v-cold);background:rgba(234,242,255,.04)}
+.v-btn--light:hover{border-color:var(--v-cold);background:rgba(234,242,255,.1);color:#fff;transform:translateY(-2px)}
+.v-btnrow{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+
+/* стеклянная панель */
+.v-glass{
+  position:relative;border:1px solid rgba(201,211,222,.16);border-radius:var(--r);
+  background:linear-gradient(180deg,rgba(20,32,48,.72) 0%,rgba(14,22,34,.82) 100%);
+}
+.v-glass::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(120deg,rgba(234,242,255,.14),transparent 34%);
+  opacity:.7;
+}
+
+/* ---------- Первый экран ---------- */
+.v-hero{position:relative;min-height:min(760px,calc(100vh - var(--v-hdr)));display:flex;align-items:flex-end;
+  padding:clamp(48px,7vw,96px) 0 clamp(40px,5vw,64px);overflow:hidden;isolation:isolate}
+.v-hero-bg{position:absolute;inset:0;z-index:-2;overflow:hidden}
+.v-hero-bg img{width:100%;height:100%;object-fit:cover;object-position:64% 58%}
+.v-hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(7,11,18,.92) 0%,rgba(7,11,18,.62) 26%,rgba(7,11,18,.34) 52%,rgba(7,11,18,.86) 100%),
+    linear-gradient(94deg,rgba(7,11,18,.94) 0%,rgba(7,11,18,.8) 42%,rgba(7,11,18,.12) 72%,rgba(7,11,18,.5) 100%)}
+.v-hero .vy-wrap{width:100%}
+.v-hero-h{max-width:19ch}
+.v-hero-h em{font-style:normal;color:var(--v-cold);text-shadow:0 0 26px rgba(234,242,255,.35)}
+.v-hero .v-lead{margin:18px 0 0;max-width:54ch;color:#D6DEE8}
+.v-hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:30px;padding-top:20px;
+  border-top:1px solid rgba(201,211,222,.2);max-width:720px}
+.v-hero-meta div{font-size:var(--v-fs-2);color:var(--v-silver)}
+.v-hero-meta b{display:block;font-size:var(--v-fs-1);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);font-weight:500;margin-bottom:2px}
+/* световая линия у заголовка — «фара» из интро, оставленная в статике */
+.v-hero-line{width:120px;height:2px;margin:0 0 22px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(234,242,255,0),var(--v-cold) 42%,#fff 60%,rgba(234,242,255,0));
+  box-shadow:0 0 22px rgba(234,242,255,.65)}
+.v-scroll{position:absolute;right:20px;bottom:18px;z-index:2;display:flex;align-items:center;gap:8px;
+  font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(201,211,222,.6)}
+.v-scroll i{display:block;width:1px;height:34px;background:linear-gradient(180deg,var(--v-cold),transparent)}
+@media (max-width:700px){
+  .v-scroll{display:none}
+  .v-hero{min-height:0;padding-top:34px}
+  .v-hero .v-lead{font-size:16px}
+  .v-hero-meta{gap:8px 20px;margin-top:22px;padding-top:16px}
+}
+
+/* ---------- «Почему это не обычное ТО» ---------- */
+.v-why{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
+.v-why-card{padding:24px 22px 26px;border-radius:var(--r);border:1px solid rgba(201,211,222,.14);
+  background:linear-gradient(180deg,rgba(22,35,52,.6),rgba(14,22,34,.72));
+  display:flex;flex-direction:column;gap:10px;transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease)}
+.v-why-card:hover{transform:translateY(-3px);border-color:rgba(234,242,255,.34)}
+.v-why-card .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  border:1px solid rgba(234,242,255,.26);background:rgba(234,242,255,.05)}
+.v-why-card .ic svg{width:20px;height:20px;stroke:var(--v-cold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.v-why-card h3{font-size:18px;margin:6px 0 0}
+.v-why-card p{font-size:var(--v-fs-2);color:rgba(201,211,222,.86);margin:0}
+.v-why-card span.n{position:absolute;display:none}
+@media (max-width:1024px){.v-why{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.v-why{grid-template-columns:1fr}}
+
+/* ---------- Кадры: второй и третий — самостоятельные блоки ---------- */
+.v-frame{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid rgba(201,211,222,.16);
+  background:var(--v-panel);margin:0}
+.v-frame img{width:100%;height:100%;object-fit:cover}
+.v-frame figcaption{display:flex;gap:14px;align-items:baseline;justify-content:space-between;
+  padding:13px 18px;border-top:1px solid rgba(201,211,222,.14);
+  font-size:var(--v-fs-1);letter-spacing:.06em;text-transform:uppercase;color:rgba(201,211,222,.66)}
+.v-frame figcaption b{color:var(--v-silver);font-weight:500;letter-spacing:.14em}
+/* блок «один узел крупно»: кадр слева, текст справа */
+.v-split{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(24px,4vw,56px);align-items:center}
+.v-split figure{margin:0}
+.v-split .v-frame img{aspect-ratio:16/9}
+.v-split h2{margin-bottom:.4em}
+.v-media-full{position:relative;border-radius:var(--r);overflow:hidden;margin-top:26px}
+.v-media-full img{width:100%;aspect-ratio:21/9;object-fit:cover;object-position:50% 58%}
+.v-media-full .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 22px 18px;
+  background:linear-gradient(180deg,rgba(7,11,18,0),rgba(7,11,18,.9));
+  font-size:var(--v-fs-2);color:var(--v-silver);display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;align-items:end}
+.v-media-full .cap b{display:block;font-family:var(--font-display);font-weight:600;font-size:var(--v-fs-4);color:var(--ivory);margin-bottom:4px}
+@media (max-width:900px){.v-split{grid-template-columns:1fr}}
+@media (max-width:700px){.v-media-full img{aspect-ratio:4/3}}
+
+/* ---------- «Что входит»: 5 групп ---------- */
+.v-incl{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:34px;counter-reset:incl}
+.v-incl-item{position:relative;padding:20px 18px 22px;border-radius:var(--r-sm);
+  border:1px solid rgba(201,211,222,.14);background:rgba(14,22,34,.66);
+  display:flex;flex-direction:column;gap:8px}
+.v-incl-item::before{counter-increment:incl;content:"0" counter(incl);
+  font-family:var(--font-display);font-size:var(--v-fs-1);letter-spacing:.18em;color:var(--brass);
+  order:-1}
+.v-incl-item h3{font-size:17px;line-height:1.3;margin:0}
+.v-incl-item p{font-size:14px;color:rgba(201,211,222,.84);margin:0}
+@media (max-width:1100px){.v-incl{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:700px){.v-incl{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.v-incl{grid-template-columns:1fr}}
+
+/* ---------- Заголовок первого экрана: три жёсткие строки ---------- */
+.v-h1-l{display:block}
+.v-hero-h{max-width:19ch}
+@media (max-width:700px){
+  /* «в Ростове-на-Дону» должно влезать в строку при 320–390 px.
+     Селектор с той же силой, что и `.v-hero h1` выше, иначе размер не переопределяется. */
+  .v-hero h1.v-hero-h{font-size:clamp(19px,6vw,28px)}
+}
+
+/* ---------- «Что проверим на осмотре»: сетка 2 колонки ---------- */
+.v-check{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin-top:34px;
+  border:1px solid rgba(201,211,222,.16);border-radius:var(--r);overflow:hidden;
+  background:rgba(201,211,222,.16)}
+.v-check-i{padding:22px 22px 24px;background:rgba(11,18,28,.94)}
+.v-check-i h3{font-family:var(--font-display);font-weight:600;font-size:18px;line-height:1.28;
+  letter-spacing:-.01em;margin:0;color:var(--ivory)}
+.v-check-i p{margin:8px 0 0;font-size:15px;line-height:1.6;color:rgba(201,211,222,.86)}
+.v-check-i--sum{background:radial-gradient(120% 140% at 0% 0%,rgba(22,64,47,.55),rgba(10,16,26,.96) 64%)}
+@media (max-width:760px){.v-check{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- «Расходники и подбор по VIN»: три карточки ---------- */
+.v-parts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:34px}
+.v-part{padding:24px 22px 26px;border-radius:var(--r);border:1px solid rgba(201,211,222,.16);
+  background:linear-gradient(160deg,rgba(22,35,52,.55),rgba(7,11,18,.7))}
+.v-part h3{font-family:var(--font-display);font-weight:600;font-size:18px;line-height:1.28;margin:0;color:var(--ivory)}
+.v-part p{margin:10px 0 0;font-size:15px;line-height:1.6;color:rgba(201,211,222,.86)}
+@media (max-width:1024px){.v-parts{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- Прайс: 15 строк ---------- */
+.v-price{display:grid;grid-template-columns:1.45fr .55fr;gap:clamp(24px,4vw,52px);align-items:start}
+.v-price-head{display:flex;align-items:end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.v-tbl{width:100%;border-collapse:collapse;font-size:var(--v-fs-3)}
+.v-tbl caption{text-align:left;font-size:var(--v-fs-1);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,211,222,.6);padding-bottom:10px}
+.v-tbl th{text-align:left;font-weight:500;font-size:var(--v-fs-1);letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);padding:0 0 10px;border-bottom:1px solid rgba(201,211,222,.24)}
+.v-tbl th:last-child,.v-tbl td:last-child{text-align:right;white-space:nowrap}
+.v-tbl td{padding:14px 0;border-bottom:1px solid rgba(201,211,222,.1);vertical-align:baseline}
+.v-tbl td b{font-family:var(--font-display);font-weight:600;font-size:var(--v-fs-4);letter-spacing:-.01em;color:var(--v-cold)}
+.v-tbl tr:hover td{background:rgba(234,242,255,.03)}
+.v-tbl .sub{display:block;font-size:13px;color:rgba(201,211,222,.6);margin-top:2px}
+.v-price-aside{position:sticky;top:calc(var(--v-hdr) + 16px)}
+.v-price-aside .v-glass{padding:24px 22px}
+.v-price-aside h3{font-size:19px;margin-bottom:.5em}
+.v-price-aside ul{display:grid;gap:10px;margin:14px 0 18px}
+.v-price-aside li{display:flex;gap:10px;font-size:var(--v-fs-2);color:rgba(201,211,222,.88)}
+.v-price-aside li::before{content:"";flex:0 0 auto;width:6px;height:6px;margin-top:9px;border-radius:50%;
+  background:var(--v-cold);box-shadow:0 0 8px rgba(234,242,255,.8)}
+.v-price-aside .sum{font-family:var(--font-display);font-size:26px;color:var(--ivory);display:block;margin-bottom:2px}
+@media (max-width:980px){
+  .v-price{grid-template-columns:1fr}
+  .v-price-aside{position:static}
+}
+/* мобильный прайс — карточки (никакого горизонтального скролла) */
+@media (max-width:700px){
+  .v-tbl thead{display:none}
+  .v-tbl caption{display:none}
+  .v-tbl,.v-tbl tbody,.v-tbl tr,.v-tbl td{display:block;width:100%}
+  .v-tbl tr{padding:14px 16px;margin-bottom:10px;border:1px solid rgba(201,211,222,.14);
+    border-radius:var(--r-sm);background:rgba(14,22,34,.7)}
+  .v-tbl td{padding:0;border:0;text-align:left !important}
+  .v-tbl td:first-child{font-weight:500;font-size:var(--v-fs-3)}
+  .v-tbl td:last-child{margin-top:6px}
+  .v-tbl td b{font-size:22px}
+  .v-tbl .sub{display:block;font-size:12.5px;margin-top:2px}
+}
+
+/* ---------- «Как проходит визит»: 4 шага ---------- */
+.v-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px;counter-reset:st}
+.v-step{padding:24px 20px;border-radius:var(--r);border:1px solid rgba(201,211,222,.14);
+  background:linear-gradient(160deg,rgba(22,35,52,.55),rgba(7,11,18,.7))}
+.v-step::before{counter-increment:st;content:counter(st);display:block;font-family:var(--font-display);
+  font-size:34px;line-height:1;color:transparent;-webkit-text-stroke:1px var(--v-cold);margin-bottom:14px}
+.v-step h3{font-size:17px;margin-bottom:.4em}
+.v-step p{font-size:14px;color:rgba(201,211,222,.84);margin:0}
+@media (max-width:1024px){.v-steps{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.v-steps{grid-template-columns:1fr}}
+
+/* ---------- FAQ ---------- */
+.v-faq{display:grid;gap:10px;margin-top:30px;max-width:880px}
+.v-faq details{border:1px solid rgba(201,211,222,.16);border-radius:var(--r-sm);
+  background:rgba(14,22,34,.6);padding:0 18px}
+.v-faq details[open]{border-color:rgba(234,242,255,.32);background:rgba(20,32,48,.7)}
+.v-faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:18px;
+  align-items:center;padding:16px 0;font-family:var(--font-display);font-weight:600;font-size:16.5px;color:var(--ivory)}
+.v-faq summary::-webkit-details-marker{display:none}
+.v-faq summary::after{content:"+";font-family:var(--font-text);font-size:20px;color:var(--v-cold);
+  transition:transform var(--t-mid) var(--ease)}
+.v-faq details[open] summary::after{transform:rotate(45deg)}
+.v-faq .ans{padding:0 0 18px;color:rgba(201,211,222,.88);font-size:var(--v-fs-2);max-width:74ch}
+
+/* ---------- Финальный CTA ---------- */
+.v-cta{position:relative;overflow:hidden;border-radius:var(--r);border:1px solid rgba(201,211,222,.18);
+  background:radial-gradient(120% 140% at 12% 0%,rgba(22,64,47,.55),rgba(7,11,18,.9) 62%);padding:clamp(28px,4vw,52px)}
+.v-cta::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--v-cold),transparent);opacity:.7}
+.v-cta-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:center}
+.v-cta h2{margin-bottom:.35em}
+.v-cta .v-btnrow{margin-top:0}
+@media (max-width:860px){.v-cta-grid{grid-template-columns:1fr}}
+
+/* ---------- Служебный слой: фото-пометки ---------- */
+.v-photonote{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(201,211,222,.55)}
+.v-photonote::before{content:"";width:18px;height:1px;background:rgba(201,211,222,.4)}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important}
+}
+
+/* ==========================================================================
+   Тизер для главной + соседние секции сайта (home-section.html).
+   Классы `site-*` повторяют ритм реальных секций: тёмная «О компании»
+   (about) и светлая «Как мы работаем» (est-sec) — чтобы видеть стык.
+   ========================================================================== */
+
+/* ---------- Тизер «Voyah Free» между «О компании» и «Как мы работаем» ---------- */
+.v-teaser{
+  position:relative;overflow:hidden;
+  padding:clamp(56px,7vw,92px) 0;
+  background:
+    radial-gradient(120% 90% at 84% 8%,rgba(22,64,47,.34),rgba(7,11,18,0) 58%),
+    linear-gradient(180deg,#080D15 0%,#070B12 62%,#080D15 100%);
+  border-top:1px solid rgba(201,211,222,.12);border-bottom:1px solid rgba(201,211,222,.12);
+}
+.v-teaser::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(234,242,255,.75),transparent);opacity:.8}
+.v-teaser::after{content:"";position:absolute;right:-8%;top:-30%;width:52%;height:150%;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(234,242,255,.09),rgba(7,11,18,0) 70%);
+  pointer-events:none}
+.v-teaser .vy-wrap{position:relative;z-index:1}
+.v-teaser-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:center}
+.v-teaser h2{max-width:16ch}
+.v-teaser .v-lead{margin-top:14px}
+.v-teaser-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;align-items:center}
+.v-teaser-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.v-teaser-fact{padding:16px 16px 14px;border-radius:var(--r-sm);border:1px solid rgba(201,211,222,.16);
+  background:rgba(14,22,34,.66)}
+.v-teaser-fact b{display:block;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--ivory);margin-bottom:4px}
+.v-teaser-fact span{font-size:13px;color:rgba(201,211,222,.78)}
+.v-teaser-prices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px}
+.v-price-chip{position:relative;padding:18px 16px;border-radius:var(--r-sm);
+  border:1px solid rgba(201,211,222,.16);background:linear-gradient(180deg,rgba(20,32,48,.8),rgba(10,16,26,.8))}
+.v-price-chip span{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);margin-bottom:6px}
+.v-price-chip b{display:block;font-family:var(--font-display);font-weight:600;font-size:24px;color:var(--v-cold);line-height:1}
+.v-price-chip small{display:block;margin-top:6px;font-size:12.5px;color:rgba(201,211,222,.7)}
+@media (max-width:980px){
+  .v-teaser-grid{grid-template-columns:1fr}
+  .v-teaser-facts{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:560px){
+  .v-teaser-prices{grid-template-columns:1fr}
+  .v-teaser-facts{grid-template-columns:1fr}
+}
+
+/* ==========================================================================
+   ИНТРО «вход в раздел» (2,4 с, один раз за сессию).
+   Оверлей целиком создаётся скриптом (client/voyah-intro.ts) — без JS его нет,
+   поэтому нет и «вспышки» при загрузке. Фон НЕПРОЗРАЧНЫЙ на самом оверлее:
+   шторы можно двигать как угодно, страница в стыке не проступит; к моменту
+   разъезда штор фон гасится анимацией vyRootClear.
+   ========================================================================== */
+.vy-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: var(--v-ink);
+  cursor: pointer;
+  isolation: isolate;
+}
+.vy-intro.is-play {
+  animation: vyRootClear 1ms linear 1960ms forwards;
+}
+.vy-intro-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.2%;
+  background: var(--v-ink);
+}
+.vy-intro-panel--l { left: 0; }
+.vy-intro-panel--r { right: 0; }
+.vy-intro.is-play .vy-intro-panel--l { animation: vyPanelL 720ms cubic-bezier(.76,0,.24,1) 1960ms forwards; }
+.vy-intro.is-play .vy-intro-panel--r { animation: vyPanelR 720ms cubic-bezier(.76,0,.24,1) 1960ms forwards; }
+.vy-intro-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 2px;
+  margin: -1px 0 0 -20px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(234,242,255,0) 0%, #eaf2ff 50%, rgba(234,242,255,0) 100%);
+  opacity: 0;
+}
+.vy-intro.is-play .vy-intro-line {
+  animation: vyLineIn 360ms cubic-bezier(.2,.8,.2,1) 60ms forwards, vyLineOut 320ms ease-in 1500ms forwards;
+}
+.vy-intro-lamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 210px;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(234,242,255,.95), rgba(234,242,255,0));
+  opacity: 0;
+  transform-origin: 0 50%;
+}
+.vy-intro-lamp--l { transform: rotate(180deg) translateX(28px) scaleX(.2); }
+.vy-intro-lamp--r { transform: translateX(28px) scaleX(.2); }
+.vy-intro.is-play .vy-intro-lamp--l { animation: vyLampL 420ms cubic-bezier(.2,.8,.2,1) 300ms forwards, vyLampOut 380ms ease-in 1460ms forwards; }
+.vy-intro.is-play .vy-intro-lamp--r { animation: vyLampR 420ms cubic-bezier(.2,.8,.2,1) 300ms forwards, vyLampOut 380ms ease-in 1460ms forwards; }
+.vy-intro-svg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(86vw, 1180px);
+  height: auto;
+  transform: translate3d(-50%, -50%, 0);
+  opacity: 0;
+}
+.vy-intro.is-play .vy-intro-svg { animation: vySvgIn 520ms ease-out 640ms forwards; }
+.vy-intro-svg path,
+.vy-intro-svg circle {
+  fill: none;
+  stroke: #eaf2ff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.vy-intro.is-play .vy-intro-svg path,
+.vy-intro.is-play .vy-intro-svg circle {
+  animation: vyDraw 760ms cubic-bezier(.4,0,.2,1) forwards;
+  animation-delay: calc(680ms + var(--i, 0) * 52ms);
+}
+.vy-intro-svg .glow { stroke: rgba(234,242,255,.18); stroke-width: 7; filter: blur(1px); }
+.vy-intro-svg .ground { stroke: rgba(234,242,255,.16); stroke-width: 1.4; }
+.vy-intro-svg .bar { stroke: #fff; stroke-width: 3.4; filter: drop-shadow(0 0 10px rgba(234,242,255,.95)); }
+.vy-intro-flash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: #eaf2ff;
+  opacity: 0;
+  transform: scaleY(1);
+}
+.vy-intro.is-play .vy-intro-flash { animation: vyFlash 420ms ease-out 1700ms forwards; }
+.vy-intro-tag {
+  position: absolute;
+  right: 22px;
+  bottom: 20px;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(201,211,222,.5);
+}
+.vy-intro-tag i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brass);
+  margin-right: 8px;
+}
+.vy-intro.is-skip { opacity: 0; visibility: hidden; transition: opacity 180ms ease, visibility 180ms; }
+@keyframes vyRootClear { to { background-color: rgba(7,11,18,0); } }
+@keyframes vyPanelL { to { transform: translate3d(-101%, 0, 0); } }
+@keyframes vyPanelR { to { transform: translate3d(101%, 0, 0); } }
+@keyframes vyLineIn { from { opacity: 0; transform: scaleX(.2); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes vyLineOut { to { opacity: 0; transform: scaleX(2.6); } }
+@keyframes vyLampL { from { opacity: 0; transform: rotate(180deg) translateX(28px) scaleX(.2); } to { opacity: .9; transform: rotate(180deg) translateX(210px) scaleX(1); } }
+@keyframes vyLampR { from { opacity: 0; transform: translateX(28px) scaleX(.2); } to { opacity: .9; transform: translateX(210px) scaleX(1); } }
+@keyframes vyLampOut { to { opacity: 0; } }
+@keyframes vySvgIn { from { opacity: 0; transform: translate3d(-50%,-50%,0) scale(.985); } to { opacity: 1; transform: translate3d(-50%,-50%,0) scale(1); } }
+@keyframes vyDraw { to { stroke-dashoffset: 0; } }
+@keyframes vyFlash { 0% { opacity: 0; transform: scaleY(1); } 35% { opacity: .75; transform: scaleY(4); } 100% { opacity: 0; transform: scaleY(14); } }
+body.vy-lock { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .vy-intro { display: none !important; }
+}
+@media print {
+  .vy-intro { display: none !important; }
+}
