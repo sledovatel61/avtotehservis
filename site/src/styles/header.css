@@ -5,11 +5,11 @@
   border-bottom:1px solid var(--line);
   transition:padding var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease);
 }
-.hdr-in{display:flex;align-items:center;gap:24px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
+.hdr-in{display:flex;align-items:center;gap:20px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
 .hdr.is-compact .hdr-in{padding-top:8px;padding-bottom:8px}
 .logo{display:flex;align-items:center;gap:12px;color:var(--ivory);flex-shrink:0}
 .logo:hover{color:var(--ivory)}
-.logo img{width:44px;height:44px;transition:transform var(--t-mid) var(--ease)}
+.logo img{width:68px;height:42px;transition:transform var(--t-mid) var(--ease)}
 .hdr.is-compact .logo img{transform:scale(.86)}
 .logo-t{font-family:var(--font-display);font-weight:600;font-size:17px;letter-spacing:-.01em;line-height:1.1}
 .logo-t b{display:block;font-family:var(--font-text);font-weight:400;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);margin-top:3px}
@@ -18,7 +18,7 @@
 .nav a{white-space:nowrap}
 .nav ul{display:flex;gap:4px}
 .nav a{
-  display:block;padding:10px 13px;border-radius:8px;color:var(--mist);
+  display:block;padding:10px 12px;border-radius:8px;color:var(--mist);
   font-size:14.5px;font-weight:500;letter-spacing:.01em;min-height:44px;
   display:flex;align-items:center;
   transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
@@ -26,7 +26,9 @@
 .nav a:hover{color:var(--ivory);background:rgba(224,169,109,.08)}
 .nav a.is-active{color:var(--brass);background:rgba(224,169,109,.1)}
 .nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:7px}
-.hdr-cta{display:flex;align-items:center;gap:16px;flex-shrink:0}
+/* круг 27: логотип стал шире (68×42 вместо 44×44) — поджимаем зазоры, чтобы на 1440
+   кнопка «Записаться» оставалась внутри контейнера (проверка §2.1) */
+.hdr-cta{display:flex;align-items:center;gap:12px;flex-shrink:0}
 .hdr-phone{
   font-weight:700;font-size:16.5px;color:var(--ivory);white-space:nowrap;
   display:flex;align-items:center;gap:8px;min-height:44px;
@@ -112,7 +114,7 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
   .logo-t b{display:none}
   .hdr-in{gap:14px}
   .logo{gap:10px}
-  .logo img{width:40px;height:40px}
+  .logo img{width:58px;height:36px}
   .logo-t{font-size:16px}
   .burger{width:44px;height:44px}
   .burger span{left:11px;right:11px}
@@ -125,5 +127,5 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
 @media (max-width:380px){
   .hdr-in{gap:10px}
   .logo-t{font-size:15px}
-  .logo img{width:36px;height:36px}
+  .logo img{width:52px;height:32px}
 }

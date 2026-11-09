@@ -7,7 +7,7 @@ const { page } = Astro.props as Props;
 <header class="hdr" id="hdr">
   <div class="hdr-in container">
     <a class="logo" href="/" aria-label={`${S.site_name} — на главную`}>
-      <img src="/img/logo.svg" alt="" width="44" height="44">
+      <img src="/img/logo.svg" alt="" width="68" height="42">
       <span class="logo-t">{S.site_name}<b>{S.city} · {S.address_short}</b></span>
     </a>
     <nav class="nav" id="nav" aria-label="Основное меню">
@@ -31,7 +31,7 @@ const { page } = Astro.props as Props;
 </header>
 <div class="m-menu" id="m-menu" aria-label="Меню (мобильное)">
   <div class="m-menu-top">
-    <a class="logo" href="/"><img src="/img/logo.svg" alt="" width="40" height="40"><span class="logo-t">{S.site_name}</span></a>
+    <a class="logo" href="/"><img src="/img/logo.svg" alt="" width="58" height="36"><span class="logo-t">{S.site_name}</span></a>
     <button class="m-close" id="m-close" type="button" aria-label="Закрыть меню">✕</button>
   </div>
   <nav aria-label="Основное меню (мобильное)">

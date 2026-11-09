@@ -100,7 +100,8 @@ export async function checkSvcBg(opts = {}) {
   const pSha = [1, 2, 3, 4, 5, 6].map(i => sha(`svc-${i}-640.avif`));
   if (new Set(pSha).size !== 6) fails.push(`C3 sha256 производных карточек не уникальны`);
   const astroCards = [...new Set([...svcimg.matchAll(/:\s*'svc-(\d)'/g)].map(m => m[1]))];
-  if (astroCards.length !== 7) fails.push(`C3 в карте svc-img.ts ${astroCards.length} файлов вместо 7 (круг 26: 7 услуг)`);
+  /* круг 27: восьмая услуга — сварка (svc-9), карта выросла до 8 фактур */
+  if (astroCards.length !== 8) fails.push(`C3 в карте svc-img.ts ${astroCards.length} файлов вместо 8 (круг 27: 8 услуг)`);
   if (!/svcImgKey|SVC_IMG/.test(pages)) fails.push('C3 страницы услуг не используют карту svc-img');
   if (!/\$\{svcImgKey\([^)]*\)\}-640\.avif/.test(pages)) fails.push('C3 picture карточек не использует srcset 640/960');
 

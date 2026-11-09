@@ -12,7 +12,13 @@
          у каждой picture с avif+webp, alt начинается с «Иллюстрация:», есть сноска
          «оформленные сертификаты можно посмотреть в сервисе»; ссылки на сканы из
          docs/content-source/r26 в разметке не встречаются.
-   --self-test: 4 мутанта, каждый обязан ронять гейт.
+     C6 (круг 27, задание №31 §1.4): бланки светлые и разные между собой:
+         C6a средняя яркость каждого из 16 файлов cert-* в коридоре 165…242 (не «чёрная
+             карточка» круга 26, которую забраковал владелец);
+         C6b попарное среднеквадратичное отличие rms ≥ 18 для 4 брендов по 1200-производной,
+             приведённой к 120×160 RGB (четыре разных фирменных дизайна, а не один шаблон).
+   --self-test: 6 мутантов, каждый обязан ронять гейт (5-чёрная-карточка → C6a,
+   6-клоны-брендов → C6b).
    Запуск: node scripts/check-certs.mjs [--self-test] */
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -26,10 +32,13 @@ const MASTERS = join(ROOT, 'docs', 'photos-source', 'r26-certs');
 const ASTRO = join(SITE, 'src', 'pages', 'about.astro');
 
 const BRANDS = ['lynxauto', 'sufix', 'korson', 'ngn'];
+const masterKey = (assetName) => assetName.replace(/^cert-/, '').replace(/-\d+$/, '');
 const GEOM = { 720: [720, 960], 1200: [1200, 1600] };
 const PAIRS = {};
 for (const k of BRANDS) for (const sz of [720, 1200]) PAIRS[`cert-${k}-${sz}`] = `cert-${k}.jpg`;
 const LAPVAR_MIN = 200;
+const MEAN_RANGE = [165, 242];      /* C6a: светлый бумажный бланк */
+const BRAND_RMS_MIN = 18;           /* C6b: минимум отличия двух брендов */
 const DENSITY = { webp: 15, avif: 8 };   /* КБ на мегапиксель */
 const WEBP_1200_CAP_KB = 120;
 
@@ -49,11 +58,28 @@ async function lapvar(buf) {
   return s2 / n - mean * mean;
 }
 
+async function greyMean(buf) {
+  const st = await sharp(buf).greyscale().stats();
+  return st.channels[0].mean;
+}
+
+async function thumb(buf) {
+  return sharp(buf).resize(120, 160, { fit: 'fill' }).removeAlpha().raw().toBuffer();
+}
+
+function rms(a, b) {
+  let s = 0;
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) { const d = a[i] - b[i]; s += d * d; }
+  return Math.sqrt(s / n);
+}
+
 export async function checkCerts(opts = {}) {
   const fails = [];
   const buffers = opts.buffers || {};
   const astro = opts.astro ?? readFileSync(ASTRO, 'utf8');
 
+  const brandThumbs = {};
   for (const [name, master] of Object.entries(PAIRS)) {
     for (const ext of ['avif', 'webp']) {
       const file = `${name}.${ext}`;
@@ -80,7 +106,21 @@ export async function checkCerts(opts = {}) {
       if (ext === 'webp' && sz === 1200 && buf.length / 1024 > WEBP_1200_CAP_KB) {
         fails.push(`C4 ${file}: ${(buf.length / 1024).toFixed(0)} КБ > ${WEBP_1200_CAP_KB} КБ (задание §3)`);
       }
+      /* C6a: светлый бланк, а не чёрная карточка */
+      const mean = await greyMean(buf);
+      if (mean < MEAN_RANGE[0] || mean > MEAN_RANGE[1]) {
+        fails.push(`C6a ${file}: средняя яркость ${mean.toFixed(0)} вне ${MEAN_RANGE[0]}…${MEAN_RANGE[1]}`);
+      }
+      if (ext === 'webp' && sz === 1200) brandThumbs[masterKey(name)] = await thumb(buf);
     }
+  }
+
+  /* C6b: четыре разных фирменных дизайна, а не один шаблон */
+  const keys = BRANDS.filter((k) => brandThumbs[k]);
+  for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+    if (keys[i] === keys[j]) continue;
+    const d = rms(brandThumbs[keys[i]], brandThumbs[keys[j]]);
+    if (d < BRAND_RMS_MIN) fails.push(`C6b ${keys[i]}/${keys[j]}: rms ${d.toFixed(1)} < ${BRAND_RMS_MIN} (похожи как один шаблон)`);
   }
 
   /* C5 разметка блока сертификатов */
@@ -120,6 +160,37 @@ const MUTANTS = [
   }],
   ['4-сноска-исчезла', ({ setAstro }) => {
     setAstro((a) => a.replace('оформленные сертификаты можно посмотреть в сервисе', 'сканы лежат в архиве сервиса'));
+  }],
+  /* круг 27: владелец забраковал чёрные карточки — мутант возвращает круг 26 */
+  ['5-чёрная-карточка', async ({ setBuf }) => {
+    /* тёмная «карточка с текстом» круга 26: яркость ~26, но зерно/фактура есть, поэтому
+       C1 (резкость) и C2 (плотность) проходят — ронять обязан именно C6a */
+    const dark = (w, h) => {
+      const d = Buffer.alloc(w * h * 3);
+      let seed = 271;
+      /* блочное зерно 2×2 и амплитуда ±30: переживает avif q70, поэтому C1 остаётся живым,
+         а падает именно C6a */
+      for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        const v = 24 + (seed % 30);
+        for (let dy = 0; dy < 2 && y + dy < h; dy++) for (let dx = 0; dx < 2 && x + dx < w; dx++) {
+          const i = ((y + dy) * w + (x + dx)) * 3;
+          d[i] = v; d[i + 1] = v + 3; d[i + 2] = v + 1;
+        }
+      }
+      return d;
+    };
+    for (const [file, w, h] of [['cert-korson-1200.webp', 1200, 1600], ['cert-korson-720.webp', 720, 960],
+      ['cert-korson-1200.avif', 1200, 1600], ['cert-korson-720.avif', 720, 960]]) {
+      const raw = dark(w, h);
+      const pipe = sharp(raw, { raw: { width: w, height: h, channels: 3 } });
+      setBuf(file, file.endsWith('.avif') ? await pipe.avif({ quality: 70 }).toBuffer() : await pipe.webp({ quality: 90 }).toBuffer());
+    }
+  }],
+  /* круг 27: подмена буфера — все бренды стали клонами LYNXauto */
+  ['6-клоны-брендов', ({ setBuf }) => {
+    const lynx = readFileSync(join(IMG, 'cert-lynxauto-1200.webp'));
+    setBuf('cert-sufix-1200.webp', lynx);
   }],
 ];
 

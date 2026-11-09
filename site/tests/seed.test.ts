@@ -4,7 +4,7 @@
          elektrika, remont-shin и прочие удалённые миграцией 002);
      S2. ровно 7 видимых услуг, у каждой price_from не NULL; значения «от» совпадают
          с прайсом a7/02; 4 скрытых чипа на месте, у kondicioner цены нет (NULL);
-     S3. chip_labels: 11 подписей чипов, включая скрытые;
+     S3. chip_labels: 12 подписей чипов, включая скрытые;
      S4. кейсы a7/05: 6 кейсов, слаги-владельцы из нового набора;
      S5. новости a9: ровно 5 статей с теми же слагами и датами (даты не меняем);
      S6. марки: «легковые, кроссоверы и паркетники», ГАЗ и УАЗ остались.
@@ -32,9 +32,13 @@ const DELETED = ['shinomontazh-gruz', 'pravka-diskov', 'hodovaya-tormoza', 'elek
 /* price_from хранится готовой строкой витрины («от N ₽») — карточка выводит её как есть */
 const VISIBLE: [string, string][] = [
   ['shinomontazh', 'от 1000 ₽'], ['balansirovka', 'от 600 ₽'], ['to-maslo', 'от 1000 ₽'], ['tormoza', 'от 1200 ₽'],
-  ['podveska', 'от 800 ₽'], ['grm-sceplenie', 'от 3500 ₽'], ['diagnostika', 'от 500 ₽']];
+  ['podveska', 'от 800 ₽'], ['grm-sceplenie', 'от 3500 ₽'], ['diagnostika', 'от 500 ₽'],
+  /* круг 27: восьмая видимая услуга — сварочные работы (от 1500 ₽ за место) */
+  ['svarka', 'от 1500 ₽']];
 const HIDDEN: [string, string | null][] = [
-  ['remont-kolesa', 'от 600 ₽'], ['sceplenie', 'от 6000 ₽'], ['diagnostika-hodovaya', 'от 500 ₽'], ['kondicioner', null]];
+  ['remont-kolesa', 'от 600 ₽'], ['sceplenie', 'от 6000 ₽'], ['diagnostika-hodovaya', 'от 500 ₽'],
+  /* круг 27: у кондиционера появилась подтверждённая владельцем цена — поиск утечки от 500 ₽ */
+  ['kondicioner', 'от 500 ₽']];
 const NEWS = ['remen-grm-kogda-menat', 'stuk-v-podveske', 'sezonnaya-smena-shin',
   'diagnostika-pered-pokupkoy', 'zapravka-kondicionera'];
 
@@ -49,10 +53,10 @@ test('S1 удалённые слаги не возвращаются сидом'
   for (const d of DELETED) assert.ok(!slugs.has(d), `слаг ${d} не должен существовать`);
 });
 
-test('S2 семь видимых услуг с ценой «от», четыре скрытых чипа', () => {
+test('S2 восемь видимых услуг с ценой «от», четыре скрытых чипа', () => {
   const rows = db.prepare('SELECT slug, hidden, price_from, sort FROM services ORDER BY sort').all() as Row[];
   const vis = rows.filter((r) => r.hidden === 0);
-  assert.equal(vis.length, 7, 'видимых услуг ровно 7');
+  assert.equal(vis.length, 8, 'видимых услуг ровно 8');
   for (const [slug, price] of VISIBLE) {
     const r = vis.find((x) => x.slug === slug);
     assert.ok(r, `видимая услуга ${slug} на месте`);
@@ -67,11 +71,11 @@ test('S2 семь видимых услуг с ценой «от», четыре
   }
 });
 
-test('S3 chip_labels: 11 подписей', () => {
+test('S3 chip_labels: 12 подписей', () => {
   const row = db.prepare("SELECT value FROM settings WHERE key = 'chip_labels'").get() as { value: string };
   const labels = JSON.parse(row.value) as Record<string, string>;
-  assert.equal(Object.keys(labels).length, 11, 'подписей чипов 11');
-  for (const slug of ['shinomontazh', 'balansirovka', 'to-maslo', 'tormoza', 'podveska', 'grm-sceplenie', 'diagnostika', 'remont-kolesa', 'sceplenie', 'diagnostika-hodovaya', 'kondicioner']) {
+  assert.equal(Object.keys(labels).length, 12, 'подписей чипов 12');
+  for (const slug of ['shinomontazh', 'balansirovka', 'to-maslo', 'tormoza', 'podveska', 'grm-sceplenie', 'diagnostika', 'remont-kolesa', 'sceplenie', 'diagnostika-hodovaya', 'kondicioner', 'svarka']) {
     assert.ok(labels[slug], `подпись чипа ${slug}`);
   }
 });

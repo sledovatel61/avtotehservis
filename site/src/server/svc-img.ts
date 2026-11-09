@@ -4,5 +4,7 @@ export const SVC_IMG: Record<string, string> = {
   'to-maslo': 'svc-4', tormoza: 'svc-5', diagnostika: 'svc-6',
   /* круг 26: свои фотофактуры новых услуг (a7/00-index §«Что обязательно поправить») */
   podveska: 'svc-7', 'grm-sceplenie': 'svc-8',
+  /* круг 27: обложка услуги «Сварочные работы и выхлоп» */
+  svarka: 'svc-9',
 };
 export const svcImgKey = (slug: string | undefined | null): string => SVC_IMG[slug ?? ''] ?? 'svc-1';
