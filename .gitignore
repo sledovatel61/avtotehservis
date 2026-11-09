@@ -52,3 +52,7 @@ mockups/round2b/_downloads/*.zip
 
 # сборка превью для GitHub Pages (генерируется скриптом, в git не нужна)
 site/pages-dist/
+
+# рабочие выгрузки из Drive и поиска картинок (в репозиторий не кладём)
+google_drive/
+image-search/

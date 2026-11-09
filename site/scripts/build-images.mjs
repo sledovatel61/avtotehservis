@@ -308,7 +308,9 @@ async function main() {
 
   /* ----- 4. мастер 2560×1440 + резкость ----- */
   const masterDeskFile = join(GEN_HERO, 'master-desk-2560.jpg');
-  await sharp(withPost).resize(NW, NH, { fit: 'fill', kernel: 'lanczos3' })
+  /* круг 28: кадр-источник может быть не 16:9 (новый герой 1536×1024) — кадрируем по центру,
+     а не растягиваем: fill искажал бы пропорции машин на фоне */
+  await sharp(withPost).resize(NW, NH, { fit: 'cover', position: 'centre', kernel: 'lanczos3' })
     .sharpen({ sigma: 0.8, m1: 0.4, m2: 1.6 }).jpeg({ quality: 95 }).toFile(masterDeskFile);
 
   /* ----- 5. замеры зон на мастере ----- */
@@ -741,7 +743,7 @@ async function main() {
       ]),
     /* круг 27: обложка услуги «Сварочные работы и выхлоп» (svc-9) */
     /* круг 28: гофра была задвоена и висела в воздухе — кадр пересобран (r28/svarka-gen.jpg) */
-    ...[join(HERE, '../../docs/photos-source/r28/svarka-gen.jpg')].flatMap((m) => [
+    ...[join(HERE, '../../docs/photos-source/r28/svarka-fix2.jpg')].flatMap((m) => [
       encodeSet('svc-9-640', sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
       encodeSet('svc-9-960', sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
     ]),
