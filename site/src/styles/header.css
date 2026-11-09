@@ -131,3 +131,18 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
   .logo-t{font-size:15px}
   .logo img{width:52px;height:32px}
 }
+
+/* круг 28: седьмой пункт «Voyah Free» — холодная точка-маркер, чтобы раздел
+   отличался от «Контактов», но не спорил с латунью CTA */
+.nav .nav-voyah a{position:relative;padding-left:16px}
+.nav .nav-voyah a::before{content:'';position:absolute;left:5px;top:50%;width:5px;height:5px;
+  margin-top:-2.5px;border-radius:50%;background:#EAF2FF;box-shadow:0 0 8px rgba(234,242,255,.9)}
+.nav .nav-voyah a.is-active::before{background:#fff}
+@media (min-width:1024px) and (max-width:1199px){
+  .hdr-phone{display:none}
+  .nav ul{gap:1px}
+  .nav a{padding:8px 6px;font-size:13.5px}
+}
+@media (min-width:1200px) and (max-width:1279px){
+  .nav a{padding:8px 6px;font-size:13.5px}
+}

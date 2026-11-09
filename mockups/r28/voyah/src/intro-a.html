@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voyah Free — прототип входа, вариант A «Световая линия»</title>
+<style>
+/*==VOYAH_CSS==*/
+</style>
+<style>
+  /* ---------- Прототип A: «Световая линия» ---------- */
+  .proto-hdr{position:fixed;left:0;right:0;top:0;z-index:60;padding:14px 20px;
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    background:linear-gradient(180deg,rgba(7,11,18,.9),rgba(7,11,18,0));pointer-events:none}
+  .proto-hdr b{font-family:var(--font-d);font-weight:600;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--silver)}
+  .proto-hdr span{font-size:12px;color:rgba(201,211,222,.6)}
+
+  /* оверлей создаётся из JS — без JS контент виден сразу */
+  .intro{position:fixed;inset:0;z-index:100;overflow:hidden;background:transparent;cursor:pointer}
+  .intro-panel{position:absolute;top:0;bottom:0;width:50.02%;background:var(--ink);
+    will-change:transform}
+  .intro-panel--l{left:0;transform:translateX(0)}
+  .intro-panel--r{right:0;transform:translateX(0)}
+  .intro.is-play .intro-panel--l{animation:panelL 430ms cubic-bezier(.7,0,.2,1) 1960ms forwards}
+  .intro.is-play .intro-panel--r{animation:panelR 430ms cubic-bezier(.7,0,.2,1) 1960ms forwards}
+  @keyframes panelL{to{transform:translateX(-100.5%)}}
+  @keyframes panelR{to{transform:translateX(100.5%)}}
+
+  /* тонкая линия «включается» и расходится в фары */
+  .intro-line{position:absolute;left:50%;top:50%;width:36px;height:2px;margin:-1px 0 0 -18px;
+    border-radius:2px;background:linear-gradient(90deg,rgba(234,242,255,0),#fff 50%,rgba(234,242,255,0));
+    opacity:0;box-shadow:0 0 24px rgba(234,242,255,.8)}
+  .intro.is-play .intro-line{animation:lineIn 380ms cubic-bezier(.2,.8,.2,1) 60ms forwards,
+    lineOut 320ms ease-in 1560ms forwards}
+  @keyframes lineIn{
+    0%{width:36px;opacity:0}
+    55%{width:150px;opacity:1}
+    100%{width:300px;opacity:1}
+  }
+  @keyframes lineOut{to{opacity:0;width:520px}}
+
+  .intro-lamp{position:absolute;top:50%;height:3px;width:220px;border-radius:3px;
+    background:linear-gradient(90deg,rgba(234,242,255,0),#EAF2FF);
+    opacity:0;transform-origin:left center;filter:drop-shadow(0 0 16px rgba(234,242,255,.75))}
+  .intro-lamp--r{left:50%;transform-origin:left center}
+  .intro-lamp--l{right:50%;transform-origin:right center;background:linear-gradient(270deg,rgba(234,242,255,0),#EAF2FF)}
+  .intro.is-play .intro-lamp--r{animation:lampR 420ms cubic-bezier(.2,.8,.2,1) 300ms forwards,lampFade 380ms ease-in 1460ms forwards}
+  .intro.is-play .intro-lamp--l{animation:lampL 420ms cubic-bezier(.2,.8,.2,1) 300ms forwards,lampFade 380ms ease-in 1460ms forwards}
+  @keyframes lampR{0%{opacity:0;transform:scaleX(.06) translateY(-14px)}100%{opacity:.95;transform:scaleX(1) translateY(-14px)}}
+  @keyframes lampL{0%{opacity:0;transform:scaleX(.06) translateY(14px)}100%{opacity:.95;transform:scaleX(1) translateY(14px)}}
+  @keyframes lampFade{to{opacity:0}}
+
+  /* контур кузова собирается по сегментам */
+  .intro-svg{position:absolute;left:50%;top:50%;width:min(86vw,1180px);transform:translate(-50%,-50%);
+    opacity:0;overflow:visible}
+  .intro.is-play .intro-svg{animation:svgIn 520ms ease-out 640ms forwards}
+  @keyframes svgIn{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
+  .intro-svg path,.intro-svg circle{fill:none;stroke:#EAF2FF;stroke-width:2.4;stroke-linecap:round;
+    stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1}
+  .intro.is-play .intro-svg path,.intro.is-play .intro-svg circle{
+    animation:draw 760ms cubic-bezier(.3,.7,.2,1) forwards;
+    animation-delay:calc(680ms + var(--i) * 52ms);
+  }
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .intro-svg .glow{stroke:rgba(234,242,255,.18);stroke-width:7;filter:blur(1px)}
+  /* сквозная световая полоса фар — единственный «горячий» элемент силуэта */
+  .intro-svg .ground{stroke:rgba(234,242,255,.16);stroke-width:1.4}
+  .intro-svg .bar{stroke:#fff;stroke-width:3.4;filter:drop-shadow(0 0 10px rgba(234,242,255,.95))}
+
+  /* вспышка и шторы */
+  .intro-flash{position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;opacity:0;
+    background:linear-gradient(90deg,rgba(234,242,255,0),#fff 30%,#fff 70%,rgba(234,242,255,0));
+    box-shadow:0 0 40px 8px rgba(234,242,255,.55)}
+  .intro.is-play .intro-flash{animation:flash 420ms ease-out 1700ms forwards}
+  @keyframes flash{0%{opacity:0;transform:scaleY(.4)}40%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(2.6)}}
+
+  /* служебная плашка */
+  .intro-tag{position:absolute;right:16px;bottom:16px;z-index:5;display:inline-flex;align-items:center;gap:8px;
+    padding:8px 12px;border-radius:999px;background:rgba(7,11,18,.8);
+    border:1px solid rgba(201,211,222,.3);font-size:12px;color:var(--silver);letter-spacing:.04em}
+  .intro-tag i{width:6px;height:6px;border-radius:50%;background:var(--cold);box-shadow:0 0 8px rgba(234,242,255,.9)}
+
+  /* панель управления прототипом */
+  .proto-bar{position:fixed;left:16px;bottom:16px;z-index:70;display:flex;gap:8px;flex-wrap:wrap}
+  .proto-bar button{font:inherit;font-size:12px;letter-spacing:.05em;padding:8px 12px;border-radius:999px;
+    border:1px solid rgba(201,211,222,.3);background:rgba(7,11,18,.8);color:var(--silver);cursor:pointer}
+  .proto-bar button:hover{border-color:var(--cold);color:var(--cold)}
+  .v-skip-hint{position:fixed;right:16px;bottom:16px;z-index:70;font-size:11.5px;color:rgba(201,211,222,.55)}
+
+  /* приведённая страница под оверлеем — короткая, чтобы видеть результат */
+  .under{min-height:100vh}
+  @media (prefers-reduced-motion:reduce){.intro{display:none}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <a class="logo" href="#"><img src="img/logo.svg" alt="" width="68" height="42">
+      <span class="logo-t">АвтоТехСервис<b>Ростов-на-Дону · Портовая 439</b></span></a>
+    <nav class="nav" aria-label="Основное меню">
+      <ul>
+        <li><a href="#">Главная</a></li><li><a href="#">Услуги и цены</a></li><li><a href="#">Прайс</a></li>
+        <li><a href="#">О компании</a></li><li><a href="#">Полезное</a></li><li><a href="#">Контакты</a></li>
+        <li><a class="is-active" href="#">Voyah Free</a></li>
+      </ul>
+    </nav>
+    <div class="hdr-cta">
+      <a class="hdr-phone" href="tel:+79289065700"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg><span>+7 (928) 906-57-00</span></a>
+      <a class="v-btn v-btn--brass" href="#">Записаться</a>
+    </div>
+  </div>
+</header>
+
+<main class="under">
+  <section class="v-hero">
+    <div class="v-hero-bg" aria-hidden="true"><img src="img/hero.jpg" width="1400" height="781" alt=""></div>
+    <div class="wrap">
+      <p class="v-eyebrow">Прототип входа · вариант A</p>
+      <h1>Ремонт и обслуживание <em>Voyah Free</em></h1>
+      <p class="v-lead">Под этой анимацией — реальный первый экран. Сцена длится 2,4 с и прерывается кликом, Esc или скроллом.</p>
+      <div class="v-btnrow">
+        <a class="v-btn v-btn--brass" href="#">Записаться на ТО</a>
+        <a class="v-btn v-btn--light" href="#">Позвонить: +7 (928) 906-57-00</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="proto-bar">
+  <button type="button" id="replay">Смотреть снова</button>
+  <a class="v-btn v-btn--light" style="min-height:0;padding:8px 12px;font-size:12px" href="intro-b.html">Вариант B →</a>
+  <a class="v-btn v-btn--light" style="min-height:0;padding:8px 12px;font-size:12px" href="index.html">К странице →</a>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   Интро «Световая линия». Оверлей создаётся только из JS: без скрипта
+   контент виден сразу, FOUC нет. Всё — transform/opacity, без blur на
+   полноэкранных слоях и без canvas.
+   ------------------------------------------------------------------ */
+(function(){
+  var KEY='voyah-intro-a';
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var saveData = navigator.connection && navigator.connection.saveData;
+  var replay = location.search.indexOf('replay') > -1;
+  try { if(!replay && sessionStorage.getItem(KEY)) return; } catch(e){}
+
+  if(reduce || saveData) return;   /* анимация не запускается, контент сразу */
+
+  var svg = ''
+  + '<svg class="intro-svg" viewBox="0 0 1200 460" aria-hidden="true" focusable="false">'
+  /* Силуэт кроссовера по рестайлингу: высокий кузов, короткие свесы, крупные арки.
+     Порог y=342, земля y=406, колёса r=62, центры (330,342) и (930,342); арка r=74,
+     поэтому шина целиком видна внутри проёма — без «двойного контура» колеса. */
+  + '<path class="ground" pathLength="1" style="--i:0" d="M96 406 L1104 406"/>'
+  + '<path class="glow" pathLength="1" style="--i:1" d="M140 342 L136 300 Q136 284 156 280 L212 268 L272 258 L520 250 L656 124 Q672 116 700 116 L892 116 L992 224 Q1010 240 1034 246 L1064 254 Q1086 262 1088 292 L1090 342 L1004 342 A74 74 0 0 0 856 342 L404 342 A74 74 0 0 0 256 342 L140 342 Z"/>'
+  + '<path pathLength="1" style="--i:1" d="M140 342 L136 300 Q136 284 156 280 L212 268 L272 258 L520 250 L656 124 Q672 116 700 116 L892 116 L992 224 Q1010 240 1034 246 L1064 254 Q1086 262 1088 292 L1090 342 L1004 342 A74 74 0 0 0 856 342 L404 342 A74 74 0 0 0 256 342 L140 342 Z"/>'
+  + '<circle cx="330" cy="342" r="62" style="--i:2"/>'
+  + '<circle cx="930" cy="342" r="62" style="--i:3"/>'
+  /* сквозная световая полоса фар — единственный «горячий» элемент силуэта */
+  + '<path class="bar" pathLength="1" style="--i:4" d="M152 294 L246 286"/>'
+  /* узкая решётка с вертикальными ламелями */
+  + '<path pathLength="1" style="--i:5" d="M168 306 L168 338 M181 305 L181 338 M194 305 L194 337 M207 304 L207 337 M220 303 L220 336"/>'
+  /* вертикальная вставка в бампере + сплиттер */
+  + '<path pathLength="1" style="--i:6" d="M154 316 L154 340 M142 340 L222 338"/>'
+  /* подоконная линия */
+  + '<path pathLength="1" style="--i:7" d="M420 278 L986 258"/>'
+  /* стойки: передняя, средняя, задняя */
+  + '<path pathLength="1" style="--i:8" d="M806 254 L806 122 M928 244 L888 120"/>'
+  /* двери, капот, ступицы */
+  + '<path pathLength="1" style="--i:9" d="M700 252 L700 336 M812 254 L812 336"/>'
+  + '<circle cx="330" cy="342" r="15" style="--i:10"/>'
+  + '<circle cx="930" cy="342" r="15" style="--i:10"/>'
+  + '</svg>';
+
+  var el = document.createElement('div');
+  el.className = 'intro';
+  el.setAttribute('aria-hidden','true');
+  el.innerHTML =
+      '<div class="intro-panel intro-panel--l"></div>'
+    + '<div class="intro-panel intro-panel--r"></div>'
+    + svg
+    + '<div class="intro-lamp intro-lamp--l"></div>'
+    + '<div class="intro-lamp intro-lamp--r"></div>'
+    + '<div class="intro-line"></div>'
+    + '<div class="intro-flash"></div>'
+    + '<div class="intro-tag"><i></i>вариант A · клик — пропустить</div>';
+  document.body.appendChild(el);
+  document.body.classList.add('no-scroll');
+
+  var done = false, timer;
+  function finish(){
+    if(done) return; done = true;
+    clearTimeout(timer);
+    el.classList.add('is-skip');           /* 180 мс на уход */
+    el.style.transition = 'opacity 180ms ease, visibility 180ms';
+    el.style.opacity = '0';
+    el.style.visibility = 'hidden';
+    document.body.classList.remove('no-scroll');
+    try { sessionStorage.setItem(KEY,'1'); } catch(e){}
+    setTimeout(function(){ el.remove(); }, 220);
+  }
+  /* сцена: 2,4 с */
+  requestAnimationFrame(function(){ el.classList.add('is-play'); });
+  timer = setTimeout(finish, 2400);
+
+  el.addEventListener('click', finish);
+  addEventListener('keydown', function(e){ if(e.key==='Escape') finish(); });
+  addEventListener('wheel', finish, {passive:true, once:true});
+  addEventListener('touchmove', finish, {passive:true, once:true});
+
+  document.getElementById('replay').addEventListener('click', function(){
+    try { sessionStorage.removeItem(KEY); } catch(e){}
+    location.search = '?replay';
+  });
+})();
+</script>
+</body>
+</html>
