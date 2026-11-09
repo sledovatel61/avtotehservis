@@ -6,8 +6,8 @@ export const SVC_ALIASES: Record<string, string> = {
   'hodovaya-tormoza': 'podveska',
   elektrika: 'diagnostika',
 };
-/* Якоря групп прайса (a7/02-prices): ссылка из карточки услуги на свою таблицу. */
+/* Якоря групп прайса (a7/02-prices + круг 27): ссылка из карточки услуги на свою таблицу. */
 export const PRICE_ANCHOR: Record<string, string> = {
   'to-maslo': 'to', tormoza: 'tormoza', podveska: 'podveska', 'grm-sceplenie': 'grm',
-  diagnostika: 'diagnostika', shinomontazh: 'shiny', balansirovka: 'shiny',
+  diagnostika: 'diagnostika', svarka: 'svarka', shinomontazh: 'shiny', balansirovka: 'shiny',
 };

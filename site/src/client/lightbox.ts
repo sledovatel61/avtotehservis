@@ -46,8 +46,10 @@ function lbGo(d: number): void {
 }
 
 if (lb && items.length) {
-  $$('[data-gal]').forEach((b) => {
-    b.addEventListener('click', () => lbOpen(parseInt(b.getAttribute('data-gal') ?? '0', 10) || 0));
+  /* круг 27: индекс берём из порядка кнопок в DOM (`idx`), а не из data-gal — иначе четыре
+     кнопки сертификатов выше блока кейсов сбивают открытие шести кейсов ниже */
+  $$('[data-gal]').forEach((b, idx) => {
+    b.addEventListener('click', () => lbOpen(idx));
   });
   $('#lb-close', lb)?.addEventListener('click', lbClose);
   $('#lb-prev', lb)?.addEventListener('click', () => lbGo(-1));
