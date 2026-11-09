@@ -13,7 +13,12 @@
    Запуск: подключается из voyah-free.astro как module-скрипт. */
 
 const KEY = 'voyah-intro';
-const DURATION = 2680; // 1960 мс сцены + 720 мс разъезда штор
+/* Круг 29 (S4): длительности больше не живут в JS — единственный источник тайминга
+   CSS-переменные .vy-intro (--vy-dur, --vy-scene). Скрипт читает --vy-dur из
+   computed style и снимает оверлей по animationend правой шторы, поэтому «в коде
+   2400, по факту 2751» больше не разойдётся. Мобильная ветка (≤700 px) —
+   класс is-quick: 1320 мс вместо плановых ≤1600. */
+const DURATION_FALLBACK = 2400;
 const SVG_ID = 'vy-intro-svg';
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -42,8 +47,9 @@ function start(): void {
 
   document.body.classList.add('vy-lock');
 
+  const quick = window.matchMedia('(max-width: 700px)').matches;
   const root = document.createElement('div');
-  root.className = 'vy-intro';
+  root.className = quick ? 'vy-intro is-quick' : 'vy-intro';
   root.setAttribute('role', 'presentation');
   root.setAttribute('aria-hidden', 'true');
   root.innerHTML = `
@@ -107,5 +113,13 @@ function start(): void {
   window.addEventListener('wheel', skip, { passive: true, once: true });
   window.addEventListener('touchmove', skip, { passive: true, once: true });
 
-  timers.push(window.setTimeout(remove, DURATION));
+  /* основной путь — конец анимации шторы; таймер только страховка */
+  const raw = getComputedStyle(root).getPropertyValue('--vy-dur').trim();
+  const dur = !raw ? DURATION_FALLBACK
+    : raw.endsWith('ms') ? parseFloat(raw)
+      : raw.endsWith('s') ? parseFloat(raw) * 1000
+        : DURATION_FALLBACK;
+  const panelR = root.querySelector('.vy-intro-panel--r');
+  panelR?.addEventListener('animationend', () => remove(), { once: true });
+  timers.push(window.setTimeout(remove, dur + 400));
 }

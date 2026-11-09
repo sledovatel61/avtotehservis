@@ -23,11 +23,15 @@ const OUT = join(HERE, '../public/img');
 const SRC = join(HERE, '../../mockups/r28/voyah/img');
 mkdirSync(OUT, { recursive: true });
 
-const HERO = join(SRC, 'hero.jpg');
 const NODE = join(SRC, 'node.jpg');
-/* «вечер» — с ретушью: знак марки закрыт фрагментом решётки
-   (site/scripts/retouch-voyah-mark.mjs → docs/photos-source/r28/voyah-evening-clean.jpg) */
-const EVENING = join(HERE, '../../docs/photos-source/r28/voyah-evening-clean.jpg');
+/* круг 29 (требование владельца «F»): знак марки ВОЗВРАЩЁН на обоих кадрах с
+   машиной — не ретушью, а чистым металлическим знаком в нишу решётки.
+   Мастеры создаёт site/scripts/brand-voyah-mark.mjs:
+     hero    → docs/photos-source/r28/voyah-hero-mark.jpg
+     evening → docs/photos-source/r28/voyah-evening-mark.jpg
+   Прежняя ретушь (retouch-voyah-mark.mjs) удалена вместе с -clean. */
+const HERO = join(HERE, '../../docs/photos-source/r28/voyah-hero-mark.jpg');
+const EVENING = join(HERE, '../../docs/photos-source/r28/voyah-evening-mark.jpg');
 
 const CAPS = {
   'vy-hero-960': { avif: 30, webp: 50 },

@@ -268,5 +268,72 @@ for (let i = 0; i < 4; i++) {
   console.log(`${fell ? 'ok  ' : 'FAIL'} мутант «скримы раунда 18 сняты»: copper ${rE.toFixed(2)}:1, mist карточки ${rB.toFixed(2)}:1 — гейт ${fell ? 'упал' : 'НЕ УПАЛ'}`);
 }
 
+/* 6) РАУНД 29 (M5): раздел Voyah Free. До этого в гейте не было ни одного
+   селектора `.v-*`, поэтому блокер B1 (белая надпись на латуни, 1,85:1)
+   и подпись кадра (1,14:1) проходили `npm test` 79/79.
+   Проверяем:
+     • латунную кнопку — токены --v-ink на --brass (10,6:1), плюс маркер CSS,
+       что специфичность правила выше `.v-hero a` (иначе блокер вернётся);
+     • подпись `.v-media-full .cap` — худший пиксель ФОТО под градиентом
+       подложки, стопы которого читаются из voyah.css (единый источник). */
+const cssV = readCss(join(HERE, '../src/styles/voyah.css'), 'utf8');
+const V_INK = [0x07, 0x0b, 0x12];
+const V_SILVER = [0xc9, 0xd3, 0xde];
+const V_IVORY = [0xf4, 0xef, 0xe6];
+const mBrass = cssV.match(/\.v-btn--brass\{background:var\(--brass\);color:var\(--v-ink\)/);
+if (!mBrass) { fail = 1; console.log('FAIL voyah: у .v-btn--brass больше нет color:var(--v-ink)'); }
+/* правило-победитель: селектор с двумя классами, а не `.v-hero a` */
+const vOverride = cssV.match(/\.v-hero \.v-btn--brass,\s*\n\.v-sec \.v-btn--brass,\s*\n\.v-teaser \.v-btn--brass \{ color: var\(--v-ink\);? ?\}/);
+if (!vOverride) { fail = 1; console.log('FAIL voyah: нет правила .v-hero .v-btn--brass{color:--v-ink} — вернётся блокер B1'); }
+row('voyah кнопка', 'надпись --v-ink на латуни --brass', V_INK, BRASS, 4.5);
+row('voyah кнопка :hover', 'надпись --v-ink на латуни #EEC08C', V_INK, [0xee, 0xc0, 0x8c], 4.5);
+
+/* подпись третьего кадра: градиент подложки читаем из CSS */
+const mCap = cssV.match(/\.v-media-full \.cap\{position:absolute;[\s\S]*?background:linear-gradient\(180deg,rgba\(7,11,18,([\d.]+)\) 0%,rgba\(7,11,18,([\d.]+)\) ([\d.]+)%,rgba\(7,11,18,([\d.]+)\) 100%\)/);
+if (!mCap) { fail = 1; console.log('FAIL voyah: у .v-media-full .cap нет разбираемого градиента подложки'); }
+const capStops = mCap
+  ? [[0, +mCap[1]], [+mCap[3] / 100, +mCap[2]], [1, +mCap[4]]]
+  : [[0, .72], [.26, .9], [1, .96]];
+console.log(`voyah подпись кадра: подложка ${capStops.map((x) => x[1]).join(' / ')}`);
+{
+  /* кадр 21:9 в контейнере 1160 px: подпись занимает нижние ~26 % кадра,
+     текст начинается через 22 px от её верха. Считаем худший пиксель фото
+     под градиентом внутри полосы текста. */
+  const worstCaption = async (file, capFrac, label) => {
+    const meta = await sharp(file).metadata();
+    const H = meta.height, W = meta.width;
+    const capH = Math.round(H * capFrac);
+    let worst = null, wl = -1, wx = 0, wy = 0;
+    const r = await sharp(file).raw().toBuffer({ resolveWithObject: true });
+    const ch = r.info.channels;
+    for (let y = H - capH + 22; y < H - 6; y += 2) {
+      const t = (y - (H - capH)) / capH;
+      const a = stopA(capStops, Math.max(0, Math.min(1, t)));
+      for (let x = 0; x < W; x += 3) {
+        const i = (y * W + x) * ch;
+        const px = over([r.data[i], r.data[i + 1], r.data[i + 2]], a, V_INK);
+        const l = lum(px);
+        if (l > wl) { wl = l; worst = px; wx = x; wy = y; }
+      }
+    }
+    row(`voyah подпись кадра ${label}`, `b ivory по худшему пикселю (${wx},${wy})`, V_IVORY, worst, 4.5);
+    row(`voyah подпись кадра ${label}`, `текст --v-silver по худшему пикселю (${wx},${wy})`, V_SILVER, worst, 4.5);
+    console.log(`     (кадр ${W}×${H}, подпись — нижние ${Math.round(capFrac * 100)} %, худший фон rgb(${worst.map((v) => Math.round(v)).join(' ')}) )`);
+    return worst;
+  };
+  /* 1440: кадр 21:9 (1160×497), подпись ~127 px = 26 % кадра
+     390 : кадр 4:3 (350×262), подпись ~127 px = 49 % кадра — тот самый случай
+           из ревью, где заголовок лежал на светлом окне бокса (1,14:1) */
+  const worst = await worstCaption(join(IMG, 'vy-evening-1600.webp'), 0.26, '1440');
+  await worstCaption(join(IMG, 'vy-evening-960.webp'), 0.49, '390');
+  /* мутант: снять подложку — гейт обязан упасть */
+  const mEv = await sharp(join(IMG, 'vy-evening-1600.webp')).metadata();
+  const noPlate = await worstInZone(join(IMG, 'vy-evening-1600.webp'), [0, mEv.height * 0.74, mEv.width, mEv.height], [[0, 0], [1, 0]], () => 0);
+  const rM = ratio(V_SILVER, noPlate.worst);
+  const fell = rM < 4.5;
+  if (!fell) fail = 1;
+  console.log(`${fell ? 'ok  ' : 'FAIL'} мутант «подложка подписи снята»: silver ${rM.toFixed(2)}:1 — гейт ${fell ? 'упал, как должен' : 'НЕ УПАЛ'}`);
+}
+
 console.log(fail ? 'КОНТРАСТ: ПРОВАЛ' : 'КОНТРАСТ: все нормы выполнены');
 process.exit(fail);

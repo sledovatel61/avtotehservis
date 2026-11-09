@@ -140,9 +140,33 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
 .nav .nav-voyah a.is-active::before{background:#fff}
 @media (min-width:1024px) and (max-width:1199px){
   .hdr-phone{display:none}
-  .nav ul{gap:1px}
-  .nav a{padding:8px 6px;font-size:13.5px}
+  .hdr-in{gap:8px}
+  .nav ul{gap:0}
+  .nav a{padding:8px 5px;font-size:13.5px}
+  .hdr-cta .btn{padding:10px 12px}
+  .logo img{width:62px;height:38px}
 }
 @media (min-width:1200px) and (max-width:1279px){
   .nav a{padding:8px 6px;font-size:13.5px}
+}
+
+/* круг 29 (S2, рецидив мажора к27): седьмой пункт «Voyah Free» снова вытолкнул
+   «Записаться» за контейнер — +39 px на 1440/1920, +50 на 1366, +12 на 1280.
+   Седьмой пункт оставлен (требование владельца), поэтому шапка уплотняется:
+   горизонтальные паддинги пунктов, промежутки, логотип и кнопка. Проверяется
+   на 1024…1920 с шагом 16 px — scripts/check-voyah-layout.mjs. */
+@media (min-width:1200px){
+  .hdr-in{gap:10px}
+  .nav ul{gap:0}
+  .nav a{padding:8px 6px;font-size:13.5px;letter-spacing:0}
+  .logo img{width:62px;height:38px}
+  .hdr-cta{gap:8px}
+  .hdr-cta .btn{padding:10px 12px}
+  .hdr-phone{font-size:14px;gap:5px}
+  .nav .nav-voyah a{padding-left:14px}
+  .nav .nav-voyah a::before{left:4px}
+}
+@media (min-width:1360px){
+  .hdr-in{gap:12px}
+  .nav a{padding:8px 7px;font-size:13.5px}
 }
