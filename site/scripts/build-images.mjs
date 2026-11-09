@@ -27,7 +27,12 @@ const OUT = join(HERE, '../public/img');
 const PHOTOS = join(HERE, '../../docs/photos-source');
 const SRC_CLEAN = join(PHOTOS, 'r13-clean/master-clean.jpg');   // оригинал заказчика, без C4
 const GEN_C = join(PHOTOS, 'r13-clean/gen-hero-c.jpg');        // принятый кадр раунда 13
-const W2 = join(PHOTOS, 'r14-gen/master-wide2.jpg');           // сцена, перегенерированная вправо
+/* Круг 28: сцена с белой Camry заменена на Voyah Free 2024 (рестайлинг, зелёный) —
+   композиция, свет и левая пустая зона те же; HERO_SRC позволяет подставить новый кадр
+   без правки остальных раундов. */
+const W2 = process.env.HERO_SRC ? join(PHOTOS, process.env.HERO_SRC) : join(PHOTOS, 'r14-gen/master-wide2.jpg');
+/* промежуточные мастера героя кладём в папку своего круга */
+const GEN_HERO = process.env.HERO_SRC ? join(PHOTOS, 'r28') : join(PHOTOS, 'r14-gen');
 const R11 = join(PHOTOS, 'r11-gen');
 const GEN = join(PHOTOS, 'r9-gen');
 const README = join(PHOTOS, 'README.md');
@@ -226,7 +231,7 @@ async function main() {
   topStrip.copy(vert, 0);
   w2.data.copy(vert, TOP * SW * 3);
   Buffer.from(botRaw).copy(vert, (TOP + SH) * SW * 3);
-  const vertFile = join(PHOTOS, 'r14-gen/_vert.png');
+  const vertFile = join(GEN_HERO, '_vert.png');
   await sharp(vert, { raw: { width: SW, height: H1, channels: 3 } }).png().toFile(vertFile);
 
   /* ----- 2. левое продолжение: зеркало собственных левых колонок ----- */
@@ -254,7 +259,7 @@ async function main() {
       canvas[i + 2] = Math.round(canvas[i + 2] * f);
     }
   }
-  const canvasFile = join(PHOTOS, 'r14-gen/_canvas.png');
+  const canvasFile = join(GEN_HERO, '_canvas.png');
   await sharp(canvas, { raw: { width: W1, height: H1, channels: 3 } }).png().toFile(canvasFile);
   const ratio = W1 / H1;
   console.log(`холст ${W1}×${H1}, пропорция ${ratio.toFixed(5)} (16:9 = 1.77778, допуск ≤1 px: ${(Math.abs(W1 - H1 * 16 / 9)).toFixed(2)} px)`);
@@ -297,12 +302,12 @@ async function main() {
     }
   }
   const postPng = await sharp(block, { raw: { width: PT.w, height: PT.h, channels: 4 } }).png().toBuffer();
-  const withPost = join(PHOTOS, 'r14-gen/_withpost.png');
+  const withPost = join(GEN_HERO, '_withpost.png');
   await sharp(canvasFile).composite([{ input: postPng, left: PT.x, top: PT.y }]).png().toFile(withPost);
   console.log(`стойка: блок ${PT.w}×${PT.h} в (${PT.x},${PT.y}), цвет букв ${txtCol.join(',')}`);
 
   /* ----- 4. мастер 2560×1440 + резкость ----- */
-  const masterDeskFile = join(PHOTOS, 'r14-gen/master-desk-2560.jpg');
+  const masterDeskFile = join(GEN_HERO, 'master-desk-2560.jpg');
   await sharp(withPost).resize(NW, NH, { fit: 'fill', kernel: 'lanczos3' })
     .sharpen({ sigma: 0.8, m1: 0.4, m2: 1.6 }).jpeg({ quality: 95 }).toFile(masterDeskFile);
 
@@ -345,7 +350,9 @@ async function main() {
   /* ----- 7. мобильный кроп 4:5 (раунд 15): холст наращён вниз на 160 px мокрого
      асфальта (зеркало нижних строк), окно 1280×1600 с x 1268 — обе машины целиком
      с запасом ≥24 px с каждой стороны и вывеска целиком ----- */
-  const MX = 1268, MCW = 1280, MCH = 1600;
+  /* круг 28: у Voyah кузов шире и передний свес длиннее — окно сдвинуто на 3 px влево,
+     чтобы запас машины слева оставался ≥24 px (гейт ниже это и проверяет) */
+  const MX = process.env.HERO_SRC ? 1265 : 1268, MCW = 1280, MCH = 1600;
   const EXT_H = MCH - 1440;
   const bottom = await sharp(masterDeskFile).extract({ left: 0, top: 1440 - EXT_H, width: 2560, height: EXT_H })
     .flip().blur(2).linear([0.92, 0.92, 0.92], [0, 0, 0]).png().toBuffer();
@@ -354,7 +361,7 @@ async function main() {
   await sharp({ create: { width: 2560, height: MCH, channels: 3, background: '#000' } })
     .composite([{ input: await sharp(masterDeskFile).png().toBuffer(), top: 0, left: 0 }, { input: bottom, top: 1440, left: 0 }])
     .png().toFile(extFile);
-  const masterMobFile = join(PHOTOS, 'r14-gen/master-mobile-4x5.jpg');
+  const masterMobFile = join(GEN_HERO, 'master-mobile-4x5.jpg');
   await sharp(extFile).extract({ left: MX, top: 0, width: MCW, height: MCH }).resize(MOBW, MOBH).jpeg({ quality: 95 }).toFile(masterMobFile);
   const kMob = MOBW / MCW;
   /* раунд 15 / правка приёмки: bbox вывески в координатах мобильного мастера —
@@ -733,7 +740,8 @@ async function main() {
         encodeSet(`svc-${i + 7}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
       ]),
     /* круг 27: обложка услуги «Сварочные работы и выхлоп» (svc-9) */
-    ...[join(HERE, '../../docs/photos-source/r27-svc/gen-svarka.jpg')].flatMap((m) => [
+    /* круг 28: гофра была задвоена и висела в воздухе — кадр пересобран (r28/svarka-gen.jpg) */
+    ...[join(HERE, '../../docs/photos-source/r28/svarka-gen.jpg')].flatMap((m) => [
       encodeSet('svc-9-640', sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
       encodeSet('svc-9-960', sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
     ]),
