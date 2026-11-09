@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ремонт и обслуживание Voyah Free — АвтоТехСервис, Ростов-на-Дону</title>
+<meta name="description" content="Мокап страницы /voyah-free: ТО и ремонт Voyah Free на Портовой, 439. Цены за работу, смета до начала.">
+<!-- МОКАП (круг 28, задание №38, агент 6). Не продакшн: формы ничего не отправляют,
+     ссылки ведут на реальные страницы сайта, но навигация внутри мокапа условная. -->
+<style>
+/* ==========================================================================
+   Voyah Free — «марочный остров» внутри сайта «АвтоТехСервис».
+   Палитра: 6 цветов + 2 нейтрали (см. README, таблица палитры).
+   Шкала: 6 размеров. Сетка: контейнер 1200 px, 12 колонок, зазор 24 px.
+   Всё локально: шрифты — .woff2 из fonts/, кадры — img/, ни одного внешнего
+   запроса. Классы названы так, чтобы их можно было перенести в Astro как есть
+   (префикс `v-` — «voyah»).
+   ========================================================================== */
+
+/* ---------- Шрифты (локальные сабсеты, те же файлы, что на сайте) ---------- */
+@font-face{font-family:'Unbounded';font-style:normal;font-weight:600;font-display:swap;
+  src:url('fonts/unbounded-cyrillic-600.woff2') format('woff2');
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116,U+2117,U+20BD}
+@font-face{font-family:'Unbounded';font-style:normal;font-weight:600;font-display:swap;
+  src:url('fonts/unbounded-latin-600.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Golos Text';font-style:normal;font-weight:400;font-display:swap;
+  src:url('fonts/golos-cyrillic-400.woff2') format('woff2');
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116,U+2117,U+20BD}
+@font-face{font-family:'Golos Text';font-style:normal;font-weight:400;font-display:swap;
+  src:url('fonts/golos-latin-400.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Golos Text';font-style:normal;font-weight:500;font-display:swap;
+  src:url('fonts/golos-cyrillic-500.woff2') format('woff2');
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116,U+2117,U+20BD}
+@font-face{font-family:'Golos Text';font-style:normal;font-weight:500;font-display:swap;
+  src:url('fonts/golos-latin-500.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Golos Text';font-style:normal;font-weight:700;font-display:swap;
+  src:url('fonts/golos-cyrillic-700.woff2') format('woff2');
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116,U+2117,U+20BD}
+@font-face{font-family:'Golos Text';font-style:normal;font-weight:700;font-display:swap;
+  src:url('fonts/golos-latin-700.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+/* ---------- Токены ---------- */
+:root{
+  /* палитра «марочного острова»: 6 цветов + 2 нейтрали */
+  --ink:#070B12;          /* 1. ночь — фон острова */
+  --panel:#0E1622;        /* 2. панель — карточки, полосы */
+  --graphite:#2A3442;     /* 3. графит — линии, второстепенные заливки */
+  --silver:#C9D3DE;       /* 4. серебро — текст-подпись, кант */
+  --cold:#EAF2FF;         /* 5. холодный свет — линии света, акценты */
+  --green:#16402F;        /* 6. отражение кузова — только акцент, не фон */
+  --ivory:#F4EFE6;        /* нейтраль 1 — основной текст на тёмном */
+  --brass:#E0A96D;        /* нейтраль 2 — кнопки сайта, из общей палитры */
+
+  /* шкала: 6 размеров */
+  --fs-1:12.5px;          /* метки, надзаголовки, номера */
+  --fs-2:15px;            /* пояснения, примечания */
+  --fs-3:17px;            /* основной текст */
+  --fs-4:21px;            /* лид, H3, суммы в прайсе */
+  --fs-5:clamp(26px,3vw,34px);      /* H2 */
+  --fs-6:clamp(31px,4.4vw,56px);    /* H1, дисплей */
+
+  --font-d:'Unbounded',system-ui,'Segoe UI',sans-serif;
+  --font-t:'Golos Text',system-ui,'Segoe UI',sans-serif;
+
+  --wrap:1200px;
+  --gap:24px;
+  --r:16px;
+  --r-sm:10px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --t-fast:150ms;
+  --t-mid:250ms;
+  --hdr:74px;
+}
+
+/* ---------- База ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--ink);color:var(--ivory);
+  font-family:var(--font-t);font-size:var(--fs-3);line-height:1.62;
+  overflow-x:hidden;
+}
+img,svg{display:block;max-width:100%;height:auto}
+a{color:var(--cold);text-decoration:none;transition:color var(--t-fast) var(--ease)}
+a:hover{color:#fff}
+ul{margin:0;padding:0;list-style:none}
+h1,h2,h3,h4{font-family:var(--font-d);font-weight:600;line-height:1.12;letter-spacing:-.02em;margin:0 0 .5em}
+h1{font-size:var(--fs-6);text-wrap:balance}
+h2{font-size:var(--fs-5);text-wrap:balance}
+h3{font-size:var(--fs-4);line-height:1.25}
+p{margin:0 0 1em}
+p:last-child{margin-bottom:0}
+b,strong{font-weight:700}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--cold);outline-offset:3px;border-radius:4px}
+::selection{background:var(--cold);color:var(--ink)}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 20px}
+
+/* ---------- Общие элементы «острова» ---------- */
+/* тонкая световая линия — главный декоративный приём раздела */
+.v-rule{height:1px;border:0;margin:0;background:linear-gradient(90deg,transparent,rgba(201,211,222,.42) 18%,rgba(234,242,255,.9) 50%,rgba(201,211,222,.42) 82%,transparent)}
+.v-eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:var(--fs-1);font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--silver);margin-bottom:14px;
+}
+.v-eyebrow::before{content:"";width:28px;height:1px;background:var(--cold);box-shadow:0 0 8px rgba(234,242,255,.8)}
+.v-lead{color:var(--silver);font-size:var(--fs-4);line-height:1.5;max-width:62ch}
+.v-note{color:rgba(201,211,222,.72);font-size:var(--fs-2)}
+.v-sec{padding:clamp(56px,7vw,88px) 0;position:relative}
+.v-sec--panel{background:var(--panel)}
+.v-sec--flush{padding-top:0}
+
+/* кнопки: латунь сайта остаётся только в CTA, чтобы остров не спорил с шапкой */
+.v-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:50px;padding:12px 26px;border-radius:999px;border:1.5px solid transparent;
+  font-size:var(--fs-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  cursor:pointer;text-align:center;
+  transition:transform var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
+}
+.v-btn:active{transform:translateY(1px)}
+.v-btn--brass{background:var(--brass);color:var(--ink);box-shadow:0 8px 26px rgba(224,169,109,.22)}
+.v-btn--brass:hover{background:#EEC08C;color:var(--ink);transform:translateY(-2px)}
+.v-btn--light{border-color:rgba(234,242,255,.42);color:var(--cold);background:rgba(234,242,255,.04)}
+.v-btn--light:hover{border-color:var(--cold);background:rgba(234,242,255,.1);color:#fff;transform:translateY(-2px)}
+.v-btnrow{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+
+/* стеклянная панель */
+.v-glass{
+  position:relative;border:1px solid rgba(201,211,222,.16);border-radius:var(--r);
+  background:linear-gradient(180deg,rgba(20,32,48,.72) 0%,rgba(14,22,34,.82) 100%);
+}
+.v-glass::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(120deg,rgba(234,242,255,.14),transparent 34%);
+  opacity:.7;
+}
+
+/* ---------- Шапка: семь пунктов ---------- */
+.hdr{position:sticky;top:0;z-index:80;background:rgba(7,11,18,.92);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(201,211,222,.14)}
+.hdr-in{display:flex;align-items:center;gap:12px;padding:12px 20px;max-width:var(--wrap);margin:0 auto}
+.logo{display:flex;align-items:center;gap:10px;color:var(--ivory);flex-shrink:0}
+.logo img{width:68px;height:42px}
+.logo-t{font-family:var(--font-d);font-weight:600;font-size:15.5px;letter-spacing:-.01em;line-height:1.1}
+.logo-t b{display:block;font-family:var(--font-t);font-weight:400;font-size:10px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--silver);margin-top:3px}
+.nav{margin-left:auto}
+.nav ul{display:flex;gap:2px}
+.nav a{display:flex;align-items:center;min-height:44px;white-space:nowrap;
+  padding:8px 6px;border-radius:8px;color:var(--silver);
+  font-size:13.5px;font-weight:500;letter-spacing:.01em;
+  transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease)}
+.nav a:hover{color:var(--ivory);background:rgba(234,242,255,.06)}
+.nav a.is-active{color:var(--cold);background:rgba(234,242,255,.09)}
+.nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--cold);
+  margin-left:6px;box-shadow:0 0 8px rgba(234,242,255,.9)}
+.hdr-cta{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hdr-phone{display:flex;align-items:center;gap:6px;min-height:44px;white-space:nowrap;
+  color:var(--ivory);font-weight:700;font-size:14.5px}
+.hdr-phone:hover{color:var(--brass)}
+.hdr-phone svg{width:17px;height:17px;stroke:var(--brass);fill:none;stroke-width:1.8}
+.hdr .v-btn{min-height:40px;padding:8px 16px;font-size:12.5px}
+.burger{display:none;width:46px;height:46px;border-radius:10px;flex-shrink:0;
+  border:1px solid rgba(201,211,222,.24);background:transparent;cursor:pointer;position:relative}
+.burger span{position:absolute;left:12px;right:12px;height:2px;background:var(--ivory);border-radius:2px;
+  transition:transform var(--t-mid) var(--ease),opacity var(--t-mid) var(--ease)}
+.burger span:nth-child(1){top:15px}
+.burger span:nth-child(2){top:22px}
+.burger span:nth-child(3){top:29px}
+body.menu-open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+body.menu-open .burger span:nth-child(2){opacity:0}
+body.menu-open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ширина 1024–1199: семь пунктов требуют убрать цифры телефона и ужать меню
+   (замер: без этого на 1024 вылет +23 px и горизонтальный скролл 1027) */
+/* 1024–1199: семь пунктов + телефон + CTA в 984 px контента не влезают —
+   телефон убираем целиком (он есть в меню, футере и на «Контактах»), меню поджимаем */
+@media (min-width:1024px) and (max-width:1199px){
+  .hdr-in{gap:14px}
+  .hdr-phone{display:none}
+  .logo-t b{display:none}
+  .nav a{padding:8px 5px;font-size:12.8px}
+}
+@media (min-width:1200px) and (max-width:1279px){
+  .nav a{padding:8px 4px;font-size:13px}
+  .hdr-phone span{display:none}
+}
+@media (min-width:1280px) and (max-width:1359px){
+  .nav a{padding:8px 5px;font-size:13px}
+  .nav ul{gap:1px}
+  .logo-t b{display:none}
+}
+@media (min-width:1360px) and (max-width:1439px){
+  .hdr-in{gap:10px}
+  .nav a{padding:8px 5px;font-size:13.5px}
+  .nav ul{gap:1px}
+  .logo-t b{display:none}
+}
+/* ≥1440: седьмой пункт не влезает вместе с подписью под логотипом — подпись убираем
+   (как сайт делает на 1280–1439), зато 7 пунктов стоят в одну строку до 2560 */
+@media (min-width:1440px){
+  .hdr-in{gap:10px}
+  .nav a{padding:8px 5px;font-size:13.5px}
+  .nav ul{gap:1px}
+  .hdr-cta{gap:8px}
+  .logo-t b{display:none}
+}
+
+/* до 1023: меню уезжает в полноэкранную панель, в шапке остаются логотип, телефон-иконка
+   и «Записаться»; на ≤420 кнопка тоже уходит в меню, чтобы не сжимать логотип */
+@media (max-width:1023px){
+  .nav{display:none}
+  .hdr-phone{display:none}
+  .burger{display:block}
+  .logo{margin-right:auto}
+  .hdr .v-btn{min-height:38px;padding:8px 14px;font-size:12px}
+}
+@media (max-width:560px){
+  .hdr-in{gap:10px;padding:10px 16px}
+  .logo img{width:58px;height:36px}
+  .logo-t{font-size:15px}
+  .logo-t b{display:none}
+}
+@media (max-width:420px){
+  .hdr .v-btn{display:none}
+}
+
+/* мобильное меню — все семь пунктов, включая «Voyah Free» */
+.m-menu{position:fixed;inset:0;z-index:90;background:var(--ink);
+  display:flex;flex-direction:column;padding:18px 22px calc(26px + env(safe-area-inset-bottom));
+  opacity:0;visibility:hidden;transform:translateY(-12px);
+  transition:opacity var(--t-mid) var(--ease),transform var(--t-mid) var(--ease),visibility var(--t-mid)}
+body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
+.m-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.m-top .logo img{width:58px;height:36px}
+.m-top .logo-t b{display:none}
+.m-close{width:46px;height:46px;border-radius:10px;border:1px solid rgba(201,211,222,.24);
+  background:transparent;color:var(--ivory);font-size:20px;line-height:1;cursor:pointer}
+.m-menu nav ul{display:flex;flex-direction:column;gap:2px}
+.m-menu nav a{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:var(--font-d);font-weight:600;font-size:clamp(1.05rem,4.6vw,1.5rem);
+  color:var(--ivory);padding:11px 2px;border-bottom:1px solid rgba(201,211,222,.12);min-height:52px}
+.m-menu nav a.is-active{color:var(--cold)}
+.m-menu nav a .n{font-family:var(--font-t);font-size:11.5px;font-weight:500;color:var(--brass);letter-spacing:.1em}
+.m-contact{margin-top:auto;display:grid;gap:10px;padding-top:18px;border-top:1px solid rgba(201,211,222,.12)}
+.m-contact a{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:500;font-size:16px}
+.m-contact .tel{font-size:20px;font-weight:700;color:var(--ivory)}
+body.no-scroll{overflow:hidden}
+
+/* полоса «демо» — как на превью сайта, честно сообщает, что это мокап */
+.demo{background:#0B1410;border-bottom:1px solid rgba(224,169,109,.16)}
+.demo p{margin:0;max-width:var(--wrap);margin-inline:auto;padding:7px 20px;
+  font-size:var(--fs-1);color:rgba(201,211,222,.8)}
+
+/* ---------- Первый экран ---------- */
+.v-hero{position:relative;min-height:min(760px,calc(100vh - var(--hdr)));display:flex;align-items:flex-end;
+  padding:clamp(48px,7vw,96px) 0 clamp(40px,5vw,64px);overflow:hidden;isolation:isolate}
+.v-hero-bg{position:absolute;inset:0;z-index:-2;overflow:hidden}
+.v-hero-bg img{width:100%;height:100%;object-fit:cover;object-position:64% 58%}
+.v-hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(7,11,18,.92) 0%,rgba(7,11,18,.62) 26%,rgba(7,11,18,.34) 52%,rgba(7,11,18,.86) 100%),
+    linear-gradient(94deg,rgba(7,11,18,.94) 0%,rgba(7,11,18,.8) 42%,rgba(7,11,18,.12) 72%,rgba(7,11,18,.5) 100%)}
+.v-hero .wrap{width:100%}
+.v-hero-h{max-width:19ch}
+.v-hero-h em{font-style:normal;color:var(--cold);text-shadow:0 0 26px rgba(234,242,255,.35)}
+.v-hero .v-lead{margin:18px 0 0;max-width:54ch;color:#D6DEE8}
+.v-hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:30px;padding-top:20px;
+  border-top:1px solid rgba(201,211,222,.2);max-width:720px}
+.v-hero-meta div{font-size:var(--fs-2);color:var(--silver)}
+.v-hero-meta b{display:block;font-size:var(--fs-1);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);font-weight:500;margin-bottom:2px}
+/* световая линия у заголовка — «фара» из интро, оставленная в статике */
+.v-hero-line{width:120px;height:2px;margin:0 0 22px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(234,242,255,0),var(--cold) 42%,#fff 60%,rgba(234,242,255,0));
+  box-shadow:0 0 22px rgba(234,242,255,.65)}
+.v-scroll{position:absolute;right:20px;bottom:18px;z-index:2;display:flex;align-items:center;gap:8px;
+  font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(201,211,222,.6)}
+.v-scroll i{display:block;width:1px;height:34px;background:linear-gradient(180deg,var(--cold),transparent)}
+@media (max-width:700px){
+  .v-scroll{display:none}
+  .v-hero{min-height:0;padding-top:34px}
+  .v-hero .v-lead{font-size:16px}
+  .v-hero-meta{gap:8px 20px;margin-top:22px;padding-top:16px}
+}
+
+/* ---------- «Почему это не обычное ТО» ---------- */
+.v-why{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
+.v-why-card{padding:24px 22px 26px;border-radius:var(--r);border:1px solid rgba(201,211,222,.14);
+  background:linear-gradient(180deg,rgba(22,35,52,.6),rgba(14,22,34,.72));
+  display:flex;flex-direction:column;gap:10px;transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease)}
+.v-why-card:hover{transform:translateY(-3px);border-color:rgba(234,242,255,.34)}
+.v-why-card .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  border:1px solid rgba(234,242,255,.26);background:rgba(234,242,255,.05)}
+.v-why-card .ic svg{width:20px;height:20px;stroke:var(--cold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.v-why-card h3{font-size:18px;margin:6px 0 0}
+.v-why-card p{font-size:var(--fs-2);color:rgba(201,211,222,.86);margin:0}
+.v-why-card span.n{position:absolute;display:none}
+@media (max-width:1024px){.v-why{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.v-why{grid-template-columns:1fr}}
+
+/* ---------- Кадры: второй и третий — самостоятельные блоки ---------- */
+.v-frame{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid rgba(201,211,222,.16);
+  background:var(--panel);margin:0}
+.v-frame img{width:100%;height:100%;object-fit:cover}
+.v-frame figcaption{display:flex;gap:14px;align-items:baseline;justify-content:space-between;
+  padding:13px 18px;border-top:1px solid rgba(201,211,222,.14);
+  font-size:var(--fs-1);letter-spacing:.06em;text-transform:uppercase;color:rgba(201,211,222,.66)}
+.v-frame figcaption b{color:var(--silver);font-weight:500;letter-spacing:.14em}
+/* блок «один узел крупно»: кадр слева, текст справа */
+.v-split{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(24px,4vw,56px);align-items:center}
+.v-split figure{margin:0}
+.v-split .v-frame img{aspect-ratio:16/9}
+.v-split h2{margin-bottom:.4em}
+.v-media-full{position:relative;border-radius:var(--r);overflow:hidden;margin-top:26px}
+.v-media-full img{width:100%;aspect-ratio:21/9;object-fit:cover;object-position:50% 58%}
+.v-media-full .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 22px 18px;
+  background:linear-gradient(180deg,rgba(7,11,18,0),rgba(7,11,18,.9));
+  font-size:var(--fs-2);color:var(--silver);display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;align-items:end}
+.v-media-full .cap b{display:block;font-family:var(--font-d);font-weight:600;font-size:var(--fs-4);color:var(--ivory);margin-bottom:4px}
+@media (max-width:900px){.v-split{grid-template-columns:1fr}}
+@media (max-width:700px){.v-media-full img{aspect-ratio:4/3}}
+
+/* ---------- «Что входит»: 5 групп ---------- */
+.v-incl{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:34px;counter-reset:incl}
+.v-incl-item{position:relative;padding:20px 18px 22px;border-radius:var(--r-sm);
+  border:1px solid rgba(201,211,222,.14);background:rgba(14,22,34,.66);
+  display:flex;flex-direction:column;gap:8px}
+.v-incl-item::before{counter-increment:incl;content:"0" counter(incl);
+  font-family:var(--font-d);font-size:var(--fs-1);letter-spacing:.18em;color:var(--brass);
+  order:-1}
+.v-incl-item h3{font-size:17px;line-height:1.3;margin:0}
+.v-incl-item p{font-size:14px;color:rgba(201,211,222,.84);margin:0}
+@media (max-width:1100px){.v-incl{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:700px){.v-incl{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.v-incl{grid-template-columns:1fr}}
+
+/* ---------- Прайс: 15 строк ---------- */
+.v-price{display:grid;grid-template-columns:1.45fr .55fr;gap:clamp(24px,4vw,52px);align-items:start}
+.v-price-head{display:flex;align-items:end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.v-tbl{width:100%;border-collapse:collapse;font-size:var(--fs-3)}
+.v-tbl caption{text-align:left;font-size:var(--fs-1);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,211,222,.6);padding-bottom:10px}
+.v-tbl th{text-align:left;font-weight:500;font-size:var(--fs-1);letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);padding:0 0 10px;border-bottom:1px solid rgba(201,211,222,.24)}
+.v-tbl th:last-child,.v-tbl td:last-child{text-align:right;white-space:nowrap}
+.v-tbl td{padding:14px 0;border-bottom:1px solid rgba(201,211,222,.1);vertical-align:baseline}
+.v-tbl td b{font-family:var(--font-d);font-weight:600;font-size:var(--fs-4);letter-spacing:-.01em;color:var(--cold)}
+.v-tbl tr:hover td{background:rgba(234,242,255,.03)}
+.v-tbl .sub{display:block;font-size:13px;color:rgba(201,211,222,.6);margin-top:2px}
+.v-price-aside{position:sticky;top:calc(var(--hdr) + 16px)}
+.v-price-aside .v-glass{padding:24px 22px}
+.v-price-aside h3{font-size:19px;margin-bottom:.5em}
+.v-price-aside ul{display:grid;gap:10px;margin:14px 0 18px}
+.v-price-aside li{display:flex;gap:10px;font-size:var(--fs-2);color:rgba(201,211,222,.88)}
+.v-price-aside li::before{content:"";flex:0 0 auto;width:6px;height:6px;margin-top:9px;border-radius:50%;
+  background:var(--cold);box-shadow:0 0 8px rgba(234,242,255,.8)}
+.v-price-aside .sum{font-family:var(--font-d);font-size:26px;color:var(--ivory);display:block;margin-bottom:2px}
+@media (max-width:980px){
+  .v-price{grid-template-columns:1fr}
+  .v-price-aside{position:static}
+}
+/* мобильный прайс — карточки (никакого горизонтального скролла) */
+@media (max-width:700px){
+  .v-tbl thead{display:none}
+  .v-tbl caption{display:none}
+  .v-tbl,.v-tbl tbody,.v-tbl tr,.v-tbl td{display:block;width:100%}
+  .v-tbl tr{padding:14px 16px;margin-bottom:10px;border:1px solid rgba(201,211,222,.14);
+    border-radius:var(--r-sm);background:rgba(14,22,34,.7)}
+  .v-tbl td{padding:0;border:0;text-align:left !important}
+  .v-tbl td:first-child{font-weight:500;font-size:var(--fs-3)}
+  .v-tbl td:last-child{margin-top:6px}
+  .v-tbl td b{font-size:22px}
+  .v-tbl .sub{display:block;font-size:12.5px;margin-top:2px}
+}
+
+/* ---------- «Как проходит визит»: 4 шага ---------- */
+.v-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px;counter-reset:st}
+.v-step{padding:24px 20px;border-radius:var(--r);border:1px solid rgba(201,211,222,.14);
+  background:linear-gradient(160deg,rgba(22,35,52,.55),rgba(7,11,18,.7))}
+.v-step::before{counter-increment:st;content:counter(st);display:block;font-family:var(--font-d);
+  font-size:34px;line-height:1;color:transparent;-webkit-text-stroke:1px var(--cold);margin-bottom:14px}
+.v-step h3{font-size:17px;margin-bottom:.4em}
+.v-step p{font-size:14px;color:rgba(201,211,222,.84);margin:0}
+@media (max-width:1024px){.v-steps{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.v-steps{grid-template-columns:1fr}}
+
+/* ---------- FAQ ---------- */
+.v-faq{display:grid;gap:10px;margin-top:30px;max-width:880px}
+.v-faq details{border:1px solid rgba(201,211,222,.16);border-radius:var(--r-sm);
+  background:rgba(14,22,34,.6);padding:0 18px}
+.v-faq details[open]{border-color:rgba(234,242,255,.32);background:rgba(20,32,48,.7)}
+.v-faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:18px;
+  align-items:center;padding:16px 0;font-family:var(--font-d);font-weight:600;font-size:16.5px;color:var(--ivory)}
+.v-faq summary::-webkit-details-marker{display:none}
+.v-faq summary::after{content:"+";font-family:var(--font-t);font-size:20px;color:var(--cold);
+  transition:transform var(--t-mid) var(--ease)}
+.v-faq details[open] summary::after{transform:rotate(45deg)}
+.v-faq .ans{padding:0 0 18px;color:rgba(201,211,222,.88);font-size:var(--fs-2);max-width:74ch}
+
+/* ---------- Финальный CTA ---------- */
+.v-cta{position:relative;overflow:hidden;border-radius:var(--r);border:1px solid rgba(201,211,222,.18);
+  background:radial-gradient(120% 140% at 12% 0%,rgba(22,64,47,.55),rgba(7,11,18,.9) 62%);padding:clamp(28px,4vw,52px)}
+.v-cta::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cold),transparent);opacity:.7}
+.v-cta-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:center}
+.v-cta h2{margin-bottom:.35em}
+.v-cta .v-btnrow{margin-top:0}
+@media (max-width:860px){.v-cta-grid{grid-template-columns:1fr}}
+
+/* ---------- Подвал мокапа ---------- */
+.v-foot{border-top:1px solid rgba(201,211,222,.14);background:#060A10;padding:36px 0 30px;margin-top:clamp(48px,6vw,72px)}
+.v-foot-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:26px}
+.v-foot h4{font-family:var(--font-t);font-size:var(--fs-1);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,211,222,.6);font-weight:500;margin:0 0 10px}
+.v-foot a{color:var(--silver);font-size:var(--fs-2)}
+.v-foot a:hover{color:var(--cold)}
+.v-foot li{margin-bottom:7px}
+.v-foot .legal{margin-top:26px;padding-top:16px;border-top:1px solid rgba(201,211,222,.1);
+  display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between;
+  font-size:12.5px;color:rgba(201,211,222,.55)}
+@media (max-width:760px){.v-foot-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.v-foot-grid{grid-template-columns:1fr}}
+
+/* плашка «это мокап» в углу страницы, чтобы стенд не путали с продакшном.
+   На узких экранах уходит в поток (иначе накрывает адрес в первом экране). */
+.v-demo-tag{position:fixed;right:14px;bottom:14px;z-index:70;
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+  background:rgba(7,11,18,.86);border:1px solid rgba(224,169,109,.5);
+  font-size:11.5px;letter-spacing:.06em;color:var(--brass);backdrop-filter:blur(6px);
+  pointer-events:none}
+.v-demo-tag i{width:6px;height:6px;border-radius:50%;background:var(--brass)}
+
+/* ссылки на прототипы интро (в мокапе, не в продакшне) */
+.v-proto{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.v-proto a{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;
+  border:1px dashed rgba(201,211,222,.34);font-size:var(--fs-1);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--silver)}
+.v-proto a:hover{border-color:var(--cold);color:var(--cold)}
+@media (max-width:820px){
+  .v-demo-tag{position:static;margin:18px auto 0;display:flex;width:max-content;pointer-events:none}
+}
+
+/* ---------- Служебный слой: фото-пометки ---------- */
+.v-photonote{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(201,211,222,.55)}
+.v-photonote::before{content:"";width:18px;height:1px;background:rgba(201,211,222,.4)}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important}
+}
+
+/* ==========================================================================
+   Тизер для главной + соседние секции сайта (home-section.html).
+   Классы `site-*` повторяют ритм реальных секций: тёмная «О компании»
+   (about) и светлая «Как мы работаем» (est-sec) — чтобы видеть стык.
+   ========================================================================== */
+
+/* ---------- Тизер «Voyah Free» между «О компании» и «Как мы работаем» ---------- */
+.v-teaser{
+  position:relative;overflow:hidden;
+  padding:clamp(56px,7vw,92px) 0;
+  background:
+    radial-gradient(120% 90% at 84% 8%,rgba(22,64,47,.34),rgba(7,11,18,0) 58%),
+    linear-gradient(180deg,#080D15 0%,#070B12 62%,#080D15 100%);
+  border-top:1px solid rgba(201,211,222,.12);border-bottom:1px solid rgba(201,211,222,.12);
+}
+.v-teaser::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(234,242,255,.75),transparent);opacity:.8}
+.v-teaser::after{content:"";position:absolute;right:-8%;top:-30%;width:52%;height:150%;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(234,242,255,.09),rgba(7,11,18,0) 70%);
+  pointer-events:none}
+.v-teaser .wrap{position:relative;z-index:1}
+.v-teaser-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:center}
+.v-teaser h2{max-width:16ch}
+.v-teaser .v-lead{margin-top:14px}
+.v-teaser-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;align-items:center}
+.v-teaser-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.v-teaser-fact{padding:16px 16px 14px;border-radius:var(--r-sm);border:1px solid rgba(201,211,222,.16);
+  background:rgba(14,22,34,.66)}
+.v-teaser-fact b{display:block;font-family:var(--font-d);font-weight:600;font-size:15px;color:var(--ivory);margin-bottom:4px}
+.v-teaser-fact span{font-size:13px;color:rgba(201,211,222,.78)}
+.v-teaser-prices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px}
+.v-price-chip{position:relative;padding:18px 16px;border-radius:var(--r-sm);
+  border:1px solid rgba(201,211,222,.16);background:linear-gradient(180deg,rgba(20,32,48,.8),rgba(10,16,26,.8))}
+.v-price-chip span{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);margin-bottom:6px}
+.v-price-chip b{display:block;font-family:var(--font-d);font-weight:600;font-size:24px;color:var(--cold);line-height:1}
+.v-price-chip small{display:block;margin-top:6px;font-size:12.5px;color:rgba(201,211,222,.7)}
+@media (max-width:980px){
+  .v-teaser-grid{grid-template-columns:1fr}
+  .v-teaser-facts{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:560px){
+  .v-teaser-prices{grid-template-columns:1fr}
+  .v-teaser-facts{grid-template-columns:1fr}
+}
+
+/* ---------- Фрагмент «О компании» (тёмный, как на сайте) ---------- */
+.site-dark{position:relative;background:var(--night,#0B1410);padding:clamp(48px,6vw,76px) 0;
+  border-bottom:1px solid rgba(224,169,109,.14)}
+.site-dark .kicker{display:inline-flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:#C87F45;margin-bottom:12px}
+.site-dark .kicker::before{content:"";width:26px;height:2px;background:#E0A96D;border-radius:2px}
+.site-dark h2{font-family:var(--font-d);font-size:clamp(24px,3vw,34px);color:#F4EFE6;max-width:22ch;margin-bottom:.5em}
+.site-dark p{color:#B7C4BB;max-width:62ch}
+.site-dark .chip-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.site-dark .chip{padding:8px 14px;border-radius:999px;border:1px solid rgba(224,169,109,.34);
+  font-size:13px;color:#E5D9C8}
+
+/* ---------- Фрагмент «Как мы работаем» (светлый айвори, как est-sec) ---------- */
+.site-ivory{background:#F4EFE6;color:#0B1410;padding:clamp(48px,6vw,76px) 0}
+.site-ivory .kicker{display:inline-flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:#9A5B2C;margin-bottom:12px}
+.site-ivory .kicker::before{content:"";width:26px;height:2px;background:#C87F45;border-radius:2px}
+.site-ivory h2{font-family:var(--font-d);font-size:clamp(24px,3vw,34px);color:#0B1410;max-width:24ch;margin-bottom:.6em}
+.site-ivory p{color:#31403A;max-width:62ch}
+.site-ivory .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}
+.site-ivory .step{padding:20px 18px;border-radius:12px;background:rgba(255,255,255,.62);
+  border:1px solid rgba(11,20,16,.1)}
+.site-ivory .step b{display:block;font-family:var(--font-d);font-size:30px;line-height:1;
+  color:transparent;-webkit-text-stroke:1px #C87F45;margin-bottom:10px}
+.site-ivory .step h3{font-family:var(--font-t);font-size:16px;font-weight:700;margin:0 0 6px;color:#0B1410}
+.site-ivory .step p{font-size:14px;color:#3F4E47;margin:0}
+@media (max-width:900px){.site-ivory .steps{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.site-ivory .steps{grid-template-columns:1fr}}
+
+/* пунктирная «линейка стыка» — только в мокапе, чтобы видеть границы секций */
+.seam{position:relative;height:0;border-top:1px dashed rgba(224,169,109,.55)}
+.seam span{position:absolute;left:20px;top:-9px;padding:0 8px;background:inherit;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E0A96D;background:#070B12}
+</style>
+</head>
+<body>
+
+<div class="demo"><p>Демонстрационная версия для согласования: раздел «Voyah Free». Заявки не отправляются, цены — за работу без запчастей.</p></div>
+
+<header class="hdr" id="hdr">
+  <div class="hdr-in">
+    <a class="logo" href="#" aria-label="АвтоТехСервис — на главную">
+      <img src="img/logo.svg" alt="" width="68" height="42">
+      <span class="logo-t">АвтоТехСервис<b>Ростов-на-Дону · Портовая 439</b></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Основное меню">
+      <ul>
+        <li><a href="#">Главная</a></li>
+        <li><a href="#">Услуги и цены</a></li>
+        <li><a href="#">Прайс</a></li>
+        <li><a href="#">О компании</a></li>
+        <li><a href="#">Полезное</a></li>
+        <li><a href="#">Контакты</a></li>
+        <li><a class="is-active" href="#" aria-current="page">Voyah Free</a></li>
+      </ul>
+    </nav>
+    <div class="hdr-cta">
+      <a class="hdr-phone" href="tel:+79289065700">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg>
+        <span>+7 (928) 906-57-00</span>
+      </a>
+      <a class="v-btn v-btn--brass" href="#">Записаться</a>
+    </div>
+    <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="m-menu" aria-label="Открыть меню">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="m-menu" id="m-menu" aria-label="Меню (мобильное)">
+  <div class="m-top">
+    <a class="logo" href="#"><img src="img/logo.svg" alt="" width="58" height="36"><span class="logo-t">АвтоТехСервис</span></a>
+    <button class="m-close" id="m-close" type="button" aria-label="Закрыть меню">✕</button>
+  </div>
+  <nav aria-label="Основное меню (мобильное)">
+    <ul>
+      <li><a href="#">Главная <span class="n">01</span></a></li>
+      <li><a href="#">Услуги и цены <span class="n">02</span></a></li>
+      <li><a href="#">Прайс <span class="n">03</span></a></li>
+      <li><a href="#">О компании <span class="n">04</span></a></li>
+      <li><a href="#">Полезное <span class="n">05</span></a></li>
+      <li><a href="#">Контакты <span class="n">06</span></a></li>
+      <li><a class="is-active" href="#" aria-current="page">Voyah Free <span class="n">07</span></a></li>
+    </ul>
+  </nav>
+  <div class="m-contact">
+    <a class="tel" href="tel:+79289065700">+7 (928) 906-57-00</a>
+    <a href="#">Ростов-на-Дону, ул. Портовая, 439 · ежедневно 9:00–19:00</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ================= Первый экран ================= -->
+<section class="v-hero" aria-labelledby="v-h1">
+  <div class="v-hero-bg" aria-hidden="true">
+    <img src="img/hero.jpg" width="1400" height="781" alt="">
+  </div>
+  <div class="wrap">
+    <p class="v-eyebrow">Voyah Free · Портовая, 439</p>
+    <h1 class="v-hero-h" id="v-h1">Ремонт и обслуживание <em>Voyah&nbsp;Free</em></h1>
+    <p class="v-lead">Полное ТО гибрида в одном боксе: масло двигателя и генераторной установки, редукторы, тормоза, подвеска и рулевое. Цены — за работу, без запчастей; сумму называем до начала.</p>
+    <div class="v-btnrow">
+      <a class="v-btn v-btn--brass" href="#">Записаться на ТО</a>
+      <a class="v-btn v-btn--light" href="tel:+79289065700">Позвонить: +7 (928) 906-57-00</a>
+    </div>
+    <div class="v-hero-meta">
+      <div><b>Адрес</b>Ростов-на-Дону, ул. Портовая, 439</div>
+      <div><b>Часы</b>ежедневно, 9:00–19:00</div>
+      <div><b>В работе</b>Voyah Free — ТО и ремонт по узлам</div>
+    </div>
+    <!-- мокап: ссылки на прототипы интро, в продакшн не переносится -->
+    <div class="v-proto">
+      <a href="intro-a.html">Прототип входа · вариант A</a>
+      <a href="intro-b.html">Прототип входа · вариант B</a>
+    </div>
+  </div>
+  <span class="v-scroll" aria-hidden="true">листайте <i></i></span>
+</section>
+
+<hr class="v-rule">
+
+<!-- ================= Почему это не обычное ТО ================= -->
+<section class="v-sec" aria-labelledby="v-why-h">
+  <div class="wrap">
+    <div>
+      <p class="v-eyebrow">Подход</p>
+      <h2 id="v-why-h">Почему это не обычное ТО</h2>
+      <p class="v-lead">У Voyah Free два контура обслуживания: двигатель с генераторной установкой и тяговые редукторы. Мы держим оба в одном боксе и не отправляем машину «на другой сервис».</p>
+    </div>
+    <div class="v-why">
+      <article class="v-why-card">
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17h16M6 17V9l3-3h6l3 3v8"/><circle cx="8.5" cy="17" r="2"/><circle cx="15.5" cy="17" r="2"/></svg></span>
+        <h3>Два контура — один визит</h3>
+        <p>Масло двигателя и масло генераторной установки меняем за один заезд, вместе с фильтрами и свечами.</p>
+      </article>
+      <article class="v-why-card">
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14M5 16h14"/><circle cx="12" cy="8" r="2.4"/><circle cx="12" cy="16" r="2.4"/></svg></span>
+        <h3>Редукторы по регламенту</h3>
+        <p>Передний и задний редукторы — отдельные позиции прайса: видно, за что платите, без «пакета».</p>
+      </article>
+      <article class="v-why-card">
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h13"/><path d="M17.5 15.5 20 18l-2.5 2.5"/></svg></span>
+        <h3>Смета до работ</h3>
+        <p>Сначала осмотр и дефектовка, потом перечень работ с суммой. Без согласования к работам не приступаем.</p>
+      </article>
+      <article class="v-why-card">
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-7-10a7 7 0 0 1 14 0c0 5.4-7 10-7 10z"/><circle cx="12" cy="11" r="2.6"/></svg></span>
+        <h3>Бокс на Портовой, 439</h3>
+        <p>Подъёмник, диагностика и слесарные работы на месте. Запись на конкретное время, без живой очереди.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Что входит: 5 групп ================= -->
+<section class="v-sec v-sec--panel" aria-labelledby="v-incl-h">
+  <div class="wrap">
+    <p class="v-eyebrow">Состав работ</p>
+    <h2 id="v-incl-h">Что входит в ТО</h2>
+    <p class="v-lead">Пять групп работ — по ним же построен прайс ниже. Каждую позицию можно взять отдельно.</p>
+    <div class="v-incl">
+      <article class="v-incl-item">
+        <h3>Двигатель и фильтры</h3>
+        <p>Масло ДВС с масляным, воздушным и салонным фильтрами; свечи зажигания; прокладка клапанной крышки при необходимости.</p>
+      </article>
+      <article class="v-incl-item">
+        <h3>Генераторная установка и редукторы</h3>
+        <p>Масло генераторной установки, масло переднего и заднего редукторов — по регламенту, отдельными позициями.</p>
+      </article>
+      <article class="v-incl-item">
+        <h3>Тормозная система</h3>
+        <p>Тормозная жидкость, колодки по осям, замена дисков вместе с колодками, если кромка уже вне допуска.</p>
+      </article>
+      <article class="v-incl-item">
+        <h3>Подвеска и рулевое</h3>
+        <p>Рычаги передней подвески, рулевые тяги и наконечники; после замены — проверка углов и пробный выезд.</p>
+      </article>
+      <article class="v-incl-item">
+        <h3>Диагностика</h3>
+        <p>Ходовая часть на подъёмнике и компьютерная диагностика: сначала находим причину, потом называем работы.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Кадр 2: узел крупно ================= -->
+<section class="v-sec" aria-labelledby="v-node-h">
+  <div class="wrap v-split">
+    <figure class="v-frame">
+      <img src="img/node.jpg" width="1400" height="781" alt="Иллюстрация: работа с рычагом передней подвески на подъёмнике">
+      <figcaption><b>Кадр 2</b> <span>Узел крупно: рычаг и рулевая тяга</span></figcaption>
+    </figure>
+    <div>
+      <p class="v-eyebrow">Что смотрим под машиной</p>
+      <h2 id="v-node-h">Подвеска и рулевое — первыми в очереди</h2>
+      <p class="v-lead">На подъёмнике видно то, что на ходу только слышно: люфт шаровой, надрыв пыльника, износ рулевой тяги. Показываем деталь до замены и объясняем, что можно оставить до следующего визита.</p>
+      <div class="v-btnrow"><a class="v-btn v-btn--light" href="#price">Смотреть прайс</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Прайс: 15 строк ================= -->
+<section class="v-sec v-sec--panel" id="price" aria-labelledby="v-price-h">
+  <div class="wrap">
+    <div class="v-price-head">
+      <div>
+        <p class="v-eyebrow">Прайс</p>
+        <h2 id="v-price-h">Цены на работы</h2>
+      </div>
+      <p class="v-note">Суммы — за работу, без запчастей и расходников.</p>
+    </div>
+    <div class="v-price">
+      <table class="v-tbl">
+        <caption>Voyah Free · 15 позиций</caption>
+        <thead><tr><th scope="col">Работа</th><th scope="col">Стоимость</th></tr></thead>
+        <tbody>
+          <tr><td>Масло ДВС + все фильтры<span class="sub">масляный, воздушный, салонный</span></td><td><b>2000 ₽</b></td></tr>
+          <tr><td>Масло переднего редуктора</td><td><b>2500 ₽</b></td></tr>
+          <tr><td>Масло заднего редуктора</td><td><b>2500 ₽</b></td></tr>
+          <tr><td>Масло генераторной установки</td><td><b>2500 ₽</b></td></tr>
+          <tr><td>Тормозная жидкость<span class="sub">с прокачкой контуров</span></td><td><b>2000 ₽</b></td></tr>
+          <tr><td>Колодки передние</td><td><b>2000 ₽</b></td></tr>
+          <tr><td>Колодки задние</td><td><b>2500 ₽</b></td></tr>
+          <tr><td>Передние диски + колодки</td><td><b>3000 ₽</b></td></tr>
+          <tr><td>Задние диски + колодки</td><td><b>4000 ₽</b></td></tr>
+          <tr><td>Свечи зажигания</td><td><b>1500 ₽</b></td></tr>
+          <tr><td>Прокладка клапанной крышки</td><td><b>2500 ₽</b></td></tr>
+          <tr><td>Рулевой наконечник</td><td><b>1200 ₽</b></td></tr>
+          <tr><td>Рулевая тяга</td><td><b>2500 ₽</b></td></tr>
+          <tr><td>Рычаги передней подвески</td><td><b>от 2500 ₽</b></td></tr>
+          <tr><td>Диагностика ходовой</td><td><b>1500 ₽</b></td></tr>
+        </tbody>
+      </table>
+      <aside class="v-price-aside">
+        <div class="v-glass">
+          <span class="sum">от 2000 ₽</span>
+          <p class="v-note" style="margin-top:6px">базовое ТО с маслом и фильтрами — цена за работу</p>
+          <ul>
+            <li>Точную сумму называем после осмотра и до начала работ.</li>
+            <li>Запчасти и расходники — отдельно, по согласованию.</li>
+            <li>Можно приехать со своими расходниками.</li>
+          </ul>
+          <a class="v-btn v-btn--brass" href="#" style="width:100%">Записаться на ТО</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Как проходит визит ================= -->
+<section class="v-sec" aria-labelledby="v-steps-h">
+  <div class="wrap">
+    <p class="v-eyebrow">Порядок</p>
+    <h2 id="v-steps-h">Как проходит визит</h2>
+    <div class="v-steps">
+      <div class="v-step"><h3>Заявка</h3><p>Звонок или запись на время. Спрашиваем, что беспокоит и какой пробег с прошлого ТО.</p></div>
+      <div class="v-step"><h3>Осмотр и диагностика</h3><p>Поднимаем машину, проверяем узлы по вашему списку и то, что видно на подъёмнике.</p></div>
+      <div class="v-step"><h3>Смета и согласование</h3><p>Показываем найденное и называем сумму. Выбираете объём — работаем только по согласованному.</p></div>
+      <div class="v-step"><h3>Работы и выдача</h3><p>Выполняем согласованное, проверяем на выезде и объясняем, что сделано и что в следующий раз.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Кадр 3: вечер у сервиса ================= -->
+<section class="v-sec v-sec--flush" aria-labelledby="v-evening-h">
+  <div class="wrap">
+    <div class="v-media-full">
+      <img src="img/evening.jpg" width="1400" height="781" alt="Иллюстрация: автомобиль у сервиса вечером, свет из открытого бокса">
+      <div class="cap">
+        <div>
+          <b id="v-evening-h">Вечером — тот же бокс</b>
+          Работаем ежедневно до 19:00: можно приехать после работы и забрать машину в тот же день, если объём небольшой.
+        </div>
+        <span class="v-photonote">кадр 3 · иллюстрация</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="v-sec" aria-labelledby="v-faq-h">
+  <div class="wrap">
+    <p class="v-eyebrow">Вопросы</p>
+    <h2 id="v-faq-h">Частые вопросы</h2>
+    <div class="v-faq">
+      <details open>
+        <summary>Нужно ли ехать к официальному дилеру, чтобы сохранить гарантию?</summary>
+        <div class="ans">Мы не официальный дилер и не говорим от лица марки. Работы выполняем по регламенту и оформляем заказ-наряд: в нём видны дата, перечень работ и пробег. Решение о гарантии принимает продавец или производитель — по своим условиям.</div>
+      </details>
+      <details>
+        <summary>Сколько по времени занимает ТО?</summary>
+        <div class="ans">Базовое ТО с маслом ДВС и фильтрами — около двух часов. Если добавляются редукторы, свечи или тормозная жидкость, время растёт: точный интервал назовём при записи, чтобы вы не ждали в сервисе весь день.</div>
+      </details>
+      <details>
+        <summary>Можно приехать со своими расходниками?</summary>
+        <div class="ans">Да. В этом случае в заказ-наряде фиксируем только работу. Если деталь не подходит по допуску, скажем до начала работ — ставить «что есть» вместо регламентной позиции не будем.</div>
+      </details>
+      <details>
+        <summary>Есть ли расходники в наличии?</summary>
+        <div class="ans">Ходовые позиции — масло, фильтры, колодки — уточняйте по телефону на нужную дату: наличие меняется. Если позиции нет, скажем сразу и предложим варианты по срокам.</div>
+      </details>
+      <details>
+        <summary>Как часто обслуживать гибрид?</summary>
+        <div class="ans">Интервалы задаёт регламент по пробегу: отдельно для двигателя, отдельно для редукторов и генераторной установки. Мы считаем от фактического пробега и показываем, какие позиции уже подошли.</div>
+      </details>
+      <details>
+        <summary>Что если после работ появился посторонний звук?</summary>
+        <div class="ans">Приезжайте — посмотрим без записи в порядке очереди. Если звук связан с нашей работой, устраняем по гарантии из заказ-наряда; условия и срок по каждой операции указаны в нём.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Финальный CTA ================= -->
+<section class="v-sec v-sec--flush">
+  <div class="wrap">
+    <div class="v-cta">
+      <div class="v-cta-grid">
+        <div>
+          <p class="v-eyebrow">Запись</p>
+          <h2>Запишите Voyah Free на ТО</h2>
+          <p class="v-lead">Скажите пробег и что беспокоит — подберём время и заранее уточним, какие позиции понадобятся. Цены за работу указаны выше; сумму подтвердим после осмотра.</p>
+        </div>
+        <div class="v-btnrow">
+          <a class="v-btn v-btn--brass" href="#">Записаться на ТО</a>
+          <a class="v-btn v-btn--light" href="tel:+79289065700">+7 (928) 906-57-00</a>
+        </div>
+      </div>
+    </div>
+    <p class="v-note" style="margin-top:18px">Кадры на странице — иллюстрации для согласования, не фотографии сервиса. Название модели — только латиницей; официальная символика марки не используется.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="v-foot">
+  <div class="wrap">
+    <div class="v-foot-grid">
+      <div>
+        <h4>АвтоТехСервис</h4>
+        <p class="v-note" style="margin:0 0 8px">Ростов-на-Дону, ул. Портовая, 439<br>ежедневно 9:00–19:00</p>
+        <a href="tel:+79289065700">+7 (928) 906-57-00</a>
+      </div>
+      <div>
+        <h4>Раздел</h4>
+        <ul>
+          <li><a href="#price">Прайс на Voyah Free</a></li>
+          <li><a href="#v-faq-h">Частые вопросы</a></li>
+          <li><a href="#">Записаться на ТО</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Сайт</h4>
+        <ul>
+          <li><a href="#">Услуги и цены</a></li>
+          <li><a href="#">Прайс</a></li>
+          <li><a href="#">Контакты</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="legal">
+      <span>ИП Яковенко П. И. · ИНН 341204080038 · ОГРНИП 32461960017335</span>
+      <span>Мокап круга 28, агент 6 · не для публикации</span>
+    </div>
+  </div>
+</footer>
+
+<div class="v-demo-tag"><i></i>мокап · задание №38</div>
+
+<script>
+/* Мобильное меню: без JS страница целиком читается, скрипт только открывает/закрывает панель. */
+(function(){
+  var burger=document.getElementById('burger'), menu=document.getElementById('m-menu'),
+      close=document.getElementById('m-close'), body=document.body;
+  function setOpen(open){
+    body.classList.toggle('menu-open', open);
+    body.classList.toggle('no-scroll', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if(open){ var a=menu.querySelector('a'); if(a) a.focus(); }
+  }
+  burger.addEventListener('click', function(){ setOpen(!body.classList.contains('menu-open')); });
+  close.addEventListener('click', function(){ setOpen(false); });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && body.classList.contains('menu-open')) setOpen(false);
+  });
+  /* «шапка поджата» — как на сайте: уменьшаем отступы после 40 px скролла */
+  var hdr=document.getElementById('hdr');
+  function onScroll(){ hdr.classList.toggle('is-compact', scrollY>40); }
+  addEventListener('scroll', onScroll, {passive:true}); onScroll();
+})();
+</script>
+</body>
+</html>
