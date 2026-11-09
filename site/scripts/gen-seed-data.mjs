@@ -28,7 +28,11 @@ const bullet = (s, key) => {
 const services = FILES.map((f) => {
   const md = readFileSync(join(A7, '03-services', f), 'utf8');
   const meta = between(md, '## Метаданные', '## Текст для страницы');
-  const description = between(md, '## Текст для страницы', '## Служебное');
+  /* круг 27 (§3.2): в исходниках A7 заголовок раздела попал в текст первой строкой —
+     служебный префикс «(поле `description`)» вырезаем, чтобы брак не возвращался в сид */
+  const description = between(md, '## Текст для страницы', '## Служебное')
+    .replace(/^\s*\(поле `description`\)\s*\n+/, '')
+    .trimStart();
   const line = meta.match(/\*\*grp:\*\* `([^`]+)` · \*\*tag:\*\* `([^`]+)` · \*\*sort:\*\* `(\d+)` · \*\*hidden:\*\* `(\d+)` · \*\*chip:\*\* `(\d+)`/);
   if (!line) throw new Error('нет строки grp/tag ' + f);
   return {

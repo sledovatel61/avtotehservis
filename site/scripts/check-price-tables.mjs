@@ -3,8 +3,9 @@
    (base /avtotehservis срезается), рендер ТОЛЬКО Chromium (puppeteer-core 23 +
    @sparticuz/chromium 131, standing R20: sharp-моки рендером не считаются).
    Проверки:
-     P1 структура: 6 групп-якорей (#to #tormoza #podveska #grm #diagnostika #shiny),
-        8 таблиц .price-tbl, sticky-навигация из 6 ссылок, JSON-LD FAQPage + BreadcrumbList,
+     P1 структура (круг 27): 8 групп-якорей (#to #tormoza #podveska #grm #diagnostika
+        #kondicioner #svarka #shiny), 10 таблиц .price-tbl, sticky-навигация из 8 ссылок,
+        JSON-LD FAQPage + BreadcrumbList,
         4 вопроса FAQ, 5 сносок в .price-foot;
      P2 390 px: documentElement.scrollWidth ≤ 391 (страница не растягивается), у каждого
         .price-wrap overflow-x auto|scroll и при переполнении таблицы скролл доступен
@@ -27,10 +28,12 @@ const DIST = join(ROOT, 'site', 'pages-dist');
 const SITE = join(ROOT, 'site');
 const PORT = 4327;
 
-const ANCHORS = ['to', 'tormoza', 'podveska', 'grm', 'diagnostika', 'shiny'];
+const ANCHORS = ['to', 'tormoza', 'podveska', 'grm', 'diagnostika', 'kondicioner', 'svarka', 'shiny'];
 /* выборочные цифры a7/02, сверенные с фотографиями прайсов владельца (круг 26) */
 const PRICES_SPOT = ['15 000', '3500–4500', '5000–6000', '6000–7000', '12 000–16 000',
-  '2200', '3600', '2000–2500', '8000–9000', '500'];
+  '2200', '3600', '2000–2500', '8000–9000', '500',
+  /* круг 27: записки владельца от 09.11.2026 — кондиционеры и сварка */
+  '2000', 'от 500', 'от 2500', 'от 1500'];
 
 const server = createServer(async (req, res) => {
   let p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
@@ -53,9 +56,9 @@ export async function checkPriceTables(opts = {}) {
   /* P1 структура */
   for (const a of ANCHORS) if (!html.includes(`id="${a}"`)) fails.push(`P1 нет якоря #${a}`);
   const tables = (html.match(/class="price-tbl"/g) || []).length;
-  if (tables !== 8) fails.push(`P1 таблиц .price-tbl ${tables} ≠ 8`);
+  if (tables !== 10) fails.push(`P1 таблиц .price-tbl ${tables} ≠ 10`);
   const navLinks = (html.match(/class="price-nav-a" href="#/g) || []).length;
-  if (navLinks !== 6) fails.push(`P1 ссылок в price-nav ${navLinks} ≠ 6`);
+  if (navLinks !== 8) fails.push(`P1 ссылок в price-nav ${navLinks} ≠ 8`);
   /* JSON-LD в pages-dist не переносится export-pages (JSDOM теряет ld+json на всех
      страницах — см. about/index.html), поэтому проверяем разметку-источник: массив jsonLd
      в prices.astro обязан содержать FAQPage и BreadcrumbList; в SSR-HTML он попадает. */
@@ -98,7 +101,7 @@ export async function checkPriceTables(opts = {}) {
         });
         const nav = document.querySelector('.price-nav');
         const tbls = [...document.querySelectorAll('.price-tbl')].map((t) => t.getBoundingClientRect().width);
-        const anchors = ['to', 'tormoza', 'podveska', 'grm', 'diagnostika', 'shiny']
+        const anchors = ['to', 'tormoza', 'podveska', 'grm', 'diagnostika', 'kondicioner', 'svarka', 'shiny']
           .filter((id) => !document.getElementById(id));
         return { scrollW: de.scrollWidth, innerW: window.innerWidth, wraps, navPos: nav ? getComputedStyle(nav).position : 'none', tbls, anchors };
       });

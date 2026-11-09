@@ -40,7 +40,7 @@ export async function checkSvcBg(opts = {}) {
   const svcimg = opts.svcimg ?? readFileSync(join(SITE, 'src/server/svc-img.ts'), 'utf8');
   const pages = astro + '\n' + (opts.services ?? readFileSync(join(SITE, 'src/pages/services.astro'), 'utf8'));
   const geom = opts.geom ?? JSON.parse(readFileSync(join(SITE, 'data', 'svc-geom.json'), 'utf8'));
-  const svgs = opts.svgs ?? [1, 2, 3, 4, 5, 6].map(i => readFileSync(join(IMG, `svc-${i}.svg`), 'utf8'));
+  const svgs = opts.svgs ?? [1, 2, 3, 4, 5, 6, 9].filter(i => existsSync(join(IMG, `svc-${i}.svg`))).map(i => readFileSync(join(IMG, `svc-${i}.svg`), 'utf8'));
 
   /* 1. фон существует */
   for (const [f, w, h] of [['svc-bg-1600.avif', 1500, 844], ['svc-bg-1600.webp', 1500, 844],
@@ -96,11 +96,29 @@ export async function checkSvcBg(opts = {}) {
   });
   for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++)
     if (Math.abs(vis[i].mean - vis[j].mean) < 6) fails.push(`C3 карточки ${i + 1}/${j + 1}: Δ ${Math.abs(vis[i].mean - vis[j].mean).toFixed(1)} < 6`);
+  const astroCards = [...new Set([...svcimg.matchAll(/:\s*'svc-(\d+)'/g)].map(m => m[1]))];
+  /* круг 27 (приёмка A6 minor 5.2): 8 фактур в карте svc-img.ts, проверяем уникальность sha256 по всем 8 и lapvar ≥ 200 на новых svc-7/8/9 */
+  if (astroCards.length !== 8) fails.push(`C3 в карте svc-img.ts ${astroCards.length} файлов вместо 8 (круг 27: 8 услуг)`);
   const sha = (f) => createHash('sha256').update(readFileSync(join(IMG, f))).digest('hex').slice(0, 12);
-  const pSha = [1, 2, 3, 4, 5, 6].map(i => sha(`svc-${i}-640.avif`));
-  if (new Set(pSha).size !== 6) fails.push(`C3 sha256 производных карточек не уникальны`);
-  const astroCards = [...new Set([...svcimg.matchAll(/:\s*'svc-(\d)'/g)].map(m => m[1]))];
-  if (astroCards.length !== 7) fails.push(`C3 в карте svc-img.ts ${astroCards.length} файлов вместо 7 (круг 26: 7 услуг)`);
+  const pSha = astroCards.map(i => existsSync(join(IMG, `svc-${i}-640.avif`)) ? sha(`svc-${i}-640.avif`) : `missing-${i}`);
+  if (pSha.some(s => s.startsWith('missing-'))) fails.push(`C3 отсутствует производная ассета: ${pSha.filter(s => s.startsWith('missing-')).join(', ')}`);
+  if (new Set(pSha).size !== astroCards.length) fails.push(`C3 sha256 производных карточек не уникальны (${new Set(pSha).size}/${astroCards.length})`);
+  for (const n of ['7', '8', '9']) {
+    for (const sz of ['640', '960']) {
+      const fp = join(IMG, `svc-${n}-${sz}.webp`);
+      if (!existsSync(fp)) { fails.push(`C3 нет файла svc-${n}-${sz}.webp`); continue; }
+      const { data, info } = await sharp(fp).greyscale().raw().toBuffer({ resolveWithObject: true });
+      const gw = info.width, gh = info.height;
+      let s1 = 0, s2 = 0, cnt = 0;
+      for (let y = 1; y < gh - 1; y++) for (let x = 1; x < gw - 1; x++) {
+        const k = y * gw + x;
+        const lv = -4 * data[k] + data[k - 1] + data[k + 1] + data[k - gw] + data[k + gw];
+        s1 += lv; s2 += lv * lv; cnt++;
+      }
+      const lp = s2 / cnt - (s1 / cnt) ** 2;
+      if (lp < 200) fails.push(`C3 svc-${n}-${sz}.webp: lapvar ${lp.toFixed(0)} < 200`);
+    }
+  }
   if (!/svcImgKey|SVC_IMG/.test(pages)) fails.push('C3 страницы услуг не используют карту svc-img');
   if (!/\$\{svcImgKey\([^)]*\)\}-640\.avif/.test(pages)) fails.push('C3 picture карточек не использует srcset 640/960');
 
@@ -174,7 +192,7 @@ export async function checkSvcBg(opts = {}) {
 const MUTANTS = {
   'фон-display-none': ({ o }) => { o.css += '\n.svc-bg{display:none}\n'; },
   'фон-плоской-заливкой': ({ o }) => { o.astro = o.astro.replace(/<div class="svc-bg"[\s\S]*?<\/div>\n  <div class="container">/, '<div class="container">'); },
-  'одна-фактура-на-все': ({ o }) => { o.svcimg = o.svcimg.replace(/'svc-[2-6]'/g, "'svc-1'"); },
+  'одна-фактура-на-все': ({ o }) => { o.svcimg = o.svcimg.replace(/'svc-[2-9]'/g, "'svc-1'"); },
   'карточка-выбелена-120': ({ G }) => { G.widths['1440'].cardZones[1].mean = 120; },
   'разброс-зоны-12': ({ G }) => { G.widths['1440'].cardZones[0].spread = 12; },
   'h3-снова-медный': ({ o }) => { o.css = o.css.replace('.svc-body h3{color:var(--ivory)}', '.svc-body h3{color:var(--brass)}'); },
@@ -194,7 +212,7 @@ const load = () => ({
   astro: readFileSync(join(SITE, 'src/pages/index.astro'), 'utf8'),
   svcimg: readFileSync(join(SITE, 'src/server/svc-img.ts'), 'utf8'),
   geom: JSON.parse(readFileSync(join(SITE, 'data', 'svc-geom.json'), 'utf8')),
-  svgs: [1, 2, 3, 4, 5, 6].map(i => readFileSync(join(IMG, `svc-${i}.svg`), 'utf8')),
+  svgs: [1, 2, 3, 4, 5, 6, 9].filter(i => existsSync(join(IMG, `svc-${i}.svg`))).map(i => readFileSync(join(IMG, `svc-${i}.svg`), 'utf8')),
 });
 
 const arg = process.argv[2] || '';

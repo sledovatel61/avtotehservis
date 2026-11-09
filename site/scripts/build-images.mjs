@@ -122,6 +122,8 @@ const CAPS = {
      проседало — подняли бюджет, страница /services остаётся в ~200 КБ картинок */
   'svc-7-640': { avif: 8, webp: 14 }, 'svc-8-640': { avif: 12, webp: 30 },
   'svc-7-960': { avif: 12, webp: 24 }, 'svc-8-960': { avif: 20, webp: 48 },
+  /* круг 27 (задание №31 §3.2): обложка восьмой услуги — сварка выхлопа */
+  'svc-9-640': { avif: 10, webp: 18 }, 'svc-9-960': { avif: 18, webp: 36 },
   /* круг 26: иллюстрации сертификатов (/about) — потолок webp 120 КБ из задания №30 §3 */
   'cert-lynxauto-720': { avif: 20, webp: 60 }, 'cert-lynxauto-1200': { avif: 45, webp: 120 },
   'cert-sufix-720': { avif: 20, webp: 60 }, 'cert-sufix-1200': { avif: 45, webp: 120 },
@@ -722,9 +724,18 @@ async function main() {
     ]),
     /* круг 26 (задание №30): svc-7 — подвеска на подъёмнике, svc-8 — ремень ГРМ.
        Мастера 1376×768 (AI-генерация круга), производные 640×480 / 960×720 — кроп, апскейла нет. */
-    ...[join(R26SVC, 'gen-podveska.jpg'), join(R26SVC, 'gen-grm.jpg')].flatMap((m, i) => [
-      encodeSet(`svc-${i + 7}-640`, sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
-      encodeSet(`svc-${i + 7}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
+    /* круг 27: мастеров r26-svc в репозитории нет (AI-кадры круга 26 жили только в рабочем
+       дереве агента, производные svc-7/svc-8 закоммичены) — блок пропускается, если мастера
+       нет, чтобы сборка поднималась из чистого клона */
+    ...[join(R26SVC, 'gen-podveska.jpg'), join(R26SVC, 'gen-grm.jpg')]
+      .map((m, i) => [m, i]).filter(([m]) => existsSync(m)).flatMap(([m, i]) => [
+        encodeSet(`svc-${i + 7}-640`, sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
+        encodeSet(`svc-${i + 7}-960`, sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
+      ]),
+    /* круг 27: обложка услуги «Сварочные работы и выхлоп» (svc-9) */
+    ...[join(HERE, '../../docs/photos-source/r27-svc/gen-svarka.jpg')].flatMap((m) => [
+      encodeSet('svc-9-640', sharp(m).resize(640, 480, { fit: 'cover' }), 640, 480, false),
+      encodeSet('svc-9-960', sharp(m).resize(960, 720, { fit: 'cover' }), 960, 720, false),
     ]),
     /* круг 26 (задание №30 §3): иллюстрации сертификатов — мастера 1200×1600 рендерит
        render-certs.mjs (Chromium + Unbounded/Golos), здесь только производные 720×960 и
