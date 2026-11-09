@@ -215,12 +215,15 @@ const jsonLd = [
         addressCountry: 'RU',
       },
     },
-    offers: PRICE.map(([name, sub, sum]) => ({
-      '@type': 'Offer',
-      name: sub ? `${name} (${sub})` : name,
-      price: sum.replace(/[^\d]/g, ''),
-      priceCurrency: 'RUB',
-    })),
+    /* круг 29 (M2): «от 2500 ₽» отдавалось как фиксированные 2500 — для других
+       креплений цена выше. Цены «от» идут через priceSpecification.minPrice. */
+    offers: PRICE.map(([name, sub, sum]) => {
+      const digits = sum.replace(/[^\d]/g, '');
+      const base = { '@type': 'Offer', name: sub ? `${name} (${sub})` : name, priceCurrency: 'RUB' };
+      return /^от\s/.test(sum)
+        ? { ...base, priceSpecification: { '@type': 'PriceSpecification', minPrice: digits, priceCurrency: 'RUB' } }
+        : { ...base, price: digits };
+    }),
   },
 ];
 ---
@@ -242,7 +245,10 @@ const jsonLd = [
       </picture>
     </div>
     <div class="vy-wrap">
-      <p class="v-eyebrow">Voyah Free · Портовая, 439</p>
+      <p class="v-eyebrow v-eyebrow--brand">
+        <img class="v-mark" src="/img/vy-mark.svg" width="24" height="24" alt="" decoding="async">
+        Voyah Free · Портовая, 439
+      </p>
       <h1 class="v-hero-h" id="v-h1">
         {H1_LINES.map((line, i) => <span class="v-h1-l">{line}{i < H1_LINES.length - 1 ? ' ' : ''}</span>)}
       </h1>
@@ -260,11 +266,11 @@ const jsonLd = [
   <hr class="v-rule">
 
   <!-- 2. Почему это не обычное ТО -->
-  <section class="v-sec" aria-labelledby="v-why-h">
+  <section class="v-sec v-sec--why v-sec--noise" aria-labelledby="v-why-h">
     <div class="vy-wrap">
       <div class="reveal">
         <p class="v-eyebrow">Как устроена машина</p>
-        <h2 id="v-why-h">Почему это не обычное ТО</h2>
+        <h2 id="v-why-h">Почему Voyah Free — это не обычное ТО</h2>
         <p class="v-lead">У Voyah Free гибридная установка: двигатель внутреннего сгорания работает с генератором, а тягу обеспечивают электромоторы. Поэтому в план обслуживания входят отдельные операции: масло в двигателе и генераторной установке, масла в переднем и заднем редукторах, тормозная жидкость и свечи. Перечень и стоимость работ согласуем до начала.</p>
       </div>
       <div class="v-why">
@@ -280,7 +286,7 @@ const jsonLd = [
   </section>
 
   <!-- 3. Что входит: пять групп работ -->
-  <section class="v-sec v-sec--panel" aria-labelledby="v-incl-h">
+  <section class="v-sec v-sec--panel v-sec--incl" aria-labelledby="v-incl-h">
     <div class="vy-wrap">
       <div class="reveal">
         <p class="v-eyebrow">Пять групп работ</p>
@@ -296,7 +302,7 @@ const jsonLd = [
   </section>
 
   <!-- 4. Кадр «узел крупно» -->
-  <section class="v-sec" aria-labelledby="v-node-h">
+  <section class="v-sec v-sec--node" aria-labelledby="v-node-h">
     <div class="vy-wrap v-split">
       <figure class="v-frame reveal">
         <picture>
@@ -316,7 +322,7 @@ const jsonLd = [
   </section>
 
   <!-- 5. Прайс: 15 строк -->
-  <section class="v-sec v-sec--panel" id="price" aria-labelledby="v-price-h">
+  <section class="v-sec v-sec--panel v-sec--price v-sec--noise" id="price" aria-labelledby="v-price-h">
     <div class="vy-wrap">
       <div class="v-price-head reveal">
         <div>
@@ -339,6 +345,7 @@ const jsonLd = [
         </div>
         <aside class="v-price-aside reveal" data-d="1" aria-label="Условия по цене">
           <div class="v-glass">
+            <img class="v-aside-mark" src="/img/vy-mark.svg" width="30" height="30" alt="" decoding="async">
             <span class="sum">от 2000 ₽</span>
             <p class="v-note" style="margin-top:6px">полное ТО с маслом и фильтрами — цена за работу</p>
             <ul>
@@ -356,7 +363,7 @@ const jsonLd = [
   </section>
 
   <!-- 6. Что проверим на осмотре -->
-  <section class="v-sec" aria-labelledby="v-check-h">
+  <section class="v-sec v-sec--check v-sec--grid" aria-labelledby="v-check-h">
     <div class="vy-wrap">
       <div class="reveal">
         <p class="v-eyebrow">Осмотр на подъёмнике</p>
@@ -376,7 +383,7 @@ const jsonLd = [
   </section>
 
   <!-- 7. Расходники и подбор по VIN -->
-  <section class="v-sec v-sec--panel" aria-labelledby="v-parts-h">
+  <section class="v-sec v-sec--panel v-sec--parts" aria-labelledby="v-parts-h">
     <div class="vy-wrap">
       <div class="reveal">
         <p class="v-eyebrow">Материалы</p>
@@ -392,7 +399,7 @@ const jsonLd = [
   </section>
 
   <!-- 8. Как проходит визит -->
-  <section class="v-sec" aria-labelledby="v-steps-h">
+  <section class="v-sec v-sec--steps" aria-labelledby="v-steps-h">
     <div class="vy-wrap">
       <div class="reveal">
         <p class="v-eyebrow">Порядок</p>
@@ -405,7 +412,7 @@ const jsonLd = [
   </section>
 
   <!-- 9. Кадр «вечером у сервиса» -->
-  <section class="v-sec v-sec--flush" aria-labelledby="v-evening-h">
+  <section class="v-sec v-sec--flush v-sec--evening" aria-labelledby="v-evening-h">
     <div class="vy-wrap">
       <div class="v-media-full reveal">
         <picture>
@@ -424,7 +431,7 @@ const jsonLd = [
   </section>
 
   <!-- 10. FAQ -->
-  <section class="v-sec" aria-labelledby="v-faq-h">
+  <section class="v-sec v-sec--faq" aria-labelledby="v-faq-h">
     <div class="vy-wrap">
       <div class="reveal">
         <p class="v-eyebrow">Вопросы</p>
@@ -447,7 +454,10 @@ const jsonLd = [
       <div class="v-cta reveal">
         <div class="v-cta-grid">
           <div>
-            <p class="v-eyebrow">Запись</p>
+            <p class="v-eyebrow v-eyebrow--brand">
+              <img class="v-mark" src="/img/vy-mark.svg" width="24" height="24" alt="" decoding="async">
+              Voyah Free · запись
+            </p>
             <h2>Запишите Voyah Free на ТО</h2>
             <p class="v-lead">Скажите пробег и что беспокоит — подберём время и заранее уточним, какие позиции понадобятся. Цены за работу указаны выше; сумму подтвердим после осмотра.</p>
           </div>
@@ -458,7 +468,7 @@ const jsonLd = [
           </div>
         </div>
       </div>
-      <p class="v-note" style="margin-top:18px">Кадры на странице — постановочные изображения для оформления раздела, не фотографии конкретных машин. Название модели — только латиницей; официальная символика марки не используется.</p>
+      <p class="v-note" style="margin-top:18px">Кадры на странице — постановочные изображения для оформления раздела, не фотографии конкретных машин. «Voyah Free» — товарный знак правообладателя; АвтоТехСервис не является официальным дилером марки и выполняет работы по своему прайсу.</p>
     </div>
   </section>
 </Base>

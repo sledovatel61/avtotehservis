@@ -115,6 +115,15 @@ try {
       + `<meta name="robots" content="noindex, follow"><title>Переезд страницы: ${to}</title></head>`
       + `<body data-preview="true"><p>Страница переехала: <a href="${base}${to}">${to}</a></p></body></html>`);
   }
+  /* круг 29 (M1): sitemap.xml не попадал в pages-dist, а в SSR-версии адреса шли
+     без публичного префикса — canonical на странице и <loc> расходились.
+     Кладём sitemap в публикацию с тем же префиксом, что и HTML. */
+  const sitemapPublic = sitemap.replace(/<loc>([^<]+)<\/loc>/g, (_, u) => {
+    const path = new URL(u).pathname;
+    return `<loc>${publicOrigin}${base}${path === '/' ? '/' : path}</loc>`;
+  });
+  await writeFile(join(output, 'sitemap.xml'), sitemapPublic);
+
   await writeFile(join(output, '.nojekyll'), '');
   await writeFile(join(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
   console.log(`Exported ${routes.length} public pages + 404 to ${output}`);

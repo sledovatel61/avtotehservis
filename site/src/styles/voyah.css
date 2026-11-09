@@ -72,11 +72,104 @@
   color:var(--v-silver);margin-bottom:14px;
 }
 .v-eyebrow::before{content:"";width:28px;height:1px;background:var(--v-cold);box-shadow:0 0 8px rgba(234,242,255,.8)}
+/* круг 29 (требование «F»): логотип марки вернулся на страницу. Знак стоит там,
+   где раньше была служебная линия надзаголовка, поэтому высота строки не растёт
+   и первый экран не съезжает (S1). */
+.v-eyebrow--brand::before{display:none}
+.v-eyebrow--brand .v-mark{width:24px;height:24px;margin:-3px 0;filter:drop-shadow(0 1px 6px rgba(234,242,255,.35))}
+.v-aside-mark{display:block;width:30px;height:30px;margin:0 0 10px;opacity:.92;
+  filter:drop-shadow(0 1px 8px rgba(234,242,255,.28))}
 .v-lead{color:var(--v-silver);font-size:var(--v-fs-4);line-height:1.5;max-width:62ch}
 .v-note{color:rgba(201,211,222,.72);font-size:var(--v-fs-2)}
 .v-sec{padding:clamp(56px,7vw,88px) 0;position:relative}
 .v-sec--v-panel{background:var(--v-panel)}
 .v-sec--flush{padding-top:0}
+
+/* ---------- Фоны секций (круг 29, требование владельца «Д») ----------
+   Раньше страница шла ровными тёмными полосами: --v-ink / --v-panel и всё.
+   Теперь у каждого блока свой световой слой — глубина, световая сетка,
+   марочное зелёное или латунное свечение. Слои — только CSS-градиенты и
+   один инлайновый SVG-шум (data-URI), поэтому внешних запросов остаётся 0,
+   а вес CSS растёт на ~0,9 КБ. Слой живёт на ::before секции, контент — выше. */
+.v-sec > .vy-wrap{position:relative;z-index:1}
+.v-sec::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none}
+/* световая сетка 1 px: «чертёж» под тёмными блоками */
+.v-sec--grid::before{
+  background-image:
+    linear-gradient(90deg,rgba(201,211,222,.055) 1px,transparent 1px),
+    linear-gradient(180deg,rgba(201,211,222,.045) 1px,transparent 1px);
+  background-size:96px 96px,96px 96px;
+  background-position:center top;
+  mask-image:radial-gradient(120% 70% at 50% 0%,#000 0%,rgba(0,0,0,.35) 62%,transparent 100%);
+  -webkit-mask-image:radial-gradient(120% 70% at 50% 0%,#000 0%,rgba(0,0,0,.35) 62%,transparent 100%);
+}
+/* шум: убирает «пластиковую» ровность градиентов */
+.v-sec--noise::after{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* 1. «Почему это не обычное ТО» — холодное свечение сверху справа + световая линия */
+.v-sec--why{background:
+  radial-gradient(90% 80% at 88% -10%,rgba(234,242,255,.13),rgba(7,11,18,0) 62%),
+  radial-gradient(70% 60% at 6% 8%,rgba(22,64,47,.5),rgba(7,11,18,0) 60%),
+  linear-gradient(180deg,#070B12 0%,#0A111B 62%,#070B12 100%)}
+.v-sec--why::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat right 6% top 16%/clamp(120px,18vw,240px),
+    linear-gradient(90deg,transparent,rgba(234,242,255,.7) 42%,rgba(234,242,255,.9) 52%,transparent 88%) top/100% 1px no-repeat,
+    radial-gradient(60% 40% at 76% 0%,rgba(224,169,109,.12),transparent 70%)}
+/* знак марки как фон: у каждого второго блока свой отсвет и своё место знака,
+   чтобы страница не читалась ровными тёмными полосами */
+.v-sec--incl::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat left 4% bottom 8%/clamp(140px,20vw,280px),
+    linear-gradient(180deg,rgba(234,242,255,.08) 0,rgba(234,242,255,0) 22%) top/100% 1px no-repeat}
+.v-sec--steps::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat right 8% bottom 12%/clamp(110px,16vw,210px),
+    linear-gradient(90deg,transparent,rgba(234,242,255,.55),transparent) top/100% 1px no-repeat}
+.v-sec--check::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat right 5% top 10%/clamp(100px,14vw,180px),
+    linear-gradient(90deg,rgba(201,211,222,.055) 1px,transparent 1px),
+    linear-gradient(180deg,rgba(201,211,222,.045) 1px,transparent 1px);
+  background-size:auto,96px 96px,96px 96px}
+/* 2. «Что входит» — панель с зелёным отсветом кузова и латунной каймой */
+.v-sec--incl{background:
+  radial-gradient(120% 110% at 12% 0%,rgba(22,64,47,.6),rgba(14,22,34,0) 58%),
+  radial-gradient(80% 90% at 96% 100%,rgba(224,169,109,.1),rgba(14,22,34,0) 62%),
+  linear-gradient(180deg,#0E1622 0%,#0B131E 58%,#0E1622 100%)}
+/* 3. «Узел крупно» — свет из левого кадра уходит в текст */
+.v-sec--node{background:
+  radial-gradient(60% 90% at -6% 46%,rgba(234,242,255,.12),rgba(7,11,18,0) 60%),
+  radial-gradient(70% 80% at 100% 6%,rgba(22,64,47,.55),rgba(7,11,18,0) 58%),
+  linear-gradient(180deg,#070B12 0%,#090F18 100%)}
+/* 4. Прайс — латунное свечение под цифрами */
+.v-sec--price{background:
+  radial-gradient(70% 70% at 4% 96%,rgba(224,169,109,.16),rgba(11,18,28,0) 60%),
+  radial-gradient(90% 80% at 88% -12%,rgba(234,242,255,.1),rgba(11,18,28,0) 62%),
+  linear-gradient(180deg,#0C141F 0%,#0E1622 46%,#0A121C 100%)}
+/* 5. «Что проверим» — центральное холодное пятно, края в ночь */
+.v-sec--check{background:
+  radial-gradient(70% 80% at 50% -20%,rgba(201,211,222,.14),rgba(7,11,18,0) 60%),
+  linear-gradient(180deg,#080E16 0%,#070B12 100%)}
+/* 6. «Расходники и VIN» — тёмно-зелёный низ и диагональная тень */
+.v-sec--parts{background:
+  linear-gradient(115deg,rgba(7,11,18,0) 42%,rgba(22,64,47,.42) 100%),
+  radial-gradient(80% 90% at 78% 108%,rgba(224,169,109,.12),rgba(11,18,28,0) 64%),
+  linear-gradient(180deg,#0D1520 0%,#0B131D 100%)}
+/* 7. «Как проходит визит» — наклонный световой луч, как от лампы бокса */
+.v-sec--steps{background:
+  linear-gradient(112deg,rgba(234,242,255,.075) 0%,rgba(234,242,255,0) 34%,rgba(234,242,255,0) 66%,rgba(22,64,47,.42) 100%),
+  linear-gradient(180deg,#080D15 0%,#070B12 70%,#080D15 100%)}
+/* 8. «Вечером» — подложка под кадр, чтобы кадр не висел в пустоте */
+.v-sec--evening{background:
+  radial-gradient(80% 120% at 50% 120%,rgba(224,169,109,.14),rgba(7,11,18,0) 62%),
+  linear-gradient(180deg,#080D15 0%,#070B12 100%)}
+/* 9. FAQ — тихая виньетка, чтобы блок вопросов читался как отдельная комната */
+.v-sec--faq{background:
+  radial-gradient(90% 70% at 50% 0%,rgba(201,211,222,.08),rgba(7,11,18,0) 58%),
+  linear-gradient(180deg,#070B12 0%,#05080E 100%)}
 
 /* кнопки: латунь сайта остаётся только в CTA, чтобы остров не спорил с шапкой */
 .v-btn{
@@ -90,6 +183,21 @@
 .v-btn:active{transform:translateY(1px)}
 .v-btn--brass{background:var(--brass);color:var(--v-ink);box-shadow:0 8px 26px rgba(224,169,109,.22)}
 .v-btn--brass:hover{background:#EEC08C;color:var(--v-ink);transform:translateY(-2px)}
+/* круг 29 (блокер B1): `.v-hero a` (0,1,1) бил `.v-btn--brass` (0,1,0), и надпись на
+   латуни становилась холодной — #EAF2FF на #E0A96D = 1,85:1. Поднимаем специфичность
+   до (0,2,0) в тех же контекстах, где живут кнопки; тёмный --v-ink на латуни = 10,6:1. */
+.v-hero .v-btn--brass,
+.v-sec .v-btn--brass,
+.v-teaser .v-btn--brass { color: var(--v-ink); }
+.v-hero .v-btn--brass:hover,
+.v-sec .v-btn--brass:hover,
+.v-teaser .v-btn--brass:hover { color: var(--v-ink); }
+.v-hero .v-btn--light,
+.v-sec .v-btn--light,
+.v-teaser .v-btn--light { color: var(--v-cold); }
+.v-hero .v-btn--light:hover,
+.v-sec .v-btn--light:hover,
+.v-teaser .v-btn--light:hover { color: #fff; }
 .v-btn--light{border-color:rgba(234,242,255,.42);color:var(--v-cold);background:rgba(234,242,255,.04)}
 .v-btn--light:hover{border-color:var(--v-cold);background:rgba(234,242,255,.1);color:#fff;transform:translateY(-2px)}
 .v-btnrow{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
@@ -106,7 +214,17 @@
 }
 
 /* ---------- Первый экран ---------- */
-.v-hero{position:relative;min-height:min(760px,calc(100vh - var(--v-hdr)));display:flex;align-items:flex-end;
+/* круг 29 (S1): высота героя считается от окна, но публичный билд добавляет над
+   шапкой демо-плашку (export-pages.mjs), и первый экран уезжал на её высоту.
+   Плашка есть только там, где у body стоит data-preview — учитываем её в --demo-h. */
+body[data-preview="true"]{--demo-h:40px}
+.v-hero{position:relative;
+  /* высота героя = окно минус всё, что стоит НАД ним: шапка (--v-hdr), хлебные
+     крошки (--v-crumbs) и демо-плашка публичного билда (--demo-h). Раньше из
+     формулы выпадали крошки — 39,6 px, ровно та разница, на которую первый
+     экран не влезал в 768/800. */
+  min-height:min(760px,calc(100vh - var(--v-hdr) - var(--v-crumbs,40px) - var(--demo-h,0px)));
+  display:flex;align-items:flex-end;
   padding:clamp(48px,7vw,96px) 0 clamp(40px,5vw,64px);overflow:hidden;isolation:isolate}
 .v-hero-bg{position:absolute;inset:0;z-index:-2;overflow:hidden}
 .v-hero-bg img{width:100%;height:100%;object-fit:cover;object-position:64% 58%}
@@ -132,9 +250,46 @@
 .v-scroll i{display:block;width:1px;height:34px;background:linear-gradient(180deg,var(--v-cold),transparent)}
 @media (max-width:700px){
   .v-scroll{display:none}
+  /* кнопка «Позвонить: +7 …» на 320–390 переносилась в две строки */
+  .v-hero .v-btn{white-space:nowrap}
   .v-hero{min-height:0;padding-top:34px}
   .v-hero .v-lead{font-size:16px}
   .v-hero-meta{gap:8px 20px;margin-top:22px;padding-top:16px}
+}
+/* круг 29 (S1): на ноутбучных 1366×768 и 1280×800 контент героя выше окна на
+   57/20 px. Ужимаем вертикальные интервалы и сам H1 — не «на глаз», а по замеру
+   (scripts/check-voyah-layout.mjs держит запас ≥16 px на всех размерах). */
+@media (min-width:1024px) and (max-height:830px){
+  .v-hero{padding-top:clamp(20px,2.6vw,38px);padding-bottom:clamp(22px,2.6vw,34px)}
+  .v-hero h1.v-hero-h{font-size:clamp(38px,3.5vw,46px)}
+  .v-hero .v-lead{margin-top:8px;font-size:17px;line-height:1.44}
+  .v-btnrow{margin-top:14px}
+  .v-hero-meta{margin-top:12px;padding-top:10px;gap:6px 20px}
+  .v-hero-meta div{font-size:14px}
+  .v-hero-line{margin-bottom:14px}
+  .v-btn{min-height:44px;padding:10px 22px}
+}
+/* M4 (круг 29): на 320×640 мета-строка уходила под сгиб целиком. Переводим её
+   в две колонки и сжимаем интервалы — адрес и часы остаются в первом экране. */
+@media (max-width:400px){
+  .v-hero{padding-top:26px;padding-bottom:32px}
+  .v-hero .v-lead{margin-top:12px;font-size:15px;line-height:1.5}
+  .v-btnrow{margin-top:18px;gap:8px}
+  .v-btn{min-height:44px;padding:10px 18px;font-size:14px}
+  .v-hero-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:16px;padding-top:12px}
+  .v-hero-meta div{font-size:12.5px;line-height:1.35}
+  .v-hero-meta b{font-size:10.5px;letter-spacing:.12em;margin-bottom:1px}
+}
+@media (max-width:360px){
+  /* M4 (круг 29): самый узкий экран. Надзаголовок уходил в две строки, лид — в
+     восемь; ужимаем их и кнопки, чтобы адрес и часы попали в первый экран. */
+  .v-hero .v-eyebrow{font-size:10.5px;letter-spacing:.1em;white-space:nowrap;gap:8px}
+  .v-hero .v-eyebrow .v-mark{width:20px;height:20px}
+  .v-hero .v-lead{font-size:14px;line-height:1.4;margin-top:8px}
+  .v-hero .v-btn{font-size:13px;padding:10px 14px}
+  .v-btnrow{gap:6px;margin-top:12px}
+  .v-hero .v-eyebrow{margin-bottom:10px}
+  .v-hero-meta{gap:5px 12px;margin-top:10px;padding-top:8px}
 }
 
 /* ---------- «Почему это не обычное ТО» ---------- */
@@ -168,7 +323,10 @@
 .v-media-full{position:relative;border-radius:var(--r);overflow:hidden;margin-top:26px}
 .v-media-full img{width:100%;aspect-ratio:21/9;object-fit:cover;object-position:50% 58%}
 .v-media-full .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 22px 18px;
-  background:linear-gradient(180deg,rgba(7,11,18,0),rgba(7,11,18,.9));
+  /* круг 29 (S3): прежний градиент 0 → .9 по всей высоте оставлял под заголовком
+     альфу ≈0, и на светлом окне бокса текст давал 1,14:1. Теперь подпись лежит на
+     плотной подложке: к первому пикселю текста альфа уже .88, внизу .96. */
+  background:linear-gradient(180deg,rgba(7,11,18,.72) 0%,rgba(7,11,18,.9) 26%,rgba(7,11,18,.96) 100%);
   font-size:var(--v-fs-2);color:var(--v-silver);display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;align-items:end}
 .v-media-full .cap b{display:block;font-family:var(--font-display);font-weight:600;font-size:var(--v-fs-4);color:var(--ivory);margin-bottom:4px}
 @media (max-width:900px){.v-split{grid-template-columns:1fr}}
@@ -284,6 +442,10 @@
   background:radial-gradient(120% 140% at 12% 0%,rgba(22,64,47,.55),rgba(7,11,18,.9) 62%);padding:clamp(28px,4vw,52px)}
 .v-cta::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--v-cold),transparent);opacity:.7}
+/* знак марки как крупный водяной знак в финальном блоке — «дорогая» деталь,
+   декор, из дерева доступности убран (aria-hidden на разметке не нужен: это ::before) */
+.v-cta::before{content:"";position:absolute;right:-3%;top:-28%;width:min(42%,340px);aspect-ratio:1;
+  background:url("/img/vy-mark.svg") center/contain no-repeat;opacity:.07;pointer-events:none}
 .v-cta-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:center}
 .v-cta h2{margin-bottom:.35em}
 .v-cta .v-btnrow{margin-top:0}
@@ -354,6 +516,20 @@
    разъезда штор фон гасится анимацией vyRootClear.
    ========================================================================== */
 .vy-intro {
+  /* круг 29 (S4/S5): сцена и разъезд штор уложены в 2400 мс (было 2680 в коде
+     при замеренных 2751–2805 мс). На узких экранах интро короче — 1320 мс,
+     как требует план §7 («≤1,6 с или отключено»), через .is-quick из JS.
+     --vy-scene — момент разъезда штор, --vy-dur — полная длительность;
+     скрипт читает --vy-dur из computed style, поэтому CSS — единственный
+     источник тайминга. */
+  --vy-k: 1;
+  --vy-scene: 1960ms;
+  --vy-dur: 2400ms;
+  --vy-step: 52ms;
+  --vy-draw: 760ms;
+  --vy-svg-in: 640ms;
+  --vy-lamp: 300ms;
+  --vy-panel: 440ms;
   position: fixed;
   inset: 0;
   z-index: 200;
@@ -363,8 +539,18 @@
   cursor: pointer;
   isolation: isolate;
 }
+.vy-intro.is-quick {
+  --vy-k: .55;
+  --vy-scene: 1078ms;
+  --vy-dur: 1320ms;
+  --vy-step: 26ms;
+  --vy-draw: 418ms;
+  --vy-svg-in: 352ms;
+  --vy-lamp: 165ms;
+  --vy-panel: 242ms;
+}
 .vy-intro.is-play {
-  animation: vyRootClear 1ms linear 1960ms forwards;
+  animation: vyRootClear 1ms linear var(--vy-scene) forwards;
 }
 .vy-intro-panel {
   position: absolute;
@@ -375,8 +561,8 @@
 }
 .vy-intro-panel--l { left: 0; }
 .vy-intro-panel--r { right: 0; }
-.vy-intro.is-play .vy-intro-panel--l { animation: vyPanelL 720ms cubic-bezier(.76,0,.24,1) 1960ms forwards; }
-.vy-intro.is-play .vy-intro-panel--r { animation: vyPanelR 720ms cubic-bezier(.76,0,.24,1) 1960ms forwards; }
+.vy-intro.is-play .vy-intro-panel--l { animation: vyPanelL var(--vy-panel) cubic-bezier(.76,0,.24,1) var(--vy-scene) forwards; }
+.vy-intro.is-play .vy-intro-panel--r { animation: vyPanelR var(--vy-panel) cubic-bezier(.76,0,.24,1) var(--vy-scene) forwards; }
 .vy-intro-line {
   position: absolute;
   left: 50%;
@@ -389,7 +575,8 @@
   opacity: 0;
 }
 .vy-intro.is-play .vy-intro-line {
-  animation: vyLineIn 360ms cubic-bezier(.2,.8,.2,1) 60ms forwards, vyLineOut 320ms ease-in 1500ms forwards;
+  animation: vyLineIn calc(360ms * var(--vy-k)) cubic-bezier(.2,.8,.2,1) 60ms forwards,
+    vyLineOut calc(320ms * var(--vy-k)) ease-in calc(var(--vy-scene) - 460ms) forwards;
 }
 .vy-intro-lamp {
   position: absolute;
@@ -405,8 +592,8 @@
 }
 .vy-intro-lamp--l { transform: rotate(180deg) translateX(28px) scaleX(.2); }
 .vy-intro-lamp--r { transform: translateX(28px) scaleX(.2); }
-.vy-intro.is-play .vy-intro-lamp--l { animation: vyLampL 420ms cubic-bezier(.2,.8,.2,1) 300ms forwards, vyLampOut 380ms ease-in 1460ms forwards; }
-.vy-intro.is-play .vy-intro-lamp--r { animation: vyLampR 420ms cubic-bezier(.2,.8,.2,1) 300ms forwards, vyLampOut 380ms ease-in 1460ms forwards; }
+.vy-intro.is-play .vy-intro-lamp--l { animation: vyLampL calc(420ms * var(--vy-k)) cubic-bezier(.2,.8,.2,1) var(--vy-lamp) forwards, vyLampOut calc(380ms * var(--vy-k)) ease-in calc(var(--vy-scene) - 500ms) forwards; }
+.vy-intro.is-play .vy-intro-lamp--r { animation: vyLampR calc(420ms * var(--vy-k)) cubic-bezier(.2,.8,.2,1) var(--vy-lamp) forwards, vyLampOut calc(380ms * var(--vy-k)) ease-in calc(var(--vy-scene) - 500ms) forwards; }
 .vy-intro-svg {
   position: absolute;
   left: 50%;
@@ -416,7 +603,12 @@
   transform: translate3d(-50%, -50%, 0);
   opacity: 0;
 }
-.vy-intro.is-play .vy-intro-svg { animation: vySvgIn 520ms ease-out 640ms forwards; }
+/* круг 29 (S5): у силуэта было только появление — к разъезду штор контур
+   оставался висеть поверх H1. Теперь он гаснет за 260 мс ДО начала разъезда. */
+.vy-intro.is-play .vy-intro-svg {
+  animation: vySvgIn calc(520ms * var(--vy-k)) ease-out var(--vy-svg-in) forwards,
+    vySvgOut 260ms ease-in calc(var(--vy-scene) - 340ms) forwards;
+}
 .vy-intro-svg path,
 .vy-intro-svg circle {
   fill: none;
@@ -429,8 +621,8 @@
 }
 .vy-intro.is-play .vy-intro-svg path,
 .vy-intro.is-play .vy-intro-svg circle {
-  animation: vyDraw 760ms cubic-bezier(.4,0,.2,1) forwards;
-  animation-delay: calc(680ms + var(--i, 0) * 52ms);
+  animation: vyDraw var(--vy-draw) cubic-bezier(.4,0,.2,1) forwards;
+  animation-delay: calc(680ms * var(--vy-k) + var(--i, 0) * var(--vy-step));
 }
 .vy-intro-svg .glow { stroke: rgba(234,242,255,.18); stroke-width: 7; filter: blur(1px); }
 .vy-intro-svg .ground { stroke: rgba(234,242,255,.16); stroke-width: 1.4; }
@@ -446,7 +638,7 @@
   opacity: 0;
   transform: scaleY(1);
 }
-.vy-intro.is-play .vy-intro-flash { animation: vyFlash 420ms ease-out 1700ms forwards; }
+.vy-intro.is-play .vy-intro-flash { animation: vyFlash calc(420ms * var(--vy-k)) ease-out calc(var(--vy-scene) - 260ms) forwards; }
 .vy-intro-tag {
   position: absolute;
   right: 22px;
@@ -474,6 +666,7 @@
 @keyframes vyLampR { from { opacity: 0; transform: translateX(28px) scaleX(.2); } to { opacity: .9; transform: translateX(210px) scaleX(1); } }
 @keyframes vyLampOut { to { opacity: 0; } }
 @keyframes vySvgIn { from { opacity: 0; transform: translate3d(-50%,-50%,0) scale(.985); } to { opacity: 1; transform: translate3d(-50%,-50%,0) scale(1); } }
+@keyframes vySvgOut { to { opacity: 0; } }
 @keyframes vyDraw { to { stroke-dashoffset: 0; } }
 @keyframes vyFlash { 0% { opacity: 0; transform: scaleY(1); } 35% { opacity: .75; transform: scaleY(4); } 100% { opacity: 0; transform: scaleY(14); } }
 body.vy-lock { overflow: hidden; }
