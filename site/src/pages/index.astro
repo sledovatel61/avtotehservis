@@ -378,10 +378,14 @@ const jsonLd = {
         <span class="eyebrow">Отзывы</span>
         <h2 id="rev-h">Отзывы клиентов на Яндекс Картах</h2>
       </div>
-      <div class="slider-nav">
-        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
-        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
-      </div>
+      {/* круг 26 (ревью A6, minor 5.6): кнопок нет, если листать нечего — при одной
+          карточке-заглушке они были активны и ничего не делали (для скринридера — обман) */}
+      {reviews.length > 1 && (
+        <div class="slider-nav">
+          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие отзывы">←</button>
+          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие отзывы">→</button>
+        </div>
+      )}
     </div>
     <div class="carousel reveal" data-carousel>
       <div class="carousel-win">

@@ -5,8 +5,11 @@
   .about-media{max-width:720px;margin-inline:auto}
   .tri{grid-template-columns:1fr;gap:14px}
   .tri-card{min-height:0}
-  .about-grid,.est-grid,.svc-detail,.contacts-grid,.post-layout,.adm-grid{grid-template-columns:1fr;gap:30px}
-  .svc-side,.post-side{position:static}
+  .about-grid,.est-grid,.adm-grid{grid-template-columns:1fr;gap:30px}
+  /* .svc-detail, .contacts-grid, .post-layout и .svc-side/.post-side переехали в pages.css:
+     их базовые правила живут там, а media.css попадает в Base.*.css, который грузится РАНЬШЕ
+     misc.*.css с pages.css — при равной специфичности медиа правило проигрывало каскадом.
+     Это причина переполнения /contacts, /appointment, /services/<slug>, /news/<slug> на 390. */
   .feats{grid-template-columns:1fr 1fr}
   .svc-card,.gal-card,.rev-card{flex-basis:calc((100% - 18px)/2)}
   .ftr-grid{grid-template-columns:1fr 1fr;gap:30px}

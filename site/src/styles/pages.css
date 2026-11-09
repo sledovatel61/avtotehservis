@@ -21,6 +21,9 @@
 
 /* ---------- Страница услуги (service.html) ---------- */
 .svc-detail{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:start}
+/* Медиа обязана лежать в этом же файле: pages.css уходит в misc.*.css, а media.css — в Base.*.css,
+   который грузится раньше; правило из media.css проигрывало каскадом (круг 26, дефект 4.1). */
+@media (max-width:1024px){.svc-detail{grid-template-columns:1fr;gap:30px}}
 .svc-detail-img{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--deep2);aspect-ratio:4/3}
 .svc-detail-img img{width:100%;height:100%;object-fit:cover}
 .svc-text h2{font-size:1.35rem;margin-top:1.6em}
@@ -45,6 +48,7 @@
 .svc-side-tel:hover{color:var(--brass)}
 .svc-side-tel svg{width:17px;height:17px;stroke:var(--brass)}
 .svc-side small{color:var(--mist);font-size:12.5px;display:block;margin-top:-8px}
+@media (max-width:1024px){.svc-side{position:static}}
 
 /* ---------- Новости ---------- */
 .filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px}
@@ -85,6 +89,7 @@
 
 /* ---------- Статья ---------- */
 .post-layout{display:grid;grid-template-columns:1fr 320px;gap:44px;align-items:start}
+@media (max-width:1024px){.post-layout{grid-template-columns:1fr;gap:30px}}
 .post-main figure{margin:0 0 28px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--deep2)}
 .post-main figure img{width:100%;aspect-ratio:16/9;object-fit:cover}
 .post-main figcaption{font-size:13px;color:var(--mist);padding:10px 16px}
@@ -100,6 +105,7 @@
 .post-cta p{margin:0;color:var(--mist);font-size:15px;max-width:44ch}
 .post-cta b{color:var(--ivory);display:block;font-size:17px;margin-bottom:3px}
 .post-side{display:grid;gap:18px;position:sticky;top:96px}
+@media (max-width:1024px){.post-side{position:static}}
 .side-box{border:1px solid var(--line-soft);border-radius:var(--r);background:var(--deep);padding:22px}
 .side-box h3{font-family:var(--font-text);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin:0 0 14px}
 .side-box ul{display:grid;gap:4px}
@@ -111,6 +117,7 @@
 
 /* ---------- Контакты ---------- */
 .contacts-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:start}
+@media (max-width:1024px){.contacts-grid{grid-template-columns:1fr;gap:30px}}
 .map-box{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--deep2)}
 .map-box svg{width:100%;height:auto;display:block}
 .map-cap{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--line-soft);font-size:13.5px;color:var(--mist)}

@@ -22,7 +22,12 @@ let server;
 try {
   await run(['scripts/migrate.ts']);
   await run(['scripts/seed.ts']);
-  await run(['scripts/seed-demo.ts']);
+  /* круг 26 (ревью A6, minor 5.3 и 5.7): демо-новости в статический экспорт НЕ сеем.
+     Их 3 при 5 владельческих, PER=6 => листинг печатал ссылку news?page=2, которой в статике
+     не существует (query-строка на Pages игнорируется), а даты демо-статей были временем
+     сборки и каждый раз всплывали выше настоящих. Пять владельческих статей укладываются
+     в одну страницу — пагинатор не появляется вовсе. */
+  // await run(['scripts/seed-demo.ts']);
   await run(['node_modules/astro/bin/astro.mjs', 'build']);
   server = spawn(process.execPath, ['dist/server/entry.mjs'], { cwd: root, env, stdio: 'inherit' });
   let ready = false;
@@ -108,7 +113,7 @@ try {
       + `<meta http-equiv="refresh" content="0; url=${base}${to}">`
       + `<link rel="canonical" href="${publicOrigin}${base}${to}">`
       + `<meta name="robots" content="noindex, follow"><title>Переезд страницы: ${to}</title></head>`
-      + `<body><p>Страница переехала: <a href="${base}${to}">${to}</a></p></body></html>`);
+      + `<body data-preview="true"><p>Страница переехала: <a href="${base}${to}">${to}</a></p></body></html>`);
   }
   await writeFile(join(output, '.nojekyll'), '');
   await writeFile(join(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
