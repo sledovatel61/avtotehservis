@@ -1,0 +1,28 @@
+---
+/**
+ * Слой 3D-фона: канвас + кнопка «выключить».
+ *
+ * Разметка статичная и ничего не весит до запуска скрипта: канвас скрыт (`opacity:0`),
+ * кнопка `hidden`. Если WebGL не получен, устройство слабое, включён Data Saver или
+ * пользователь уже выключал фон — слой так и останется невидимым, а страница покажет
+ * обычный градиент `.page-head`. Ни сдвига макета (CLS 0), ни мигания.
+ *
+ * `<script>` здесь — отдельный чанк, который Astro добавляет только на страницы,
+ * где компонент реально отрисован.
+ */
+import '../styles/bg3d.css';
+
+export interface Props {
+  /** 'depth' — вариант A «глубина», 'silhouette' — вариант B «силуэт в глубине» */
+  variant?: 'depth' | 'silhouette';
+}
+const { variant = 'silhouette' } = Astro.props;
+---
+<div class="bg3d" data-bg3d={variant}>
+  <canvas class="bg3d-canvas" width="2" height="2" aria-hidden="true"></canvas>
+  <button class="bg3d-off" type="button" hidden aria-pressed="true" aria-label="Выключить 3D-фон">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="3.6"/></svg>
+    <span class="bg3d-off-text">Выключить 3D-фон</span>
+  </button>
+</div>
+<script>import '../client/bg3d.ts';</script>

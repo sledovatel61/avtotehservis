@@ -1,0 +1,15 @@
+{
+  "name": "ats-shader-check",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Автономная проверка шейдера 3D-фона (задание №44): Khronos glslang в WebAssembly + SPIRV-Tools. В сборку сайта не входит, в npm ci сайта не участвует.",
+  "scripts": {
+    "check": "node ../../scripts/bg3d-shader-check.mjs"
+  },
+  "devDependencies": {
+    "@moreplease/glslang": "16.6.0-1",
+    "glslang-wasm": "1.1.1",
+    "spirv-tools": "20.4.1"
+  }
+}
