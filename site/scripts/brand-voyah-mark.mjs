@@ -6,10 +6,11 @@
    тёмное пятно, а ставим чистый металлический знак в ту же нишу на решётке.
 
    Как это сделано:
-     • знак берётся тем же файлом, что стоит на странице (site/public/img/vy-mark.png,
-       собран из исходника владельца scripts/build-voyah-logo.mjs): один источник
-       формы, поэтому «логотип на странице» и «логотип на машине» — один и тот же
-       знак (две изогнутые лопасти + центральная игла, а не самодельная «V»);
+     • знак берётся той же геометрией, что стоит на странице: инлайн-компонент
+       VoyahMark.astro и файл site/public/img/vy-mark-light.svg собраны из одного
+       вектора (scripts/vectorize-voyah.py), поэтому «логотип на странице» и
+       «логотип на машине» — один и тот же знак (две изогнутые лопасти +
+       центральная игла, а не самодельная «V»);
      • композит идёт в мастеры (hero.jpg 1400×781 и evening.jpg 1400×781), а не в
        готовые vy-*: build-voyah-images.mjs режет из мастеров все размеры;
      • у знака есть мягкое свечение и лёгкий наклон под ракурс кадра, у героя —
@@ -29,7 +30,11 @@ import sharp from 'sharp';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, '../../mockups/r28/voyah/img');
 const OUT = join(HERE, '../../docs/photos-source/r28');
-const MARK = join(HERE, '../public/img/vy-mark.png');
+/* Знак на кадрах — тот же вектор, что и на странице (vy-mark-light.svg:
+   белая заливка, потому что <img>/композит не наследуют currentColor).
+   Раньше здесь был vy-mark.png, искажённый на ~8 % по пропорции; вектор ведён
+   от docs/brand/voyah/source/logo-black-on-white.png, пропорция 0.7122. */
+const MARK = join(HERE, '../public/img/vy-mark-light.svg');
 
 /* координаты ниши знака (мастер 1400×781) и габарит знака в кадре */
 const SHOTS = [

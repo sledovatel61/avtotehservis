@@ -6,8 +6,17 @@
 import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import '../styles/voyah.css';
+import VoyahMark from '../components/VoyahMark.astro';
+import Bg3dLayer from '../components/Bg3dLayer.astro';
+import { bg3dFor, bg3dDemo } from '../server/bg3d-config.ts';
 
 const S = getSettings();
+/* 3D-фон (задание №44). По умолчанию off — страница не меняется ни на байт.
+   Включается ТОЛЬКО переменной окружения сервера: BG3D=voyah-free или BG3D=*.
+   Раньше слой был подключён лишь к шаблону /services/<slug>, а страница Voyah Free
+   живёт отдельным файлом — то есть на ней фон было не включить вообще. */
+const bg3d = bg3dFor('voyah-free');
+const demo3d = bg3dDemo();
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 
 const TITLE = 'Voyah Free в Ростове — ТО на Портовой, 439';
@@ -234,8 +243,9 @@ const jsonLd = [
   </nav>
 
   <!-- 1. Первый экран -->
-  <section class="v-hero" aria-labelledby="v-h1">
-    <div class="v-hero-bg" aria-hidden="true">
+  <section class={`v-hero${bg3d.enabled ? ' v-hero--bg3d' : ''}`} aria-labelledby="v-h1">
+    <div class="v-hero-bg" aria-hidden={bg3d.enabled ? undefined : 'true'}>
+      {bg3d.enabled && <Bg3dLayer variant={bg3d.variant} demo={demo3d} />}
       <picture>
         <source media="(max-width:767px)" type="image/avif" srcset="/img/vy-hero-m-640.avif 640w, /img/vy-hero-m-960.avif 960w" sizes="100vw">
         <source media="(max-width:767px)" type="image/webp" srcset="/img/vy-hero-m-640.webp 640w, /img/vy-hero-m-960.webp 960w" sizes="100vw">
@@ -246,7 +256,7 @@ const jsonLd = [
     </div>
     <div class="vy-wrap">
       <p class="v-eyebrow v-eyebrow--brand">
-        <img class="v-mark" src="/img/vy-mark.png" width="24" height="34" alt="" decoding="async">
+        <VoyahMark class="v-mark" height={26} />
         Voyah Free · Портовая, 439
       </p>
       <h1 class="v-hero-h" id="v-h1">
@@ -345,7 +355,7 @@ const jsonLd = [
         </div>
         <aside class="v-price-aside reveal" data-d="1" aria-label="Условия по цене">
           <div class="v-glass">
-            <img class="v-aside-mark" src="/img/vy-mark.png" width="30" height="43" alt="" decoding="async">
+            <VoyahMark class="v-aside-mark" height={42} />
             <span class="sum">от 2000 ₽</span>
             <p class="v-note" style="margin-top:6px">полное ТО с маслом и фильтрами — цена за работу</p>
             <ul>
@@ -455,7 +465,7 @@ const jsonLd = [
         <div class="v-cta-grid">
           <div>
             <p class="v-eyebrow v-eyebrow--brand">
-              <img class="v-mark" src="/img/vy-mark.png" width="24" height="34" alt="" decoding="async">
+              <VoyahMark class="v-mark" height={26} />
               Voyah Free · запись
             </p>
             <h2>Запишите Voyah Free на ТО</h2>

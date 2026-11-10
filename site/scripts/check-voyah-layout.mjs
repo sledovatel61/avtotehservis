@@ -23,8 +23,10 @@
         заставку заново (круг 30: раньше sessionStorage гасил её до конца сессии);
         `?intro=0` — выключает; без JS и при reduced-motion оверлея нет.
    Запуск: node site/scripts/check-voyah-layout.mjs (exit 1 при провале).
-   --self-test: мутанты (шапка шире контейнера, кнопка холодного цвета,
-   интро 2900 мс, силуэт не гаснет) — каждый обязан уронить гейт. */
+   --self-test: мутанты вёрстки и заставки (шапка шире контейнера, кнопка
+   холодного цвета, интро 2900 мс, мгновенная шторка, скрытый кадр) и знака
+   (искажённый viewBox, заливка краской владельца #1B1F3C, потерянный контур) —
+   каждый обязан уронить гейт. */
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -73,6 +75,16 @@ const MUTANTS = {
   'кадр заставки не виден': `.vy-intro-canvas,.vy-intro-poster{display:none !important}`,
 };
 
+/* L7 нельзя проверить подмешиванием CSS: знак — инлайновый SVG, его ломают
+   атрибутами. Мутант — кусок кода, который выполняется для каждого svg.v-mark
+   сразу после появления в DOM (знак приезжает вместе с разметкой, но
+   подстраховываемся MutationObserver'ом). */
+const SVG_MUTANTS = {
+  'знак искажён (viewBox растянут)': `el.setAttribute('viewBox','0 0 520 620.1')`,
+  'знак залит краской владельца #1B1F3C': `el.querySelectorAll('path').forEach((p)=>p.setAttribute('fill','#1B1F3C'))`,
+  'у знака потерян контур': `if (!el.dataset.mut) { el.dataset.mut = '1'; el.querySelector('path')?.remove(); }`,
+};
+
 async function run(mutant) {
   const fails = [];
   const notes = [];
@@ -91,7 +103,15 @@ async function run(mutant) {
       /* круг 30: сессионного гейта в интро больше нет — прячем заставку
          параметром ?intro=0, иначе она перекроет замеры первого экрана */
 
-      if (mutant) await page.evaluateOnNewDocument((css) => {
+      if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
+        const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
+          .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
+        apply();
+        const mo = new MutationObserver(apply);
+        mo.observe(document, { childList: true, subtree: true });
+        addEventListener('load', apply);
+      }, SVG_MUTANTS[mutant]);
+      else if (mutant) await page.evaluateOnNewDocument((css) => {
         const add = () => {
           const head = document.head || document.documentElement;
           if (!head) return false;
@@ -140,6 +160,56 @@ async function run(mutant) {
       });
       const tag = `${w}×${h}`;
 
+      /* ---------- L7: знак марки на странице (задание №48) ----------
+         Логотип вернулся на страницу инлайновым SVG, поэтому проверяем не
+         «файл лежит», а что он реально нарисован и не искажён: пропорция
+         контура совпадает с пропорцией кадра (0.7122), заливка — не краска
+         владельца #1B1F3C (она даёт 1.23:1 на почти чёрном фоне), и видимая
+         ширина/высота знака не нулевые. */
+      const mark = await page.evaluate(() => [...document.querySelectorAll('svg.v-mark, svg.v-aside-mark')].map((el) => {
+        const r = el.getBoundingClientRect();
+        const path = el.querySelector('path');
+        /* bbox контура — объединение по всем подпутям: у знака их три
+           (две лопасти и игла), и по отдельности каждая даёт свою пропорцию */
+        let ub = null;
+        try {
+          for (const pp of el.querySelectorAll('path')) {
+            const b = pp.getBBox();
+            ub = ub
+              ? { x0: Math.min(ub.x0, b.x), y0: Math.min(ub.y0, b.y), x1: Math.max(ub.x1, b.x + b.width), y1: Math.max(ub.y1, b.y + b.height) }
+              : { x0: b.x, y0: b.y, x1: b.x + b.width, y1: b.y + b.height };
+          }
+        } catch { ub = null; }
+        const pathBox = ub ? { width: ub.x1 - ub.x0, height: ub.y1 - ub.y0 } : null;
+        return {
+          cls: el.getAttribute('class'),
+          w: +r.width.toFixed(2),
+          h: +r.height.toFixed(2),
+          fill: getComputedStyle(path || el).fill,
+          paths: el.querySelectorAll('path').length,
+          vb: el.getAttribute('viewBox'),
+          pathRatio: pathBox && pathBox.height ? +(pathBox.width / pathBox.height).toFixed(4) : null,
+        };
+      }));
+      if (!mark.length) bad(`${tag}: на странице нет знака марки (svg.v-mark / .v-aside-mark)`);
+      for (const m of mark) {
+        const vbRatio = m.vb ? (() => { const v = m.vb.trim().split(/\s+/).map(Number); return +(v[2] / v[3]).toFixed(4); })() : null;
+        if (vbRatio == null || Math.abs(vbRatio - 0.7122) > 0.01) bad(`${tag}: ${m.cls} пропорция кадра ${m.vb} ≠ 0.7122 (искажение знака)`);
+        if (m.pathRatio != null && Math.abs(m.pathRatio - 0.7122) > 0.02) bad(`${tag}: ${m.cls} пропорция контура ${m.pathRatio} ≠ 0.7122`);
+        /* пропорция самого элемента: при неверной ширине (как у PNG 24×34 =
+           0.706) знак получает лишний горизонтальный запас и съезжает */
+        const elRatio = m.h > 0 ? +(m.w / m.h).toFixed(4) : null;
+        if (elRatio != null && Math.abs(elRatio - 0.7122) > 0.01) bad(`${tag}: ${m.cls} пропорция элемента ${elRatio} ≠ 0.7122 (${m.w}×${m.h})`);
+        if (m.paths !== 3) bad(`${tag}: ${m.cls} контуров ${m.paths}, а в знаке их 3 (2 лопасти + игла)`);
+        if (!(m.w > 1 && m.h > 1)) bad(`${tag}: ${m.cls} не отрисован (${m.w}×${m.h})`);
+        const rgb = (m.fill.match(/\d+/g) || []).map(Number);
+        if (rgb.length >= 3) {
+          /* краска владельца на тёмном фоне не видна: 1.23:1 */
+          const ink = rgb[0] < 40 && rgb[1] < 40 && rgb[2] < 65;
+          if (ink) bad(`${tag}: ${m.cls} залит краской владельца ${m.fill} — на тёмном фоне 1.23:1`);
+        } else if (!/currentcolor|rgb/i.test(m.fill)) bad(`${tag}: ${m.cls} заливка не определена (${m.fill})`);
+      }
+
       if (m.scrollWidth > m.innerWidth + 1) bad(`${tag}: горизонтальный скролл ${m.scrollWidth} > ${m.innerWidth}`);
       if (!m.h1) bad(`${tag}: нет .v-hero-h`);
       else {
@@ -173,7 +243,15 @@ async function run(mutant) {
       /* круг 30: сессионного гейта в интро больше нет — прячем заставку
          параметром ?intro=0, иначе она перекроет замеры первого экрана */
 
-      if (mutant) await page.evaluateOnNewDocument((css) => {
+      if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
+        const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
+          .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
+        apply();
+        const mo = new MutationObserver(apply);
+        mo.observe(document, { childList: true, subtree: true });
+        addEventListener('load', apply);
+      }, SVG_MUTANTS[mutant]);
+      else if (mutant) await page.evaluateOnNewDocument((css) => {
         const add = () => {
           const head = document.head || document.documentElement;
           if (!head) return false;
@@ -215,7 +293,15 @@ async function run(mutant) {
     for (const [w, h, min, limit, label] of [[1440, 900, 2200, 2600, 'десктоп'], [390, 844, 1200, 1500, 'мобильный 390'], [360, 780, 1200, 1500, 'мобильный 360']]) {
       const page = await browser.newPage();
       await page.setViewport({ width: w, height: h });
-      if (mutant) await page.evaluateOnNewDocument((css) => {
+      if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
+        const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
+          .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
+        apply();
+        const mo = new MutationObserver(apply);
+        mo.observe(document, { childList: true, subtree: true });
+        addEventListener('load', apply);
+      }, SVG_MUTANTS[mutant]);
+      else if (mutant) await page.evaluateOnNewDocument((css) => {
         const add = () => {
           const head = document.head || document.documentElement;
           if (!head) return false;
@@ -347,7 +433,7 @@ await startServer();
 try {
   if (process.argv.includes('--self-test')) {
     let bad = 0;
-    for (const name of Object.keys(MUTANTS)) {
+    for (const name of [...Object.keys(MUTANTS), ...Object.keys(SVG_MUTANTS)]) {
       const { fails } = await run(name);
       const fell = fails.length > 0;
       if (!fell) bad = 1;
