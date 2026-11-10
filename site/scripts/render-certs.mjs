@@ -91,10 +91,10 @@ body{background:#B9A98F}
 .lines .b{font-weight:700;font-size:37px;color:#1F2428}
 .lines .brand{font-weight:700;font-size:46px;color:#1F2428;margin-top:6px}
 .lines .gap{margin-top:20px}
-.foot-l{position:absolute;left:80px;bottom:168px;text-align:left;font-size:23px;line-height:1.5;color:#4A4F55}
+.foot-l{position:absolute;left:80px;bottom:184px;text-align:left;font-size:23px;line-height:1.5;color:#4A4F55}
 .foot-l b{font-weight:700;color:#2F3438}
-.seal{position:absolute;right:74px;bottom:126px;width:238px;height:238px}
-.valid{position:absolute;left:0;right:0;bottom:76px;text-align:center;font-size:26px;color:#2F3438}
+.seal{position:absolute;right:74px;bottom:142px;width:238px;height:238px}
+.valid{position:absolute;left:130px;right:130px;bottom:94px;padding-bottom:14px;border-bottom:1.5px solid rgba(192,32,43,.65);text-align:center;font-size:25px;color:#2F3438}
 .valid b{font-weight:700;color:#C0202B}
 `, `
 <div class="frame-wood"></div><div class="glass"></div>

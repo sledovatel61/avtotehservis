@@ -61,7 +61,8 @@ const marks = [
   ['блок героя 16:9 (пропорция кадра = пропорция блока)', /\.hero\{[^}]*aspect-ratio:16\/9/],
   ['кадр на весь блок (.slide-bg absolute inset:0)', /\.slide-bg\{position:absolute;inset:0/],
   ['скрим под текстом слева', /\.slide-bg::before\{[^}]*linear-gradient\(90deg/],
-  ['текст в левой колонке ≤46% (раунд 14: 44%, коробка слева)', /max-width:44%;margin-left:0;margin-right:auto/],
+  /* раунд 28: колонка задана в пикселях, но правый край по-прежнему ≤47 % окна (машины с 50.5 %) */
+  ['текст в левой колонке ≤49 % (раунд 28: --tw в px, коробка слева)', /--tw:clamp\(430px,min\(38vw,49vw - var\(--cx\) - 24px\),660px\);\n\s*width:calc\(var\(--cx\) \+ var\(--tw\) \+ 24px\)/],
   ['hero-ui справа в зазоре hp', /\.hero-ui\{left:auto;right:var\(--hp\)/],
   ['стрелка у левого края (не на подписи «Автопрокрутка»)', /\.hero-scroll\{left:var\(--cx\);right:auto/],
 ];

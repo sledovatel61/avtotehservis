@@ -5,33 +5,34 @@
   border-bottom:1px solid var(--line);
   transition:padding var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease);
 }
-.hdr-in{display:flex;align-items:center;gap:20px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
+.hdr-in{display:flex;align-items:center;gap:14px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
 .hdr.is-compact .hdr-in{padding-top:8px;padding-bottom:8px}
-.logo{display:flex;align-items:center;gap:12px;color:var(--ivory);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;color:var(--ivory);flex-shrink:0}
 .logo:hover{color:var(--ivory)}
 .logo img{width:68px;height:42px;transition:transform var(--t-mid) var(--ease)}
 .hdr.is-compact .logo img{transform:scale(.86)}
-.logo-t{font-family:var(--font-display);font-weight:600;font-size:17px;letter-spacing:-.01em;line-height:1.1}
-.logo-t b{display:block;font-family:var(--font-text);font-weight:400;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mist);margin-top:3px}
+.logo-t{font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:-.01em;line-height:1.1}
+.logo-t b{display:block;font-family:var(--font-text);font-weight:400;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--mist);margin-top:3px}
 .nav{margin-left:auto}
 /* раунд 15: пункты меню не ломаются на две строки (скрин g: 1212 px) */
 .nav a{white-space:nowrap}
-.nav ul{display:flex;gap:4px}
+.nav ul{display:flex;gap:2px}
 .nav a{
-  display:block;padding:10px 12px;border-radius:8px;color:var(--mist);
-  font-size:14.5px;font-weight:500;letter-spacing:.01em;min-height:44px;
+  display:block;padding:8px 7px;border-radius:8px;color:var(--mist);
+  font-size:13.5px;font-weight:500;letter-spacing:.01em;min-height:44px;
   display:flex;align-items:center;
   transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
 }
 .nav a:hover{color:var(--ivory);background:rgba(224,169,109,.08)}
 .nav a.is-active{color:var(--brass);background:rgba(224,169,109,.1)}
-.nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:7px}
-/* круг 27: логотип стал шире (68×42 вместо 44×44) — поджимаем зазоры, чтобы на 1440
-   кнопка «Записаться» оставалась внутри контейнера (проверка §2.1) */
-.hdr-cta{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:6px}
+/* круг 27 (приёмка A6 major 4.2): логотип 68×42 + подпись + 6 пунктов меню + телефон + CTA
+   обязаны укладываться в 1200 px контента .hdr-in на 1360–1440+ без выхода за контейнер */
+.hdr-cta{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hdr-cta .btn{padding:10px 14px;font-size:12.5px}
 .hdr-phone{
-  font-weight:700;font-size:16.5px;color:var(--ivory);white-space:nowrap;
-  display:flex;align-items:center;gap:8px;min-height:44px;
+  font-weight:700;font-size:14.5px;color:var(--ivory);white-space:nowrap;
+  display:flex;align-items:center;gap:6px;min-height:44px;
 }
 .hdr-phone:hover{color:var(--brass)}
 .hdr-phone svg{width:17px;height:17px;stroke:var(--brass)}
@@ -101,9 +102,10 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
   .nav a{padding:8px 7px;font-size:13.5px}
 }
 @media (min-width:1360px) and (max-width:1439px){
-  .hdr-in{gap:16px}
-  .hdr-cta{gap:12px}
-  .nav ul{gap:4px}
+  .hdr-in{gap:12px}
+  .hdr-cta{gap:10px}
+  .logo-t b{display:none}
+  .nav ul{gap:2px}
   .nav a{padding:9px 9px;font-size:14px}
 }
 
@@ -128,4 +130,43 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
   .hdr-in{gap:10px}
   .logo-t{font-size:15px}
   .logo img{width:52px;height:32px}
+}
+
+/* круг 28: седьмой пункт «Voyah Free» — холодная точка-маркер, чтобы раздел
+   отличался от «Контактов», но не спорил с латунью CTA */
+.nav .nav-voyah a{position:relative;padding-left:16px}
+.nav .nav-voyah a::before{content:'';position:absolute;left:5px;top:50%;width:5px;height:5px;
+  margin-top:-2.5px;border-radius:50%;background:#EAF2FF;box-shadow:0 0 8px rgba(234,242,255,.9)}
+.nav .nav-voyah a.is-active::before{background:#fff}
+@media (min-width:1024px) and (max-width:1199px){
+  .hdr-phone{display:none}
+  .hdr-in{gap:8px}
+  .nav ul{gap:0}
+  .nav a{padding:8px 5px;font-size:13.5px}
+  .hdr-cta .btn{padding:10px 12px}
+  .logo img{width:62px;height:38px}
+}
+@media (min-width:1200px) and (max-width:1279px){
+  .nav a{padding:8px 6px;font-size:13.5px}
+}
+
+/* круг 29 (S2, рецидив мажора к27): седьмой пункт «Voyah Free» снова вытолкнул
+   «Записаться» за контейнер — +39 px на 1440/1920, +50 на 1366, +12 на 1280.
+   Седьмой пункт оставлен (требование владельца), поэтому шапка уплотняется:
+   горизонтальные паддинги пунктов, промежутки, логотип и кнопка. Проверяется
+   на 1024…1920 с шагом 16 px — scripts/check-voyah-layout.mjs. */
+@media (min-width:1200px){
+  .hdr-in{gap:10px}
+  .nav ul{gap:0}
+  .nav a{padding:8px 6px;font-size:13.5px;letter-spacing:0}
+  .logo img{width:62px;height:38px}
+  .hdr-cta{gap:8px}
+  .hdr-cta .btn{padding:10px 12px}
+  .hdr-phone{font-size:14px;gap:5px}
+  .nav .nav-voyah a{padding-left:14px}
+  .nav .nav-voyah a::before{left:4px}
+}
+@media (min-width:1360px){
+  .hdr-in{gap:12px}
+  .nav a{padding:8px 7px;font-size:13.5px}
 }

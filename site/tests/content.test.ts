@@ -60,13 +60,33 @@ test('L2 главная: отзывы только Яндекс, без выду
   assert.ok(!text.includes('182'), 'число отзывов 182 не публикуется');
 });
 
-test('L3 /services: 8 карточек, у каждой цена «от»', () => {
+test('L3 /services: 8 карточек, у каждой цена «от» и своя ссылка «Полный прайс»', () => {
   const html = read(join('services', 'index.html'));
   const cards = (html.match(/class="svc-card/g) || []).length;
   const prices = (html.match(/class="svc-price"/g) || []).length;
   assert.equal(cards, 8, 'карточек услуг 8');
   assert.equal(prices, 8, 'цен «от N ₽» 8');
   assert.ok(html.includes('/services/svarka'), 'карточка сварочных работ на месте');
+  /* круг 27 (приёмка A6 major 4.1): на каждой карточке /services/<slug> финальная ссылка
+     «Полный прайс» обязана вести в якорь своей группы, а не падать по дефолту в #to */
+  const EXPECTED_ANCHORS: Record<string, string> = {
+    shinomontazh: 'shiny',
+    balansirovka: 'shiny',
+    'to-maslo': 'to',
+    tormoza: 'tormoza',
+    podveska: 'podveska',
+    'grm-sceplenie': 'grm',
+    svarka: 'svarka',
+    diagnostika: 'diagnostika',
+  };
+  for (const [slug, anchor] of Object.entries(EXPECTED_ANCHORS)) {
+    const detail = read(join('services', slug, 'index.html'));
+    assert.match(
+      detail,
+      new RegExp(`Полный прайс — в разделе <a[^>]*href="[^"]*/prices#${anchor}"`),
+      `/services/${slug}: «Полный прайс» обязан вести в #${anchor}`,
+    );
+  }
 });
 
 test('L4 /prices: заголовок, 8 якорей, кондиционеры и сварка, 5 сносок', () => {

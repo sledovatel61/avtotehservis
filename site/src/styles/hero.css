@@ -104,12 +104,18 @@
   .slide-bg::after{content:none}
   .slide-in{
     position:relative;z-index:3;background:none;border-radius:0;backdrop-filter:none;
-    -webkit-backdrop-filter:none;padding:0 var(--hp) 0 var(--cx);
-    /* раунд 14: коробка слева (margin-right:auto), правый край ≤44 % — текст не на машинах */
-    max-width:44%;margin-left:0;margin-right:auto;align-self:center;
+    /* РАУНД 28: раньше ширина коробки была 44 % окна и вычитался правый отступ --hp,
+       поэтому на 2560 заголовок сжимался в 402 px при пустом поле слева, а на 1920 — в 441 px.
+       Теперь ширина текст-колонки задаётся в пикселях: clamp(430px, min(38vw, 49vw − cx − 24px), 660px).
+       Правый край никогда не заходит за 49 % окна (машины начинаются с 50.5 %), а на любом
+       большом экране колонка остаётся читаемой 480–640 px. */
+    -webkit-backdrop-filter:none;padding:0 24px 0 var(--cx);
+    --tw:clamp(430px,min(38vw,49vw - var(--cx) - 24px),660px);
+    width:calc(var(--cx) + var(--tw) + 24px);max-width:calc(var(--cx) + var(--tw) + 24px);
+    margin-left:0;margin-right:auto;align-self:center;
   }
-  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.2vw,2.9rem);max-width:14em}
-  .slide-sub{font-size:clamp(15px,1.15vw,18px);max-width:44ch}
+  .slide h1,.slide .h1{font-size:clamp(2rem,3.4vw,3.2rem);max-width:14em}
+  .slide-sub{font-size:clamp(15.5px,1.2vw,19px);max-width:46ch}
   .hero-ui{left:auto;right:var(--hp);bottom:max(12px,calc(var(--hp)/2 - 20px))}
   .hero-ui .container{justify-content:flex-end;padding-left:0;padding-right:0}
   /* РАУНД 15 / патч оркестратора: стрелка стояла на подписи «Автопрокрутка…» (A6: 873 px²).
@@ -117,7 +123,7 @@
   .hero-scroll{left:var(--cx);right:auto;transform:none;bottom:max(12px,calc(var(--hp)/2 - 20px));animation:none}
 }
 @media (min-width:1180px){
-  .slide h1,.slide .h1{font-size:clamp(1.9rem,3.6vw,3rem)}
+  .slide h1,.slide .h1{font-size:clamp(2rem,3.9vw,3.35rem)}
 }
 /* РАУНД 15 / патч оркестратора: на коротком десктопе стрелка «вниз» ушла бы на кнопки —
    там её просто нет (колесо/клавиши/точки остаются) */

@@ -56,7 +56,7 @@ await new Promise((r) => server.listen(4332, '127.0.0.1', r));
 
 const browser = await puppeteer.launch({ executablePath: await chromium.executablePath(),
   args: [...chromium.args, '--no-sandbox', '--font-render-hinting=none'], headless: 'shell',
-  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/nss-libs:${process.env.LD_LIBRARY_PATH || ''}` },
+  env: { ...process.env, LD_LIBRARY_PATH: `/tmp/nss-libs:/tmp/al2023-libs/lib:/tmp/al2-libs/lib:${process.env.LD_LIBRARY_PATH || ''}` },
   protocolTimeout: 180000 });
 const page = await browser.newPage();
 await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 });

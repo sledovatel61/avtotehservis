@@ -1,6 +1,9 @@
 /* ---------- Сброс и база ---------- */
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+/* круг 29 (M6): блокировка скролла на интро Voyah (body.vy-lock) убирала и
+   возвращала классический вертикальный скроллбар — на Windows контент прыгал
+   на ~15 px. Гуттер держим постоянным, чтобы полоса не занимала место вовсе. */
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scrollbar-gutter:stable}
 body{
   /* РАУНД 15 / приёмка: высота шапки — одна переменная. В превью над шапкой стоит
      демо-плашка (35 px), и первый экран вылезал за окно на 20 px (рендер 1217×598:

@@ -49,7 +49,7 @@ const jsonLd = [
                 <picture>
                   <source type="image/avif" srcset={`/img/${svcImgKey(sv.slug)}-640.avif 640w, /img/${svcImgKey(sv.slug)}-960.avif 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
                   <source type="image/webp" srcset={`/img/${svcImgKey(sv.slug)}-640.webp 640w, /img/${svcImgKey(sv.slug)}-960.webp 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
-                  <img src={`/img/${svcImgKey(sv.slug)}-640.webp`} alt={sv.title} width="800" height="600" loading="lazy" decoding="async">
+                  <img src={`/img/${svcImgKey(sv.slug)}-640.webp`} alt={sv.title} width="960" height="720" loading="lazy" decoding="async">
                 </picture>
               </span>
               <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p>{sv.price_from ? <span class="svc-price">{sv.price_from}</span> : null}<span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>

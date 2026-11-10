@@ -8,6 +8,8 @@ import { fmtDateRu, plural } from '../server/format.ts';
 const S = getSettings();
 const services = listHomeServices();
 import { SVC_IMG } from '../server/svc-img.ts';
+/* круг 28: раздел Voyah Free живёт на своём CSS (токены --v-*) */
+import '../styles/voyah.css';
 const cases = listPublishedCases(6);
 const reviews = listPublishedReviews(8);
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
@@ -60,9 +62,9 @@ const jsonLd = {
       <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 2 из 3">
         <div class="slide-bg">
           <picture>
-            <source type="image/avif" srcset="/img/hero-tyre-640.avif 640w, /img/hero-tyre-960.avif 960w, /img/hero-tyre-1600.avif 1600w, /img/hero-tyre-2032.avif 2032w" sizes="100vw">
-            <source type="image/webp" srcset="/img/hero-tyre-640.webp 640w, /img/hero-tyre-960.webp 960w, /img/hero-tyre-1600.webp 1600w, /img/hero-tyre-2032.webp 2032w" sizes="100vw">
-            <img src="/img/hero-tyre-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
+            <source type="image/avif" srcset="/img/hero-tools-640.avif 640w, /img/hero-tools-960.avif 960w, /img/hero-tools-1600.avif 1600w, /img/hero-tools-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tools-640.webp 640w, /img/hero-tools-960.webp 960w, /img/hero-tools-1600.webp 1600w, /img/hero-tools-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tools-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
           </picture>
         </div>
         <div class="slide-in container">
@@ -78,9 +80,9 @@ const jsonLd = {
       <div class="slide" role="group" aria-roledescription="слайд" aria-label="Слайд 3 из 3">
         <div class="slide-bg">
           <picture>
-            <source type="image/avif" srcset="/img/hero-tools-640.avif 640w, /img/hero-tools-960.avif 960w, /img/hero-tools-1600.avif 1600w, /img/hero-tools-2032.avif 2032w" sizes="100vw">
-            <source type="image/webp" srcset="/img/hero-tools-640.webp 640w, /img/hero-tools-960.webp 960w, /img/hero-tools-1600.webp 1600w, /img/hero-tools-2032.webp 2032w" sizes="100vw">
-            <img src="/img/hero-tools-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
+            <source type="image/avif" srcset="/img/hero-tyre-640.avif 640w, /img/hero-tyre-960.avif 960w, /img/hero-tyre-1600.avif 1600w, /img/hero-tyre-2032.avif 2032w" sizes="100vw">
+            <source type="image/webp" srcset="/img/hero-tyre-640.webp 640w, /img/hero-tyre-960.webp 960w, /img/hero-tyre-1600.webp 1600w, /img/hero-tyre-2032.webp 2032w" sizes="100vw">
+            <img src="/img/hero-tyre-1600.webp" width="1600" height="900" alt="" aria-hidden="true" loading="lazy" decoding="async">
           </picture>
         </div>
         <div class="slide-in container">
@@ -243,6 +245,37 @@ const jsonLd = {
         <p>Сертификаты LYNXauto, SUFIX, KORSON и NGN действуют до 23.06.2027. Документы подтверждают официальный статус точки продаж.</p>
       </div>
     </div>
+  </div>
+</section>
+<!-- Voyah Free: остров между «О компании» и «Как мы работаем» -->
+<section class="v-teaser" id="voyah" aria-labelledby="v-teaser-h">
+  <div class="vy-wrap">
+    <div class="v-teaser-grid">
+      <div class="reveal">
+        <p class="v-eyebrow v-eyebrow--brand">
+          <img class="v-mark" src="/img/vy-mark.png" width="24" height="34" alt="" decoding="async" loading="lazy">
+          Voyah Free · новое направление
+        </p>
+        <h2 id="v-teaser-h">ТО Voyah Free на Портовой, 439</h2>
+        <p class="v-lead">Более трёх лет обслуживаем Voyah Free в Ростове-на-Дону. Проводим полное ТО гибридной установки: меняем масло в двигателе, генераторе и редукторах, обслуживаем тормоза и подвеску. Сначала осмотр и смета.</p>
+        <div class="v-teaser-cta">
+          <a class="v-btn v-btn--brass" href="/voyah-free">Подробнее о Voyah Free</a>
+          <a class="v-btn v-btn--light" href="/appointment?s=to-maslo">Записаться на ТО</a>
+        </div>
+        <div class="v-teaser-prices">
+          <div class="v-price-chip"><span>Масло ДВС</span><b>2000 ₽</b><small>+ все фильтры</small></div>
+          <div class="v-price-chip"><span>Тормозная жидкость</span><b>2000 ₽</b><small>с прокачкой контуров</small></div>
+          <div class="v-price-chip"><span>Диагностика ходовой</span><b>1500 ₽</b><small>на подъёмнике</small></div>
+        </div>
+      </div>
+      <div class="v-teaser-facts reveal" data-d="1">
+        <div class="v-teaser-fact"><b>Опыт более трёх лет</b><span>Обслуживаем Voyah Free в Ростове-на-Дону; знаем регламент по маслам, редукторам и тормозам.</span></div>
+        <div class="v-teaser-fact"><b>Полное ТО</b><span>Масла, фильтры, тормоза и ходовая — состав согласуем после осмотра.</span></div>
+        <div class="v-teaser-fact"><b>Цена за работу</b><span>Цены без запчастей и расходников; смету согласуем заранее.</span></div>
+        <div class="v-teaser-fact"><b>Запись по времени</b><span>Согласуем время визита, чтобы вы не стояли в живой очереди; работаем ежедневно, с 9:00 до 19:00.</span></div>
+      </div>
+    </div>
+    <p class="v-note" style="margin-top:22px">Цены — за работу, без запчастей. Все 15 позиций и порядок работ — на странице <a class="u-brass" href="/voyah-free#price">Voyah Free</a>.</p>
   </div>
 </section>
 <section class="sec sec--ivory est-sec" aria-labelledby="est-h">
