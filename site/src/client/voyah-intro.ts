@@ -32,14 +32,14 @@ type IntroStats = {
 
 /* ------------------------------- шейдеры --------------------------------- */
 
-const VERT = `#version 300 es
+export const VERT = `#version 300 es
 void main(){
   /* полноэкранный треугольник без буферов и атрибутов: 3 вершины по gl_VertexID */
   vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }`;
 
-const SCENE_FS = `#version 300 es
+export const SCENE_FS = `#version 300 es
 precision highp float;
 out vec4 O;
 uniform vec2 uRes;
@@ -225,7 +225,7 @@ void main(){
 }`;
 
 /* bloom: яркий проход по горизонтали в четверть разрешения */
-const BRIGHT_FS = `#version 300 es
+export const BRIGHT_FS = `#version 300 es
 precision highp float;
 out vec4 O;
 uniform sampler2D uTex;
@@ -244,7 +244,7 @@ void main(){
 }`;
 
 /* композит: сцена + размытый bloom, виньетка, лёгкий тонмаппинг */
-const COMP_FS = `#version 300 es
+export const COMP_FS = `#version 300 es
 precision highp float;
 out vec4 O;
 uniform sampler2D uScene;
@@ -263,12 +263,17 @@ void main(){
 
 /* ------------------------------- запуск ---------------------------------- */
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const saveData =
-  (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
-const params = new URLSearchParams(location.search);
+/* Шейдеры выше экспортируются: гейт компиляции A10 импортирует VERT / SCENE_FS /
+   BRIGHT_FS / COMP_FS и собирает программы в настоящем WebGL2. Поэтому запуск
+   заставки заперт в проверке DOM: импорт в node (гейт) ничего не рисует и не падает. */
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const saveData =
+    (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+  const params = new URLSearchParams(location.search);
 
-if (!reduced && !saveData && params.get('intro') !== '0') boot();
+  if (!reduced && !saveData && params.get('intro') !== '0') boot();
+}
 
 function readMs(css: CSSStyleDeclaration, name: string, fallback: number): number {
   const raw = css.getPropertyValue(name).trim();

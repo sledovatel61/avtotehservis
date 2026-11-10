@@ -110,3 +110,26 @@ LD_LIBRARY_PATH=/tmp/al2023/lib STILLS=200,450,700,1000,1400,1800 OUT=../docs/re
 LD_LIBRARY_PATH=/tmp/al2023/lib node scripts/intro-overlay.mjs        # exit 0 = все 12 ориентиров в допуске
 LD_LIBRARY_PATH=/tmp/al2023/lib npm test                              # rc=0, 109 pass
 ```
+
+## 9. Дополнение оркестратора: экспорт шейдеров для гейта компиляции A10
+
+`site/src/client/voyah-intro.ts` теперь экспортирует четыре источника под теми же именами:
+
+```ts
+export const VERT = `#version 300 es …`;      // 233 символа
+export const SCENE_FS = `#version 300 es …`;  // 7 793
+export const BRIGHT_FS = `#version 300 es …`; // 420
+export const COMP_FS = `#version 300 es …`;   // 365
+```
+
+Запуск заставки перенесён под проверку DOM:
+
+```ts
+if (typeof window !== 'undefined' && typeof document !== 'undefined') { … boot() }
+```
+
+Так `import { VERT, SCENE_FS, BRIGHT_FS, COMP_FS } from '…/voyah-intro.ts'` в node не создаёт оверлей, не трогает `matchMedia`/`location` и не падает — гейт получает строки и компилирует их в своём WebGL2. В браузере поведение не изменилось: в бандле остался прежний вызов `boot()` (проверено по `dist/client/_astro/voyah-free….js`).
+
+Проверено: импорт в node — 4 экспорта, строки на месте; `npm run build` rc=0; `npx tsc --noEmit` rc=0; `node --test tests/unit.test.ts` 21/21.
+
+**Чего не проверил:** настоящую компиляцию шейдеров в Chromium. Рабочая песочница перезапустилась, и в ней нет системных библиотек Chromium (`libnss3.so`, `libnspr4.so`, …), которые в прошлой сессии лежали в `/tmp/al2023/lib`; браузер не стартует, поэтому `npm test` (все гейты на puppeteer) и `intro-overlay.mjs` в этой сессии не прогонялись. Код шейдеров при этом не менялся — только добавлено `export`; последний полный прогон был в коммите `dde3b3f`.
