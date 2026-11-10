@@ -1,0 +1,15 @@
+{
+  "name": "voyah-vector-check",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Проверка векторного знака Voyah: контуры, вес SVG, отклонение от растра владельца",
+  "scripts": {
+    "check": "node check-voyah-vector.mjs",
+    "report": "node tools/make-report.mjs"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "pngjs": "7.0.0"
+  }
+}
