@@ -1,0 +1,465 @@
+---
+/**
+ * Лаборатория 3D-фона (задание №44, раунд 30).
+ *
+ * Зачем отдельная страница:
+ *  - оба прототипа (A «глубина» и B «силуэт в глубине») переключаются на месте, без пересборки;
+ *  - здесь же живёт измерительный стенд: fps, время кадра, реальное время GPU (если браузер
+ *    отдаёт EXT_disjoint_timer_query), разрешение, причины решения gate.ts, память после
+ *    N циклов монтажа;
+ *  - режим `?bench=1` прогоняет замер сам и кладёт JSON в `window.__bg3dBench` — его снимает
+ *    scripts/bg3d-device-metrics.mjs (Playwright) на реальных четырёх профилях.
+ *
+ * Страница не зависит от базы и не входит в sitemap. В production отдаётся только при
+ * `BG3D_LAB=1`, иначе 404 — диагностический стенд не должен жить на боевом сайте.
+ */
+const lab = process.env.BG3D_LAB === '1' || import.meta.env.DEV;
+if (!lab) return new Response('Лаборатория отключена (нужен BG3D_LAB=1)', { status: 404 });
+
+import '../../styles/fonts.css';
+import '../../styles/tokens.css';
+import '../../styles/base.css';
+import '../../styles/buttons.css';
+import '../../styles/utils.css';
+import '../../styles/header.css';
+import '../../styles/sections.css';
+import '../../styles/pages.css';
+import '../../styles/misc.css';
+import '../../styles/bg3d.css';
+
+const variant = (Astro.url.searchParams.get('variant') ?? 'silhouette') === 'depth' ? 'depth' : 'silhouette';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Лаборатория 3D-фона — АвтоТехСервис</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#0B1410">
+  <style>
+    /* Только оформление стенда. Сайтовые токены и классы — из общих CSS выше. */
+    .lab-bar{position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;
+      padding:10px 16px;background:rgba(11,20,16,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+    .lab-bar b{font-family:var(--font-display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass)}
+    .lab-bar label{display:inline-flex;align-items:center;gap:6px;color:var(--mist);font-size:12.5px}
+    .lab-bar select,.lab-bar input[type=range]{background:var(--deep2);color:var(--ivory);border:1px solid var(--line-soft);
+      border-radius:8px;padding:4px 6px;font:inherit;font-size:12.5px}
+    .lab-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px;padding:14px 16px;
+      border-bottom:1px solid var(--line-soft)}
+    .lab-cell{background:var(--deep);border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:8px 10px}
+    .lab-cell span{display:block;color:var(--mist);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+    .lab-cell b{display:block;font-family:var(--font-display);font-size:17px;color:var(--ivory);margin-top:3px}
+    .lab-cell b.warn{color:var(--warn)}.lab-cell b.bad{color:var(--danger)}.lab-cell b.good{color:var(--emerald)}
+    .lab-reasons{padding:12px 16px;color:var(--mist);font-size:13px;border-bottom:1px solid var(--line-soft)}
+    .lab-reasons code{color:var(--brass)}
+    .lab-pre{margin:14px 16px;padding:12px;background:#0A120E;border:1px solid var(--line-soft);border-radius:var(--r-sm);
+      color:var(--mist);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-all;max-height:340px;overflow:auto}
+    .lab-host{position:relative;min-height:clamp(420px,62svh,680px);display:flex;align-items:flex-end;
+      background:linear-gradient(180deg,var(--deep) 0%,var(--night) 100%);border-bottom:1px solid var(--line-soft);overflow:hidden}
+    .lab-host .container{position:relative;z-index:1;padding-bottom:44px;padding-top:44px}
+    .lab-shot{display:block;max-width:100%;height:auto;border:1px solid var(--line-soft);border-radius:var(--r-sm);margin:14px 16px}
+    .lab-note{padding:0 16px 18px;color:var(--mist);font-size:13.5px;max-width:88ch}
+  </style>
+</head>
+<body data-page="lab-bg3d">
+<a class="skip" href="#main">Перейти к содержанию</a>
+
+<div class="lab-bar" id="lab-bar">
+  <b>3D-фон · стенд</b>
+  <label>Прототип
+    <select id="c-variant">
+      <option value="silhouette" selected={variant === 'silhouette'}>B — силуэт в глубине</option>
+      <option value="depth" selected={variant === 'depth'}>A — глубина</option>
+    </select>
+  </label>
+  <label>Профиль
+    <select id="c-tier">
+      <option value="auto" selected>авто (gate.ts)</option>
+      <option value="high">high · 60 к/с · 100 %</option>
+      <option value="mid">mid · 30 к/с · 90 %</option>
+      <option value="low">low · 24 к/с · 60 %</option>
+      <option value="static">reduced-motion (1 кадр)</option>
+      <option value="off">выключен</option>
+    </select>
+  </label>
+  <label>Масштаб <input id="c-scale" type="range" min="40" max="200" step="5" value="100"><output id="o-scale">100 %</output></label>
+  <label>Стресс ×<input id="c-stress" type="range" min="100" max="400" step="25" value="100"><output id="o-stress">1.00</output></label>
+  <label>К/с <input id="c-fps" type="range" min="0" max="120" step="6" value="0"><output id="o-fps">профиль</output></label>
+  <button class="btn btn--ghost btn--sm" type="button" id="c-restart">Перезапустить</button>
+  <button class="btn btn--ghost btn--sm" type="button" id="c-shot">Снять кадр</button>
+  <button class="btn btn--ghost btn--sm" type="button" id="c-bench">Замер 10 с</button>
+  <button class="btn btn--ghost btn--sm" type="button" id="c-cycles">20 циклов</button>
+</div>
+
+<div class="lab-grid" id="lab-grid">
+  <div class="lab-cell"><span>fps</span><b id="m-fps">—</b></div>
+  <div class="lab-cell"><span>кадр, мс (среднее)</span><b id="m-avg">—</b></div>
+  <div class="lab-cell"><span>кадр, мс (p95)</span><b id="m-p95">—</b></div>
+  <div class="lab-cell"><span>GPU на кадр, мс</span><b id="m-gpu">—</b></div>
+  <div class="lab-cell"><span>буфер, px</span><b id="m-res">—</b></div>
+  <div class="lab-cell"><span>мегапикселей/с</span><b id="m-mpx">—</b></div>
+  <div class="lab-cell"><span>кадров / пропусков</span><b id="m-frames">—</b></div>
+  <div class="lab-cell"><span>пауз / деградаций</span><b id="m-pauses">—</b></div>
+  <div class="lab-cell"><span>рисовали, с</span><b id="m-draw">—</b></div>
+  <div class="lab-cell"><span>heap, МБ</span><b id="m-heap">—</b></div>
+  <div class="lab-cell"><span>GPU (браузер)</span><b id="m-gl" style="font-size:12px;line-height:1.35">—</b></div>
+  <div class="lab-cell"><span>состояние</span><b id="m-state" style="font-size:13px">—</b></div>
+</div>
+<div class="lab-reasons" id="lab-reasons">решение gate.ts появится после запуска</div>
+<pre class="lab-pre" id="lab-out" hidden></pre>
+<img class="lab-shot" id="lab-shot" alt="Кадр, снятый с канваса фоном" hidden>
+
+<main id="main">
+  <!-- Хост фона: та же раскладка, что и .page-head на странице услуги,
+       чтобы стоимость композитинга была сопоставима с боевой страницей. -->
+  <section class="lab-host page-head" id="bg-host">
+    <div class="bg3d" data-bg3d={variant}>
+      <canvas class="bg3d-canvas" width="2" height="2" aria-hidden="true"></canvas>
+      <button class="bg3d-off" type="button" hidden aria-pressed="true" aria-label="Выключить 3D-фон">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="3.6"/></svg>
+        <span class="bg3d-off-text">Выключить 3D-фон</span>
+      </button>
+    </div>
+    <div class="container">
+      <span class="eyebrow">Электро и гибриды</span>
+      <h1>Voyah Free — обслуживание и ремонт</h1>
+      <p class="lead">Диагностика высоковольтной части, ходовая, тормоза, шины и ТО для Voyah Free.
+        Сначала осмотр и смета, потом решение владельца. Страница-стенд: так фон стоит на боевой странице услуги.</p>
+      <p><a class="btn btn--copper" href="/appointment">Записаться</a>
+        <a class="btn btn--ghost" href="/services">Все услуги</a></p>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="container">
+      <div class="sec-head"><div><span class="eyebrow">Что проверяем</span><h2>Сценарии стенда</h2></div></div>
+      <p class="lab-note" style="padding-left:0">
+        1. <b>Пауза вне экрана</b> — прокрутите страницу вниз: счётчик «пауз» вырастет, fps перестанет считаться,
+        GPU молчит. 2. <b>Вкладка</b> — откройте вторую вкладку: то же самое. 3. <b>Кнопка «выключить»</b> —
+        справа внизу первого экрана; выбор запоминается в localStorage и переживает перезагрузку.
+        4. <b>Слабое устройство</b> — «Стресс ×4» увеличивает внутренний буфер в 4 раза по стороне
+        (в 16 по площади): на сильной машине это эквивалент GPU в 16 раз слабее, и watchdog
+        обязан снизить разрешение, а потом погасить фон. 5. <b>20 циклов</b> — монтаж и полная уборка
+        экземпляра 20 раз подряд с замером кучи: проверка на утечку контекстов.
+      </p>
+      <div class="svc-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+        <div class="svc-card"><span class="svc-body"><span class="svc-tag">A</span><h3>Глубина</h3>
+          <p>Перспективный пол с туманом, тёплая лужа света от ламп, дымка у горизонта. Объектов нет.</p></span></div>
+        <div class="svc-card"><span class="svc-body"><span class="svc-tag">B</span><h3>Силуэт в глубине</h3>
+          <p>То же поле плюс собирательный силуэт кроссовера: контровой свет, фары, отражение в мокром асфальте.</p></span></div>
+        <div class="svc-card"><span class="svc-body"><span class="svc-tag">0</span><h3>Без текстур</h3>
+          <p>Ни одной картинки: шум и силуэт считаются математикой в фрагментном шейдере. Вес — только код.</p></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sec--deep">
+    <div class="container">
+      <div class="sec-head"><div><span class="eyebrow">Дальше</span><h2>Контент страницы — для сопоставимой нагрузки</h2></div></div>
+      <p class="lab-note" style="padding-left:0">Несколько экранов текста ниже нужны не для красоты: фон приходится
+        композитить вместе со слоем страницы, и на боевой странице под фоном есть контент. Без него замер
+        fps был бы заметно оптимистичнее реальности.</p>
+      <p class="lab-note" style="padding-left:0">АвтоТехСервис, Портовая 439, Ростов-на-Дону. Шиномонтаж, балансировка,
+        ремонт шин, ТО и аппаратная замена масла, ходовая и тормоза, электрика и диагностика, кондиционеры.
+        Сначала смета — потом ремонт. Ежедневно 9:00–19:00.</p>
+      <p class="lab-note" style="padding-left:0">АвтоТехСервис, Портовая 439, Ростов-на-Дону. Шиномонтаж, балансировка,
+        ремонт шин, ТО и аппаратная замена масла, ходовая и тормоза, электрика и диагностика, кондиционеры.
+        Сначала смета — потом ремонт. Ежедневно 9:00–19:00.</p>
+      <p class="lab-note" style="padding-left:0">АвтоТехСервис, Портовая 439, Ростов-на-Дону. Шиномонтаж, балансировка,
+        ремонт шин, ТО и аппаратная замена масла, ходовая и тормоза, электрика и диагностика, кондиционеры.
+        Сначала смета — потом ремонт. Ежедневно 9:00–19:00.</p>
+      <p class="lab-note" style="padding-left:0">АвтоТехСервис, Портовая 439, Ростов-на-Дону. Шиномонтаж, балансировка,
+        ремонт шин, ТО и аппаратная замена масла, ходовая и тормоза, электрика и диагностика, кондиционеры.
+        Сначала смета — потом ремонт. Ежедневно 9:00–19:00.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+import { mount, unmountAll, registry, liveInstances, type Mounted } from '../../client/bg3d/index.ts';
+import type { Bg3dStats, Variant } from '../../client/bg3d/engine.ts';
+import { collectEnv, type Bg3dDecision } from '../../client/bg3d/gate.ts';
+
+const $id = <T extends HTMLElement>(s: string): T => document.getElementById(s) as T;
+const host = $id<HTMLElement>('bg-host');
+const bgHost = host.querySelector<HTMLElement>('.bg3d')!;
+const out = $id<HTMLPreElement>('lab-out');
+const shot = $id<HTMLImageElement>('lab-shot');
+const q = new URLSearchParams(location.search);
+
+let current: Mounted | null = null;
+let benchBusy = false;
+
+/* ---------- панель статистики ---------- */
+function heapMb(): number | null {
+  const p = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
+  return p ? p.usedJSHeapSize / 1048576 : null;
+}
+function fmt(n: number | null | undefined, d = 1): string {
+  return n === null || n === undefined || Number.isNaN(n) ? '—' : n.toFixed(d);
+}
+function paint(s: Bg3dStats | null, state: string): void {
+  const fps = $id<HTMLElement>('m-fps');
+  fps.textContent = s ? fmt(s.fps) : '—';
+  fps.className = s ? (s.fps >= (s.fpsCap || 60) * 0.9 ? 'good' : s.fps >= (s.fpsCap || 60) * 0.6 ? 'warn' : 'bad') : '';
+  $id('m-avg').textContent = s ? fmt(s.frameMsAvg) : '—';
+  const p95 = $id<HTMLElement>('m-p95');
+  p95.textContent = s ? fmt(s.frameMsP95) : '—';
+  p95.className = s && s.frameMsP95 > 40 ? 'bad' : '';
+  $id('m-gpu').textContent = s ? (s.gpuMs === null ? 'нет расширения' : fmt(s.gpuMs, 2)) : '—';
+  $id('m-res').textContent = s ? `${s.drawWidth}×${s.drawHeight}` : '—';
+  $id('m-mpx').textContent = s ? fmt((s.drawWidth * s.drawHeight * s.fps) / 1e6, 1) : '—';
+  $id('m-frames').textContent = s ? `${s.frames} / ${s.skipped}` : '—';
+  $id('m-pauses').textContent = s ? `${s.pauses} / ${s.degradations}` : '—';
+  $id('m-draw').textContent = s ? fmt(s.drawMs / 1000) : '—';
+  const h = heapMb();
+  $id('m-heap').textContent = h === null ? 'нет API' : fmt(h);
+  $id('m-gl').textContent = s ? `${s.vendor || '?'} · ${s.renderer || '?'} · ${s.glVersion}` : '—';
+  $id('m-state').textContent = state;
+}
+function show(text: string): void {
+  out.hidden = false;
+  out.textContent = text;
+}
+
+/* ---------- запуск ---------- */
+interface Cfg { variant: Variant; tier: string; scale: number; stress: number; fps: number }
+function readCfg(): Cfg {
+  return {
+    variant: $id<HTMLSelectElement>('c-variant').value as Variant,
+    tier: $id<HTMLSelectElement>('c-tier').value,
+    scale: Number($id<HTMLInputElement>('c-scale').value) / 100,
+    stress: Number($id<HTMLInputElement>('c-stress').value) / 100,
+    fps: Number($id<HTMLInputElement>('c-fps').value),
+  };
+}
+type Preset = Pick<Bg3dDecision, 'quality' | 'fpsCap' | 'renderScale' | 'dprCap' | 'tier' | 'motion'>;
+const TIER_PRESET: Record<string, Preset> = {
+  high: { quality: 2, fpsCap: 60, renderScale: 1.0, dprCap: 2, tier: 'high', motion: 'animate' },
+  mid: { quality: 1, fpsCap: 30, renderScale: 0.9, dprCap: 2, tier: 'mid', motion: 'animate' },
+  low: { quality: 0, fpsCap: 24, renderScale: 0.6, dprCap: 1.25, tier: 'low', motion: 'animate' },
+  static: { quality: 2, fpsCap: 0, renderScale: 1.0, dprCap: 2, tier: 'high', motion: 'static' },
+};
+function start(cfg: Cfg = readCfg()): void {
+  unmountAll();
+  current = null;
+  /* Канвас создаём заново: после destroy() прежний контекст помечен потерянным
+     (WEBGL_lose_context), а настоящий переход по сайту тоже приходит с новым канвасом.
+     Так стенд честно повторяет 20 переходов, а не 20 перезапусков одного элемента. */
+  const old = bgHost.querySelector('canvas.bg3d-canvas');
+  const fresh = document.createElement('canvas');
+  fresh.className = 'bg3d-canvas';
+  fresh.width = 2;
+  fresh.height = 2;
+  fresh.setAttribute('aria-hidden', 'true');
+  if (old) old.replaceWith(fresh); else bgHost.prepend(fresh);
+  bgHost.dataset.bg3d = cfg.variant;
+  /* ?demo=1 — показать сцену на машине без GPU (в песочнице и на витрине Chromium
+     рисует через SwiftShader, и гейт честно гасит фон). Обычный запуск стенда
+     ведёт себя как боевая страница: программный растеризатор = фон выключен. */
+  if (q.get('demo') === '1') bgHost.dataset.bg3dDemo = '1'; else delete bgHost.dataset.bg3dDemo;
+  bgHost.removeAttribute('data-bg3d-state');
+  bgHost.removeAttribute('data-bg3d-tier');
+  delete bgHost.dataset.bg3dAutooff;
+  try { localStorage.removeItem('ats.bg3d'); sessionStorage.removeItem('ats.bg3d.blocked'); } catch { /* приватный режим */ }
+  if (cfg.tier === 'off') { paint(null, 'выключен вручную'); show('Профиль «выключен»: фон не создан, контекста WebGL нет.'); return; }
+
+  const force = cfg.tier === 'auto' ? { renderScale: cfg.scale, stress: cfg.stress, ...(cfg.fps ? { fpsCap: cfg.fps } : {}) }
+    : { ...TIER_PRESET[cfg.tier], renderScale: TIER_PRESET[cfg.tier].renderScale * cfg.scale, stress: cfg.stress, ...(cfg.fps ? { fpsCap: cfg.fps } : {}) };
+
+  current = mount({
+    host: bgHost,
+    variant: cfg.variant,
+    featureEnabled: true,
+    /* стенд не должен гаснуть от watchdog: его задача — показать и обмерить сцену,
+       в том числе на программном растеризаторе, где fps заведомо низкий */
+    noWatchdog: true,
+    force,
+    onStats: (s) => paint(s, s.running ? 'рисует' : 'пауза'),
+    onAutoOff: (reason) => { paint(current?.stats() ?? null, 'автоотключён'); show(`Watchdog погасил фон: ${reason}`); },
+  });
+  const d = current.decision;
+  /* textContent, а не innerHTML: в причины попадает строка renderer из браузера */
+  $id('lab-reasons').textContent = `Решение gate.ts: ${d.tier} · качество ${d.quality} · ${d.fpsCap || 'один кадр'} · масштаб ${Math.round(d.renderScale * 100)} % · DPR ≤ ${d.dprCap}. Причины: ${d.reasons.join('; ')}`;
+  paint(current.stats(), d.tier === 'off' ? 'отключён gate' : d.motion === 'static' ? 'статичный кадр' : 'запуск');
+}
+
+/* ---------- органы управления ---------- */
+$id('c-variant').addEventListener('change', () => start());
+$id('c-tier').addEventListener('change', () => start());
+$id('c-scale').addEventListener('input', (e) => { $id('o-scale').textContent = `${(e.target as HTMLInputElement).value} %`; });
+$id('c-scale').addEventListener('change', () => start());
+$id('c-stress').addEventListener('input', (e) => { $id('o-stress').textContent = (Number((e.target as HTMLInputElement).value) / 100).toFixed(2); });
+$id('c-stress').addEventListener('change', () => start());
+$id('c-fps').addEventListener('input', (e) => { const v = Number((e.target as HTMLInputElement).value); $id('o-fps').textContent = v ? `${v}` : 'профиль'; });
+$id('c-fps').addEventListener('change', () => start());
+$id('c-restart').addEventListener('click', () => start());
+
+$id('c-shot').addEventListener('click', () => {
+  const inst = current?.inst;
+  if (!inst) { show('Нет живого экземпляра — выберите профиль и перезапустите.'); return; }
+  inst.renderOnce(performance.now() / 1000, 1);
+  const c = bgHost.querySelector('canvas')!;
+  shot.src = c.toDataURL('image/png');
+  shot.hidden = false;
+  show(`Кадр ${c.width}×${c.height} снят синхронно после drawArrays (preserveDrawingBuffer не нужен).`);
+});
+
+/* ---------- замер на N секунд ---------- */
+async function bench(seconds: number, cfg: Cfg = readCfg()): Promise<Record<string, unknown>> {
+  start(cfg);
+  const t0 = performance.now();
+  const b0 = await readBatterySafe();
+  const heap0 = heapMb();
+  await new Promise((r) => { setTimeout(r, seconds * 1000); });
+  const s = current?.stats() ?? null;
+  const b1 = await readBatterySafe();
+  const heap1 = heapMb();
+  const wallMs = performance.now() - t0;
+  const env = collectEnv(document, window, { featureEnabled: true, userOff: false, sessionBlocked: false });
+  const report = {
+    ts: new Date().toISOString(),
+    variant: cfg.variant,
+    profile: cfg.tier,
+    stress: cfg.stress,
+    forcedFpsCap: cfg.fps || null,
+    seconds,
+    wallMs: Math.round(wallMs),
+    device: {
+      ua: navigator.userAgent,
+      dpr: window.devicePixelRatio,
+      screen: `${window.innerWidth}×${window.innerHeight}`,
+      cores: navigator.hardwareConcurrency ?? null,
+      deviceMemory: (navigator as unknown as { deviceMemory?: number }).deviceMemory ?? null,
+      connection: (navigator as unknown as { connection?: { effectiveType?: string; saveData?: boolean } }).connection ?? null,
+      webgl2: env.webgl2,
+      renderer: s?.renderer ?? null,
+      vendor: s?.vendor ?? null,
+      glVersion: s?.glVersion ?? null,
+    },
+    frame: {
+      drawWidth: s?.drawWidth ?? null,
+      drawHeight: s?.drawHeight ?? null,
+      cssWidth: s?.cssWidth ?? null,
+      cssHeight: s?.cssHeight ?? null,
+      renderScale: s?.renderScale ?? null,
+      fpsCap: s?.fpsCap ?? null,
+      frames: s?.frames ?? 0,
+      skipped: s?.skipped ?? 0,
+      fps: s?.fps ?? null,
+      frameMsAvg: s?.frameMsAvg ?? null,
+      frameMsP95: s?.frameMsP95 ?? null,
+      gpuMs: s?.gpuMs ?? null,
+      degradations: s?.degradations ?? 0,
+      pauses: s?.pauses ?? 0,
+      drawMs: s?.drawMs ?? null,
+      mpxPerSec: s ? Number(((s.drawWidth * s.drawHeight * s.fps) / 1e6).toFixed(2)) : null,
+    },
+    heapMb: { start: heap0, end: heap1, api: heap0 !== null },
+    battery: b0 && b1 ? { levelStart: b0.level, levelEnd: b1.level, charging: b1.charging, api: true } : { api: false },
+    decision: current?.decision ?? null,
+  };
+  return report;
+}
+async function readBatterySafe(): Promise<{ level: number; charging: boolean } | null> {
+  const nav = navigator as Navigator & { getBattery?: () => Promise<{ level: number; charging: boolean }> };
+  if (typeof nav.getBattery !== 'function') return null;
+  try { return await nav.getBattery(); } catch { return null; }
+}
+
+$id('c-bench').addEventListener('click', () => {
+  if (benchBusy) return;
+  benchBusy = true;
+  show('Замер 10 с: не трогайте страницу…');
+  void bench(10).then((r) => {
+    benchBusy = false;
+    (window as unknown as { __bg3dBench?: unknown }).__bg3dBench = r;
+    paint(current?.stats() ?? null, 'замер готов');
+    show(JSON.stringify(r, null, 2));
+  });
+});
+
+/* ---------- 20 циклов монтажа/уборки: память ---------- */
+async function cycles(n: number): Promise<Record<string, unknown>> {
+  const rows: Array<Record<string, unknown>> = [];
+  const heapStart = heapMb();
+  for (let i = 0; i < n; i++) {
+    start();
+    await new Promise((r) => { setTimeout(r, 260); });   /* даём нарисовать несколько кадров */
+    const s = current?.stats() ?? null;
+    unmountAll();
+    await new Promise((r) => { setTimeout(r, 120); });
+    rows.push({ i: i + 1, frames: s?.frames ?? 0, heapMb: heapMb(), mountedInRegistry: registry.length, drawing: liveInstances() });
+  }
+  const heapEnd = heapMb();
+  return {
+    cycles: n,
+    heapMb: { start: heapStart, end: heapEnd, delta: heapStart !== null && heapEnd !== null ? Number((heapEnd - heapStart).toFixed(2)) : null, api: heapStart !== null },
+    mountedLayersAfter: registry.length,
+    liveInstancesAfter: liveInstances(),
+    rows,
+  };
+}
+$id('c-cycles').addEventListener('click', () => {
+  show('20 циклов монтажа и уборки…');
+  void cycles(20).then((r) => {
+    (window as unknown as { __bg3dCycles?: unknown }).__bg3dCycles = r;
+    show(JSON.stringify(r, null, 2));
+  });
+});
+
+/* ---------- пауза вне экрана: показать в панели ---------- */
+document.addEventListener('visibilitychange', () => {
+  if (current) paint(current.stats(), document.hidden ? 'вкладка скрыта' : 'рисует');
+});
+new IntersectionObserver((es) => {
+  if (current) paint(current.stats(), es[0].isIntersecting ? 'рисует' : 'вне экрана — пауза');
+}, { threshold: 0 }).observe(bgHost);
+
+/* ---------- отладочный хук: статистику живого экземпляра можно прочитать снаружи ----------
+   Нужен scripts/bg3d-device-metrics.mjs (сценарии «пауза вне экрана» и «кнопка выключить»)
+   и ручной отладке в консоли. Живёт только здесь: лаборатория в production отдаётся при
+   BG3D_LAB=1, на публичных страницах этого хука нет. */
+(window as unknown as { __bg3dDebug?: unknown }).__bg3dDebug = {
+  stats: () => current?.stats() ?? null,
+  decision: () => current?.decision ?? null,
+  mounted: () => registry.length,
+  live: () => liveInstances(),
+};
+
+/* ---------- автоматические режимы для scripts/bg3d-device-metrics.mjs ---------- */
+const auto = q.get('bench') === '1' || q.has('autorun');
+if (auto) {
+  const cfg: Cfg = {
+    variant: q.get('variant') === 'depth' ? 'depth' : 'silhouette',
+    tier: q.get('tier') ?? 'auto',
+    scale: q.has('scale') ? Number(q.get('scale')) : 1,
+    stress: q.has('stress') ? Number(q.get('stress')) : 1,
+    fps: q.has('fps') ? Number(q.get('fps')) : 0,
+  };
+  const secs = q.has('seconds') ? Number(q.get('seconds')) : 8;
+  void bench(secs, cfg).then(async (r) => {
+    (window as unknown as { __bg3dBench?: unknown }).__bg3dBench = r;
+    if (q.get('cycles')) {
+      (window as unknown as { __bg3dCycles?: unknown }).__bg3dCycles = await cycles(Number(q.get('cycles')));
+    }
+    paint(current?.stats() ?? null, 'готово');
+    show(JSON.stringify(r, null, 2));
+    document.title = 'BENCH DONE';
+  });
+} else {
+  /* `variant` из frontmatter живёт только на сервере; в клиентском скрипте его нет —
+     читаем ещё раз из адресной строки (было: ReferenceError variant is not defined) */
+  start({
+    variant: q.get('variant') === 'depth' ? 'depth' : 'silhouette',
+    tier: q.get('tier') ?? 'auto',
+    scale: q.has('scale') ? Number(q.get('scale')) : 1,
+    stress: q.has('stress') ? Number(q.get('stress')) : 1,
+    fps: q.has('fps') ? Number(q.get('fps')) : 0,
+  });
+}
+</script>
+</body>
+</html>
