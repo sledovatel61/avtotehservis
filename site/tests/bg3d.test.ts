@@ -537,6 +537,23 @@ test('страница услуги при BG3D=* отдаёт слой: кан�
   assert.match(html, /href="[^"]*(bg3d|Bg3dLayer)[^"]*\.css"/, 'css слоя не подключён');
 });
 
+/* Круг 31: страница Voyah Free — отдельный файл src/pages/voyah-free.astro, а не запись
+   в services. До этой проверки слой был подключён только к шаблону /services/<slug>,
+   то есть включить фон на настоящей странице раздела было нечем. Проверяем оба адреса:
+   у страницы и у «услуги» слой обязан появиться при BG3D=*. */
+test('страница /voyah-free при BG3D=* получает слой в первом экране и прячет фото', async () => {
+  const html = await (await fetch(`${BASE}/voyah-free`)).text();
+  assert.match(html, /data-bg3d="silhouette"/, 'на /voyah-free слоя нет — фон включить нечем');
+  assert.match(html, /v-hero--bg3d/, 'модификатор первого экрана не выставлен: фото не уступит место сцене');
+  assert.match(html, /<canvas class="bg3d-canvas"/, 'канвас слоя отсутствует');
+  /* слой должен стоять ВНУТРИ подложки героя: иначе тёмный градиент .v-hero::after
+     окажется под сценой, и контраст заголовка поедет (гейт контраста это ловит) */
+  const heroBg = html.slice(html.indexOf('v-hero-bg'));
+  const canvasAt = heroBg.indexOf('bg3d-canvas');
+  const pictureAt = heroBg.indexOf('<picture');
+  assert.ok(canvasAt > 0 && pictureAt > canvasAt, 'слой и фото должны жить в одной подложке, слой — первым');
+});
+
 test('страница другой услуги слой не получает даже при BG3D=*', async () => {
   assert.ok(otherSlug, 'в тестовой базе нужна вторая услуга для сравнения');
   const html = await (await fetch(`${BASE}/services/${otherSlug}`)).text();
