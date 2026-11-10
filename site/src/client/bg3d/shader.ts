@@ -22,6 +22,8 @@
  * отличаются только глубиной, а не тоном страницы: переключение не выглядит прыжком.
  */
 
+import { PROFILE_GLSL, SCALE, SCENE } from '../car-profile.ts';
+
 /** Один треугольник на весь экран: 3 вершины, 0 индексных буферов, 1 draw call. */
 export const VERT = `precision highp float;
 attribute vec2 aPos;
@@ -32,6 +34,17 @@ void main(){
 }`;
 
 export const FRAG = `precision highp float;
+
+/* Профиль машины — ОДИН источник (site/src/client/car-profile.ts, задание №54).
+   Здесь только единицы сцены: масштаб ${SCALE.bg3d.toFixed(6)} (0,60 ед. на 1,645 м
+   кузова) и земля ${SCENE.ground}. Раньше силуэт собирался тут же из rbox/seg/circle —
+   вторая копия геометрии, которая разошлась с заставкой; теперь её нет. */
+${PROFILE_GLSL}
+const float CAR_UNITS  = ${SCALE.bg3d.toFixed(6)};   /* ед. сцены на метр */
+const float CAR_GROUND = ${SCENE.ground.toFixed(6)};  /* земля фона, ед. сцены */
+const float CAR_AXLE_F = ${SCENE.axleFront.toFixed(6)};
+const float CAR_AXLE_R = ${SCENE.axleRear.toFixed(6)};
+const float CAR_TYRE_R = ${SCENE.tyreRadius.toFixed(6)};
 
 varying vec2 vUv;
 
@@ -95,35 +108,23 @@ float smin(float a, float b, float k){
   return mix(b, a, h) - k * h * (1.0 - h);
 }
 
-/* Собирательный силуэт кроссовера, вид сбоку. q — локальные координаты, 0 = центр кузова.
-   НИКАКИХ шильдиков, номеров, логотипов и читаемых элементов: правило арт-дирекшна
-   (docs/art-direction/README.md) и запрет выдумывать бренды. Это не портрет Voyah Free,
-   а «кроссовер в тумане» — см. вердикт, пункт про риск силуэта. */
+/* Силуэт: единицы сцены → метры модуля. Своего здесь нет ничего:
+   carProfile() приходит из car-profile.ts вместе с крышей, порогом и арками.
+   Контракт модуля: y = 0 — земля, поэтому сначала снимаем сдвиг земли. */
 float carSdf(vec2 q){
-  float body  = sdRoundBox(q - vec2(0.0, -0.115), vec2(0.90, 0.145), 0.095);
-  float cabin = sdRoundBox(q - vec2(-0.02, 0.10), vec2(0.46, 0.16), 0.085);
-  /* Крышу делают два среза полуплоскостями: наклонное лобовое и пологая корма.
-     Режем ТОЛЬКО кабину: на капот и корму срезы не должны распространяться. */
-  float wind = (q.x - 0.40) * 0.55 + (q.y - 0.015) * 0.84;
-  float rear = -(q.x + 0.50) * 0.40 + (q.y - 0.05) * 0.92;
-  cabin = max(cabin, wind);
-  cabin = max(cabin, rear);
-  float hood  = sdSeg(q, vec2(0.46, 0.01), vec2(0.93, -0.10), 0.070);
-  float tail  = sdSeg(q, vec2(-0.48, 0.03), vec2(-0.91, -0.11), 0.068);
-  float s = smin(body, cabin, 0.06);
-  s = smin(s, hood, 0.05);
-  s = smin(s, tail, 0.05);
-  s = max(s, -sdCircle(q - vec2( 0.56, -0.27), 0.235));   /* передняя арка */
-  s = max(s, -sdCircle(q - vec2(-0.56, -0.27), 0.235));   /* задняя арка */
-  return s;
+  return carProfile(vec2(q.x / CAR_UNITS, (q.y - CAR_GROUND) / CAR_UNITS)) * CAR_UNITS;
 }
 
 /* Колесо: тёмная шина + чуть более светлый диск. Отдельной функцией, чтобы не писать цикл
    (в ESSL 1.00 границы цикла обязаны быть константами — проще развернуть). */
 vec3 wheel(vec3 col, vec2 q, float wx, float fogC){
-  float d = length(q - vec2(wx, -0.27));
-  float tyre = 1.0 - smoothstep(0.166, 0.176, d);
-  float rim  = 1.0 - smoothstep(0.068, 0.078, d);
+  /* Радиус шины — паспортный: 0,36875 м × CAR_UNITS. Диск — 0,42 радиуса
+     шины (диск 20" при шине 0,7375 м). */
+  float rTyre = CAR_TYRE_R;
+  float rRim  = 0.42 * CAR_TYRE_R;
+  float d = length(q - vec2(wx, CAR_GROUND + CAR_TYRE_R));
+  float tyre = 1.0 - smoothstep(rTyre - 0.009, rTyre, d);
+  float rim  = 1.0 - smoothstep(rRim - 0.006, rRim, d);
   col = mix(col, uNight * 0.38, tyre * fogC);
   col = mix(col, uDeep * 1.10, rim * tyre * fogC * 0.5);
   return col;
@@ -198,8 +199,8 @@ void main(){
     float fogC = exp(-depth * 1.15);
 
     /* контактная тень под машиной — до силуэта, чтобы легла на пол */
-    /* Линия земли = низ колеса: -0.27 - 0.176 ≈ -0.44. Тень и отражение считаются от неё. */
-    float gy = q.y + 0.44;
+    /* Линия земли = низ паспортного колеса (CAR_GROUND). Тень и отражение — от неё же. */
+    float gy = q.y - CAR_GROUND;
     float shd = exp(-(q.x * q.x * 0.75 + gy * gy * 20.0));
     col *= 1.0 - 0.62 * shd;
 
@@ -210,8 +211,8 @@ void main(){
     col = mix(col, mix(bodyCol, col, 0.35 * (1.0 - fogC)) * (0.55 + 0.45 * fogC), inside);
 
     /* колёса */
-    col = wheel(col, q,  0.56, fogC);
-    col = wheel(col, q, -0.56, fogC);
+    col = wheel(col, q, CAR_AXLE_F, fogC);
+    col = wheel(col, q, CAR_AXLE_R, fogC);
 
     /* контровой свет по кромке: сверху латунь, снизу медь. Нормаль не считаем —
        4 лишних вызова carSdf стоили бы ~120 операций на пиксель, а свет и так
@@ -229,11 +230,11 @@ void main(){
     /* отражение в мокром асфальте — самый дорогой кусок B (второй проход carSdf),
        поэтому на low/mid его нет вовсе. */
     if (uQuality > 1.5) {
-      float rg = -q.y - 0.88;                      /* зеркало относительно земли y = -0.44 */
-      if (rg > -0.44) {
+      float rg = 2.0 * CAR_GROUND - q.y;           /* зеркало относительно линии земли */
+      if (rg > CAR_GROUND) {
         vec2 rq = vec2(q.x + (vnoise(vec2(q.y * 3.1, t * 0.7)) - 0.5) * 0.09, rg);
         float rsd = carSdf(rq);
-        float fade = exp(-max(-(q.y + 0.44), 0.0) * 3.4);
+        float fade = exp(-max(CAR_GROUND - q.y, 0.0) * 3.4);
         float rIn = (1.0 - smoothstep(-0.006, 0.012, rsd)) * fade;
         col = mix(col, bodyCol * 0.42, rIn * 0.40);
         col += mix(uCopper, uBrass, 0.5) * (1.0 - smoothstep(0.0, 0.030, abs(rsd))) * rIn * 0.16;
