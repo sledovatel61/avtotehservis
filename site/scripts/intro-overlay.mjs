@@ -101,6 +101,115 @@ function stripAt(im, x) {
   return { top: ys[0], bot: ys[ys.length - 1], mid: (ys[0] + ys[ys.length - 1]) / 2, thick: ys.length };
 }
 
+/* --- силуэт: IoU, зеркало отдельным ориентиром, профиль фона (§3.5 разбора) --- */
+
+/* маска силуэта: тёмный нейтральный пиксель; область — кузов и выше пола */
+function silMask(im, y0, y1) {
+  const m = new Uint8Array(im.w * im.h);
+  for (let y = y0; y < y1; y++) for (let x = 0; x < im.w; x++) if (neutral(im, x, y)) m[y * im.w + x] = 1;
+  return m;
+}
+
+function iou(ma, mb, w, h, y0, y1) {
+  let inter = 0;
+  let uni = 0;
+  for (let y = y0; y < y1; y++) {
+    for (let x = 0; x < w; x++) {
+      const a = ma[y * w + x];
+      const b = mb[y * w + x];
+      if (a || b) uni += 1;
+      if (a && b) inter += 1;
+    }
+  }
+  return uni ? inter / uni : 0;
+}
+
+/* связные компоненты тёмной маски (BFS по 4-соседям) */
+function components(im, y0, y1) {
+  const w = im.w;
+  const m = silMask(im, y0, y1);
+  const lab = new Int32Array(w * im.h).fill(-1);
+  const out = [];
+  const stack = new Int32Array(w * im.h);
+  for (let y = y0; y < y1; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!m[i] || lab[i] >= 0) continue;
+      const id = out.length;
+      const c = { id, n: 0, minX: 1e9, maxX: -1, minY: 1e9, maxY: -1, px: [] };
+      let sp = 0;
+      stack[sp++] = i;
+      lab[i] = id;
+      while (sp) {
+        const j = stack[--sp];
+        const jy = (j / w) | 0;
+        const jx = j - jy * w;
+        c.n += 1;
+        if (jx < c.minX) c.minX = jx;
+        if (jx > c.maxX) c.maxX = jx;
+        if (jy < c.minY) c.minY = jy;
+        if (jy > c.maxY) c.maxY = jy;
+        c.px.push(j);
+        const nb = [j - 1, j + 1, j - w, j + w];
+        for (const k of nb) {
+          if (k < 0 || k >= m.length) continue;
+          const ky = (k / w) | 0;
+          if (ky < y0 || ky >= y1) continue;
+          if (m[k] && lab[k] < 0) { lab[k] = id; stack[sp++] = k; }
+        }
+      }
+      out.push(c);
+    }
+  }
+  return out;
+}
+
+/* зазор между компонентами: минимальное расстояние по пикселям (ограничено 80 px) */
+function gapBetween(src, dst, w) {
+  const R = 80;
+  const seen = new Set();
+  const q = [];
+  for (const j of src.px) { q.push([j % w, (j / w) | 0, 0]); seen.add(j); }
+  let head = 0;
+  const target = new Set(dst.px);
+  while (head < q.length) {
+    const [x, y, d] = q[head++];
+    if (d > R) return null;
+    if (target.has(y * w + x)) return d;
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
+      const k = ny * w + nx;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      q.push([nx, ny, d + 1]);
+    }
+  }
+  return null;
+}
+
+/* зеркало: компонент, целиком лежащий в рамке слева от стойки */
+function mirrorOf(comps, x0, x1, y0, y1, minN = 300) {
+  const inBox = comps.filter((c) => c.minX > x0 && c.maxX < x1 && c.minY > y0 && c.maxY < y1 && c.n >= minN);
+  if (!inBox.length) return null;
+  return inBox.sort((p, q) => q.n - p.n)[0];
+}
+
+const bodyComp = (comps) => comps.filter((c) => c.n > 20000).sort((a, b) => b.n - a.n)[0] ?? null;
+
+/* профиль фона: шесть точек кадра (как в разборе оркестратора) */
+const BG_POINTS = [[10, 600], [10, 900], [1800, 600], [1800, 1020], [200, 200], [200, 360]];
+function bgProfile(im) {
+  return BG_POINTS.map(([x, y]) => {
+    let sum = 0;
+    let n = 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const i = ((y + dy) * im.w + (x + dx)) * im.c;
+      sum += (im.data[i] + im.data[i + 1] + im.data[i + 2]) / 3;
+      n += 1;
+    }
+    return sum / n;
+  });
+}
+
 function measure(im) {
   /* строки выбраны вне полосы ДХО (410…455) и выше линии пола (608) */
   const bodyRows = rows(im, [120, 200, 280, 560, 600]);
@@ -160,6 +269,29 @@ const oursIm = { data: oursRawBuf.data, w: oursRawBuf.info.width, h: oursRawBuf.
 const ref = measure(refIm);
 const ours = measure(oursIm);
 
+/* --- §3.5: IoU силуэта, зеркала отдельным ориентиром, профиль фона --- */
+const cRef = components(refIm, 60, 800);
+const cOurs = components(oursIm, 60, 800);
+const silRef = silMask(refIm, 60, 800);
+const silOurs = silMask(oursIm, 60, 800);
+const iouAll = iou(silRef, silOurs, W, H, 60, 800);
+const iouTop = iou(silRef, silOurs, W, H, 60, 400);
+const mirRef = mirrorOf(cRef, 360, 600, 150, 400);
+const mirOurs = mirrorOf(cOurs, 360, 600, 150, 400);
+const bodyRef = bodyComp(cRef);
+const bodyOurs = bodyComp(cOurs);
+const gapRef = mirRef && bodyRef ? gapBetween(mirRef, bodyRef, W) : null;
+const gapOurs = mirOurs && bodyOurs ? gapBetween(mirOurs, bodyOurs, W) : null;
+/* для отладки: маски силуэта обоих кадров */
+if (process.env.DUMP_MASK) {
+  const { writeFile: wf } = await import('node:fs/promises');
+  const mk = (m) => { const b = Buffer.alloc(W * H * 3); for (let i = 0; i < W * H; i++) if (m[i]) { b[i * 3] = 255; b[i * 3 + 1] = 255; b[i * 3 + 2] = 255; } return b; };
+  await wf(join(OUT, 'mask-ref.png'), await sharp(mk(silRef), { raw: { width: W, height: H, channels: 3 } }).resize(960, 540).png().toBuffer());
+  await wf(join(OUT, 'mask-ours.png'), await sharp(mk(silOurs), { raw: { width: W, height: H, channels: 3 } }).resize(960, 540).png().toBuffer());
+}
+const bgRef = bgProfile(refIm);
+const bgOurs = bgProfile(oursIm);
+
 /* --- таблица --- */
 const fr = (v) => (v / W) * 100;
 const rowsOut = [];
@@ -191,6 +323,12 @@ push('знак: ширина', ref.mark ? ref.mark.maxX - ref.mark.minX : null, 
 
 const TOL = 0.015 * W;
 let bad = 0;
+/* вторая таблица: похожесть (без «эталон/у нас») и яркость фона */
+const extra = [];
+const iouMinAll = Number(process.env.IOU_MIN || 0.86);
+const iouMinTop = Number(process.env.IOU_MIN_TOP || 0.75);
+extra.push({ name: 'IoU силуэта, y 60…800', val: iouAll, min: iouMinAll });
+extra.push({ name: 'IoU силуэта, y 60…400', val: iouTop, min: iouMinTop });
 console.log(`\nФаза uT=${UT} (${Math.round(UT * SCENE_MS)} мс), кадр ${W}×${H}, допуск ±${TOL.toFixed(0)} px (1,5 % кадра)\n`);
 console.log('  ориентир                        эталон      у нас    откл., px   откл., % кадра');
 for (const r of rowsOut) {
@@ -200,6 +338,47 @@ for (const r of rowsOut) {
   if (d != null && pct > 1.5) bad += 1;
   console.log(`  [${mark}] ${r.name.padEnd(30)} ${String(r.a ?? '—').padStart(8)} ${String(r.b ?? '—').padStart(9)}` +
     ` ${d == null ? '—' : (d >= 0 ? '+' : '') + d.toFixed(0).padStart(6)}   ${pct == null ? '—' : pct.toFixed(2)}`);
+}
+console.log('  --- похожесть силуэта (без пары «эталон/у нас») ---');
+for (const e of extra) {
+  const ok = e.val >= e.min;
+  if (!ok) bad += 1;
+  console.log(`  [${ok ? ' ok ' : 'FAIL'}] ${e.name.padEnd(30)} минимум ${e.min.toFixed(2)}     у нас ${e.val.toFixed(3)}`);
+}
+
+/* --- зеркала: bbox и зазор до кузова (блокер §3.1) --- */
+const mirBox = (m) => (m ? { w: m.maxX - m.minX + 1, h: m.maxY - m.minY + 1, x: m.minX, y: m.minY } : null);
+const mrBox = mirBox(mirRef);
+const moBox = mirBox(mirOurs);
+const mirrorRows = [];
+const pushM = (name, a, b) => mirrorRows.push({ name, a, b, d: a == null || b == null ? null : b - a });
+pushM('зеркало: ширина', mrBox?.w ?? null, moBox?.w ?? null);
+pushM('зеркало: высота', mrBox?.h ?? null, moBox?.h ?? null);
+pushM('зеркало: левый край x', mrBox?.x ?? null, moBox?.x ?? null);
+pushM('зеркало: верхний край y', mrBox?.y ?? null, moBox?.y ?? null);
+pushM('зеркало: зазор до кузова', gapRef, gapOurs);
+
+console.log('  --- зеркало (отдельный компонент слева от стойки) ---');
+console.log('  ориентир                        эталон      у нас    откл., px');
+for (const r of mirrorRows) {
+  const d = r.d;
+  const fail = d == null || Math.abs(d) > 6;
+  if (fail) bad += 1;
+  console.log(`  [${fail ? 'FAIL' : ' ok '}] ${r.name.padEnd(30)} ${String(r.a ?? 'слито').padStart(8)} ${String(r.b ?? 'слито').padStart(9)}` +
+    ` ${d == null ? '—' : (d >= 0 ? '+' : '') + d.toFixed(0).padStart(6)}`);
+}
+
+/* --- профиль фона: шесть точек, допуск ±12 % (важно §3.3) --- */
+console.log('  --- фон: яркость 0…255 в шести точках ---');
+console.log('  точка                           эталон      у нас    откл., %');
+for (let i = 0; i < BG_POINTS.length; i++) {
+  const a = bgRef[i];
+  const b = bgOurs[i];
+  const pct = a ? ((b - a) / a) * 100 : 0;
+  const fail = Math.abs(pct) > 12;
+  if (fail) bad += 1;
+  console.log(`  [${fail ? 'FAIL' : ' ok '}] x=${String(BG_POINTS[i][0]).padStart(4)} y=${String(BG_POINTS[i][1]).padStart(4)}` +
+    `                ${a.toFixed(0).padStart(6)} ${b.toFixed(0).padStart(9)} ${(pct >= 0 ? '+' : '') + pct.toFixed(0).padStart(6)}`);
 }
 
 /* --- картинки --- */

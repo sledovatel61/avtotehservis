@@ -73,6 +73,33 @@ float sdBox(vec2 p, vec2 b, float r){
   vec2 d = abs(p) - b + r;
   return length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0) - r;
 }
+/* сторона полуплоскости a→b: > 0 слева от луча */
+float sideD(vec2 p, vec2 a, vec2 b){
+  vec2 e = b - a;
+  return (e.x * (p.y - a.y) - e.y * (p.x - a.x)) / length(e);
+}
+/* выпуклый четырёхугольник со скруглением r: «минус внутри» */
+float sdQuad(vec2 p, vec2 a, vec2 b, vec2 c, vec2 d, float r){
+  vec2 ctr = (a + b + c + d) * 0.25;
+  float s = sign(sideD(ctr, a, b));
+  float q = max(max(sideD(p, a, b), sideD(p, b, c)), max(sideD(p, c, d), sideD(p, d, a))) * s;
+  return -(q + r);   /* «минус внутри», как у sdBox: «+ r» раздувает контур и скругляет углы */
+}
+float sdSeg(vec2 p, vec2 a, vec2 b, float r){
+  vec2 pa = p - a, ba = b - a;
+  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+  return length(pa - ba * h) - r;
+}
+/* гладкий шум для кромки заливки: без циклов и массивов */
+/* без sin: на SwiftShader каждые 8 sin на пиксель стоили дороже всей геометрии */
+float hash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i), b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0)), d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
 
 /* Полуширина кузова от t (доля высоты от крыши вниз): таблица FRONT.md §2.1–2.2,
    пересчитанная в пиксели кадра. Крыша узкая (0,196 W), плечи расходятся к t ≈ 0,65,
@@ -96,40 +123,80 @@ float halfW(float t){
 
 /* Силуэт кузова: > 0 внутри. Крыша и низ — горизонтальные кромки, бока — по halfW,
    углы скруглены smin-ом, зеркала — отдельные «лопасти» выше линии капота (§2.3). */
-float bodySd(vec2 p){
+float bodyOnly(vec2 p){
   float t = clamp((p.y - BY0) / BH, 0.0, 1.0);
   float dSide = halfW(t) - abs(p.x - BX);
   float dEdge = min(p.y - BY0, BOT - p.y);
-  float d = smin(dSide, dEdge, 26.0);
-  /* знак sdBox — «минус внутри», у d — «плюс внутри»: объединение через max(d, −mir) */
-  float mir = sdBox(vec2(abs(p.x - BX) - 466.0, p.y - 232.0), vec2(74.0, 50.0), 46.0);
-  return max(d, -mir);
+  return smin(dSide, dEdge, 26.0);
 }
+
+/* Рейлинги над крышей: эталон x 643…664 (верх y=83, ширина 22) и x 1253…1275
+   (верх y=86, ширина 15). Две чёрточки, но силуэт перестаёт быть «обмылком». */
+float railsSd(vec2 p){
+  float a = sdBox(vec2(p.x - 653.5, p.y - 96.0), vec2(11.0, 13.0), 5.0);
+  float b = sdBox(vec2(p.x - 1264.0, p.y - 97.5), vec2(7.5, 11.5), 4.0);
+  return min(a, b);
+}
+
+/* Зеркало: скошенная лопасть на ножке, отдельно от кузова (эталон: клин
+   mx 450…545, y 220…315; ножка тонкая, зазор до кузова 8–12 px).
+   Всё в координатах (mx, y): mx = |x − BX|, наружу — больше. */
+float mirrorSd(vec2 p){
+  vec2 q = vec2(abs(p.x - BX), p.y);
+  /* лопасть — не треугольник и не «подушка», а скошенный четырёхугольник:
+     сверху широкая и скруглённая, к кузову сходится в точку (эталон x 416…508, y 220…314) */
+  vec2 a = vec2(519.0, 254.0), b = vec2(490.0, 243.0), c = vec2(458.0, 296.0), d = vec2(527.0, 302.0);
+  float blade = sdQuad(q, a, b, c, d, 15.0);
+  /* ножка: от лопасти вниз вдоль стойки, не касаясь кузова — зазор ≈ 22 px */
+  float leg = sdSeg(q, vec2(480.0, 296.0), vec2(477.0, 348.0), 3.5);
+  return smin(blade, leg, 8.0);
+}
+
+/* Силуэт целиком собирается в layers(): там же нужны отдельно корпус и зеркало
+   (у зеркала свечение только по внешней кромке), поэтому лишних вызовов SDF нет. */
 
 /* Слои кузова и света. Те же функции зовёт отражение в полу, поэтому они вынесены. */
 void layers(vec2 p, float t, out float body, out vec3 light){
   body = 0.0;
   light = vec3(0.0);
 
-  float d = bodySd(p);
+  /* ранние выходы по полосам кадра: рейлинги живут только у крыши, зеркало —
+     в узком поясе. Это убирает три SDF из девяти десятых пикселей кадра. */
+  float dRail = p.y < 130.0 ? railsSd(p) : 9999.0;
+  float dBody = max(bodyOnly(p), -dRail);        /* корпус + рейлинги, «плюс внутри» */
+  float dMirRaw = (p.y > 190.0 && p.y < 372.0) ? mirrorSd(p) : 9999.0;
+  float d = max(dBody, -dMirRaw);
   float inside = smoothstep(-1.6, 1.6, d);
 
-  /* кузов наливается почти чёрным снизу вверх (uT 0,46–0,70) */
-  float fillY = mix(840.0, 40.0, smoothstep(0.46, 0.70, t));
-  body = inside * smoothstep(fillY - 26.0, fillY + 26.0, p.y);
+  /* Заливка кузова: фронт не горизонтальный. Идёт от линии ДХО (y ≈ 448) вверх
+     и вниз одновременно — сначала «пояс» вокруг полосы, потом расходится,
+     кромка с шумом ±20 px, чтобы не висел чёрный прямоугольник (uT 0,44–0,72). */
+  float mouth = abs(p.y - 448.0);
+  float wob = (vnoise(vec2(p.x * 0.011, 3.7)) - 0.5) * 30.0
+            + (vnoise(vec2(p.x * 0.041, 9.1)) - 0.5) * 10.0;
+  float spread = smoothstep(0.44, 0.72, t) * 470.0;
+  body = inside * smoothstep(spread + 24.0, spread - 74.0, mouth + wob);
   /* низ уходит в тень пола, а не обрывается линией */
-  body *= smoothstep(BOT + 30.0, BOT - 55.0, p.y);
+  body *= smoothstep(BOT + 40.0, BOT - 10.0, p.y);
 
   /* контровой свет: обводит кромку от макушки крыши вниз по стойкам и плечам */
   float rimProg = smoothstep(0.42, 0.68, t);
   float trace = length(vec2((p.x - BX) * 0.90, (p.y - BY0) * 1.02)) / 700.0;
   float shown = smoothstep(trace, trace + 0.10, rimProg);
-  float ad = abs(d);
+  float ad = abs(dBody);
   light += WARM * exp(-ad * 0.16) * shown * 0.26;
   light += vec3(1.00, 0.56, 0.38) * smoothstep(2.0, 0.0, ad) * shown * 0.80;
 
-  /* тёплый отблеск на капоте над полосой */
-  light += WARM * exp(-abs(p.y - 422.0) / 30.0) * inside * smoothstep(0.40, 0.60, t) * 0.14;
+  /* у зеркала свечение только по внешней кромке: к кузову и внизу — гаснет */
+  float dMir = abs(dMirRaw);
+  float mirGlow = smoothstep(0.02, 0.40, (abs(p.x - BX) - 452.0) / 94.0)
+                * smoothstep(332.0, 292.0, p.y);
+  light += WARM * exp(-dMir * 0.18) * shown * 0.20 * mirGlow;
+  light += vec3(1.00, 0.60, 0.42) * smoothstep(1.6, 0.0, dMir) * shown * 0.85 * mirGlow;
+
+  /* тёплый отблеск на капоте: у эталона он выше полосы (y ≈ 338) и узкий */
+  light += WARM * exp(-abs(p.y - 340.0) / 7.0) * inside * smoothstep(0.40, 0.60, t) * 0.75
+         * (1.0 - smoothstep(380.0, 470.0, abs(p.x - BX)));
 
   /* полоса ДХО: две половины, разрыв по центру, подъём ≈3,5° к краю (§3) */
   float reveal = smoothstep(0.12, 0.44, t);
@@ -161,15 +228,24 @@ void layers(vec2 p, float t, out float body, out vec3 light){
   light += vec3(0.88, 0.96, 1.00) * a * smoothstep(0.42, 0.50, t) * 1.55;
   light += vec3(0.55, 0.75, 1.00) * exp(-length(p - ec) * 0.10)
          * exp(-pow((t - 0.44) / 0.04, 2.0)) * 1.1;
+  /* ровный ореол вокруг знака: у эталона он шире (75 px против 61) */
+  light += vec3(0.62, 0.80, 1.00)
+         * exp(-pow(length(vec2((p.x - ec.x) / 1.55, p.y - ec.y)) / 26.0, 2.0))
+         * smoothstep(0.42, 0.50, t) * 0.95;
 }
 
 /* Фон: тёплый градиент с виньеткой (§5), пол чуть светлее, к концу — ночь #070B12 */
 vec3 bgAt(vec2 p, float t){
-  vec2 q = vec2((p.x - BX) / 1400.0, (p.y - 120.0) / 700.0);
-  float r = clamp(length(q), 0.0, 1.35);
-  vec3 c = mix(vec3(0.455, 0.059, 0.012), vec3(0.141, 0.020, 0.012), smoothstep(0.0, 1.15, r));
-  c *= mix(1.0, 0.70, smoothstep(-200.0, 700.0, p.x - BX));      /* правый край темнее */
-  c *= 1.0 + 0.22 * smoothstep(FLOOR - 60.0, FLOOR + 140.0, p.y);
+  vec2 q = vec2((p.x - BX) / 1520.0, (p.y - 120.0) / 780.0);
+  float r = clamp(length(q), 0.0, 1.45);
+  vec3 c = mix(vec3(0.520, 0.080, 0.020), vec3(0.215, 0.034, 0.017), smoothstep(0.0, 1.10, r));
+  /* линия горизонта пола: у эталона на y ≈ 722 чуть более светлая полоса */
+  c += vec3(0.085, 0.013, 0.006) * exp(-abs(p.y - 722.0) / 22.0);
+  /* подсвеченное пятно на полу под машиной */
+  float pool = exp(-length(vec2((p.x - BX) / 700.0, (p.y - 790.0) / 165.0)) * 2.0);
+  c += vec3(0.230, 0.040, 0.015) * pool;
+  /* пол к низу кадра гаснет (у эталона углы внизу темнее) */
+  c *= mix(1.0, 0.55, smoothstep(740.0, 1100.0, p.y));
   c *= smoothstep(0.0, 0.18, t);
   return c;
 }
@@ -214,7 +290,7 @@ void main(){
       wsum += w;
     }
     float depth = clamp((p.y - FLOOR) / 280.0, 0.0, 1.0);
-    col += acc / wsum * 0.40 * reflIn * (1.0 - depth * 0.8);
+    col += acc / wsum * 0.36 * reflIn * pow(1.0 - depth, 1.7);   /* к низу кадра гаснет */
   }
 
   col += light;
