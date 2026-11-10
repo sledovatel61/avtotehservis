@@ -16,7 +16,7 @@
     "seed:demo": "node scripts/seed-demo.ts",
     "seed:demo:clear": "node scripts/seed-demo.ts clear",
     "admin:create": "node scripts/create-admin.ts",
-    "test": "npm run build && npm run build:pages && node --test tests/unit.test.ts tests/integration.test.ts tests/e2e-form.test.ts tests/admin.test.ts tests/seed.test.ts tests/content.test.ts && node scripts/check-cascade.mjs && node scripts/check-safe-zone.mjs && node scripts/check-hero-layout.mjs && node scripts/measure-contrast.mjs && node scripts/check-about-panel.mjs && node scripts/check-dirs.mjs && node scripts/check-about-bg.mjs && node scripts/check-steps-bg.mjs && node scripts/check-svc-bg.mjs && node scripts/check-mobile-grid.mjs && node scripts/check-mobile-grid.mjs --self-test && node scripts/check-about-page.mjs && node scripts/check-about-page.mjs --self-test && node scripts/check-about-images.mjs && node scripts/check-about-images.mjs --self-test && node scripts/check-certs.mjs && node scripts/check-certs.mjs --self-test && node scripts/check-price-tables.mjs && node scripts/check-price-tables.mjs --self-test && node scripts/check-voyah-content.mjs && node scripts/check-voyah-content.mjs --self-test && node scripts/check-voyah-layout.mjs && node scripts/check-voyah-layout.mjs --self-test",
+    "test": "npm run build && npm run build:pages && node --test tests/unit.test.ts tests/integration.test.ts tests/e2e-form.test.ts tests/admin.test.ts tests/seed.test.ts tests/content.test.ts && node scripts/check-cascade.mjs && node scripts/check-safe-zone.mjs && node scripts/check-hero-layout.mjs && node scripts/measure-contrast.mjs && node scripts/check-about-panel.mjs && node scripts/check-dirs.mjs && node scripts/check-about-bg.mjs && node scripts/check-steps-bg.mjs && node scripts/check-svc-bg.mjs && node scripts/check-mobile-grid.mjs && node scripts/check-mobile-grid.mjs --self-test && node scripts/check-about-page.mjs && node scripts/check-about-page.mjs --self-test && node scripts/check-about-images.mjs && node scripts/check-about-images.mjs --self-test && node scripts/check-certs.mjs && node scripts/check-certs.mjs --self-test && node scripts/check-price-tables.mjs && node scripts/check-price-tables.mjs --self-test && node scripts/check-voyah-content.mjs && node scripts/check-voyah-content.mjs --self-test && node scripts/check-voyah-vector.mjs && node scripts/check-voyah-vector.mjs --self-test && node scripts/check-voyah-layout.mjs && node scripts/check-voyah-layout.mjs --self-test",
     "typecheck": "tsc --noEmit",
     "audit": "npm audit --omit=dev",
     "smoke": "node scripts/smoke.mjs",
@@ -32,6 +32,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@sparticuz/chromium": "^131.0.1",
     "@types/better-sqlite3": "^9.6.0",
     "@types/jsdom": "^30.0.0",
