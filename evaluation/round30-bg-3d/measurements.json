@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T07:42:53.754Z",
+  "generatedAt": "2026-11-10T19:43:52.774Z",
   "host": {
     "node": "v22.22.3",
     "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -10,33 +10,39 @@
   "measured": {
     "weights": {
       "shaderSource": {
-        "raw": 11797,
-        "gzip": 4654,
-        "brotli": 4002,
+        "raw": 15398,
+        "gzip": 5838,
+        "brotli": 5022,
         "limitGzipBytes": 14336,
         "fitsLimit": true,
-        "headroomPct": 67.5
+        "headroomPct": 59.3
       },
       "clientFiles": {
-        "Bg3dLayer.astro_astro_type_script_index_0_lang.-TSjokNZ.js": {
+        "Bg3dLayer.BuZw-ZRo.css": {
+          "raw": 1342,
+          "gzip": 610,
+          "brotli": 478,
+          "hasShader": false
+        },
+        "Bg3dLayer.astro_astro_type_script_index_0_lang.sNYIt0pz.js": {
           "raw": 166,
           "gzip": 142,
-          "brotli": 106,
+          "brotli": 114,
           "hasShader": false
         },
-        "bg3d.B8FCeAix.css": {
-          "raw": 1268,
-          "gzip": 585,
-          "brotli": 457,
+        "bg3d.BuZw-ZRo.css": {
+          "raw": 1342,
+          "gzip": 610,
+          "brotli": 478,
           "hasShader": false
         },
-        "bg3d.BHfdajLE.js": {
-          "raw": 30947,
-          "gzip": 11753,
-          "brotli": 10290,
+        "bg3d.Js0iOXvw.js": {
+          "raw": 35631,
+          "gzip": 13735,
+          "brotli": 12064,
           "hasShader": true
         },
-        "bg3d.astro_astro_type_script_index_0_lang.DpqJEmik.js": {
+        "bg3d.astro_astro_type_script_index_0_lang.uRyX-qWk.js": {
           "raw": 7617,
           "gzip": 3221,
           "brotli": 2733,
@@ -51,30 +57,30 @@
       },
       "marginalForServicePage": {
         "js": {
-          "file": "bg3d.BHfdajLE.js",
-          "raw": 30947,
-          "gzip": 11753,
-          "brotli": 10290,
+          "file": "bg3d.Js0iOXvw.js",
+          "raw": 35631,
+          "gzip": 13735,
+          "brotli": 12064,
           "hasShader": true
         },
         "entryJs": {
-          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.-TSjokNZ.js",
+          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.sNYIt0pz.js",
           "raw": 166,
           "gzip": 142,
-          "brotli": 106,
+          "brotli": 114,
           "hasShader": false
         },
         "css": {
-          "file": "bg3d.B8FCeAix.css",
-          "raw": 1268,
-          "gzip": 585,
-          "brotli": 457,
+          "file": "bg3d.BuZw-ZRo.css",
+          "raw": 1342,
+          "gzip": 610,
+          "brotli": 478,
           "hasShader": false
         },
-        "gzipTotal": 12480,
+        "gzipTotal": 14487,
         "note": "лаборатория (bg3d.astro) собирается только при BG3D_LAB=1 и на прод-страницы не попадает",
         "labJs": {
-          "file": "bg3d.astro_astro_type_script_index_0_lang.DpqJEmik.js",
+          "file": "bg3d.astro_astro_type_script_index_0_lang.uRyX-qWk.js",
           "raw": 7617,
           "gzip": 3221,
           "brotli": 2733,
@@ -83,7 +89,7 @@
       }
     },
     "shader": {
-      "generatedAt": "2026-11-10T07:42:54.361Z",
+      "generatedAt": "2026-11-10T19:43:53.500Z",
       "toolchain": {
         "glslang": "16.6.0 (Khronos, WASM)",
         "validator": "@moreplease/glslang 16.6.0-1",
@@ -108,16 +114,16 @@
         }
       },
       "fragment": {
-        "total": 1375,
-        "executable": 831,
-        "arithmetic": 349,
-        "transcendental": 21,
-        "memory": 447,
-        "composite": 35,
+        "total": 1497,
+        "executable": 919,
+        "arithmetic": 428,
+        "transcendental": 19,
+        "memory": 455,
+        "composite": 36,
         "texture": 0,
-        "branch": 6,
-        "controlFlow": 6,
-        "spirvBytes": 23344,
+        "branch": 17,
+        "controlFlow": 17,
+        "spirvBytes": 25188,
         "unknownOpcodes": [],
         "byOpcode": {
           "OpCapability": 1,
@@ -126,65 +132,93 @@
           "OpEntryPoint": 1,
           "OpExecutionMode": 1,
           "OpSource": 1,
-          "OpName": 154,
+          "OpName": 133,
           "OpDecorate": 29,
           "OpTypeVoid": 1,
-          "OpTypeFunction": 7,
+          "OpTypeFunction": 5,
           "OpTypeFloat": 1,
-          "OpTypeVector": 3,
           "OpTypePointer": 10,
-          "OpConstant": 106,
-          "OpConstantComposite": 20,
-          "OpTypeInt": 1,
-          "OpVariable": 126,
+          "OpTypeVector": 3,
+          "OpConstant": 151,
           "OpTypeBool": 1,
+          "OpTypeInt": 1,
+          "OpConstantComposite": 9,
+          "OpVariable": 112,
           "OpFunction": 9,
-          "OpLabel": 21,
-          "OpLoad": 254,
-          "OpStore": 145,
-          "OpAccessChain": 48,
-          "OpExtInst": 72,
-          "OpFDiv": 6,
-          "OpCompositeConstruct": 31,
-          "OpFSub": 51,
-          "OpVectorTimesScalar": 44,
-          "OpFMul": 78,
-          "OpFAdd": 45,
-          "OpFunctionCall": 24,
-          "OpFNegate": 15,
-          "OpFOrdLessThan": 1,
-          "OpSelectionMerge": 6,
-          "OpBranchConditional": 6,
-          "OpFOrdGreaterThan": 5,
+          "OpLabel": 43,
+          "OpLoad": 279,
+          "OpStore": 125,
+          "OpAccessChain": 51,
+          "OpExtInst": 66,
+          "OpFDiv": 17,
+          "OpCompositeConstruct": 32,
+          "OpFSub": 56,
+          "OpVectorTimesScalar": 43,
+          "OpFMul": 109,
+          "OpFAdd": 69,
+          "OpFunctionCall": 20,
+          "OpFNegate": 12,
+          "OpFOrdLessThan": 12,
+          "OpSelectionMerge": 17,
+          "OpBranchConditional": 17,
+          "OpFOrdGreaterThan": 6,
           "OpBranch": 6,
           "OpVectorShuffle": 1,
           "OpCompositeExtract": 3,
           "OpReturn": 1,
           "OpFunctionEnd": 9,
-          "OpFunctionParameter": 19,
-          "OpReturnValue": 8,
-          "OpDot": 2
+          "OpFunctionParameter": 12,
+          "OpReturnValue": 19,
+          "OpLogicalOr": 1
         },
         "byExt": {
-          "FMax": 10,
+          "FMax": 7,
           "FClamp": 4,
-          "FMix": 18,
+          "FMix": 17,
           "Pow": 1,
           "SmoothStep": 10,
-          "Length": 10,
+          "Length": 8,
           "Exp": 10,
           "FAbs": 4,
+          "FMin": 1,
           "Fract": 3,
-          "Floor": 1,
-          "FMin": 1
+          "Floor": 1
         },
         "byFunc": {
           "main": {
-            "executable": 563,
-            "arithmetic": 251,
+            "executable": 561,
+            "arithmetic": 249,
             "transcendental": 17,
             "memory": 282,
             "composite": 30
+          },
+          "pTop(f1;": {
+            "executable": 163,
+            "arithmetic": 101,
+            "transcendental": 0,
+            "memory": 62,
+            "composite": 0
+          },
+          "pBottom(f1;": {
+            "executable": 27,
+            "arithmetic": 17,
+            "transcendental": 0,
+            "memory": 10,
+            "composite": 0
+          },
+          "pArch(vf2;f1;": {
+            "executable": 13,
+            "arithmetic": 5,
+            "transcendental": 1,
+            "memory": 7,
+            "composite": 1
+          },
+          "carProfile(vf2;": {
+            "executable": 34,
+            "arithmetic": 12,
+            "transcendental": 0,
+            "memory": 22,
+            "composite": 0
           },
           "hash21(vf2;": {
             "executable": 19,
@@ -200,46 +234,18 @@
             "memory": 30,
             "composite": 1
           },
-          "sdRoundBox(vf2;vf2;f1;": {
-            "executable": 20,
-            "arithmetic": 9,
-            "transcendental": 1,
-            "memory": 10,
+          "carSdf(vf2;": {
+            "executable": 11,
+            "arithmetic": 5,
+            "transcendental": 0,
+            "memory": 5,
             "composite": 1
           },
-          "sdCircle(vf2;f1;": {
-            "executable": 4,
-            "arithmetic": 2,
-            "transcendental": 1,
-            "memory": 2,
-            "composite": 0
-          },
-          "sdSeg(vf2;vf2;vf2;f1;": {
-            "executable": 25,
-            "arithmetic": 10,
-            "transcendental": 1,
-            "memory": 15,
-            "composite": 0
-          },
-          "smin(f1;f1;f1;": {
-            "executable": 20,
-            "arithmetic": 10,
-            "transcendental": 0,
-            "memory": 10,
-            "composite": 0
-          },
-          "carSdf(vf2;": {
-            "executable": 97,
-            "arithmetic": 30,
-            "transcendental": 0,
-            "memory": 67,
-            "composite": 0
-          },
           "wheel(vf3;vf2;f1;f1;": {
-            "executable": 36,
-            "arithmetic": 14,
+            "executable": 44,
+            "arithmetic": 16,
             "transcendental": 1,
-            "memory": 19,
+            "memory": 25,
             "composite": 3
           }
         }
@@ -299,13 +305,13 @@
         }
       },
       "weights": {
-        "rawBytes": 11797,
-        "gzipBytes": 4654,
-        "brotliBytes": 4002,
-        "fragRawBytes": 11656,
-        "fragGzipBytes": 4598,
-        "spirvBytes": 23344,
-        "lines": 229,
+        "rawBytes": 15398,
+        "gzipBytes": 5838,
+        "brotliBytes": 5022,
+        "fragRawBytes": 15257,
+        "fragGzipBytes": 5776,
+        "spirvBytes": 25188,
+        "lines": 300,
         "limitGzipBytes": 14336
       },
       "ok": true
@@ -319,50 +325,50 @@
             "instPerPxMax": 265,
             "scalarPerPx": 373.9,
             "scalarPerPxMax": 450,
-            "cpuNsPerPx": 624,
-            "cpuNsPerPxRun2": 791
+            "cpuNsPerPx": 630,
+            "cpuNsPerPxRun2": 782
           },
           "1": {
             "instPerPx": 249.9,
             "instPerPxMax": 319,
             "scalarPerPx": 415,
             "scalarPerPxMax": 527,
-            "cpuNsPerPx": 449,
-            "cpuNsPerPxRun2": 455
+            "cpuNsPerPx": 454,
+            "cpuNsPerPxRun2": 466
           },
           "2": {
             "instPerPx": 278.7,
             "instPerPxMax": 373,
             "scalarPerPx": 460.3,
             "scalarPerPxMax": 612,
-            "cpuNsPerPx": 416,
-            "cpuNsPerPxRun2": 416
+            "cpuNsPerPx": 482,
+            "cpuNsPerPxRun2": 496
           }
         },
         "silhouette": {
           "0": {
-            "instPerPx": 436.1,
-            "instPerPxMax": 480,
-            "scalarPerPx": 769.9,
-            "scalarPerPxMax": 846,
-            "cpuNsPerPx": 744,
-            "cpuNsPerPxRun2": 686
+            "instPerPx": 494.1,
+            "instPerPxMax": 538,
+            "scalarPerPx": 779.9,
+            "scalarPerPxMax": 856,
+            "cpuNsPerPx": 934,
+            "cpuNsPerPxRun2": 864
           },
           "1": {
-            "instPerPx": 464.9,
-            "instPerPxMax": 534,
-            "scalarPerPx": 811,
-            "scalarPerPxMax": 923,
-            "cpuNsPerPx": 733,
-            "cpuNsPerPxRun2": 731
+            "instPerPx": 522.9,
+            "instPerPxMax": 592,
+            "scalarPerPx": 821,
+            "scalarPerPxMax": 933,
+            "cpuNsPerPx": 893,
+            "cpuNsPerPxRun2": 871
           },
           "2": {
-            "instPerPx": 549.5,
-            "instPerPxMax": 762,
-            "scalarPerPx": 940.9,
-            "scalarPerPxMax": 1273,
-            "cpuNsPerPx": 1034,
-            "cpuNsPerPxRun2": 1079
+            "instPerPx": 625.9,
+            "instPerPxMax": 878,
+            "scalarPerPx": 954.1,
+            "scalarPerPxMax": 1293,
+            "cpuNsPerPx": 1023,
+            "cpuNsPerPxRun2": 1005
           }
         }
       }
@@ -382,37 +388,37 @@
           "refInstTotal": 7,
           "refInstOwnBody": 7,
           "callsSubtracted": [],
-          "spirvFunc": "sdRoundBox(vf2;vf2;f1;",
-          "spirvArith": 9,
-          "spirvComposite": 1,
-          "delta": -2
+          "spirvFunc": null,
+          "spirvArith": null,
+          "spirvComposite": null,
+          "delta": null
         },
         "sdCircle": {
           "refInstTotal": 1,
           "refInstOwnBody": 1,
           "callsSubtracted": [],
-          "spirvFunc": "sdCircle(vf2;f1;",
-          "spirvArith": 2,
-          "spirvComposite": 0,
-          "delta": -1
+          "spirvFunc": null,
+          "spirvArith": null,
+          "spirvComposite": null,
+          "delta": null
         },
         "sdSeg": {
           "refInstTotal": 8,
           "refInstOwnBody": 8,
           "callsSubtracted": [],
-          "spirvFunc": "sdSeg(vf2;vf2;vf2;f1;",
-          "spirvArith": 10,
-          "spirvComposite": 0,
-          "delta": -2
+          "spirvFunc": null,
+          "spirvArith": null,
+          "spirvComposite": null,
+          "delta": null
         },
         "smin": {
           "refInstTotal": 10,
           "refInstOwnBody": 10,
           "callsSubtracted": [],
-          "spirvFunc": "smin(f1;f1;f1;",
-          "spirvArith": 10,
-          "spirvComposite": 0,
-          "delta": 0
+          "spirvFunc": null,
+          "spirvArith": null,
+          "spirvComposite": null,
+          "delta": null
         },
         "vnoise": {
           "refInstTotal": 44,
@@ -426,21 +432,16 @@
           "delta": 0
         },
         "carSdf": {
-          "refInstTotal": 91,
-          "refInstOwnBody": 29,
-          "callsSubtracted": [
-            "2×sdRoundBox",
-            "2×sdSeg",
-            "3×smin",
-            "2×sdCircle"
-          ],
+          "refInstTotal": 149,
+          "refInstOwnBody": 149,
+          "callsSubtracted": [],
           "spirvFunc": "carSdf(vf2;",
-          "spirvArith": 30,
-          "spirvComposite": 0,
-          "delta": -1
+          "spirvArith": 5,
+          "spirvComposite": 1,
+          "delta": 144
         }
       },
-      "worstAbsDelta": 2,
+      "worstAbsDelta": 144,
       "note": "сравнивается тело функции без вложенных вызовов: SPIR-V byFunc считает OpFunctionCall в теле вызывающей, а порт накапливает счётчик и внутри вызванных. Наибольшее расхождение — 1 инструкция, т.е. порт и независимый компилятор Khronos считают одну и ту же математику; именно поэтому оп/px из порта можно переносить в модель"
     },
     "lifecycle": {
@@ -451,13 +452,13 @@
         "height": 300
       },
       "tierObserved": "high",
-      "heapMbBefore": 41.6,
-      "heapMbAfter": 42.78,
+      "heapMbBefore": 41.67,
+      "heapMbAfter": 42.85,
       "heapDeltaMb": 1.18,
       "heapTrend": {
-        "heapMbCycle1": 41.8,
-        "heapMbCycle10": 42.52,
-        "heapMbCycle20": 42.78,
+        "heapMbCycle1": 41.87,
+        "heapMbCycle10": 42.59,
+        "heapMbCycle20": 42.85,
         "deltaCycles1to10Kb": 737.3,
         "deltaCycles10to20Kb": 266.2,
         "leakPerCycleKbLast10": 26.6,
@@ -465,22 +466,22 @@
       },
       "controlRunWithoutBg3d": {
         "note": "20 циклов создания/удаления того же хоста без монтажа фона — базовая линия jsdom/V8",
-        "heapMbStart": 42.78,
-        "heapMbEnd": 42.84,
+        "heapMbStart": 42.85,
+        "heapMbEnd": 42.91,
         "heapDeltaMb": 0.06,
         "perCycleKb": 2.9,
         "rows": [
           {
             "cycle": 1,
-            "heapMb": 42.79
+            "heapMb": 42.86
           },
           {
             "cycle": 10,
-            "heapMb": 42.81
+            "heapMb": 42.88
           },
           {
             "cycle": 20,
-            "heapMb": 42.84
+            "heapMb": 42.91
           }
         ]
       },
@@ -532,7 +533,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 41.8,
+          "heapMb": 41.87,
           "registry": 0,
           "listeners": 0,
           "glContexts": 2
@@ -543,7 +544,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 41.97,
+          "heapMb": 42.04,
           "registry": 0,
           "listeners": 0,
           "glContexts": 4
@@ -554,7 +555,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.04,
+          "heapMb": 42.11,
           "registry": 0,
           "listeners": 0,
           "glContexts": 6
@@ -565,7 +566,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.16,
+          "heapMb": 42.23,
           "registry": 0,
           "listeners": 0,
           "glContexts": 8
@@ -576,7 +577,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.19,
+          "heapMb": 42.27,
           "registry": 0,
           "listeners": 0,
           "glContexts": 10
@@ -587,7 +588,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.23,
+          "heapMb": 42.3,
           "registry": 0,
           "listeners": 0,
           "glContexts": 12
@@ -598,7 +599,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.27,
+          "heapMb": 42.34,
           "registry": 0,
           "listeners": 0,
           "glContexts": 14
@@ -609,7 +610,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.43,
+          "heapMb": 42.51,
           "registry": 0,
           "listeners": 0,
           "glContexts": 16
@@ -620,7 +621,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.48,
+          "heapMb": 42.56,
           "registry": 0,
           "listeners": 0,
           "glContexts": 18
@@ -631,7 +632,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.52,
+          "heapMb": 42.59,
           "registry": 0,
           "listeners": 0,
           "glContexts": 20
@@ -642,7 +643,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.55,
+          "heapMb": 42.62,
           "registry": 0,
           "listeners": 0,
           "glContexts": 22
@@ -653,7 +654,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.57,
+          "heapMb": 42.64,
           "registry": 0,
           "listeners": 0,
           "glContexts": 24
@@ -664,7 +665,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.6,
+          "heapMb": 42.67,
           "registry": 0,
           "listeners": 0,
           "glContexts": 26
@@ -675,7 +676,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.62,
+          "heapMb": 42.69,
           "registry": 0,
           "listeners": 0,
           "glContexts": 28
@@ -686,7 +687,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.65,
+          "heapMb": 42.72,
           "registry": 0,
           "listeners": 0,
           "glContexts": 30
@@ -697,7 +698,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.67,
+          "heapMb": 42.74,
           "registry": 0,
           "listeners": 0,
           "glContexts": 32
@@ -708,7 +709,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.7,
+          "heapMb": 42.77,
           "registry": 0,
           "listeners": 0,
           "glContexts": 34
@@ -719,7 +720,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.73,
+          "heapMb": 42.8,
           "registry": 0,
           "listeners": 0,
           "glContexts": 36
@@ -730,7 +731,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.76,
+          "heapMb": 42.83,
           "registry": 0,
           "listeners": 0,
           "glContexts": 38
@@ -741,7 +742,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.78,
+          "heapMb": 42.85,
           "registry": 0,
           "listeners": 0,
           "glContexts": 40
@@ -974,18 +975,18 @@
           ],
           "dprUsed": 1,
           "drawnPx": 576000,
-          "opsPerPx": 941,
-          "requiredGopsPerS": 32.52,
+          "opsPerPx": 954,
+          "requiredGopsPerS": 32.97,
           "availableGopsPerS": 712.3,
           "gpuUtilPct": 4.6,
           "fpsPredicted": 60,
-          "fpsHeadroomX": 21.9,
+          "fpsHeadroomX": 21.6,
           "gateReasons": [
             "deviceMemory=16 ГБ",
             "hardwareConcurrency=8",
             "WebGL2",
             "итог: high, качество 2, 60 к/с, масштаб 100%",
-            "бюджет: 941 оп/px × 60 к/с, потолок 60 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+            "бюджет: 954 оп/px × 60 к/с, потолок 60 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
           ]
         },
         {
@@ -1007,18 +1008,18 @@
           ],
           "dprUsed": 1,
           "drawnPx": 331938,
-          "opsPerPx": 941,
-          "requiredGopsPerS": 9.37,
+          "opsPerPx": 954,
+          "requiredGopsPerS": 9.5,
           "availableGopsPerS": 86.4,
-          "gpuUtilPct": 10.8,
+          "gpuUtilPct": 11,
           "fpsPredicted": 30,
-          "fpsHeadroomX": 9.22,
+          "fpsHeadroomX": 9.09,
           "gateReasons": [
             "deviceMemory=8 ГБ",
             "hardwareConcurrency=4",
             "WebGL2",
             "итог: mid, качество 2, 30 к/с, масштаб 90%",
-            "бюджет: 941 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+            "бюджет: 954 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
           ]
         },
         {
@@ -1040,19 +1041,19 @@
           ],
           "dprUsed": 1.5,
           "drawnPx": 233774,
-          "opsPerPx": 811,
-          "requiredGopsPerS": 5.69,
+          "opsPerPx": 821,
+          "requiredGopsPerS": 5.76,
           "availableGopsPerS": 42.5,
-          "gpuUtilPct": 13.4,
+          "gpuUtilPct": 13.5,
           "fpsPredicted": 30,
-          "fpsHeadroomX": 7.48,
+          "fpsHeadroomX": 7.39,
           "gateReasons": [
             "deviceMemory=4 ГБ",
             "hardwareConcurrency=8",
             "тач-устройство",
             "WebGL2",
             "итог: mid, качество 1, 30 к/с, масштаб 75%",
-            "бюджет: 811 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+            "бюджет: 821 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
           ]
         },
         {
@@ -1105,11 +1106,11 @@
               300
             ],
             "drawnPx": 576000,
-            "opsPerPx": 941,
-            "requiredGopsPerS": 32.52,
+            "opsPerPx": 954,
+            "requiredGopsPerS": 32.97,
             "availableGopsPerS": 712.3,
             "gpuUtilPct": 4.6,
-            "fpsPredicted": 1314.1,
+            "fpsPredicted": 1296.2,
             "saturated": false,
             "extraW": null,
             "pctPerHourOfVisibility": null,
@@ -1128,14 +1129,14 @@
               300
             ],
             "drawnPx": 409800,
-            "opsPerPx": 941,
-            "requiredGopsPerS": 23.14,
+            "opsPerPx": 954,
+            "requiredGopsPerS": 23.46,
             "availableGopsPerS": 86.4,
-            "gpuUtilPct": 26.8,
-            "fpsPredicted": 224.1,
+            "gpuUtilPct": 27.1,
+            "fpsPredicted": 221,
             "saturated": false,
-            "extraW": 1.61,
-            "pctPerHourOfVisibility": 2.87,
+            "extraW": 1.63,
+            "pctPerHourOfVisibility": 2.91,
             "batteryWh": 56
           },
           {
@@ -1151,11 +1152,11 @@
               470
             ],
             "drawnPx": 1396869,
-            "opsPerPx": 941,
-            "requiredGopsPerS": 78.87,
+            "opsPerPx": 954,
+            "requiredGopsPerS": 79.96,
             "availableGopsPerS": 42.5,
-            "gpuUtilPct": 185.5,
-            "fpsPredicted": 32.4,
+            "gpuUtilPct": 188,
+            "fpsPredicted": 31.9,
             "saturated": true,
             "extraW": 1.6,
             "pctPerHourOfVisibility": 8.31,
@@ -1174,11 +1175,11 @@
               450
             ],
             "drawnPx": 648000,
-            "opsPerPx": 941,
-            "requiredGopsPerS": 36.59,
+            "opsPerPx": 954,
+            "requiredGopsPerS": 37.09,
             "availableGopsPerS": 18.3,
-            "gpuUtilPct": 199.9,
-            "fpsPredicted": 30,
+            "gpuUtilPct": 202.7,
+            "fpsPredicted": 29.6,
             "saturated": true,
             "extraW": 1,
             "pctPerHourOfVisibility": 6.49,
@@ -1188,8 +1189,8 @@
       },
       "softwareRasterizer": {
         "note": "SwiftShader/llvmpipe-класс: цена измерена CPU-портом на этой машине, не смоделирована",
-        "cpuNsPerPx": 1034,
-        "coresNeededFor1280x720x30": 28.6,
+        "cpuNsPerPx": 1023,
+        "coresNeededFor1280x720x30": 28.3,
         "consequence": "поэтому gate.ts гасит фон на программных растеризаторах (BLOCKED_RENDERER)"
       }
     },
@@ -1230,12 +1231,12 @@
           "gpu": "Intel UHD Graphics 620",
           "variant": "silhouette",
           "variantLabel": "B «силуэт в глубине»",
-          "gpuUtilPct": 10.8,
+          "gpuUtilPct": 11,
           "loadDeltaW": 6,
-          "extraW": 0.65,
+          "extraW": 0.66,
           "batteryWh": 56,
-          "pctPerHourOfVisibility": 1.16,
-          "pctPerVisit25s": 0.008,
+          "pctPerHourOfVisibility": 1.18,
+          "pctPerVisit25s": 0.0082,
           "cap": 30
         },
         {
@@ -1243,22 +1244,22 @@
           "gpu": "Qualcomm Adreno 610",
           "variant": "silhouette",
           "variantLabel": "B «силуэт в глубине»",
-          "gpuUtilPct": 13.4,
+          "gpuUtilPct": 13.5,
           "loadDeltaW": 1.6,
-          "extraW": 0.21,
+          "extraW": 0.22,
           "batteryWh": 19.25,
-          "pctPerHourOfVisibility": 1.11,
-          "pctPerVisit25s": 0.0077,
+          "pctPerHourOfVisibility": 1.12,
+          "pctPerVisit25s": 0.0078,
           "cap": 30
         }
       ]
     }
   },
   "summary": {
-    "shaderGzipBytes": 4654,
+    "shaderGzipBytes": 5838,
     "shaderLimitGzipBytes": 14336,
     "textures": 0,
-    "marginalGzipBytes": 12480,
+    "marginalGzipBytes": 14487,
     "opsPerPx": {
       "depth": [
         374,
@@ -1266,9 +1267,9 @@
         460
       ],
       "silhouette": [
-        770,
-        811,
-        941
+        780,
+        821,
+        954
       ]
     },
     "opsBudget": {

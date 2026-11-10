@@ -256,6 +256,10 @@ function start(cfg: Cfg = readCfg()): void {
   fresh.setAttribute('aria-hidden', 'true');
   if (old) old.replaceWith(fresh); else bgHost.prepend(fresh);
   bgHost.dataset.bg3d = cfg.variant;
+  /* ?demo=1 — показать сцену на машине без GPU (в песочнице и на витрине Chromium
+     рисует через SwiftShader, и гейт честно гасит фон). Обычный запуск стенда
+     ведёт себя как боевая страница: программный растеризатор = фон выключен. */
+  if (q.get('demo') === '1') bgHost.dataset.bg3dDemo = '1'; else delete bgHost.dataset.bg3dDemo;
   bgHost.removeAttribute('data-bg3d-state');
   bgHost.removeAttribute('data-bg3d-tier');
   delete bgHost.dataset.bg3dAutooff;
@@ -269,6 +273,9 @@ function start(cfg: Cfg = readCfg()): void {
     host: bgHost,
     variant: cfg.variant,
     featureEnabled: true,
+    /* стенд не должен гаснуть от watchdog: его задача — показать и обмерить сцену,
+       в том числе на программном растеризаторе, где fps заведомо низкий */
+    noWatchdog: true,
     force,
     onStats: (s) => paint(s, s.running ? 'рисует' : 'пауза'),
     onAutoOff: (reason) => { paint(current?.stats() ?? null, 'автоотключён'); show(`Watchdog погасил фон: ${reason}`); },
@@ -443,8 +450,10 @@ if (auto) {
     document.title = 'BENCH DONE';
   });
 } else {
+  /* `variant` из frontmatter живёт только на сервере; в клиентском скрипте его нет —
+     читаем ещё раз из адресной строки (было: ReferenceError variant is not defined) */
   start({
-    variant,
+    variant: q.get('variant') === 'depth' ? 'depth' : 'silhouette',
     tier: q.get('tier') ?? 'auto',
     scale: q.has('scale') ? Number(q.get('scale')) : 1,
     stress: q.has('stress') ? Number(q.get('stress')) : 1,

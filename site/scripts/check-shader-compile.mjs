@@ -42,7 +42,7 @@ import { spawnSync } from 'node:child_process';
 import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createBrotliDecompress } from 'node:zlib';
 import { classifyShader, extractGlslFromModule, loadToolchain, validateProgram } from '../tools/shader-check/spirv.mjs';
 
@@ -79,10 +79,47 @@ const SETS = [
 /* 1. Добыть исходники шейдеров                                        */
 /* ------------------------------------------------------------------ */
 
-/** Шейдеры в проекте не экспортируются (заставка — точно), а править чужой файл ради гейта
- *  запрещено (задание №55, §2). Поэтому читаем текст модуля и вытаскиваем шаблонные строки,
- *  похожие на GLSL. Когда A5 экспортирует их, этот же путь продолжит работать. */
-function collectSets() {
+/**
+ * Как добыть исходник — два пути, в порядке надёжности.
+ *
+ *  1. **Импорт модуля** (`await import(file)`) и взять настоящие значения экспортов. Это
+ *     единственный путь, который видит шейдер таким, каким он уедет в браузер: с 21.10 шейдер
+ *     фона собирается подстановкой (`${PROFILE_GLSL}`, `SCALE`, `SCENE`), и текст шаблона в файле —
+ *     уже не тот GLSL, который компилируется. Разбор текста на таком шейдере даёт `$` и падает
+ *     «invalid character» на живой, работающей геометрии — проверено при сведении A11 в круг 31.
+ *  2. **Разбор текста** (`extractGlslFromModule`) — запасной путь для файлов без экспортов:
+ *     статическая шаблонная строка читается как есть.
+ *
+ *  Импорт .ts работает через type-stripping Node (>=22.18); модули шейдеров — чистый TS без DOM.
+ */
+/**
+ * Импортировать модуль и взять его GLSL-экспорты в порядке объявления в файле.
+ * `null`, если модуль не импортируется или ничего похожего на GLSL не экспортирует —
+ * тогда работает разбор текста.
+ */
+const STAGE_HINT = /void\s+main\s*\(/;
+async function collectViaImport(path) {
+  let mod;
+  try {
+    mod = await import(pathToFileURL(path).href);
+  } catch {
+    return null;
+  }
+  const text = readFileSync(path, 'utf8');
+  const names = [...text.matchAll(/export\s+const\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]);
+  const out = [];
+  for (const name of names) {
+    const value = mod[name];
+    if (typeof value !== 'string' || !STAGE_HINT.test(value)) continue;
+    if (/\$\{/.test(value)) {
+      throw new Error(`${path}: экспорт ${name} содержит незакрытую подстановку $\{…} — это не GLSL`);
+    }
+    out.push({ name, source: value });
+  }
+  return out.length ? out : null;
+}
+
+async function collectSets() {
   const found = [];
   const problems = [];
   for (const set of SETS) {
@@ -92,7 +129,7 @@ function collectSets() {
       continue;
     }
     const text = readFileSync(path, 'utf8');
-    const glsl = extractGlslFromModule(text);
+    const glsl = (await collectViaImport(path)) || extractGlslFromModule(text);
     if (!glsl.length) {
       problems.push({ set: set.id, kind: 'no-glsl-found', path });
       continue;
@@ -329,7 +366,7 @@ function reportRun(results, label) {
   return { results, failures };
 }
 
-const { found, problems } = collectSets();
+const { found, problems } = await collectSets();
 
 if (LIST) {
   for (const s of found) {

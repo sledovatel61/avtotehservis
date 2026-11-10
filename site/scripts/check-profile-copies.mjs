@@ -50,7 +50,13 @@ const SHADER_FILES = [
   { id: 'bg3d', file: 'src/client/bg3d/shader.ts' },
   { id: 'intro', file: 'src/client/voyah-intro.ts' },
 ];
-const PROFILE_FILE = 'src/client/bg3d/car-profile.ts';
+/* Задание №54 §2.1 кладёт модуль в `src/client/car-profile.ts` (на уровень выше bg3d).
+   Исторический путь `src/client/bg3d/car-profile.ts` тоже принимаем: если модуль окажется там,
+   гейт обязан его увидеть, а не тихо решить, что модуля нет. */
+const PROFILE_CANDIDATES = [
+  'src/client/car-profile.ts',
+  'src/client/bg3d/car-profile.ts',
+];
 
 /* ---------------- детекторы ---------------- */
 
@@ -156,6 +162,7 @@ function checkFile(id, file, path) {
 const results = [];
 for (const f of SHADER_FILES) results.push(checkFile(f.id, f.file, join(ROOT, f.file)));
 
+const PROFILE_FILE = PROFILE_CANDIDATES.find((f) => existsSync(join(ROOT, f))) || PROFILE_CANDIDATES[0];
 const profilePath = join(ROOT, PROFILE_FILE);
 let copies = [];
 if (existsSync(profilePath)) {

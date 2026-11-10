@@ -21,6 +21,13 @@
 .bg3d-off svg{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
 .bg3d-off[hidden]{display:none}
 
+/* Первый экран Voyah Free: когда фон включён, фотография уступает место 3D-сцене.
+   Слой живёт ВНУТРИ .v-hero-bg (там же, где фото), поэтому тёмный градиент .v-hero::after
+   остаётся поверх него — контраст заголовка и мета-строки не меняется. */
+.v-hero--bg3d .v-hero-bg picture{display:none}
+/* сцена сама по себе темнее фото, виньетка ей не нужна */
+.v-hero--bg3d .v-hero-bg .bg3d{opacity:1}
+
 /* Хосты, в которые вставляется слой. */
 .page-head{position:relative}
 .page-head>.container{position:relative;z-index:1}
