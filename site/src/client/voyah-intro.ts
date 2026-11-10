@@ -5,14 +5,17 @@
 
    Принципы:
      • без JS оверлея нет вообще → нет «вспышки» непростилизованного контента;
-     • играем один раз за сессию (sessionStorage `voyah-intro`);
-     • параметр ?intro=1 — принудительный повтор (для проверки и для владельца);
+     • играем КАЖДЫЙ заход на страницу (круг 30, требование владельца: раньше
+       sessionStorage гасил заставку до конца сессии — «срабатывает 1 раз и больше
+       не загружается»); повторного показа на одном заходе нет, т.к. скрипт
+       выполняется один раз;
+     • ?intro=0 — выключить заставку (для тех, кому мешает; ссылка на неё — в подписи),
+       ?intro=1 — оставлен как синоним «показать» для старых ссылок и проверок;
      • при reduced-motion / save-data интро не показываем совсем;
      • прерывается кликом, Esc, колесом и touchmove, тогда шторы уходят сразу.
 
    Запуск: подключается из voyah-free.astro как module-скрипт. */
 
-const KEY = 'voyah-intro';
 /* Круг 29 (S4): длительности больше не живут в JS — единственный источник тайминга
    CSS-переменные .vy-intro (--vy-dur, --vy-scene). Скрипт читает --vy-dur из
    computed style и снимает оверлей по animationend правой шторы, поэтому «в коде
@@ -24,21 +27,10 @@ const SVG_ID = 'vy-intro-svg';
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const saveData =
   (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
-const force = new URLSearchParams(location.search).get('intro') === '1';
+const introParam = new URLSearchParams(location.search).get('intro');
+const off = introParam === '0';
 
-let seen = false;
-try {
-  seen = sessionStorage.getItem(KEY) === '1';
-} catch {
-  seen = false;
-}
-
-if (!reduced && !saveData && (force || !seen)) {
-  try {
-    sessionStorage.setItem(KEY, '1');
-  } catch {
-    /* приватный режим — просто покажем интро без записи */
-  }
+if (!reduced && !saveData && !off) {
   start();
 }
 

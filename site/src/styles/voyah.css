@@ -76,8 +76,8 @@
    где раньше была служебная линия надзаголовка, поэтому высота строки не растёт
    и первый экран не съезжает (S1). */
 .v-eyebrow--brand::before{display:none}
-.v-eyebrow--brand .v-mark{width:24px;height:24px;margin:-3px 0;filter:drop-shadow(0 1px 6px rgba(234,242,255,.35))}
-.v-aside-mark{display:block;width:30px;height:30px;margin:0 0 10px;opacity:.92;
+.v-eyebrow--brand .v-mark{width:auto;height:26px;margin:-5px 0;filter:drop-shadow(0 1px 6px rgba(234,242,255,.35))}
+.v-aside-mark{display:block;width:auto;height:42px;margin:0 0 10px;opacity:.92;
   filter:drop-shadow(0 1px 8px rgba(234,242,255,.28))}
 .v-lead{color:var(--v-silver);font-size:var(--v-fs-4);line-height:1.5;max-width:62ch}
 .v-note{color:rgba(201,211,222,.72);font-size:var(--v-fs-2)}
@@ -115,22 +115,22 @@
   linear-gradient(180deg,#070B12 0%,#0A111B 62%,#070B12 100%)}
 .v-sec--why::before{
   background:
-    url("/img/vy-mark-ghost.svg") no-repeat right 6% top 16%/clamp(120px,18vw,240px),
+    url("/img/vy-mark-ghost.png") no-repeat right 6% top 16%/clamp(120px,18vw,240px),
     linear-gradient(90deg,transparent,rgba(234,242,255,.7) 42%,rgba(234,242,255,.9) 52%,transparent 88%) top/100% 1px no-repeat,
     radial-gradient(60% 40% at 76% 0%,rgba(224,169,109,.12),transparent 70%)}
 /* знак марки как фон: у каждого второго блока свой отсвет и своё место знака,
    чтобы страница не читалась ровными тёмными полосами */
 .v-sec--incl::before{
   background:
-    url("/img/vy-mark-ghost.svg") no-repeat left 4% bottom 8%/clamp(140px,20vw,280px),
+    url("/img/vy-mark-ghost.png") no-repeat left 4% bottom 8%/clamp(140px,20vw,280px),
     linear-gradient(180deg,rgba(234,242,255,.08) 0,rgba(234,242,255,0) 22%) top/100% 1px no-repeat}
 .v-sec--steps::before{
   background:
-    url("/img/vy-mark-ghost.svg") no-repeat right 8% bottom 12%/clamp(110px,16vw,210px),
+    url("/img/vy-mark-ghost.png") no-repeat right 8% bottom 12%/clamp(110px,16vw,210px),
     linear-gradient(90deg,transparent,rgba(234,242,255,.55),transparent) top/100% 1px no-repeat}
 .v-sec--check::before{
   background:
-    url("/img/vy-mark-ghost.svg") no-repeat right 5% top 10%/clamp(100px,14vw,180px),
+    url("/img/vy-mark-ghost.png") no-repeat right 5% top 10%/clamp(100px,14vw,180px),
     linear-gradient(90deg,rgba(201,211,222,.055) 1px,transparent 1px),
     linear-gradient(180deg,rgba(201,211,222,.045) 1px,transparent 1px);
   background-size:auto,96px 96px,96px 96px}
@@ -445,7 +445,7 @@ body[data-preview="true"]{--demo-h:40px}
 /* знак марки как крупный водяной знак в финальном блоке — «дорогая» деталь,
    декор, из дерева доступности убран (aria-hidden на разметке не нужен: это ::before) */
 .v-cta::before{content:"";position:absolute;right:-3%;top:-28%;width:min(42%,340px);aspect-ratio:1;
-  background:url("/img/vy-mark.svg") center/contain no-repeat;opacity:.07;pointer-events:none}
+  background:url("/img/vy-mark-ghost.png") center/contain no-repeat;opacity:.55;pointer-events:none}
 .v-cta-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:center}
 .v-cta h2{margin-bottom:.35em}
 .v-cta .v-btnrow{margin-top:0}
