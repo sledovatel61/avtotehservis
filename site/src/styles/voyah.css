@@ -76,8 +76,12 @@
    где раньше была служебная линия надзаголовка, поэтому высота строки не растёт
    и первый экран не съезжает (S1). */
 .v-eyebrow--brand::before{display:none}
-.v-eyebrow--brand .v-mark{width:auto;height:26px;margin:-5px 0;filter:drop-shadow(0 1px 6px rgba(234,242,255,.35))}
-.v-aside-mark{display:block;width:auto;height:42px;margin:0 0 10px;opacity:.92;
+/* Знак — инлайновый SVG, поэтому красится currentColor и наследует цвет
+   надзаголовка. Ширина считается из пропорции 0.7122 (viewBox 441.6×620.1):
+   при height 26px это 18.5px. Раньше ширина не задавалась вовсе, и знак
+   тянулся по PNG-фолбэку 24×34 (пропорция 0.706) — отсюда был сдвиг строки. */
+.v-eyebrow--brand .v-mark{flex:0 0 auto;width:18.5px;height:26px;margin:-5px 0;filter:drop-shadow(0 1px 6px rgba(234,242,255,.35))}
+.v-aside-mark{display:block;width:29.9px;height:42px;margin:0 0 10px;opacity:.92;
   filter:drop-shadow(0 1px 8px rgba(234,242,255,.28))}
 .v-lead{color:var(--v-silver);font-size:var(--v-fs-4);line-height:1.5;max-width:62ch}
 .v-note{color:rgba(201,211,222,.72);font-size:var(--v-fs-2)}
@@ -115,22 +119,22 @@
   linear-gradient(180deg,#070B12 0%,#0A111B 62%,#070B12 100%)}
 .v-sec--why::before{
   background:
-    url("/img/vy-mark-ghost.png") no-repeat right 6% top 16%/clamp(120px,18vw,240px),
+    url("/img/vy-mark-ghost.svg") no-repeat right 6% top 16%/clamp(120px,18vw,240px),
     linear-gradient(90deg,transparent,rgba(234,242,255,.7) 42%,rgba(234,242,255,.9) 52%,transparent 88%) top/100% 1px no-repeat,
     radial-gradient(60% 40% at 76% 0%,rgba(224,169,109,.12),transparent 70%)}
 /* знак марки как фон: у каждого второго блока свой отсвет и своё место знака,
    чтобы страница не читалась ровными тёмными полосами */
 .v-sec--incl::before{
   background:
-    url("/img/vy-mark-ghost.png") no-repeat left 4% bottom 8%/clamp(140px,20vw,280px),
+    url("/img/vy-mark-ghost.svg") no-repeat left 4% bottom 8%/clamp(140px,20vw,280px),
     linear-gradient(180deg,rgba(234,242,255,.08) 0,rgba(234,242,255,0) 22%) top/100% 1px no-repeat}
 .v-sec--steps::before{
   background:
-    url("/img/vy-mark-ghost.png") no-repeat right 8% bottom 12%/clamp(110px,16vw,210px),
+    url("/img/vy-mark-ghost.svg") no-repeat right 8% bottom 12%/clamp(110px,16vw,210px),
     linear-gradient(90deg,transparent,rgba(234,242,255,.55),transparent) top/100% 1px no-repeat}
 .v-sec--check::before{
   background:
-    url("/img/vy-mark-ghost.png") no-repeat right 5% top 10%/clamp(100px,14vw,180px),
+    url("/img/vy-mark-ghost.svg") no-repeat right 5% top 10%/clamp(100px,14vw,180px),
     linear-gradient(90deg,rgba(201,211,222,.055) 1px,transparent 1px),
     linear-gradient(180deg,rgba(201,211,222,.045) 1px,transparent 1px);
   background-size:auto,96px 96px,96px 96px}
@@ -284,7 +288,7 @@ body[data-preview="true"]{--demo-h:40px}
   /* M4 (круг 29): самый узкий экран. Надзаголовок уходил в две строки, лид — в
      восемь; ужимаем их и кнопки, чтобы адрес и часы попали в первый экран. */
   .v-hero .v-eyebrow{font-size:10.5px;letter-spacing:.1em;white-space:nowrap;gap:8px}
-  .v-hero .v-eyebrow .v-mark{width:20px;height:20px}
+  .v-hero .v-eyebrow .v-mark{width:14.2px;height:20px}
   .v-hero .v-lead{font-size:14px;line-height:1.4;margin-top:8px}
   .v-hero .v-btn{font-size:13px;padding:10px 14px}
   .v-btnrow{gap:6px;margin-top:12px}
@@ -445,7 +449,7 @@ body[data-preview="true"]{--demo-h:40px}
 /* знак марки как крупный водяной знак в финальном блоке — «дорогая» деталь,
    декор, из дерева доступности убран (aria-hidden на разметке не нужен: это ::before) */
 .v-cta::before{content:"";position:absolute;right:-3%;top:-28%;width:min(42%,340px);aspect-ratio:1;
-  background:url("/img/vy-mark-ghost.png") center/contain no-repeat;opacity:.55;pointer-events:none}
+  background:url("/img/vy-mark-ghost.svg") center/contain no-repeat;opacity:.55;pointer-events:none}
 .v-cta-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:center}
 .v-cta h2{margin-bottom:.35em}
 .v-cta .v-btnrow{margin-top:0}
@@ -508,171 +512,21 @@ body[data-preview="true"]{--demo-h:40px}
   .v-teaser-facts{grid-template-columns:1fr}
 }
 
-/* ==========================================================================
-   ИНТРО «вход в раздел» (2,4 с, один раз за сессию).
-   Оверлей целиком создаётся скриптом (client/voyah-intro.ts) — без JS его нет,
-   поэтому нет и «вспышки» при загрузке. Фон НЕПРОЗРАЧНЫЙ на самом оверлее:
-   шторы можно двигать как угодно, страница в стыке не проступит; к моменту
-   разъезда штор фон гасится анимацией vyRootClear.
-   ========================================================================== */
-.vy-intro {
-  /* круг 29 (S4/S5): сцена и разъезд штор уложены в 2400 мс (было 2680 в коде
-     при замеренных 2751–2805 мс). На узких экранах интро короче — 1320 мс,
-     как требует план §7 («≤1,6 с или отключено»), через .is-quick из JS.
-     --vy-scene — момент разъезда штор, --vy-dur — полная длительность;
-     скрипт читает --vy-dur из computed style, поэтому CSS — единственный
-     источник тайминга. */
-  --vy-k: 1;
-  --vy-scene: 1960ms;
-  --vy-dur: 2400ms;
-  --vy-step: 52ms;
-  --vy-draw: 760ms;
-  --vy-svg-in: 640ms;
-  --vy-lamp: 300ms;
-  --vy-panel: 440ms;
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: grid;
-  place-items: center;
-  background: var(--v-ink);
-  cursor: pointer;
-  isolation: isolate;
-}
-.vy-intro.is-quick {
-  --vy-k: .55;
-  --vy-scene: 1078ms;
-  --vy-dur: 1320ms;
-  --vy-step: 26ms;
-  --vy-draw: 418ms;
-  --vy-svg-in: 352ms;
-  --vy-lamp: 165ms;
-  --vy-panel: 242ms;
-}
-.vy-intro.is-play {
-  animation: vyRootClear 1ms linear var(--vy-scene) forwards;
-}
-.vy-intro-panel {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50.2%;
-  background: var(--v-ink);
-}
-.vy-intro-panel--l { left: 0; }
-.vy-intro-panel--r { right: 0; }
-.vy-intro.is-play .vy-intro-panel--l { animation: vyPanelL var(--vy-panel) cubic-bezier(.76,0,.24,1) var(--vy-scene) forwards; }
-.vy-intro.is-play .vy-intro-panel--r { animation: vyPanelR var(--vy-panel) cubic-bezier(.76,0,.24,1) var(--vy-scene) forwards; }
-.vy-intro-line {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 40px;
-  height: 2px;
-  margin: -1px 0 0 -20px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, rgba(234,242,255,0) 0%, #eaf2ff 50%, rgba(234,242,255,0) 100%);
-  opacity: 0;
-}
-.vy-intro.is-play .vy-intro-line {
-  animation: vyLineIn calc(360ms * var(--vy-k)) cubic-bezier(.2,.8,.2,1) 60ms forwards,
-    vyLineOut calc(320ms * var(--vy-k)) ease-in calc(var(--vy-scene) - 460ms) forwards;
-}
-.vy-intro-lamp {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 210px;
-  height: 3px;
-  margin-top: -1.5px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, rgba(234,242,255,.95), rgba(234,242,255,0));
-  opacity: 0;
-  transform-origin: 0 50%;
-}
-.vy-intro-lamp--l { transform: rotate(180deg) translateX(28px) scaleX(.2); }
-.vy-intro-lamp--r { transform: translateX(28px) scaleX(.2); }
-.vy-intro.is-play .vy-intro-lamp--l { animation: vyLampL calc(420ms * var(--vy-k)) cubic-bezier(.2,.8,.2,1) var(--vy-lamp) forwards, vyLampOut calc(380ms * var(--vy-k)) ease-in calc(var(--vy-scene) - 500ms) forwards; }
-.vy-intro.is-play .vy-intro-lamp--r { animation: vyLampR calc(420ms * var(--vy-k)) cubic-bezier(.2,.8,.2,1) var(--vy-lamp) forwards, vyLampOut calc(380ms * var(--vy-k)) ease-in calc(var(--vy-scene) - 500ms) forwards; }
-.vy-intro-svg {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(86vw, 1180px);
-  height: auto;
-  transform: translate3d(-50%, -50%, 0);
-  opacity: 0;
-}
-/* круг 29 (S5): у силуэта было только появление — к разъезду штор контур
-   оставался висеть поверх H1. Теперь он гаснет за 260 мс ДО начала разъезда. */
-.vy-intro.is-play .vy-intro-svg {
-  animation: vySvgIn calc(520ms * var(--vy-k)) ease-out var(--vy-svg-in) forwards,
-    vySvgOut 260ms ease-in calc(var(--vy-scene) - 340ms) forwards;
-}
-.vy-intro-svg path,
-.vy-intro-svg circle {
-  fill: none;
-  stroke: #eaf2ff;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-.vy-intro.is-play .vy-intro-svg path,
-.vy-intro.is-play .vy-intro-svg circle {
-  animation: vyDraw var(--vy-draw) cubic-bezier(.4,0,.2,1) forwards;
-  animation-delay: calc(680ms * var(--vy-k) + var(--i, 0) * var(--vy-step));
-}
-.vy-intro-svg .glow { stroke: rgba(234,242,255,.18); stroke-width: 7; filter: blur(1px); }
-.vy-intro-svg .ground { stroke: rgba(234,242,255,.16); stroke-width: 1.4; }
-.vy-intro-svg .bar { stroke: #fff; stroke-width: 3.4; filter: drop-shadow(0 0 10px rgba(234,242,255,.95)); }
-.vy-intro-flash {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  margin-top: -1px;
-  background: #eaf2ff;
-  opacity: 0;
-  transform: scaleY(1);
-}
-.vy-intro.is-play .vy-intro-flash { animation: vyFlash calc(420ms * var(--vy-k)) ease-out calc(var(--vy-scene) - 260ms) forwards; }
-.vy-intro-tag {
-  position: absolute;
-  right: 22px;
-  bottom: 20px;
-  font-size: 11px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: rgba(201,211,222,.5);
-}
-.vy-intro-tag i {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--brass);
-  margin-right: 8px;
-}
-.vy-intro.is-skip { opacity: 0; visibility: hidden; transition: opacity 180ms ease, visibility 180ms; }
-@keyframes vyRootClear { to { background-color: rgba(7,11,18,0); } }
-@keyframes vyPanelL { to { transform: translate3d(-101%, 0, 0); } }
-@keyframes vyPanelR { to { transform: translate3d(101%, 0, 0); } }
-@keyframes vyLineIn { from { opacity: 0; transform: scaleX(.2); } to { opacity: 1; transform: scaleX(1); } }
-@keyframes vyLineOut { to { opacity: 0; transform: scaleX(2.6); } }
-@keyframes vyLampL { from { opacity: 0; transform: rotate(180deg) translateX(28px) scaleX(.2); } to { opacity: .9; transform: rotate(180deg) translateX(210px) scaleX(1); } }
-@keyframes vyLampR { from { opacity: 0; transform: translateX(28px) scaleX(.2); } to { opacity: .9; transform: translateX(210px) scaleX(1); } }
-@keyframes vyLampOut { to { opacity: 0; } }
-@keyframes vySvgIn { from { opacity: 0; transform: translate3d(-50%,-50%,0) scale(.985); } to { opacity: 1; transform: translate3d(-50%,-50%,0) scale(1); } }
-@keyframes vySvgOut { to { opacity: 0; } }
-@keyframes vyDraw { to { stroke-dashoffset: 0; } }
-@keyframes vyFlash { 0% { opacity: 0; transform: scaleY(1); } 35% { opacity: .75; transform: scaleY(4); } 100% { opacity: 0; transform: scaleY(14); } }
-body.vy-lock { overflow: hidden; }
-@media (prefers-reduced-motion: reduce) {
-  .vy-intro { display: none !important; }
-}
-@media print {
-  .vy-intro { display: none !important; }
-}
+/* @intro-start */
+.vy-intro{--vy-scene:1950ms;--vy-panel:300ms;position:fixed;inset:0;z-index:200;
+  background:#05080d;cursor:pointer;isolation:isolate;contain:strict}
+.vy-intro.is-quick{--vy-scene:1000ms;--vy-panel:240ms}
+.vy-intro-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:1;transition:opacity 120ms linear}
+.vy-intro.is-wait .vy-intro-canvas{opacity:0}
+.vy-intro-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vy-intro-tag{position:absolute;right:22px;bottom:20px;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(201,211,222,.5)}
+.vy-intro-tag i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brass);margin-right:8px}
+.vy-intro.is-open{animation:vyIntroOut var(--vy-panel) ease-in forwards;pointer-events:none}
+.vy-intro.is-open.is-still{animation:none;opacity:0;visibility:hidden}
+.vy-intro.is-skip{opacity:0;transition:opacity 150ms ease}
+@keyframes vyIntroOut{to{opacity:0;visibility:hidden}}
+body.vy-lock{overflow:hidden}
+@media (prefers-reduced-motion:reduce){.vy-intro{display:none!important}}
+@media print{.vy-intro{display:none!important}}
+/* @intro-end */

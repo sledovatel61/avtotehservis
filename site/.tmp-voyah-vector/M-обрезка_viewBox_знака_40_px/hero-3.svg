@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0E1A14"/><stop offset=".55" stop-color="#0B1410"/><stop offset="1" stop-color="#131C16"/></linearGradient>
+<radialGradient id="s" cx=".78" cy=".24" r=".6"><stop offset="0" stop-color="#C87F45" stop-opacity=".20"/><stop offset="1" stop-color="#C87F45" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1600" height="900" fill="url(#g)"/>
+<rect width="1600" height="900" fill="url(#s)"/>
+<g stroke="#B7C4BB" stroke-opacity=".06"><path d="M0 150h1600M0 300h1600M0 450h1600M0 600h1600M0 750h1600M200 0v900M400 0v900M600 0v900M800 0v900M1000 0v900M1200 0v900M1400 0v900"/></g>
+
+<g fill="none" stroke="#E0A96D" stroke-width="5" opacity=".9">
+<circle cx="1150" cy="350" r="105"/><circle cx="1390" cy="560" r="105"/>
+<path d="M1150 350h240v210" stroke="#B7C4BB" stroke-dasharray="14 12"/>
+<path d="M980 640h90M1030 595v90" stroke="#C87F45" stroke-width="8" stroke-linecap="round"/>
+<path d="M1240 210l60 60-60 60-60-60z" stroke="#C87F45"/>
+</g>
+
+<g fill="#B7C4BB" font-family="sans-serif" font-size="26" opacity=".5"><text x="1400" y="862">Заглушка: фото появится после съёмки в сервисе</text></g>
+</svg>

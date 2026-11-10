@@ -68,8 +68,9 @@ const URL_ = `http://127.0.0.1:${PORT}${PAGE}`;
 const MUTANTS = {
   'шапка шире контейнера': `.hdr-in{gap:40px !important}.nav a{padding:8px 16px !important}.hdr-cta .btn{padding:10px 26px !important}`,
   'кнопка холодного цвета (рецидив B1)': `.v-hero .v-btn--brass,.v-sec .v-btn--brass{color:#EAF2FF !important}`,
-  'интро длиннее нормы': `.vy-intro{--vy-scene:2600ms !important;--vy-dur:2900ms !important}`,
-  'силуэт не гаснет': `.vy-intro.is-play .vy-intro-svg{animation:vySvgIn 520ms ease-out 640ms forwards !important}`,
+  'интро длиннее нормы': `.vy-intro{--vy-scene:2600ms !important}`,
+  'финальная шторка мгновенная': `.vy-intro{--vy-panel:60ms !important}`,
+  'кадр заставки не виден': `.vy-intro-canvas,.vy-intro-poster{display:none !important}`,
 };
 
 async function run(mutant) {
@@ -91,9 +92,18 @@ async function run(mutant) {
          параметром ?intro=0, иначе она перекроет замеры первого экрана */
 
       if (mutant) await page.evaluateOnNewDocument((css) => {
-        document.addEventListener('DOMContentLoaded', () => {
-          const st = document.createElement('style'); st.textContent = css; document.head.append(st);
-        });
+        const add = () => {
+          const head = document.head || document.documentElement;
+          if (!head) return false;
+          const st = document.createElement('style');
+          st.textContent = css;
+          head.append(st);
+          return true;
+        };
+        if (!add()) {
+          const mo = new MutationObserver(() => { if (add()) mo.disconnect(); });
+          mo.observe(document, { childList: true, subtree: true });
+        }
       }, MUTANTS[mutant]);
       await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -130,6 +140,56 @@ async function run(mutant) {
       });
       const tag = `${w}×${h}`;
 
+      /* ---------- L7: знак марки на странице (задание №48) ----------
+         Логотип вернулся на страницу инлайновым SVG, поэтому проверяем не
+         «файл лежит», а что он реально нарисован и не искажён: пропорция
+         контура совпадает с пропорцией кадра (0.7122), заливка — не краска
+         владельца #1B1F3C (она даёт 1.23:1 на почти чёрном фоне), и видимая
+         ширина/высота знака не нулевые. */
+      const mark = await page.evaluate(() => [...document.querySelectorAll('svg.v-mark, svg.v-aside-mark')].map((el) => {
+        const r = el.getBoundingClientRect();
+        const path = el.querySelector('path');
+        /* bbox контура — объединение по всем подпутям: у знака их три
+           (две лопасти и игла), и по отдельности каждая даёт свою пропорцию */
+        let ub = null;
+        try {
+          for (const pp of el.querySelectorAll('path')) {
+            const b = pp.getBBox();
+            ub = ub
+              ? { x0: Math.min(ub.x0, b.x), y0: Math.min(ub.y0, b.y), x1: Math.max(ub.x1, b.x + b.width), y1: Math.max(ub.y1, b.y + b.height) }
+              : { x0: b.x, y0: b.y, x1: b.x + b.width, y1: b.y + b.height };
+          }
+        } catch { ub = null; }
+        const pathBox = ub ? { width: ub.x1 - ub.x0, height: ub.y1 - ub.y0 } : null;
+        return {
+          cls: el.getAttribute('class'),
+          w: +r.width.toFixed(2),
+          h: +r.height.toFixed(2),
+          fill: getComputedStyle(path || el).fill,
+          paths: el.querySelectorAll('path').length,
+          vb: el.getAttribute('viewBox'),
+          pathRatio: pathBox && pathBox.height ? +(pathBox.width / pathBox.height).toFixed(4) : null,
+        };
+      }));
+      if (!mark.length) bad(`${tag}: на странице нет знака марки (svg.v-mark / .v-aside-mark)`);
+      for (const m of mark) {
+        const vbRatio = m.vb ? (() => { const v = m.vb.trim().split(/\s+/).map(Number); return +(v[2] / v[3]).toFixed(4); })() : null;
+        if (vbRatio == null || Math.abs(vbRatio - 0.7122) > 0.01) bad(`${tag}: ${m.cls} пропорция кадра ${m.vb} ≠ 0.7122 (искажение знака)`);
+        if (m.pathRatio != null && Math.abs(m.pathRatio - 0.7122) > 0.02) bad(`${tag}: ${m.cls} пропорция контура ${m.pathRatio} ≠ 0.7122`);
+        /* пропорция самого элемента: при неверной ширине (как у PNG 24×34 =
+           0.706) знак получает лишний горизонтальный запас и съезжает */
+        const elRatio = m.h > 0 ? +(m.w / m.h).toFixed(4) : null;
+        if (elRatio != null && Math.abs(elRatio - 0.7122) > 0.01) bad(`${tag}: ${m.cls} пропорция элемента ${elRatio} ≠ 0.7122 (${m.w}×${m.h})`);
+        if (m.paths !== 3) bad(`${tag}: ${m.cls} контуров ${m.paths}, а в знаке их 3 (2 лопасти + игла)`);
+        if (!(m.w > 1 && m.h > 1)) bad(`${tag}: ${m.cls} не отрисован (${m.w}×${m.h})`);
+        const rgb = (m.fill.match(/\d+/g) || []).map(Number);
+        if (rgb.length >= 3) {
+          /* краска владельца на тёмном фоне не видна: 1.23:1 */
+          const ink = rgb[0] < 40 && rgb[1] < 40 && rgb[2] < 65;
+          if (ink) bad(`${tag}: ${m.cls} залит краской владельца ${m.fill} — на тёмном фоне 1.23:1`);
+        } else if (!/currentcolor|rgb/i.test(m.fill)) bad(`${tag}: ${m.cls} заливка не определена (${m.fill})`);
+      }
+
       if (m.scrollWidth > m.innerWidth + 1) bad(`${tag}: горизонтальный скролл ${m.scrollWidth} > ${m.innerWidth}`);
       if (!m.h1) bad(`${tag}: нет .v-hero-h`);
       else {
@@ -164,9 +224,18 @@ async function run(mutant) {
          параметром ?intro=0, иначе она перекроет замеры первого экрана */
 
       if (mutant) await page.evaluateOnNewDocument((css) => {
-        document.addEventListener('DOMContentLoaded', () => {
-          const st = document.createElement('style'); st.textContent = css; document.head.append(st);
-        });
+        const add = () => {
+          const head = document.head || document.documentElement;
+          if (!head) return false;
+          const st = document.createElement('style');
+          st.textContent = css;
+          head.append(st);
+          return true;
+        };
+        if (!add()) {
+          const mo = new MutationObserver(() => { if (add()) mo.disconnect(); });
+          mo.observe(document, { childList: true, subtree: true });
+        }
       }, MUTANTS[mutant]);
       await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
       let gapMin = Infinity;
@@ -192,48 +261,85 @@ async function run(mutant) {
       await page.close();
     }
 
-    /* ---------- L6: интро ---------- */
-    for (const [w, h, limit, label] of [[1440, 900, 2500, 'десктоп'], [390, 844, 1620, 'мобильный 390'], [360, 780, 1620, 'мобильный 360']]) {
+    /* ---------- L6: интро (круг 30 — 3D-заставка на WebGL2) ---------- */
+    for (const [w, h, min, limit, label] of [[1440, 900, 2200, 2600, 'десктоп'], [390, 844, 1200, 1500, 'мобильный 390'], [360, 780, 1200, 1500, 'мобильный 360']]) {
       const page = await browser.newPage();
       await page.setViewport({ width: w, height: h });
       if (mutant) await page.evaluateOnNewDocument((css) => {
-        document.addEventListener('DOMContentLoaded', () => {
-          const st = document.createElement('style'); st.textContent = css; document.head.append(st);
-        });
+        const add = () => {
+          const head = document.head || document.documentElement;
+          if (!head) return false;
+          const st = document.createElement('style');
+          st.textContent = css;
+          head.append(st);
+          return true;
+        };
+        if (!add()) {
+          const mo = new MutationObserver(() => { if (add()) mo.disconnect(); });
+          mo.observe(document, { childList: true, subtree: true });
+        }
       }, MUTANTS[mutant]);
-      await page.goto(URL_, { waitUntil: 'load' });
-      const has = await page.$('.vy-intro');
-      if (!has) { bad(`интро ${label}: оверлей не появился при входе на страницу`); await page.close(); continue; }
-      const res = await page.evaluate(() => new Promise((resolve) => {
-        const t0 = performance.now();
-        let svgFadedAt = null;
-        let svgSeen = false; /* до старта анимации у силуэта opacity:0 — это не «погас» */
-        const root = document.querySelector('.vy-intro');
-        const raw = getComputedStyle(root).getPropertyValue('--vy-panel').trim();
-        const panelMs = raw.endsWith('ms') ? parseFloat(raw) : raw.endsWith('s') ? parseFloat(raw) * 1000 : 440;
+      /* счётчик ставим ДО загрузки: иначе отсчёт начнётся после load и
+         укоротит измеренную длительность на время разбора страницы */
+      await page.evaluateOnNewDocument(() => {
+        const rec = { t0: null, seenAt: null, openAt: null, gone: null, aria: null, drawn: false };
+        window.__vyRec = rec;
         const tick = () => {
           const root = document.querySelector('.vy-intro');
-          const svg = document.querySelector('.vy-intro-svg');
-          if (svg && performance.now() - t0 > 400) {
-            const op = +getComputedStyle(svg).opacity;
-            if (op > 0.5) svgSeen = true;
-            if (svgSeen && op < 0.05 && svgFadedAt == null) svgFadedAt = performance.now() - t0;
+          if (root) {
+            if (rec.seenAt == null) rec.seenAt = performance.now();
+            if (!rec.drawn) {
+              const el = document.querySelector('.vy-intro-canvas, .vy-intro-poster');
+              if (el) {
+                const cs = getComputedStyle(el);
+                const r = el.getBoundingClientRect();
+                if (cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 100 && r.height > 100) rec.drawn = true;
+              }
+            }
+            if (rec.t0 == null && rec.drawn) rec.t0 = performance.now();
+            if (rec.aria == null) rec.aria = root.getAttribute('aria-hidden');
+            if (rec.openAt == null && root.classList.contains('is-open')) rec.openAt = performance.now();
+          } else if (rec.seenAt != null && rec.gone == null) {
+            rec.gone = performance.now();
+            return;
           }
-          if (!root) {
-            const end = performance.now() - t0;
-            return resolve({ end, svgFadedAt, panelMs, panelStart: end - panelMs, lock: document.body.classList.contains('vy-lock') });
-          }
+          if (performance.now() > 12000) return;
           requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
+      });
+      await page.goto(URL_, { waitUntil: 'load' });
+      if (!(await page.$('.vy-intro'))) { bad(`интро ${label}: оверлей не появился при входе на страницу`); await page.close(); continue; }
+      const res = await page.evaluate(() => new Promise((resolve) => {
+        setTimeout(() => { const r = window.__vyRec ?? {}; resolve({ end: 0, fade: null, drawn: r.drawn ?? false, aria: r.aria ?? null, lock: false, canvases: 0, timeout: true }); }, 6000);
+        const wait = () => {
+          const r = window.__vyRec;
+          if (r && r.gone != null) {
+            return resolve({
+              end: r.gone - (r.t0 ?? r.seenAt),
+              fade: r.openAt == null ? null : r.gone - r.openAt,
+              drawn: r.drawn,
+              aria: r.aria,
+              lock: document.body.classList.contains('vy-lock'),
+              canvases: document.querySelectorAll('canvas').length,
+            });
+          }
+          requestAnimationFrame(wait);
+        };
+        wait();
       }));
+      if (res.timeout) { bad(`интро ${label}: оверлей не снялся за 6 с`); await page.close(); continue; }
       const dur = Math.round(res.end);
+      if (!res.drawn) bad(`интро ${label}: ни 3D-canvas, ни статичного кадра`);
+      if (res.aria !== 'true') bad(`интро ${label}: оверлей без aria-hidden="true"`);
       if (dur > limit) bad(`интро ${label}: ${dur} мс при норме ≤${limit}`);
-      else notes.push(`интро ${label}: ${dur} мс (норма ≤${limit})`);
+      else if (dur < min) bad(`интро ${label}: ${dur} мс при норме ≥${min}`);
+      else notes.push(`интро ${label}: ${dur} мс (норма ${min}–${limit})`);
+      if (res.fade == null) bad(`интро ${label}: заставка не дошла до финальной фазы (is-open)`);
+      else if (res.fade < 250 || res.fade > 470) bad(`интро ${label}: финальная шторка ${Math.round(res.fade)} мс при норме 250–300 (+140 запас)`);
+      else notes.push(`интро ${label}: шторка ${Math.round(res.fade)} мс`);
       if (res.lock) bad(`интро ${label}: остался body.vy-lock`);
-      if (res.panelStart != null && res.svgFadedAt == null) bad(`интро ${label}: силуэт не погас (S5)`);
-      if (res.panelStart != null && res.svgFadedAt != null && res.svgFadedAt > res.panelStart + 20)
-        bad(`интро ${label}: силуэт гаснет на ${Math.round(res.svgFadedAt)} мс, шторы идут с ${Math.round(res.panelStart)} мс (S5)`);
+      if (res.canvases > 0) bad(`интро ${label}: после снятия в DOM остался canvas (${res.canvases})`);
       /* круг 30: повторный заход в той же сессии — заставка снова на месте */
       await page.goto(URL_, { waitUntil: 'load' });
       if (!(await page.$('.vy-intro'))) bad(`интро ${label}: при повторном заходе заставки нет (требование владельца)`);
@@ -241,6 +347,28 @@ async function run(mutant) {
       await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
       if (await page.$('.vy-intro')) bad(`интро ${label}: ?intro=0 не выключает заставку`);
       await page.close();
+      /* пропуск кликом и Esc — не дольше 300 мс (проверяем на десктопе) */
+      if (w === 1440) {
+        for (const how of ['click', 'esc']) {
+          const sp = await browser.newPage();
+          await sp.setViewport({ width: w, height: h });
+          await sp.goto(URL_, { waitUntil: 'load' });
+          await new Promise((r) => setTimeout(r, 350));
+          const skipMs = await sp.evaluate((mode) => new Promise((resolve) => {
+            const t0 = performance.now();
+            const tick = () => {
+              if (!document.querySelector('.vy-intro')) return resolve(performance.now() - t0);
+              requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+            if (mode === 'esc') window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            else document.querySelector('.vy-intro')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          }), how);
+          if (skipMs > 300) bad(`интро: пропуск по ${how} — ${Math.round(skipMs)} мс при норме ≤300`);
+          else notes.push(`интро: пропуск по ${how} — ${Math.round(skipMs)} мс`);
+          await sp.close();
+        }
+      }
     }
     /* reduced-motion и без JS */
     {
