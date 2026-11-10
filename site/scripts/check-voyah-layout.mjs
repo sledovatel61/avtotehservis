@@ -23,8 +23,10 @@
         заставку заново (круг 30: раньше sessionStorage гасил её до конца сессии);
         `?intro=0` — выключает; без JS и при reduced-motion оверлея нет.
    Запуск: node site/scripts/check-voyah-layout.mjs (exit 1 при провале).
-   --self-test: мутанты (шапка шире контейнера, кнопка холодного цвета,
-   интро 2900 мс, силуэт не гаснет) — каждый обязан уронить гейт. */
+   --self-test: мутанты вёрстки и заставки (шапка шире контейнера, кнопка
+   холодного цвета, интро 2900 мс, мгновенная шторка, скрытый кадр) и знака
+   (искажённый viewBox, заливка краской владельца #1B1F3C, потерянный контур) —
+   каждый обязан уронить гейт. */
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -73,6 +75,16 @@ const MUTANTS = {
   'кадр заставки не виден': `.vy-intro-canvas,.vy-intro-poster{display:none !important}`,
 };
 
+/* L7 нельзя проверить подмешиванием CSS: знак — инлайновый SVG, его ломают
+   атрибутами. Мутант — кусок кода, который выполняется для каждого svg.v-mark
+   сразу после появления в DOM (знак приезжает вместе с разметкой, но
+   подстраховываемся MutationObserver'ом). */
+const SVG_MUTANTS = {
+  'знак искажён (viewBox растянут)': `el.setAttribute('viewBox','0 0 520 620.1')`,
+  'знак залит краской владельца #1B1F3C': `el.querySelectorAll('path').forEach((p)=>p.setAttribute('fill','#1B1F3C'))`,
+  'у знака потерян контур': `if (!el.dataset.mut) { el.dataset.mut = '1'; el.querySelector('path')?.remove(); }`,
+};
+
 async function run(mutant) {
   const fails = [];
   const notes = [];
@@ -91,7 +103,15 @@ async function run(mutant) {
       /* круг 30: сессионного гейта в интро больше нет — прячем заставку
          параметром ?intro=0, иначе она перекроет замеры первого экрана */
 
-      if (mutant) await page.evaluateOnNewDocument((css) => {
+      if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
+        const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
+          .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
+        apply();
+        const mo = new MutationObserver(apply);
+        mo.observe(document, { childList: true, subtree: true });
+        addEventListener('load', apply);
+      }, SVG_MUTANTS[mutant]);
+      else if (mutant) await page.evaluateOnNewDocument((css) => {
         const add = () => {
           const head = document.head || document.documentElement;
           if (!head) return false;
@@ -223,7 +243,15 @@ async function run(mutant) {
       /* круг 30: сессионного гейта в интро больше нет — прячем заставку
          параметром ?intro=0, иначе она перекроет замеры первого экрана */
 
-      if (mutant) await page.evaluateOnNewDocument((css) => {
+      if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
+        const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
+          .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
+        apply();
+        const mo = new MutationObserver(apply);
+        mo.observe(document, { childList: true, subtree: true });
+        addEventListener('load', apply);
+      }, SVG_MUTANTS[mutant]);
+      else if (mutant) await page.evaluateOnNewDocument((css) => {
         const add = () => {
           const head = document.head || document.documentElement;
           if (!head) return false;
@@ -265,7 +293,15 @@ async function run(mutant) {
     for (const [w, h, min, limit, label] of [[1440, 900, 2200, 2600, 'десктоп'], [390, 844, 1200, 1500, 'мобильный 390'], [360, 780, 1200, 1500, 'мобильный 360']]) {
       const page = await browser.newPage();
       await page.setViewport({ width: w, height: h });
-      if (mutant) await page.evaluateOnNewDocument((css) => {
+      if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
+        const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
+          .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
+        apply();
+        const mo = new MutationObserver(apply);
+        mo.observe(document, { childList: true, subtree: true });
+        addEventListener('load', apply);
+      }, SVG_MUTANTS[mutant]);
+      else if (mutant) await page.evaluateOnNewDocument((css) => {
         const add = () => {
           const head = document.head || document.documentElement;
           if (!head) return false;
@@ -397,7 +433,7 @@ await startServer();
 try {
   if (process.argv.includes('--self-test')) {
     let bad = 0;
-    for (const name of Object.keys(MUTANTS)) {
+    for (const name of [...Object.keys(MUTANTS), ...Object.keys(SVG_MUTANTS)]) {
       const { fails } = await run(name);
       const fell = fails.length > 0;
       if (!fell) bad = 1;
