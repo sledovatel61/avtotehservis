@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T07:42:54.361Z",
+  "generatedAt": "2026-11-10T15:51:56.852Z",
   "toolchain": {
     "glslang": "16.6.0 (Khronos, WASM)",
     "validator": "@moreplease/glslang 16.6.0-1",
@@ -24,16 +24,16 @@
     }
   },
   "fragment": {
-    "total": 1375,
-    "executable": 831,
-    "arithmetic": 349,
-    "transcendental": 21,
-    "memory": 447,
-    "composite": 35,
+    "total": 1497,
+    "executable": 919,
+    "arithmetic": 428,
+    "transcendental": 19,
+    "memory": 455,
+    "composite": 36,
     "texture": 0,
-    "branch": 6,
-    "controlFlow": 6,
-    "spirvBytes": 23344,
+    "branch": 17,
+    "controlFlow": 17,
+    "spirvBytes": 25188,
     "unknownOpcodes": [],
     "byOpcode": {
       "OpCapability": 1,
@@ -42,65 +42,93 @@
       "OpEntryPoint": 1,
       "OpExecutionMode": 1,
       "OpSource": 1,
-      "OpName": 154,
+      "OpName": 133,
       "OpDecorate": 29,
       "OpTypeVoid": 1,
-      "OpTypeFunction": 7,
+      "OpTypeFunction": 5,
       "OpTypeFloat": 1,
-      "OpTypeVector": 3,
       "OpTypePointer": 10,
-      "OpConstant": 106,
-      "OpConstantComposite": 20,
-      "OpTypeInt": 1,
-      "OpVariable": 126,
+      "OpTypeVector": 3,
+      "OpConstant": 151,
       "OpTypeBool": 1,
+      "OpTypeInt": 1,
+      "OpConstantComposite": 9,
+      "OpVariable": 112,
       "OpFunction": 9,
-      "OpLabel": 21,
-      "OpLoad": 254,
-      "OpStore": 145,
-      "OpAccessChain": 48,
-      "OpExtInst": 72,
-      "OpFDiv": 6,
-      "OpCompositeConstruct": 31,
-      "OpFSub": 51,
-      "OpVectorTimesScalar": 44,
-      "OpFMul": 78,
-      "OpFAdd": 45,
-      "OpFunctionCall": 24,
-      "OpFNegate": 15,
-      "OpFOrdLessThan": 1,
-      "OpSelectionMerge": 6,
-      "OpBranchConditional": 6,
-      "OpFOrdGreaterThan": 5,
+      "OpLabel": 43,
+      "OpLoad": 279,
+      "OpStore": 125,
+      "OpAccessChain": 51,
+      "OpExtInst": 66,
+      "OpFDiv": 17,
+      "OpCompositeConstruct": 32,
+      "OpFSub": 56,
+      "OpVectorTimesScalar": 43,
+      "OpFMul": 109,
+      "OpFAdd": 69,
+      "OpFunctionCall": 20,
+      "OpFNegate": 12,
+      "OpFOrdLessThan": 12,
+      "OpSelectionMerge": 17,
+      "OpBranchConditional": 17,
+      "OpFOrdGreaterThan": 6,
       "OpBranch": 6,
       "OpVectorShuffle": 1,
       "OpCompositeExtract": 3,
       "OpReturn": 1,
       "OpFunctionEnd": 9,
-      "OpFunctionParameter": 19,
-      "OpReturnValue": 8,
-      "OpDot": 2
+      "OpFunctionParameter": 12,
+      "OpReturnValue": 19,
+      "OpLogicalOr": 1
     },
     "byExt": {
-      "FMax": 10,
+      "FMax": 7,
       "FClamp": 4,
-      "FMix": 18,
+      "FMix": 17,
       "Pow": 1,
       "SmoothStep": 10,
-      "Length": 10,
+      "Length": 8,
       "Exp": 10,
       "FAbs": 4,
+      "FMin": 1,
       "Fract": 3,
-      "Floor": 1,
-      "FMin": 1
+      "Floor": 1
     },
     "byFunc": {
       "main": {
-        "executable": 563,
-        "arithmetic": 251,
+        "executable": 561,
+        "arithmetic": 249,
         "transcendental": 17,
         "memory": 282,
         "composite": 30
+      },
+      "pTop(f1;": {
+        "executable": 163,
+        "arithmetic": 101,
+        "transcendental": 0,
+        "memory": 62,
+        "composite": 0
+      },
+      "pBottom(f1;": {
+        "executable": 27,
+        "arithmetic": 17,
+        "transcendental": 0,
+        "memory": 10,
+        "composite": 0
+      },
+      "pArch(vf2;f1;": {
+        "executable": 13,
+        "arithmetic": 5,
+        "transcendental": 1,
+        "memory": 7,
+        "composite": 1
+      },
+      "carProfile(vf2;": {
+        "executable": 34,
+        "arithmetic": 12,
+        "transcendental": 0,
+        "memory": 22,
+        "composite": 0
       },
       "hash21(vf2;": {
         "executable": 19,
@@ -116,46 +144,18 @@
         "memory": 30,
         "composite": 1
       },
-      "sdRoundBox(vf2;vf2;f1;": {
-        "executable": 20,
-        "arithmetic": 9,
-        "transcendental": 1,
-        "memory": 10,
+      "carSdf(vf2;": {
+        "executable": 11,
+        "arithmetic": 5,
+        "transcendental": 0,
+        "memory": 5,
         "composite": 1
       },
-      "sdCircle(vf2;f1;": {
-        "executable": 4,
-        "arithmetic": 2,
-        "transcendental": 1,
-        "memory": 2,
-        "composite": 0
-      },
-      "sdSeg(vf2;vf2;vf2;f1;": {
-        "executable": 25,
-        "arithmetic": 10,
-        "transcendental": 1,
-        "memory": 15,
-        "composite": 0
-      },
-      "smin(f1;f1;f1;": {
-        "executable": 20,
-        "arithmetic": 10,
-        "transcendental": 0,
-        "memory": 10,
-        "composite": 0
-      },
-      "carSdf(vf2;": {
-        "executable": 97,
-        "arithmetic": 30,
-        "transcendental": 0,
-        "memory": 67,
-        "composite": 0
-      },
       "wheel(vf3;vf2;f1;f1;": {
-        "executable": 36,
-        "arithmetic": 14,
+        "executable": 44,
+        "arithmetic": 16,
         "transcendental": 1,
-        "memory": 19,
+        "memory": 25,
         "composite": 3
       }
     }
@@ -215,13 +215,13 @@
     }
   },
   "weights": {
-    "rawBytes": 11797,
-    "gzipBytes": 4654,
-    "brotliBytes": 4002,
-    "fragRawBytes": 11656,
-    "fragGzipBytes": 4598,
-    "spirvBytes": 23344,
-    "lines": 229,
+    "rawBytes": 15398,
+    "gzipBytes": 5838,
+    "brotliBytes": 5022,
+    "fragRawBytes": 15257,
+    "fragGzipBytes": 5776,
+    "spirvBytes": 25188,
+    "lines": 300,
     "limitGzipBytes": 14336
   },
   "ok": true

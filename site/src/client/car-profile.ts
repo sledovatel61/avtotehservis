@@ -143,8 +143,11 @@ export const CABIN = {
 export const ARCH = { radius: CAR.tyre / 2 + CAR.archGap, squashY: 1.06 } as const;
 
 export interface ProfileNode extends CarPoint {
+  /** верх силуэта в этой точке (крыша/капот/порог с поправкой на арки) */
   top: number;
+  /** порог: низ кузова, от которого считаются арки */
   bottom: number;
+  /** линия остекления — по ней carCabin строит окно */
   belt: number;
 }
 
@@ -154,7 +157,14 @@ export const NODES: ProfileNode[] = (() => {
   const n = Math.round(CAR.length / 0.05);
   for (let i = 0; i <= n; i++) {
     const x = -CAR.length / 2 + (i * CAR.length) / n;
-    out.push({ x: +x.toFixed(3), top: +topAt(x).toFixed(4), bottom: +bottomAt(x).toFixed(4), belt: +beltAt(x).toFixed(4) });
+    const top = topAt(x);
+    out.push({
+      x: +x.toFixed(3),
+      y: +top.toFixed(4),              /* y — верх силуэта: узел лежит на контуре */
+      top: +top.toFixed(4),
+      bottom: +bottomAt(x).toFixed(4),
+      belt: +beltAt(x).toFixed(4),
+    });
   }
   return out;
 })();
