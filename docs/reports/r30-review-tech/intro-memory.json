@@ -1,0 +1,9 @@
+{
+  "cycles": 10,
+  "start_heap_MB": 18.42,
+  "end_heap_MB": 18.84,
+  "delta_MB": 0.42,
+  "canvases_after_each": [0,0,0,0,0,0,0,0,0,0],
+  "vy_lock_after_each": [false,false,false,false,false,false,false,false,false,false],
+  "note": "performance.memory via puppeteer, SwiftShader, 1440x900"
+}

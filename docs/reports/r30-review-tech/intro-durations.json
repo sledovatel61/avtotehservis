@@ -1,0 +1,10 @@
+{
+  "measured": "gate L6 on review-r30-tech (SwiftShader, 3 runs)",
+  "desktop_1440": [2417, 2423, 2441],
+  "mobile_390": [1373, 1389, 1402],
+  "mobile_360": [1352, 1362, 1371],
+  "declared": {"desktop":[2501,2547], "mobile":[1429,1451]},
+  "norm": {"desktop":[2200,2600], "mobile":[0,1500]},
+  "determinism_ms": 18,
+  "note": "SwiftShader soft render, not live device.Gate measures end-gone - t0(dawn)."
+}

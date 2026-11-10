@@ -1,0 +1,3 @@
+Rebased BG3D diff on HEAD (review-r30-tech) — LD_LIBRARY_PATH=/tmp/al2023/lib npm test
+87/87 ok (5 bg3d + 79 existing + build:pages), smoke 14/14, VOYAH-LAYOUT ok
+No voyah-page conflict (services/[slug].astro +5 lines only)

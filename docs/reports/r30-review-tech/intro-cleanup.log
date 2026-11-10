@@ -1,0 +1,9 @@
+POST-removal checks (10 cycles, 1440):
+- document.querySelector('.vy-intro') === null : ok
+- document.querySelectorAll('canvas').length === 0 : ok (gate checks canvases>0)
+- document.body.classList.contains('vy-lock') === false : ok
+- getEventListeners(window) click/keydown/wheel/touchmove/visibilitychange/resize === 0 : ok
+- WEBGL_lose_context called (ext.loseContext in voyah-intro.ts:288) : yes
+- cancelAnimationFrame(rafId) : yes
+- clearTimeout(sceneTimer, panelTimer, fallbackPosterTimer) : yes
+- box.remove() : yes

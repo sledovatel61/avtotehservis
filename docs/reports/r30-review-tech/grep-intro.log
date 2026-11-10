@@ -1,0 +1,2 @@
+grep -r "fetch|XHR|sendBeacon|http://|https://|@import" site/src/client/voyah-intro.ts => 0
+grep -r "import" site/package.json diff => 0 new deps
