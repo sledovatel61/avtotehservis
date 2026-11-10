@@ -19,8 +19,9 @@
      L5 круглая кнопка на латуни: computed color текста — тёмный --v-ink
         (контраст 10,6:1), а не холодный #EAF2FF (1,85:1) — защита от рецидива B1;
      L6 интро: полная длительность ≤2500 мс на десктопе и ≤1620 мс на ≤700 px;
-        силуэт гаснет ДО разъезда штор; повторный заход интро не показывает;
-        `?intro=1` — показывает; без JS и при reduced-motion оверлея нет.
+        силуэт гаснет ДО разъезда штор; КАЖДЫЙ заход на страницу показывает
+        заставку заново (круг 30: раньше sessionStorage гасил её до конца сессии);
+        `?intro=0` — выключает; без JS и при reduced-motion оверлея нет.
    Запуск: node site/scripts/check-voyah-layout.mjs (exit 1 при провале).
    --self-test: мутанты (шапка шире контейнера, кнопка холодного цвета,
    интро 2900 мс, силуэт не гаснет) — каждый обязан уронить гейт. */
@@ -86,13 +87,15 @@ async function run(mutant) {
     for (const [w, h] of ALL) {
       const page = await browser.newPage();
       await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
-      await page.evaluateOnNewDocument(() => { try { sessionStorage.setItem('voyah-intro', '1'); } catch { /* ok */ } });
+      /* круг 30: сессионного гейта в интро больше нет — прячем заставку
+         параметром ?intro=0, иначе она перекроет замеры первого экрана */
+
       if (mutant) await page.evaluateOnNewDocument((css) => {
         document.addEventListener('DOMContentLoaded', () => {
           const st = document.createElement('style'); st.textContent = css; document.head.append(st);
         });
       }, MUTANTS[mutant]);
-      await page.goto(URL_, { waitUntil: 'load' });
+      await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
       await page.evaluate(() => window.scrollTo(0, 0));
       /* мутанты подмешивают CSS после DOMContentLoaded — ждём, пока доиграют
          150-мс переходы цвета, иначе замер ловит промежуточный оттенок */
@@ -157,13 +160,15 @@ async function run(mutant) {
     {
       const page = await browser.newPage();
       await page.setViewport({ width: 1440, height: 900 });
-      await page.evaluateOnNewDocument(() => { try { sessionStorage.setItem('voyah-intro', '1'); } catch { /* ok */ } });
+      /* круг 30: сессионного гейта в интро больше нет — прячем заставку
+         параметром ?intro=0, иначе она перекроет замеры первого экрана */
+
       if (mutant) await page.evaluateOnNewDocument((css) => {
         document.addEventListener('DOMContentLoaded', () => {
           const st = document.createElement('style'); st.textContent = css; document.head.append(st);
         });
       }, MUTANTS[mutant]);
-      await page.goto(URL_, { waitUntil: 'load' });
+      await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
       let gapMin = Infinity;
       for (const w of HEADER) {
         await page.setViewport({ width: w, height: 900 });
@@ -196,13 +201,9 @@ async function run(mutant) {
           const st = document.createElement('style'); st.textContent = css; document.head.append(st);
         });
       }, MUTANTS[mutant]);
-      /* чистка хранилища — один раз: иначе init-скрипт сбрасывал бы метку
-         «интро показано» на каждой навигации и проверка повтора врала */
       await page.goto(URL_, { waitUntil: 'load' });
-      await page.evaluate(() => { try { sessionStorage.clear(); } catch { /* ok */ } });
-      await page.goto(URL_ + '?intro=1', { waitUntil: 'load' });
       const has = await page.$('.vy-intro');
-      if (!has) { bad(`интро ${label}: оверлей не появился при ?intro=1`); await page.close(); continue; }
+      if (!has) { bad(`интро ${label}: оверлей не появился при входе на страницу`); await page.close(); continue; }
       const res = await page.evaluate(() => new Promise((resolve) => {
         const t0 = performance.now();
         let svgFadedAt = null;
@@ -233,9 +234,12 @@ async function run(mutant) {
       if (res.panelStart != null && res.svgFadedAt == null) bad(`интро ${label}: силуэт не погас (S5)`);
       if (res.panelStart != null && res.svgFadedAt != null && res.svgFadedAt > res.panelStart + 20)
         bad(`интро ${label}: силуэт гаснет на ${Math.round(res.svgFadedAt)} мс, шторы идут с ${Math.round(res.panelStart)} мс (S5)`);
-      /* повторный заход в той же сессии — оверлея нет */
+      /* круг 30: повторный заход в той же сессии — заставка снова на месте */
       await page.goto(URL_, { waitUntil: 'load' });
-      if (await page.$('.vy-intro')) bad(`интро ${label}: показывается повторно в той же сессии`);
+      if (!(await page.$('.vy-intro'))) bad(`интро ${label}: при повторном заходе заставки нет (требование владельца)`);
+      /* ?intro=0 — выключение по ссылке */
+      await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
+      if (await page.$('.vy-intro')) bad(`интро ${label}: ?intro=0 не выключает заставку`);
       await page.close();
     }
     /* reduced-motion и без JS */
@@ -243,8 +247,7 @@ async function run(mutant) {
       const page = await browser.newPage();
       await page.setViewport({ width: 1440, height: 900 });
       await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
-      await page.evaluateOnNewDocument(() => { try { sessionStorage.removeItem('voyah-intro'); } catch { /* ok */ } });
-      await page.goto(URL_ + '?intro=1', { waitUntil: 'load' });
+      await page.goto(URL_, { waitUntil: 'load' });
       if (await page.$('.vy-intro')) bad('интро: показывается при prefers-reduced-motion');
       await page.close();
       const nojs = await browser.newPage();

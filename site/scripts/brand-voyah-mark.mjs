@@ -6,9 +6,10 @@
    тёмное пятно, а ставим чистый металлический знак в ту же нишу на решётке.
 
    Как это сделано:
-     • знак рисуется тем же SVG, что стоит на странице (site/public/img/vy-mark.svg):
-       один источник формы, поэтому «логотип на странице» и «логотип на машине» —
-       один и тот же знак;
+     • знак берётся тем же файлом, что стоит на странице (site/public/img/vy-mark.png,
+       собран из исходника владельца scripts/build-voyah-logo.mjs): один источник
+       формы, поэтому «логотип на странице» и «логотип на машине» — один и тот же
+       знак (две изогнутые лопасти + центральная игла, а не самодельная «V»);
      • композит идёт в мастеры (hero.jpg 1400×781 и evening.jpg 1400×781), а не в
        готовые vy-*: build-voyah-images.mjs режет из мастеров все размеры;
      • у знака есть мягкое свечение и лёгкий наклон под ракурс кадра, у героя —
@@ -20,7 +21,7 @@
    Запуск: node site/scripts/brand-voyah-mark.mjs
    Проверка глазами: node site/scripts/brand-voyah-mark.mjs --preview → tmp-*.jpg рядом. */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -28,7 +29,7 @@ import sharp from 'sharp';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, '../../mockups/r28/voyah/img');
 const OUT = join(HERE, '../../docs/photos-source/r28');
-const MARK = join(HERE, '../public/img/vy-mark.svg');
+const MARK = join(HERE, '../public/img/vy-mark.png');
 
 /* координаты ниши знака (мастер 1400×781) и габарит знака в кадре */
 const SHOTS = [
@@ -37,7 +38,7 @@ const SHOTS = [
     out: join(OUT, 'voyah-evening-mark.jpg'),
     /* ниша на решётке: тёмный «щит» между двумя участками светодиодной полосы,
        по замеру 496…531 × 434…463 в мастере — знак ставим внутрь щита */
-    x: 504, y: 433, w: 19, h: 26,
+    x: 504, y: 431, w: 22, h: 32,
     rotate: -1.5, opacity: 1, blur: 0.4, glow: 0.42,
   },
   {
@@ -46,13 +47,11 @@ const SHOTS = [
     /* решётка в перспективе: знак ставим в центр ламелей (не на кромку носа —
        в первом прогоне он «висел» на стыке решётки и крыла), под ним тёмная
        площадка-основание, иначе знак смотрится наклейкой поверх ламелей */
-    x: 816, y: 290, w: 17, h: 21,
+    x: 815, y: 287, w: 20, h: 25,
     rotate: -4, opacity: 0.92, blur: 0.35, glow: 0.3,
     back: { w: 42, h: 30, alpha: 0.55 },
   },
 ];
-
-const svg = readFileSync(MARK);
 
 /* тёмная площадка под знаком: овальная, с мягкими краями — «гнездо» в решётке */
 async function renderBack(w, h, alpha) {
@@ -68,7 +67,7 @@ async function renderBack(w, h, alpha) {
 }
 
 async function render(s, w, h, opacity, blur) {
-  const base = await sharp(svg, { density: 900 })
+  const base = await sharp(MARK)
     .resize(w, h, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .rotate(s.rotate, { background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png()
@@ -85,7 +84,7 @@ for (const s of SHOTS) {
   const mark = await render(s, s.w, s.h, s.opacity, s.blur);
   /* свечение: размытая копия знака холодным светом, чуть крупнее */
   const glowW = Math.round(s.w * 1.9), glowH = Math.round(s.h * 1.9);
-  const glow = await sharp(svg, { density: 900 })
+  const glow = await sharp(MARK)
     .resize(glowW, glowH, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .tint({ r: 234, g: 242, b: 255 })
     .blur(6)
