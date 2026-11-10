@@ -17,8 +17,6 @@
    Тайминг живёт только в CSS: .vy-intro{--vy-scene;--vy-panel}. Скрипт читает их
    из computed style, поэтому «в коде одно, по факту другое» не разойдётся. */
 
-import { CAR, carGlsl } from './car-profile';
-
 type GL = WebGL2RenderingContext;
 
 type IntroStats = {
@@ -49,19 +47,73 @@ float hash13(vec3 p){
   p += dot(p, p.yzx + 33.33);
   return fract((p.x + p.y) * p.z);
 }
-${carGlsl(CAR)}
+float smin(float a, float b, float k){
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+float sdBox2(vec2 p, vec2 b, float r){
+  vec2 d = abs(p) - b + r;
+  return length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0) - r;
+}
+float sdRot(vec2 p, vec2 c, vec2 b, float a, float r){
+  vec2 q = p - c;
+  float s = sin(a), co = cos(a);
+  q = mat2(co, s, -s, co) * q;
+  return sdBox2(q, b, r);
+}
+float sdCylZ(vec3 p, vec2 c, float r, float hw){
+  vec2 d = abs(vec2(length(p.xy - c), p.z)) - vec2(r, hw);
+  return min(max(d.x, d.y), 0.0) + length(max(d, vec2(0.0)));
+}
+float sdExt(float dd, float z, float hz, float r){
+  vec2 w = vec2(dd + r, abs(z) - (hz - r));
+  return min(max(w.x, w.y), 0.0) + length(max(w, vec2(0.0))) - r;
+}
 
-/* дешёвое отсечение: всё, что дальше габаритного бокса, считается по боксу */
+/* остекление: трапеция (лобовое — наклон, крыша — ровная, корма — отвесная) */
+float cabin(vec2 p){
+  float a = 1.66 - p.y;
+  float b = p.y - 1.02;
+  float c = dot(p - vec2(0.10, 1.66), normalize(vec2(-0.68, -0.73)));
+  float d = dot(p - vec2(-1.70, 1.02), normalize(vec2(0.70, -0.71)));
+  return -min(min(a, b), min(c, d));
+}
+
+/* профиль кроссовера сбоку */
+float prof(vec2 p){
+  float bodyD = sdBox2(p - vec2(0.0, 0.70), vec2(2.16, 0.30), 0.17);
+  float hoodD = sdRot(p, vec2(1.40, 1.03), vec2(0.72, 0.12), -0.10, 0.10);
+  float d = smin(bodyD, hoodD, 0.09);
+  d = smin(d, cabin(p), 0.07);
+  return d;
+}
+
 float map(vec3 p){
-  float bx = carBoxDist(p);
-  if (bx > 0.03) return bx;
-  return sdCarProfile(p);
+  float hz = mix(0.95, 0.79, smoothstep(1.02, 1.18, p.y));
+  float dp = prof(p.xy);
+  float d = sdExt(dp, p.z, hz, 0.075);
+  d = max(d, -sdCylZ(p, vec2(1.50, 0.35), 0.46, 1.1));
+  d = max(d, -sdCylZ(p, vec2(-1.50, 0.35), 0.46, 1.1));
+  float w = sdCylZ(p - vec3(0.0, 0.0, 0.80), vec2(1.50, 0.35), 0.355, 0.115);
+  w = min(w, sdCylZ(p - vec3(0.0, 0.0, -0.80), vec2(1.50, 0.35), 0.355, 0.115));
+  w = min(w, sdCylZ(p - vec3(0.0, 0.0, 0.80), vec2(-1.50, 0.35), 0.355, 0.115));
+  w = min(w, sdCylZ(p - vec3(0.0, 0.0, -0.80), vec2(-1.50, 0.35), 0.355, 0.115));
+  return min(d, w);
+}
+
+vec3 normalAt(vec3 p){
+  const vec2 e = vec2(0.0018, -0.0018);
+  return normalize(
+    e.xyy * map(p + e.xyy) +
+    e.yyx * map(p + e.yyx) +
+    e.yxy * map(p + e.yxy) +
+    e.xxx * map(p + e.xxx));
 }
 
 void camera(float t, out vec3 ro, out vec3 ta){
   float e = t * t * (3.0 - 2.0 * t);
   float yaw = mix(-0.40, 0.12, e);
-  float rad = mix(6.35, 5.05, e);
+  float rad = mix(5.8, 4.5, e);
   float pit = mix(0.13, 0.22, e);
   ta = vec3(0.0, 0.80, 0.0);
   ro = ta + vec3(sin(yaw) * cos(pit), sin(pit), cos(yaw) * cos(pit)) * rad;
@@ -105,13 +157,12 @@ void main(){
   float t = 0.0;
   float halo = 0.0;
   bool hit = false;
-  for (int i = 0; i < 36; i++) {
+  for (int i = 0; i < 72; i++) {
     vec3 p = ro + rd * t;
     float d = map(p);
-    /* ореол без exp(): в программном растеризаторе трансцендентные дороже всего */
-    halo += 1.0 / (1.0 + max(d, 0.0) * 22.0) * 0.014;
-    if (d < 0.0024 + t * 0.0014) { hit = true; break; }
-    t += max(d, 0.0015);
+    halo += exp(-max(d, 0.0) * 22.0) * 0.014;
+    if (d < 0.0016 + t * 0.0012) { hit = true; break; }
+    t += max(d * 0.85, 0.0015);
     if (t > 18.0) break;
   }
 
@@ -119,7 +170,7 @@ void main(){
 
   if (hit) {
     vec3 p = ro + rd * t;
-    vec3 n = carNormal(p);
+    vec3 n = normalAt(p);
     float rv = smoothstep(sweep, sweep + 0.45, p.x);
     float head = exp(-abs(p.x - sweep) * 9.0);
     float dith = smoothstep(dissolve - 0.30, dissolve, hash13(floor(p * 5.0)));
@@ -133,32 +184,21 @@ void main(){
     float secFade = 1.0 - smoothstep(0.015, 0.05, fw);
     float lines = smoothstep(wpx, 0.0, secX) * 0.9 * secFade;
 
-    /* подоконный пояс (beltline) — линия от фары через ручки к фонарю */
-    float belt = abs(p.y - 1.06);
-    lines += smoothstep(max(fwidth(belt) * 0.9, 0.0012), 0.0, belt) * side * 1.15;
+    float belt = abs(p.y - 1.00);
+    lines += smoothstep(max(fwidth(belt) * 0.9, 0.0012), 0.0, belt) * side * 1.1;
 
-    /* стыки дверей: передняя кромка, средняя стойка, задняя дверь */
-    float seamD = min(min(abs(p.x - 0.55), abs(p.x + 0.18)), abs(p.x + 1.15));
-    float seam = smoothstep(max(fwidth(seamD) * 0.85, 0.0012), 0.0, seamD) * side * smoothstep(1.02, 0.94, p.y) * 0.75;
+    float seamD = min(min(abs(p.x - 0.52), abs(p.x - 0.06)), abs(p.x - 0.66));
+    float seam = smoothstep(max(fwidth(seamD) * 0.85, 0.0012), 0.0, seamD) * side * smoothstep(0.98, 0.90, p.y) * 0.75;
     lines += seam;
 
-    /* остекление: контур между подоконной линией и крышей, в пределах кабины */
-    float gIn = min(carTop(p.x) - 0.05 - p.y, p.y - 1.075);
-    float gX = smoothstep(-1.92, -1.74, p.x) * smoothstep(0.62, 0.50, p.x);
-    lines += smoothstep(max(fwidth(gIn) * 0.9, 0.0015), 0.0, abs(gIn)) * side * gX * 1.0;
+    float cab = cabin(p.xy);
+    lines += smoothstep(max(fwidth(cab) * 0.9, 0.0015), 0.0, abs(cab - 0.05)) * side * smoothstep(0.96, 1.02, p.y) * 1.0;
 
-    /* фары: узкие «прищуренные» полосы на крыле и фонарь во всю корму */
-    float drl = smoothstep(0.016, 0.0, abs(p.y - 0.99)) * smoothstep(2.02, 2.14, p.x);
-    drl += smoothstep(0.014, 0.0, abs(p.y - 0.95)) * smoothstep(-2.02, -2.14, p.x);
-    drl *= smoothstep(0.55, 0.70, abs(p.z));
+    float drl = smoothstep(0.012, 0.0, abs(p.y - 1.03)) * smoothstep(2.06, 2.18, p.x);
+    drl += smoothstep(0.010, 0.0, abs(p.y - 1.06)) * smoothstep(-2.06, -2.18, p.x);
 
-    /* диск колеса: два обода + 5 спиц (в неоне читается как колесо, не «бублик») */
-    float wr = length(p.xy - vec2(sign(p.x) * 1.48, 0.369));
-    float face = smoothstep(0.80, 0.90, abs(p.z));
-    float rims = (smoothstep(0.012, 0.0, abs(wr - 0.252)) + smoothstep(0.010, 0.0, abs(wr - 0.338))) * face * step(wr, 0.352);
-    float ang = atan(p.y - 0.369, abs(p.x) - 1.48);
-    float spoke = abs(fract(ang / 1.25664 + 0.5) - 0.5) * 1.25664;
-    rims += smoothstep(0.055, 0.0, spoke) * step(wr, 0.25) * step(0.04, wr) * face * 0.9;
+    float wr = length(p.xy - vec2(sign(p.x) * 1.50, 0.35));
+    float rims = (smoothstep(0.010, 0.0, abs(wr - 0.195)) + smoothstep(0.008, 0.0, abs(wr - 0.285))) * smoothstep(0.55, 0.70, abs(p.z)) * step(wr, 0.34);
 
     float rim = pow(1.0 - abs(dot(n, rd)), 3.0);
     float fres = 1.0 - abs(dot(n, rd));
@@ -405,7 +445,7 @@ function boot(): void {
       h: number;
     };
     let target: Target = { tex: null, texel: null, fbo: null, fboB: null, bw: 0, bh: 0, w: 0, h: 0 };
-    let scale = quick ? 0.46 : 0.52;
+    let scale = quick ? 0.55 : 0.62;
 
     const alloc = (): boolean => {
       const cssW = box.clientWidth || innerWidth;
@@ -496,8 +536,8 @@ function boot(): void {
       if (frames === 1) box.classList.remove('is-wait');
 
       /* адаптивное качество: тяжело — снижаем разрешение сцены, легко — возвращаем */
-      if (frames === 4 || frames === 12 || frames === 30) {
-        const avg = acc / (frames === 4 ? 3 : frames === 12 ? 8 : 18);
+      if (frames === 8 || frames === 20 || frames === 44) {
+        const avg = acc / (frames === 8 ? 7 : frames === 20 ? 12 : 24);
         if (avg > 32 && scale > 0.4) {
           scale = Math.max(0.4, scale - 0.1);
           acc = 0;
