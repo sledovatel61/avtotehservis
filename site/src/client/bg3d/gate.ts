@@ -63,7 +63,10 @@ export interface Bg3dEnv {
  */
 export const OPS_PER_PX: Record<VariantLike, [number, number, number]> = {
   depth: [374, 415, 460],
-  silhouette: [770, 811, 941],
+  /* силуэт подорожал на 1,0–1,4 %: carSdf теперь обёртка над общим модулем
+     профиля (car-profile.ts, задание №54) вместо двух rbox и двух сегментов.
+     Приёмка задания — не больше +10 % к 941, факт 954 (+1,4 %). */
+  silhouette: [780, 821, 954],
 };
 type VariantLike = 'depth' | 'silhouette';
 

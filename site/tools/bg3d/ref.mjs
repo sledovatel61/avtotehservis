@@ -112,31 +112,32 @@ export function smin(a, b, k) {
   return r;
 }
 
-/** float carSdf(vec2 q) — SPIR-V: 21 арифметическая инструкция (из них 9 вызовов). */
+/* ---------- профиль машины: тот же модуль, что у шейдера ----------
+   Порт обязан считать ТУ ЖЕ геометрию, иначе оп/px и кадры врут. Поэтому он
+   не повторяет формулы, а берёт их из единственного источника —
+   `src/client/car-profile.ts` (задание №54). */
+const profile = await import('../../src/client/car-profile.ts');
+export const CAR_SCALE = profile.SCALE.bg3d;
+export const CAR_GROUND = profile.SCENE.ground;
+export const CAR_TYRE_R = profile.CAR.tyre / 2;
+export const CAR_AXLE_F = profile.SCENE.axleFront;
+export const CAR_AXLE_R = profile.SCENE.axleRear;
+
+/**
+ * Стоимость одного обращения к профилю, посчитанная по SPIR-V
+ * (`scripts/bg3d-shader-check.mjs`, byFunc), а не на глаз:
+ * pTop 101 + pBottom 17 + pArch×2 10 + carProfile 12 + carSdf 5 = 145 арифм.
+ * Если профиль в шейдере поменяется, эти числа надо пересчитать — иначе
+ * оп/px разойдётся с компилятором, а бюджет держится именно на них.
+ */
+export const PROFILE_COST = { inst: 145, scalar: 130 };
+function profileCalls() { t(PROFILE_COST.inst, PROFILE_COST.scalar); }
+
+/** float carSdf(vec2 q) — единицы сцены → метры модуля → carProfile(). */
 export function carSdf(qx, qy) {
-  const body = sdRoundBox(qx - 0.0, qy - (-0.115), 0.90, 0.145, 0.095);
-  t(2, 2);                                   /* q - vec2(0,-0.115) + вызов */
-  let cabin = sdRoundBox(qx - (-0.02), qy - 0.10, 0.46, 0.16, 0.085);
-  t(2, 2);
-  /* два среза полуплоскостями: наклонное лобовое и пологая корма — режем только кабину */
-  const wind = (qx - 0.40) * 0.55 + (qy - 0.015) * 0.84;
-  cabin = Math.max(cabin, wind);
-  const rear = -(qx + 0.50) * 0.40 + (qy - 0.05) * 0.92;
-  cabin = Math.max(cabin, rear);
-  t(12, 12);
-  const hood = sdSeg(qx, qy, 0.46, 0.01, 0.93, -0.10, 0.070);
-  const tail = sdSeg(qx, qy, -0.48, 0.03, -0.91, -0.11, 0.068);
-  t(2, 0);                                   /* 2 вызова sdSeg */
-  let s = smin(body, cabin, 0.06);
-  s = smin(s, hood, 0.05);
-  s = smin(s, tail, 0.05);
-  t(3, 0);                                   /* 3 вызова smin */
-  const arch1 = -sdCircle(qx - 0.56, qy + 0.27, 0.235);
-  const arch2 = -sdCircle(qx + 0.56, qy + 0.27, 0.235);
-  s = Math.max(s, arch1);
-  s = Math.max(s, arch2);
-  t(8, 8);                                   /* 2 вызова sdCircle, 2 вычитания vec2, 2 отрицания, 2 max */
-  return s;
+  t(4, 4);                                           /* /CAR_UNITS, -CAR_GROUND, вызов, *CAR_UNITS */
+  profileCalls();
+  return profile.carProfileJS(qx / CAR_SCALE, (qy - CAR_GROUND) / CAR_SCALE) * CAR_SCALE;
 }
 
 /* ---------- палитра (из tokens.css) ---------- */
@@ -291,7 +292,7 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     const fogC = Math.exp(-depth * 1.15);
     t(3, 4);
 
-    const gy = qy + 0.44;
+    const gy = qy - CAR_GROUND;
     const shd = Math.exp(-(qx * qx * 0.75 + gy * gy * 20.0));
     t(8, 10);
     const shdMul = 1.0 - 0.62 * shd;
@@ -318,11 +319,14 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     t(9, 27);
 
     /* колёса: wheel() вызывается дважды */
-    for (const wx of [0.56, -0.56]) {
-      const dx = qx - wx, dy = qy + 0.27;
+    for (const wx of [CAR_AXLE_F, CAR_AXLE_R]) {
+      /* радиус шины — паспортный (0,36875 м), диск — 0,42 радиуса */
+      const rTyre = CAR_TYRE_R * CAR_SCALE;
+      const rRim = 0.42 * rTyre;
+      const dx = qx - wx, dy = qy - (CAR_GROUND + rTyre);
       const dl = Math.sqrt(dx * dx + dy * dy);
-      const tyre = 1.0 - smoothstep(0.166, 0.176, dl);
-      const rim = 1.0 - smoothstep(0.068, 0.078, dl);
+      const tyre = 1.0 - smoothstep(rTyre - 0.009, rTyre, dl);
+      const rim = 1.0 - smoothstep(rRim - 0.006, rRim, dl);
       t(11, 22);
       const tMul = tyre * fogC;
       cR = mix(cR, P.night[0] * 0.38, tMul);
@@ -365,8 +369,8 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     /* отражение в мокром асфальте */
     if (U.quality > 1.5) {
       t(1, 1);
-      const rg = -qy - 0.88;
-      if (rg > -0.44) {
+      const rg = 2.0 * CAR_GROUND - qy;
+      if (rg > CAR_GROUND) {
         t(3, 3);
         const wob = vnoise(qy * 3.1, tm * 0.7);
         t(4, 4);
@@ -375,7 +379,7 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
         t(4, 4);
         const rsd = carSdf(rqx, rqy);
         t(1, 0);
-        const fade = Math.exp(-Math.max(-(qy + 0.44), 0.0) * 3.4);
+        const fade = Math.exp(-Math.max(CAR_GROUND - qy, 0.0) * 3.4);
         t(5, 6);
         const rIn = (1.0 - smoothstep(-0.006, 0.012, rsd)) * fade;
         t(4, 8);

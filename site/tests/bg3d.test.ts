@@ -101,9 +101,9 @@ test('бюджет тира: high > mid > low > off = 0', () => {
 });
 
 test('fitScale: запас по бюджету не режет масштаб, нехватка — режет по sqrt и упирается в пол', () => {
-  /* 1600×1000 @30 к/с с вариантом B (811 оп/px) — как раз тот размер, на котором
+  /* 1600×1000 @30 к/с с вариантом B (821 оп/px) — как раз тот размер, на котором
      бюджет mid (25 Гоп/с) начинает связывать: fit ≈ 0.80 */
-  const base = { cssWidth: 1600, cssHeight: 1000, dpr: 1, fpsCap: 30, opsPerPx: 811, budget: OPS_BUDGET.mid, min: 0.5, max: 1 };
+  const base = { cssWidth: 1600, cssHeight: 1000, dpr: 1, fpsCap: 30, opsPerPx: 821, budget: OPS_BUDGET.mid, min: 0.5, max: 1 };
   const free = fitScale({ ...base, budget: 1e12 });
   assert.equal(free, 1, 'при огромном бюджете масштаб обязан остаться максимальным');
 
