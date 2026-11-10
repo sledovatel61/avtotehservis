@@ -10,6 +10,7 @@ const services = listHomeServices();
 import { SVC_IMG } from '../server/svc-img.ts';
 /* круг 28: раздел Voyah Free живёт на своём CSS (токены --v-*) */
 import '../styles/voyah.css';
+import VoyahMark from '../components/VoyahMark.astro';
 const cases = listPublishedCases(6);
 const reviews = listPublishedReviews(8);
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
@@ -253,7 +254,7 @@ const jsonLd = {
     <div class="v-teaser-grid">
       <div class="reveal">
         <p class="v-eyebrow v-eyebrow--brand">
-          <img class="v-mark" src="/img/vy-mark.png" width="24" height="34" alt="" decoding="async" loading="lazy">
+          <VoyahMark class="v-mark" height={26} />
           Voyah Free · новое направление
         </p>
         <h2 id="v-teaser-h">ТО Voyah Free на Портовой, 439</h2>

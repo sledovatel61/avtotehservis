@@ -70,6 +70,8 @@ const MUTANTS = {
   'кнопка холодного цвета (рецидив B1)': `.v-hero .v-btn--brass,.v-sec .v-btn--brass{color:#EAF2FF !important}`,
   'интро длиннее нормы': `.vy-intro{--vy-scene:2600ms !important;--vy-dur:2900ms !important}`,
   'силуэт не гаснет': `.vy-intro.is-play .vy-intro-svg{animation:vySvgIn 520ms ease-out 640ms forwards !important}`,
+  'знак марки искажён (26×34 вместо пропорции 0.7122)': `.v-eyebrow--brand .v-mark,.v-aside-mark{width:26px !important;height:34px !important}`,
+  'знак залит краской владельца (невидим на тёмном)': `.v-eyebrow--brand .v-mark path,.v-aside-mark path{fill:#1B1F3C !important}`,
 };
 
 async function run(mutant) {
@@ -129,6 +131,56 @@ async function run(mutant) {
         };
       });
       const tag = `${w}×${h}`;
+
+      /* ---------- L7: знак марки на странице (задание №48) ----------
+         Логотип вернулся на страницу инлайновым SVG, поэтому проверяем не
+         «файл лежит», а что он реально нарисован и не искажён: пропорция
+         контура совпадает с пропорцией кадра (0.7122), заливка — не краска
+         владельца #1B1F3C (она даёт 1.23:1 на почти чёрном фоне), и видимая
+         ширина/высота знака не нулевые. */
+      const mark = await page.evaluate(() => [...document.querySelectorAll('svg.v-mark, svg.v-aside-mark')].map((el) => {
+        const r = el.getBoundingClientRect();
+        const path = el.querySelector('path');
+        /* bbox контура — объединение по всем подпутям: у знака их три
+           (две лопасти и игла), и по отдельности каждая даёт свою пропорцию */
+        let ub = null;
+        try {
+          for (const pp of el.querySelectorAll('path')) {
+            const b = pp.getBBox();
+            ub = ub
+              ? { x0: Math.min(ub.x0, b.x), y0: Math.min(ub.y0, b.y), x1: Math.max(ub.x1, b.x + b.width), y1: Math.max(ub.y1, b.y + b.height) }
+              : { x0: b.x, y0: b.y, x1: b.x + b.width, y1: b.y + b.height };
+          }
+        } catch { ub = null; }
+        const pathBox = ub ? { width: ub.x1 - ub.x0, height: ub.y1 - ub.y0 } : null;
+        return {
+          cls: el.getAttribute('class'),
+          w: +r.width.toFixed(2),
+          h: +r.height.toFixed(2),
+          fill: getComputedStyle(path || el).fill,
+          paths: el.querySelectorAll('path').length,
+          vb: el.getAttribute('viewBox'),
+          pathRatio: pathBox && pathBox.height ? +(pathBox.width / pathBox.height).toFixed(4) : null,
+        };
+      }));
+      if (!mark.length) bad(`${tag}: на странице нет знака марки (svg.v-mark / .v-aside-mark)`);
+      for (const m of mark) {
+        const vbRatio = m.vb ? (() => { const v = m.vb.trim().split(/\s+/).map(Number); return +(v[2] / v[3]).toFixed(4); })() : null;
+        if (vbRatio == null || Math.abs(vbRatio - 0.7122) > 0.01) bad(`${tag}: ${m.cls} пропорция кадра ${m.vb} ≠ 0.7122 (искажение знака)`);
+        if (m.pathRatio != null && Math.abs(m.pathRatio - 0.7122) > 0.02) bad(`${tag}: ${m.cls} пропорция контура ${m.pathRatio} ≠ 0.7122`);
+        /* пропорция самого элемента: при неверной ширине (как у PNG 24×34 =
+           0.706) знак получает лишний горизонтальный запас и съезжает */
+        const elRatio = m.h > 0 ? +(m.w / m.h).toFixed(4) : null;
+        if (elRatio != null && Math.abs(elRatio - 0.7122) > 0.01) bad(`${tag}: ${m.cls} пропорция элемента ${elRatio} ≠ 0.7122 (${m.w}×${m.h})`);
+        if (m.paths !== 3) bad(`${tag}: ${m.cls} контуров ${m.paths}, а в знаке их 3 (2 лопасти + игла)`);
+        if (!(m.w > 1 && m.h > 1)) bad(`${tag}: ${m.cls} не отрисован (${m.w}×${m.h})`);
+        const rgb = (m.fill.match(/\d+/g) || []).map(Number);
+        if (rgb.length >= 3) {
+          /* краска владельца на тёмном фоне не видна: 1.23:1 */
+          const ink = rgb[0] < 40 && rgb[1] < 40 && rgb[2] < 65;
+          if (ink) bad(`${tag}: ${m.cls} залит краской владельца ${m.fill} — на тёмном фоне 1.23:1`);
+        } else if (!/currentcolor|rgb/i.test(m.fill)) bad(`${tag}: ${m.cls} заливка не определена (${m.fill})`);
+      }
 
       if (m.scrollWidth > m.innerWidth + 1) bad(`${tag}: горизонтальный скролл ${m.scrollWidth} > ${m.innerWidth}`);
       if (!m.h1) bad(`${tag}: нет .v-hero-h`);
