@@ -85,6 +85,7 @@ float sdQuad(vec2 p, vec2 a, vec2 b, vec2 c, vec2 d, float r){
   float q = max(max(sideD(p, a, b), sideD(p, b, c)), max(sideD(p, c, d), sideD(p, d, a))) * s;
   return -(q + r);   /* «минус внутри», как у sdBox: «+ r» раздувает контур и скругляет углы */
 }
+vec2 rot2(vec2 p, float a){ float c = cos(a), s = sin(a); return vec2(c * p.x - s * p.y, s * p.x + c * p.y); }
 float sdSeg(vec2 p, vec2 a, vec2 b, float r){
   vec2 pa = p - a, ba = b - a;
   float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
@@ -130,11 +131,19 @@ float bodyOnly(vec2 p){
   return smin(dSide, dEdge, 26.0);
 }
 
-/* Рейлинги над крышей: эталон x 643…664 (верх y=83, ширина 22) и x 1253…1275
-   (верх y=86, ширина 15). Две чёрточки, но силуэт перестаёт быть «обмылком». */
+/* Рейлинги над крышей: в эталоне это низкие продольные плавники, лежащие на
+   крыше (x 643…664 и 1253…1275, верх y ≈ 83 при кромке крыши 92).
+   Плавник — приплюснутый эллипс, у которого над крышей видна только верхняя
+   половина: концы уходят в крышу без вертикальных торцов. */
+float finSd(vec2 q, vec2 r){
+  vec2 s = q / r;
+  return (length(s) - 1.0) * min(r.x, r.y);
+}
 float railsSd(vec2 p){
-  float a = sdBox(vec2(p.x - 653.5, p.y - 96.0), vec2(11.0, 13.0), 5.0);
-  float b = sdBox(vec2(p.x - 1264.0, p.y - 97.5), vec2(7.5, 11.5), 4.0);
+  /* наклон ±0,10 рад — по линии крыши; верх 88/89 при кромке BY0 = 95,
+     низ утоплен в кузов, чтобы плавник срастался с крышей без шва */
+  float a = finSd(rot2(vec2(p.x - 653.5, p.y - 97.5), 0.10), vec2(16.0, 9.5));
+  float b = finSd(rot2(vec2(p.x - 1264.0, p.y - 98.0), -0.10), vec2(15.0, 9.0));
   return min(a, b);
 }
 
@@ -163,7 +172,9 @@ void layers(vec2 p, float t, out float body, out vec3 light){
   /* ранние выходы по полосам кадра: рейлинги живут только у крыши, зеркало —
      в узком поясе. Это убирает три SDF из девяти десятых пикселей кадра. */
   float dRail = p.y < 130.0 ? railsSd(p) : 9999.0;
-  float dBody = max(bodyOnly(p), -dRail);        /* корпус + рейлинги, «плюс внутри» */
+  /* корпус + рейлинги, «плюс внутри»; объединение гладкое (-smin), иначе торец
+     плавника даёт вертикальную ступеньку и снова читается «болтом» */
+  float dBody = -smin(-bodyOnly(p), dRail, 3.0);
   float dMirRaw = (p.y > 190.0 && p.y < 372.0) ? mirrorSd(p) : 9999.0;
   float d = max(dBody, -dMirRaw);
   float inside = smoothstep(-1.6, 1.6, d);
@@ -290,7 +301,7 @@ void main(){
       wsum += w;
     }
     float depth = clamp((p.y - FLOOR) / 280.0, 0.0, 1.0);
-    col += acc / wsum * 0.36 * reflIn * pow(1.0 - depth, 1.7);   /* к низу кадра гаснет */
+    col += acc / wsum * 0.30 * reflIn * pow(1.0 - depth, 2.4);   /* к низу кадра гаснет раньше */
   }
 
   col += light;

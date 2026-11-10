@@ -23,6 +23,8 @@
     "check:shaders": "node scripts/check-shader-compile.mjs",
     "check:profile-copies": "node scripts/check-profile-copies.mjs",
     "measure:intro": "node scripts/measure-intro.mjs",
+    "measure:bg3d:dyn": "node scripts/bg3d-measure-dyn.mjs",
+    "edge:shadow": "node scripts/bg3d-edge-shadow.mjs",
     "car-profile": "node scripts/car-profile.mjs --overlay docs/brand/voyah/refs/r31/side-white-1456.jpg",
     "trace:car-profile": "node scripts/trace-car-profile.mjs",
     "typecheck": "tsc --noEmit",
