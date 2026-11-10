@@ -47,6 +47,9 @@ export interface Bg3dEnv {
   sessionBlocked: boolean;
   /** флаг сборки/владельца: включать ли фон на этой странице вообще */
   featureEnabled: boolean;
+  /** демонстрационный показ без GPU (серверный BG3D_DEMO=1): не блокировать программный
+   *  растеризатор. В обычном показе не выставляется и ни на что не влияет. */
+  demo?: boolean;
   /** navigator.userAgent — только для детекта программных растеризаторов и старых WebView */
   userAgent?: string;
 }
@@ -160,7 +163,10 @@ export function decideTier(env: Bg3dEnv, variant: VariantLike = 'silhouette'): B
     return off(`сеть ${env.effectiveType} — фон не грузим`);
   }
   if (!env.webgl && !env.webgl2) return off('WebGL недоступен');
-  if (isBlockedRenderer(env.renderer, env.vendor)) {
+  /* demo — единственное исключение для программного растеризатора, и включается он
+     только серверным флагом BG3D_DEMO=1 (см. server/bg3d-config.ts). В обычном
+     показе строки ниже гасят фон на SwiftShader/llvmpipe, как и положено. */
+  if (!env.demo && isBlockedRenderer(env.renderer, env.vendor)) {
     return off(`программный/слабый растеризатор: ${(env.renderer ?? '').slice(0, 48) || 'неизвестно'}`);
   }
   if (env.batteryLevel !== undefined && !env.batteryCharging && env.batteryLevel < 0.2) {
@@ -200,8 +206,11 @@ export function decideTier(env: Bg3dEnv, variant: VariantLike = 'silhouette'): B
   if (env.effectiveType === '3g') { score -= 1; reasons.push('сеть 3g'); }
   if (env.webgl2) { score += 1; reasons.push('WebGL2'); } else { reasons.push('только WebGL1'); }
 
-  /* 4. Слишком слабое железо или слишком узкий экран — фон не включаем. */
-  if (score <= -3) return off(`слабое устройство (оценка ${score})`);
+  /* 4. Слишком слабое железо или слишком узкий экран — фон не включаем.
+        В демо-показе (серверный BG3D_DEMO=1) порог железа снят: у песочницы и
+        витрины 2 ядра и 4 ГБ, а показать фон всё равно надо. В обычном показе
+        строка работает как раньше. */
+  if (!env.demo && score <= -3) return off(`слабое устройство (оценка ${score})`);
   if (env.width < NARROW_OFF) return off(`ширина ${env.width}px < ${NARROW_OFF}px — силуэт не читается`);
 
   /* 5. Бюджет качества. Пикселей на кадр — главный множитель стоимости, поэтому

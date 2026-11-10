@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Bg3dLayer from '../../components/Bg3dLayer.astro';
-import { bg3dFor } from '../../server/bg3d-config.ts';
+import { bg3dFor, bg3dDemo } from '../../server/bg3d-config.ts';
 import { getSettings } from '../../server/settings.ts';
 import { getService, otherServices } from '../../server/services.ts';
 import { mdToHtml } from '../../server/markdown.ts';
@@ -17,6 +17,7 @@ if (!svc) Astro.response.status = 404;
 const others = svc ? otherServices(svc.slug, 3) : [];
 /* 3D-фон (задание №44): по умолчанию выключен везде, включается env BG3D — см. server/bg3d-config.ts */
 const bg3d = bg3dFor(svc?.slug);
+const demo3d = bg3dDemo();
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = svc ? [
   {
@@ -50,7 +51,7 @@ const jsonLd = svc ? [
 >
   <nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><a href="/services">Услуги</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">{svc.title}</span></nav>
   <section class="page-head">
-    {bg3d.enabled && <Bg3dLayer variant={bg3d.variant} />}
+    {bg3d.enabled && <Bg3dLayer variant={bg3d.variant} demo={demo3d} />}
     <div class="container">
       <span class="eyebrow" id="svc-tag">{svc.tag ?? svc.grp}</span>
       <h1 id="svc-title">{svc.title}</h1>

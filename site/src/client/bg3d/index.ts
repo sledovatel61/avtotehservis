@@ -75,6 +75,8 @@ export interface MountOpts {
   force?: Partial<Pick<Bg3dDecision, 'quality' | 'fpsCap' | 'renderScale' | 'dprCap' | 'tier' | 'motion'>> & { stress?: number };
   onAutoOff?: (reason: string) => void;
   onStats?: (s: Bg3dStats) => void;
+  /** не гасить сцену по низкому fps: нужно стенду, который сам меряет fps */
+  noWatchdog?: boolean;
 }
 
 /** Собрать экземпляр по разметке хоста: канвас и кнопка уже в DOM (см. Bg3dLayer.astro). */
@@ -83,11 +85,17 @@ export function mount(opts: MountOpts): Mounted {
   const canvas = host.querySelector<HTMLCanvasElement>('canvas.bg3d-canvas') ?? undefined;
   const btn = host.querySelector<HTMLButtonElement>('.bg3d-off') ?? null;
   const userOff = lsGet(LS_KEY) === 'off';
+  /* демо-показ без GPU (сервер выставил BG3D_DEMO=1 → data-bg3d-demo="1").
+     Тогда же не блокируем программный растеризатор и не гасим сцену по низкому fps:
+     иначе на машине без видеокарты владелец не увидит фона вообще. */
+  const demo = host.dataset.bg3dDemo === '1';
   const env = collectEnv(document, window, {
     featureEnabled: opts.featureEnabled,
     userOff,
-    sessionBlocked: ssGet(SS_KEY) === '1',
+    /* в демо автоотключение прошлой сессии не учитываем: показ должен быть воспроизводимым */
+    sessionBlocked: demo ? false : ssGet(SS_KEY) === '1',
   });
+  if (demo) env.demo = true;
   const base = decideTier(env);
   const decision: Bg3dDecision = opts.force ? { ...base, ...opts.force } : base;
 
@@ -153,6 +161,7 @@ export function mount(opts: MountOpts): Mounted {
       dprCap: mounted.decision.dprCap,
       motion: mounted.decision.motion,
       stress: opts.force?.stress ?? 1,
+      noWatchdog: demo || opts.noWatchdog === true,
       opsPerPx: mounted.decision.opsPerPx,
       opsBudget: mounted.decision.opsBudget,
       onStats: opts.onStats,

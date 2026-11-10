@@ -99,6 +99,9 @@ export interface Bg3dConfig {
   onDestroyed?: () => void;
   /** не создавать канвас самому, а взять существующий (страница отдаёт его из разметки) */
   canvas?: HTMLCanvasElement;
+  /** не гасить сцену по низкому fps. Только демо-показ без GPU (серверный BG3D_DEMO=1):
+   *  на SwiftShader watchdog сработает всегда, и владелец не увидит ровно ничего. */
+  noWatchdog?: boolean;
 }
 
 const GL_ATTRS: WebGLContextAttributes = {
@@ -426,6 +429,7 @@ export class Bg3d {
   /* ---------- watchdog: снижение разрешения, потом автоотключение ---------- */
 
   private watchdog(now: number): void {
+    if (this.cfg.noWatchdog) return;
     if (this.cfg.motion === 'static') return;
     if (now - this.t0 < 1500) return;                       /* прогрев: первые кадры дорогие */
     const target = this.cfg.fpsCap > 0 ? this.cfg.fpsCap : 60;
