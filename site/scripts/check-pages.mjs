@@ -40,6 +40,19 @@ async function walk(dir) {
         }
       }
       dom.window.close();
+    } else if (entry.name.endsWith('.js')) {
+      /* Круг 31: адреса картинок, собранные В САМОМ JS (заставка берёт постер и текстуру
+         знака в рантайме), префикс не получали — на Pages они отдавали 404, и заставка
+         рисовалась без эмблемы. Проверяем только каталоги ассетов: `/api/...` на статике
+         всё равно не работает, его отсутствие — не регресс публикации. */
+      const js = await readFile(file, 'utf8');
+      for (const m of js.matchAll(/(["'`])(\/(?:img|fonts|audio|video|media)\/[^"'`]*)/g)) {
+        const value = m[2];
+        assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed JS asset: ${value} in ${file}`);
+        const path = join(root, decodeURIComponent(value.slice('/avtotehservis/'.length)));
+        assert.ok(await exists(path), `Broken JS asset: ${value} in ${file}`);
+        links++;
+      }
     } else if (entry.name.endsWith('.css')) {
       /* РАУНД 17 / приёмка: регресс на главный дефект круга — фон секции ссылался на /img/…
          без префикса и на Pages отдавал 404. Проверяем ОБА вида ссылок: url(…) и

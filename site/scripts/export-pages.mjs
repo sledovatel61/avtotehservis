@@ -98,6 +98,26 @@ try {
     }
   }
   await fixCss(output);
+  /* Круг 31 / приёмка превью: пути к картинкам, зашитые В JS, не переписывались — префикс
+     ставился только в HTML и CSS. Заставка собирает адреса в рантайме
+     (`/img/vy-intro-poster.webp`, `/img/vy-mark-light.svg`), и на Pages оба уходили в 404:
+     постер-заглушка не показывалась, а текстура знака не загружалась, то есть заставка
+     рисовалась БЕЗ эмблемы. Сервер в песочнице отдаёт корень, поэтому локальные прогоны
+     и скриншоты этого не видели — ловится только на публикации.
+     Ограничиваемся каталогами ассетов: `/api/...` префиксовать нельзя — на статике API нет,
+     и путь к нему ничего не меняет. */
+  async function fixJs(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await fixJs(path);
+      else if (entry.name.endsWith('.js')) {
+        const js = await readFile(path, 'utf8');
+        const fixed = js.replace(/(["'`])\/(img|fonts|audio|video|media)\//g, `$1${base}/$2/`);
+        if (fixed !== js) await writeFile(path, fixed);
+      }
+    }
+  }
+  await fixJs(output);
   /* круг 26 (задание №30): SSR отдаёт 301 со старых слагов услуг (svc-aliases.ts);
      на статическом хостинге 301 нет, поэтому публикуем meta-refresh-файлы тех же пар */
   const ALIASES = {
