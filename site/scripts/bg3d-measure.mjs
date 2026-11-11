@@ -170,7 +170,10 @@ if (spv) {
     sdSeg: { call: () => ref.sdSeg(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.05), calls: [] },
     smin: { call: () => ref.smin(0.1, 0.2, 0.05), calls: [] },
     vnoise: { call: () => ref.vnoise(0.37, 0.61), calls: [['hash21', 4]] },
-    carSdf: { call: () => ref.carSdf(0.15, -0.05), calls: [['sdRoundBox', 2], ['sdSeg', 2], ['smin', 3], ['sdCircle', 2]] },
+    /* carSdf теперь обёртка над ОДНИМ модулем профиля (car-profile.ts):
+       примитивов sd* внутри больше нет — они ушли вместе со второй копией
+       геометрии (задание №54), поэтому и вычитать нечего. */
+    carSdf: { call: () => ref.carSdf(0.15, -0.05), calls: [] },
   };
   const total = {};
   for (const [name, spec] of Object.entries(LEAF)) total[name] = perCall(spec.call);
