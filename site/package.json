@@ -28,7 +28,9 @@
     "trace:car-profile": "node scripts/trace-car-profile.mjs",
     "check:shaders": "node scripts/check-shader-compile.mjs",
     "check:profile-copies": "node scripts/check-profile-copies.mjs",
-    "measure:bg-car": "node scripts/bg3d-car-measure.mjs"
+    "measure:bg-car": "node scripts/bg3d-car-measure.mjs",
+    "measure:side-iou": "node scripts/bg3d-side-iou.mjs",
+    "edge:shadow": "node scripts/bg3d-edge-shadow.mjs"
   },
   "dependencies": {
     "@astrojs/node": "11.1.9",

@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "generatedAt": "2026-11-11T10:59:03.185Z",
+=======
+  "generatedAt": "2026-11-11T11:36:15.682Z",
+>>>>>>> 5530211
   "host": {
     "node": "v22.22.3",
     "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -10,9 +14,15 @@
   "measured": {
     "weights": {
       "shaderSource": {
+<<<<<<< HEAD
         "raw": 31506,
         "gzip": 10748,
         "brotli": 9341,
+=======
+        "raw": 31508,
+        "gzip": 10752,
+        "brotli": 9357,
+>>>>>>> 5530211
         "limitGzipBytes": 14336,
         "fitsLimit": true,
         "headroomPct": 25
@@ -24,6 +34,7 @@
           "brotli": 478,
           "hasShader": false
         },
+<<<<<<< HEAD
         "Bg3dLayer.astro_astro_type_script_index_0_lang.vHbLr4iW.js": {
           "raw": 166,
           "gzip": 143,
@@ -46,11 +57,36 @@
           "raw": 7748,
           "gzip": 3245,
           "brotli": 2770,
+=======
+        "Bg3dLayer.astro_astro_type_script_index_0_lang.DvOJAyL8.js": {
+          "raw": 166,
+          "gzip": 143,
+          "brotli": 111,
+          "hasShader": false
+        },
+        "bg3d.Br8sGJyJ.js": {
+          "raw": 52004,
+          "gzip": 19122,
+          "brotli": 16509,
+          "hasShader": true
+        },
+        "bg3d.Cklxkgcd.css": {
+          "raw": 4207,
+          "gzip": 1263,
+          "brotli": 1087,
+          "hasShader": false
+        },
+        "bg3d.astro_astro_type_script_index_0_lang.BWNOE6ve.js": {
+          "raw": 7748,
+          "gzip": 3244,
+          "brotli": 2762,
+>>>>>>> 5530211
           "hasShader": false
         }
       },
       "marginalForServicePage": {
         "js": {
+<<<<<<< HEAD
           "file": "bg3d.DVEaD6rJ.js",
           "raw": 52002,
           "gzip": 19118,
@@ -62,6 +98,19 @@
           "raw": 166,
           "gzip": 143,
           "brotli": 107,
+=======
+          "file": "bg3d.Br8sGJyJ.js",
+          "raw": 52004,
+          "gzip": 19122,
+          "brotli": 16509,
+          "hasShader": true
+        },
+        "entryJs": {
+          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.DvOJAyL8.js",
+          "raw": 166,
+          "gzip": 143,
+          "brotli": 111,
+>>>>>>> 5530211
           "hasShader": false
         },
         "css": {
@@ -71,6 +120,7 @@
           "brotli": 1087,
           "hasShader": false
         },
+<<<<<<< HEAD
         "gzipTotal": 20524,
         "note": "лаборатория (bg3d.astro) собирается только при BG3D_LAB=1 и на прод-страницы не попадает",
         "labJs": {
@@ -78,11 +128,21 @@
           "raw": 7748,
           "gzip": 3245,
           "brotli": 2770,
+=======
+        "gzipTotal": 20528,
+        "note": "лаборатория (bg3d.astro) собирается только при BG3D_LAB=1 и на прод-страницы не попадает",
+        "labJs": {
+          "file": "bg3d.astro_astro_type_script_index_0_lang.BWNOE6ve.js",
+          "raw": 7748,
+          "gzip": 3244,
+          "brotli": 2762,
+>>>>>>> 5530211
           "hasShader": false
         }
       }
     },
     "shader": {
+<<<<<<< HEAD
       "generatedAt": "2026-11-11T10:59:03.906Z",
       "toolchain": {
         "glslang": "16.6.0 (Khronos, WASM)",
@@ -332,6 +392,9 @@
         "limitGzipBytes": 14336
       },
       "ok": true
+=======
+      "error": "Command failed: /usr/local/bin/node /home/user/avtotehservis/site/scripts/bg3d-shader-check.mjs --json /home/user/avtotehservis/evaluation/round30-bg-3d/shader-report.json | Не найден пакет @moreplease/glslang в /home/user/avtotehservis/site/tools/shader-check/node_modules |   cd site/tools/shader-check && npm ci"
+>>>>>>> 5530211
     },
     "cpuCost": {
       "window": "640×360, t=4.0, scroll=0.15, pointer=0.18/-0.08; второй прогон 320×180 для проверки независимости от размера",
@@ -342,28 +405,44 @@
             "instPerPxMax": 265,
             "scalarPerPx": 373.9,
             "scalarPerPxMax": 450,
+<<<<<<< HEAD
             "cpuNsPerPx": 911,
             "cpuNsPerPxRun2": 1190
+=======
+            "cpuNsPerPx": 525,
+            "cpuNsPerPxRun2": 652
+>>>>>>> 5530211
           },
           "1": {
             "instPerPx": 249.9,
             "instPerPxMax": 319,
             "scalarPerPx": 415,
             "scalarPerPxMax": 527,
+<<<<<<< HEAD
             "cpuNsPerPx": 420,
             "cpuNsPerPxRun2": 416
+=======
+            "cpuNsPerPx": 418,
+            "cpuNsPerPxRun2": 444
+>>>>>>> 5530211
           },
           "2": {
             "instPerPx": 278.7,
             "instPerPxMax": 373,
             "scalarPerPx": 460.3,
             "scalarPerPxMax": 612,
+<<<<<<< HEAD
             "cpuNsPerPx": 464,
             "cpuNsPerPxRun2": 461
+=======
+            "cpuNsPerPx": 466,
+            "cpuNsPerPxRun2": 477
+>>>>>>> 5530211
           }
         },
         "silhouette": {
           "0": {
+<<<<<<< HEAD
             "instPerPx": 503.6,
             "instPerPxMax": 771,
             "scalarPerPx": 762.6,
@@ -386,10 +465,35 @@
             "scalarPerPxMax": 1302,
             "cpuNsPerPx": 1048,
             "cpuNsPerPxRun2": 1026
+=======
+            "instPerPx": 494.1,
+            "instPerPxMax": 538,
+            "scalarPerPx": 779.9,
+            "scalarPerPxMax": 856,
+            "cpuNsPerPx": 904,
+            "cpuNsPerPxRun2": 750
+          },
+          "1": {
+            "instPerPx": 522.9,
+            "instPerPxMax": 592,
+            "scalarPerPx": 821,
+            "scalarPerPxMax": 933,
+            "cpuNsPerPx": 756,
+            "cpuNsPerPxRun2": 723
+          },
+          "2": {
+            "instPerPx": 625.9,
+            "instPerPxMax": 878,
+            "scalarPerPx": 954.1,
+            "scalarPerPxMax": 1293,
+            "cpuNsPerPx": 871,
+            "cpuNsPerPxRun2": 870
+>>>>>>> 5530211
           }
         }
       }
     },
+<<<<<<< HEAD
     "crossCheck": {
       "perFunction": {
         "hash21": {
@@ -461,6 +565,8 @@
       "worstAbsDelta": 144,
       "note": "сравнивается тело функции без вложенных вызовов: SPIR-V byFunc считает OpFunctionCall в теле вызывающей, а порт накапливает счётчик и внутри вызванных. Наибольшее расхождение — 1 инструкция, т.е. порт и независимый компилятор Khronos считают одну и ту же математику; именно поэтому оп/px из порта можно переносить в модель"
     },
+=======
+>>>>>>> 5530211
     "lifecycle": {
       "harness": "jsdom 30 + tools/bg3d/mockgl.mjs (WebGL не исполняется: журнал считает create/delete объектов, drawArrays и loseContext); observer'ы — заглушки, считающие disconnect",
       "cyclesRun": 20,
@@ -469,6 +575,7 @@
         "height": 300
       },
       "tierObserved": "high",
+<<<<<<< HEAD
       "heapMbBefore": 41.96,
       "heapMbAfter": 43.14,
       "heapDeltaMb": 1.18,
@@ -477,19 +584,35 @@
         "heapMbCycle10": 42.88,
         "heapMbCycle20": 43.14,
         "deltaCycles1to10Kb": 737.3,
+=======
+      "heapMbBefore": 41.72,
+      "heapMbAfter": 42.9,
+      "heapDeltaMb": 1.18,
+      "heapTrend": {
+        "heapMbCycle1": 41.91,
+        "heapMbCycle10": 42.64,
+        "heapMbCycle20": 42.9,
+        "deltaCycles1to10Kb": 747.5,
+>>>>>>> 5530211
         "deltaCycles10to20Kb": 266.2,
         "leakPerCycleKbLast10": 26.6,
         "plateau": true
       },
       "controlRunWithoutBg3d": {
         "note": "20 циклов создания/удаления того же хоста без монтажа фона — базовая линия jsdom/V8",
+<<<<<<< HEAD
         "heapMbStart": 43.14,
         "heapMbEnd": 43.2,
+=======
+        "heapMbStart": 42.9,
+        "heapMbEnd": 42.95,
+>>>>>>> 5530211
         "heapDeltaMb": 0.06,
         "perCycleKb": 2.9,
         "rows": [
           {
             "cycle": 1,
+<<<<<<< HEAD
             "heapMb": 43.15
           },
           {
@@ -499,6 +622,17 @@
           {
             "cycle": 20,
             "heapMb": 43.2
+=======
+            "heapMb": 42.91
+          },
+          {
+            "cycle": 10,
+            "heapMb": 42.93
+          },
+          {
+            "cycle": 20,
+            "heapMb": 42.95
+>>>>>>> 5530211
           }
         ]
       },
@@ -509,7 +643,7 @@
         "mocksPerCycle": 2,
         "kbPerCycleAttributableToHarness": 10.2
       },
-      "framesRenderedTotal": 180,
+      "framesRenderedTotal": 179,
       "glContexts": {
         "total": 40,
         "engine": 20,
@@ -532,7 +666,7 @@
           "query": 0
         },
         "asymmetric": [],
-        "draws": 180
+        "draws": 179
       },
       "observers": {
         "ioCreated": 20,
@@ -550,7 +684,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.16,
+=======
+          "heapMb": 41.91,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 2
@@ -561,7 +699,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.33,
+=======
+          "heapMb": 42.09,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 4
@@ -572,7 +714,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.4,
+=======
+          "heapMb": 42.15,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 6
@@ -581,9 +727,13 @@
           "cycle": 4,
           "tier": "high",
           "quality": 2,
-          "frames": 9,
+          "frames": 8,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.52,
+=======
+          "heapMb": 42.27,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 8
@@ -594,7 +744,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.55,
+=======
+          "heapMb": 42.31,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 10
@@ -605,7 +759,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.59,
+=======
+          "heapMb": 42.34,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 12
@@ -616,7 +774,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.63,
+=======
+          "heapMb": 42.39,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 14
@@ -627,7 +789,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.8,
+=======
+          "heapMb": 42.56,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 16
@@ -638,7 +804,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.85,
+=======
+          "heapMb": 42.6,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 18
@@ -649,7 +819,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.88,
+=======
+          "heapMb": 42.64,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 20
@@ -660,7 +834,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.91,
+=======
+          "heapMb": 42.66,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 22
@@ -671,7 +849,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.93,
+=======
+          "heapMb": 42.69,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 24
@@ -682,7 +864,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.96,
+=======
+          "heapMb": 42.71,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 26
@@ -693,7 +879,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 42.98,
+=======
+          "heapMb": 42.74,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 28
@@ -704,7 +894,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 43.01,
+=======
+          "heapMb": 42.76,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 30
@@ -715,7 +909,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 43.03,
+=======
+          "heapMb": 42.79,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 32
@@ -726,7 +924,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 43.06,
+=======
+          "heapMb": 42.81,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 34
@@ -737,7 +939,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 43.09,
+=======
+          "heapMb": 42.85,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 36
@@ -748,7 +954,11 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 43.12,
+=======
+          "heapMb": 42.87,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 38
@@ -759,14 +969,18 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
+<<<<<<< HEAD
           "heapMb": 43.14,
+=======
+          "heapMb": 42.9,
+>>>>>>> 5530211
           "registry": 0,
           "listeners": 0,
           "glContexts": 40
         }
       ],
       "ok": true,
-      "verdict": "утечек нет: все GL-объекты удалены (баланс create/delete сходится), слушатели сняты (осталось 0), observer'ы разорваны, реестр пуст, все 40 контекстов помечены потерянными; куча вышла на плато (737.3 КБ за циклы 1–10 и 266.2 КБ за 10–20)"
+      "verdict": "утечек нет: все GL-объекты удалены (баланс create/delete сходится), слушатели сняты (осталось 0), observer'ы разорваны, реестр пуст, все 40 контекстов помечены потерянными; куча вышла на плато (747.5 КБ за циклы 1–10 и 266.2 КБ за 10–20)"
     }
   },
   "modeled": {
@@ -1206,8 +1420,13 @@
       },
       "softwareRasterizer": {
         "note": "SwiftShader/llvmpipe-класс: цена измерена CPU-портом на этой машине, не смоделирована",
+<<<<<<< HEAD
         "cpuNsPerPx": 1048,
         "coresNeededFor1280x720x30": 29,
+=======
+        "cpuNsPerPx": 871,
+        "coresNeededFor1280x720x30": 24.1,
+>>>>>>> 5530211
         "consequence": "поэтому gate.ts гасит фон на программных растеризаторах (BLOCKED_RENDERER)"
       }
     },
@@ -1273,10 +1492,17 @@
     }
   },
   "summary": {
+<<<<<<< HEAD
     "shaderGzipBytes": 10748,
     "shaderLimitGzipBytes": 14336,
     "textures": 0,
     "marginalGzipBytes": 20524,
+=======
+    "shaderGzipBytes": 10752,
+    "shaderLimitGzipBytes": 14336,
+    "textures": 0,
+    "marginalGzipBytes": 20528,
+>>>>>>> 5530211
     "opsPerPx": {
       "depth": [
         374,
