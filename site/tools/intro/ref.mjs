@@ -581,12 +581,14 @@ export function shadePixel(fcx, fcy, U, opts = {}) {
       wsum += w;
       t(1, 1);
     }
-    const depth = clampf((py - FLOOR) / 280.0, 0.0, 1.0);
-    t(2, 2);                                 /* p.y - FLOOR, /280.0 */
-    const fade = powf(1.0 - depth, 2.4);
-    t(1, 1);                                 /* 1.0 - depth */
-    const rk = 0.30 * reflIn * fade;
-    t(2, 2);                                 /* *0.30, *reflIn */
+    /* ред. 4: затухание до низа кадра (1080), а не до FLOOR+280 = 1010 —
+       иначе зеркальная копия ДХО на y = 2*FLOOR-448 = 1012 отсекается (разбор §9) */
+    const gap = clampf((py - FLOOR) / (1080.0 - FLOOR), 0.0, 1.0);
+    t(2, 2);                                 /* p.y - FLOOR, /350.0 */
+    const fade = 1.0 - smoothstep(0.60, 1.0, gap);
+    t(1, 1);                                 /* 1.0 - smoothstep */
+    const rk = 0.38 * reflIn * fade;
+    t(2, 2);                                 /* *0.38, *reflIn */
     const quo = [acc[0] / wsum, acc[1] / wsum, acc[2] / wsum];
     t(1, 3);                                 /* acc / wsum */
     const add = [quo[0] * rk, quo[1] * rk, quo[2] * rk];
@@ -746,9 +748,9 @@ export const PORT_SOURCE_LITERALS = [
   ['фон: q /1520 и /780 от (960,120), горизонт 722/22, пул 700/790/165, низ 740…1100 ×0.55, ss(0,0.18)',
     /\(p\.x - BX\) \/ 1520\.0, \(p\.y - 120\.0\) \/ 780\.0[\s\S]{0,800}c \*= smoothstep\(0\.0, 0\.18, t\);/],
   ['ночь: ss(0.72,1.0) к #070B12 (0.0322,0.0504,0.0826), финал ×0.62',
-    /smoothstep\(0\.72, 1\.0, t\)[\s\S]{0,200}vec3\(0\.0322, 0\.0504, 0\.0826\)[\s\S]{0,900}mix\(1\.0, 0\.62, nightK\)/],
-  ['отражение: ss(0.60,0.82), 3 тапа o=(i-1)*10, x+o*0.25, 2*FLOOR-y-o, w=1-0.3|i-1|, ×0.30, depth /280, pow 2.4',
-    /smoothstep\(0\.60, 0\.82, t\)[\s\S]{0,500}for \(int i = 0; i < 3; i\+\+\)[\s\S]{0,400}pow\(1\.0 - depth, 2\.4\)/],
+    /smoothstep\(0\.72, 1\.0, t\)[\s\S]{0,200}vec3\(0\.0322, 0\.0504, 0\.0826\)[\s\S]{0,1600}mix\(1\.0, 0\.62, nightK\)/],
+  ['отражение: ss(0.60,0.82), 3 тапа o=(i-1)*10, x+o*0.25, 2*FLOOR-y-o, w=1-0.3|i-1|, ×0.38, gap /(1080-FLOOR), fade 1-ss(0.60,1)',
+    /smoothstep\(0\.60, 0\.82, t\)[\s\S]{0,500}for \(int i = 0; i < 3; i\+\+\)[\s\S]{0,700}gap = clamp\(\(p\.y - FLOOR\) \/ \(1080\.0 - FLOOR\)[\s\S]{0,200}0\.38 \* reflIn \* fade/],
   ['раскладка: ландшафт aspect ≥ 0.85, s = max(rx/1920, ry/1080), центр (0.5, 0.415); портрет k = 1.55 rx/BW, 0.30',
     /if \(aspect >= 0\.85\)[\s\S]{0,300}1\.55 \* uRes\.x \/ BW/],
   ['дизеринг: hash12(frag + t*91)/255', /hash12\(frag \+ t \* 91\.0\) - 0\.5\) \/ 255\.0/],
