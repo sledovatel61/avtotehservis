@@ -30,7 +30,9 @@
     "typecheck": "tsc --noEmit",
     "audit": "npm audit --omit=dev",
     "smoke": "node scripts/smoke.mjs",
-    "build:pages": "node scripts/export-pages.mjs"
+    "build:pages": "node scripts/export-pages.mjs",
+    "compare:intro": "node scripts/intro-vs-ref.mjs",
+    "measure:bg-car": "node scripts/bg3d-car-measure.mjs"
   },
   "dependencies": {
     "@astrojs/node": "11.1.9",

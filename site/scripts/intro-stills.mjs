@@ -62,8 +62,21 @@ try {
       overlay: !!document.querySelector('.vy-intro'),
     }));
     const file = join(OUT, `still-${ms}.jpg`);
-    await page.screenshot({ path: file });
-    console.log(`${ms} мс → ${file}`, JSON.stringify(state));
+    /* Снимаем ЭЛЕМЕНТ .vy-intro-canvas, а не страницу (круг 32, A12).
+       headless-shell отдаёт снимок layout-вьюпорта: при html{scrollbar-gutter:stable}
+       это 1585 px, а остальные 15 px он добивает фоном страницы (--night #0B1410).
+       Сама заставка при этом расписана до 1600 px (getBoundingClientRect и снимок
+       элемента дают содержимое на x = 1596), то есть полоса — артефакт снимка, а не
+       кадра: в живом браузере оверлей лежит поверх гуттера, а скроллбар рисуется
+       ещё выше. Артефакт ломал гейт compare:intro: строка «купол крыши» берёт самый
+       правый тёмный пиксель строки, а фон страницы проходит порог силуэта
+       (r < 45, r−b < 18, g−b < 12) — ширина выходила 66,6 %W при любых 33,3 %W машины.
+       Снимки страницы и элемента совпадают побайтово на всех x < 1585 (сверено:
+       13 500 отличающихся пикселей из 1 440 000 — ровно 15 × 900). */
+    const canvasEl = state.canvas ? await page.$('.vy-intro-canvas') : null;
+    if (canvasEl) await canvasEl.screenshot({ path: file });
+    else await page.screenshot({ path: file });
+    console.log(`${ms} мс → ${file}`, JSON.stringify({ ...state, shot: canvasEl ? 'canvas' : 'page' }));
     await page.close();
   }
 } finally {
