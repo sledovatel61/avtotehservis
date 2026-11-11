@@ -317,8 +317,8 @@ void main(){
     /* окантовка стёкол: тонкая светлая линия по стойкам, разделителю и подоконнику —
        она даёт «дорого» сильнее самого блика (задание №57, §2.1) */
     float lower = 1.0 - smoothstep(0.002, 0.009, abs((q.y - CAR_GROUND) / CAR_UNITS - trim.z));
-    bodyCol += uMist * 0.40 * trim.y;
-    bodyCol += uMist * 0.26 * lower * step(abs(q.x) / CAR_UNITS, 1.30);
+    bodyCol += uMist * 0.26 * trim.y;
+    bodyCol += uMist * 0.18 * lower * step(abs(q.x) / CAR_UNITS, 1.30);
 
     /* ---------- детали тоном (порядок — по отдаче из задания §2.5) ---------- */
     float qx = q.x / CAR_UNITS;                          /* метры модуля: удобнее для линий */
@@ -345,9 +345,10 @@ void main(){
     bodyCol += uMist * (0.10 * seam + 0.16 * hnd);
     /* 3. штамповка крыла и подоконная линия */
     bodyCol += uMist * 0.10 * (1.0 - smoothstep(0.0, 0.016, abs(pFender(vec2(qx, zig)))));
-    /* 4. задний фонарь — узкая полоса по корме */
-    float lamp = step(-1.72, qx) * step(qx, -0.98) * (1.0 - smoothstep(0.004, 0.020, abs(zig - 1.02)));
-    bodyCol = mix(bodyCol, uDanger * 0.55, lamp * beltZ);
+    /* 4. задний фонарь — узкая полоса по корме, НА КУЗОВЕ (ниже подоконника):
+       в первом варианте он попадал в полосу стекла и читался красной ниткой в окне. */
+    float lamp = step(-1.86, qx) * step(qx, -1.06) * (1.0 - smoothstep(0.004, 0.022, abs(zig - 0.905)));
+    bodyCol = mix(bodyCol, uDanger * 0.55, lamp * (1.0 - beltZ));
     /* 5. зеркало с ножкой на уровне подоконника */
     float mir = 1.0 - smoothstep(0.0, 0.058, length((vec2(qx, zig) - vec2(0.74, 1.06)) * vec2(1.5, 1.0)));
     bodyCol = mix(bodyCol, uNight * 0.50, mir);

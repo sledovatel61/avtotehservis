@@ -366,7 +366,7 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     t(3, 9);
     const lower = 1.0 - smoothstep(0.002, 0.009, Math.abs(ty - trimBelt));
     t(3, 4);
-    const orn = 0.40 * trimPillar + 0.26 * lower * (Math.abs(tx) <= 1.30 ? 1 : 0);
+    const orn = 0.26 * trimPillar + 0.18 * lower * (Math.abs(tx) <= 1.30 ? 1 : 0);
     bodyR += P.mist[0] * orn; bodyG += P.mist[1] * orn; bodyB += P.mist[2] * orn;
     t(8, 21);
 
@@ -401,7 +401,7 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     const fendK = 0.10 * fend;
     bodyR += P.mist[0] * fendK; bodyG += P.mist[1] * fendK; bodyB += P.mist[2] * fendK;
     t(12, 18);
-    const lamp = (qxm >= -1.72 && qxm <= -0.98 ? 1 : 0) * (1.0 - smoothstep(0.004, 0.020, Math.abs(zig - 1.02))) * beltZ;
+    const lamp = (qxm >= -1.86 && qxm <= -1.06 ? 1 : 0) * (1.0 - smoothstep(0.004, 0.022, Math.abs(zig - 0.905))) * (1 - beltZ);
     bodyR = mix(bodyR, P.danger[0] * 0.55, lamp);
     bodyG = mix(bodyG, P.danger[1] * 0.55, lamp);
     bodyB = mix(bodyB, P.danger[2] * 0.55, lamp);
