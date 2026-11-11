@@ -234,13 +234,45 @@ console.log(`   паспорт (§2.4):            0.0:25 0.1:69 0.2:73 0.3:77 0
     if ((!on || i === len) && st >= 0) { if (i - st > len * 0.03) runs.push([st, i - 1]); st = -1; }
   }
   console.log(`\n4. колёса: тон кузова ${bodyL.toFixed(1)} L, на высоте оси ${(hgt * 0.24).toFixed(0)} px от низа`);
-  for (const r of runs) {
-    const w = (r[1] - r[0] + 1) / len;
-    const ok = Math.abs(w * 100 - 15.0) <= 1.0;
-    console.log(`   пятно ${((r[0] / len) * 100).toFixed(0)}…${((r[1] / len) * 100).toFixed(0)} %L: ширина ${(w * 100).toFixed(1)} %L`
-      + ` (паспорт 15,0 ±1,0 → ${ok ? 'PASS' : 'FAIL'})`);
+
+  /* Привязка к ОСЯМ, а не к пятнам (задание №60, шаг 3.4).
+     Прежняя версия печатала каждое тёмное пятно на линии оси как «колесо»:
+     на CPU-кадре их набиралось четыре (бампер, тень, две арки), и каждое
+     объявлялось колесом. Теперь окна берутся там, где оси стоят по паспорту:
+     передняя 19,8 %L, задняя 80,1 %L от носа, и в каждом окне (±8 %L)
+     измеряется ширина тёмного прогона. Пятна вне окон — не колёса. */
+  const AXLE_F = 19.8, AXLE_R = 80.1, WIN = 8;
+  const wheels = [];
+  for (const [label, c] of [['переднее', AXLE_F], ['заднее', AXLE_R]]) {
+    const r = runs.find(([a, b]) => {
+      const mid = ((a + b) / 2 / len) * 100;
+      return Math.abs(mid - c) <= WIN;
+    });
+    if (!r) { wheels.push({ label, ok: false, w: null }); continue; }
+    const w = ((r[1] - r[0] + 1) / len) * 100;
+    const ok = Math.abs(w - 15.0) <= 1.0;
+    wheels.push({ label, ok, w, from: (r[0] / len) * 100, to: (r[1] / len) * 100 });
   }
-  if (!runs.length) console.log('   колесо не читается отдельно от кузова и пола — это и есть «капля»');
+  for (const wh of wheels) {
+    if (wh.w === null) {
+      console.log(`   ${wh.label}: окно оси ${wh.label === 'переднее' ? AXLE_F : AXLE_R} %L — колесо не читается (FAIL)`);
+    } else {
+      console.log(`   ${wh.label} (ось ${wh.label === 'переднее' ? AXLE_F : AXLE_R} %L): прогон ${wh.from.toFixed(0)}…${wh.to.toFixed(0)} %L,`
+        + ` ширина ${wh.w.toFixed(1)} %L (паспорт 15,0 ±1,0 → ${wh.ok ? 'PASS' : 'FAIL'})`);
+    }
+  }
+  const outside = runs.filter(([a, b]) => {
+    const mid = ((a + b) / 2 / len) * 100;
+    return Math.abs(mid - AXLE_F) > WIN && Math.abs(mid - AXLE_R) > WIN;
+  });
+  if (outside.length) {
+    console.log(`   вне окон осей тёмных пятен: ${outside.length} (бампер/тень/арки — за колёса не считаются)`);
+  }
+  const same = wheels.every((wh) => wh.w !== null)
+    && Math.abs(wheels[0].w - wheels[1].w) <= 0.5;
+  if (wheels.every((wh) => wh.w !== null)) {
+    console.log(`   переднее и заднее: ${wheels[0].w.toFixed(1)} и ${wheels[1].w.toFixed(1)} %L → ${same ? 'одинаковые (PASS)' : 'РАЗНЫЕ (FAIL: арка перекрывает шину или колёса разного размера)'}`);
+  }
 }
 
 /* Остекление: контраст между полосой 20…40 % высоты и 55…75 % высоты. */

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T11:57:43.998Z",
+  "generatedAt": "2026-11-11T12:01:09.910Z",
   "method": "CPU-порт tools/bg3d/ref.mjs той же математики, что в src/client/bg3d/shader.ts; PNG собран node:zlib",
   "cpu": "x64 linux, node v22.22.3",
   "frames": [
@@ -11,8 +11,8 @@
       "width": 1280,
       "height": 720,
       "pngBytes": 589366,
-      "cpuMs": 460.9,
-      "cpuNsPerPx": 500,
+      "cpuMs": 455,
+      "cpuNsPerPx": 494,
       "opsPerPx": {
         "inst": 281.8,
         "scalar": 465.3,
@@ -27,8 +27,8 @@
       "width": 1280,
       "height": 720,
       "pngBytes": 240876,
-      "cpuMs": 435.6,
-      "cpuNsPerPx": 473,
+      "cpuMs": 448.3,
+      "cpuNsPerPx": 486,
       "opsPerPx": {
         "inst": 281.8,
         "scalar": 465.3,
@@ -43,8 +43,8 @@
       "width": 1280,
       "height": 720,
       "pngBytes": 445891,
-      "cpuMs": 1634.1,
-      "cpuNsPerPx": 1773,
+      "cpuMs": 1664.8,
+      "cpuNsPerPx": 1806,
       "opsPerPx": {
         "inst": 643.2,
         "scalar": 947.4,
@@ -59,8 +59,8 @@
       "width": 1280,
       "height": 720,
       "pngBytes": 436401,
-      "cpuMs": 741,
-      "cpuNsPerPx": 804,
+      "cpuMs": 751.1,
+      "cpuNsPerPx": 815,
       "opsPerPx": {
         "inst": 505,
         "scalar": 765.1,
@@ -91,8 +91,8 @@
       "width": 1280,
       "height": 720,
       "pngBytes": 443535,
-      "cpuMs": 855.2,
-      "cpuNsPerPx": 928,
+      "cpuMs": 904.7,
+      "cpuNsPerPx": 982,
       "opsPerPx": {
         "inst": 616,
         "scalar": 910.3,

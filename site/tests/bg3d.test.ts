@@ -565,3 +565,86 @@ test('слой не влияет на контент страницы: заго�
   assert.match(html, /Voyah Free/, 'заголовок услуги потерян');
   assert.match(html, /aria-label="Хлебные крошки"/, 'хлебные крошки потеряны');
 });
+
+/* ------------------------------------------------------------------ */
+/* Круг 33, задание №60: единая линейка фото ↔ силуэт                 */
+/* ------------------------------------------------------------------ */
+test('линейка: форма силуэта против фото в одних координатах', async () => {
+  /* Задание №60, шаг 1: гейт не должен быть «скриптом для отчёта» — он в тестах.
+     Сравниваем в безразмерных долях (X — доля длины, Y — доля собственной
+     высоты): фото перспективное, и абсолютные высоты в нём завышены на ~5 %. */
+  const { renderFrame } = await import('../tools/bg3d/ref.mjs');
+  const W = 640;
+  const H = 360;
+  const base = { width: W, height: H, variant: 'silhouette', quality: 2, time: 4, scroll: 0, pointer: [0.18, -0.08] };
+  const withCar = renderFrame({ ...base, car: true });
+  const withoutCar = renderFrame({ ...base, car: false });
+  const mask = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const j = i * 3;
+    const d = (Math.abs(withCar.data[j] - withoutCar.data[j])
+      + Math.abs(withCar.data[j + 1] - withoutCar.data[j + 1])
+      + Math.abs(withCar.data[j + 2] - withoutCar.data[j + 2])) / 3;
+    mask[i] = d > 12 ? 1 : 0;
+  }
+  /* Габарит — по ВЕРХНЕЙ связной группе строк. Без этого маска захватывает
+     отражение в мокром асфальте, и h/L выходит 0,469 вместо 0,339: ровно та
+     ошибка, из-за которой в круге 33 три замера дали три разных числа. */
+  const rowN = new Array(H).fill(0);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x]) rowN[y]++;
+  const rowMax = Math.max(...rowN);
+  const groups: Array<{ a: number; b: number; gap: number }> = [];
+  let run: { a: number; b: number; gap: number } | null = null;
+  for (let y = 0; y < H; y++) {
+    if (rowN[y] >= Math.max(2, rowMax * 0.025)) {
+      if (!run) run = { a: y, b: y, gap: 0 }; else { run.b = y; run.gap = 0; }
+    } else if (run) { if (++run.gap >= 6) { groups.push(run); run = null; } }
+  }
+  if (run) groups.push(run);
+  const band = groups.filter((g) => g.b - g.a >= 3)[0] ?? groups[0];
+  assert.ok(band, 'силуэт не найден в CPU-кадре');
+
+  let x0 = W, x1 = -1;
+  for (let x = 0; x < W; x++) {
+    let n = 0;
+    for (let y = band.a; y <= band.b; y++) if (mask[y * W + x]) n++;
+    if (n >= 2) { if (x < x0) x0 = x; x1 = x; }
+  }
+  const y0 = band.a;
+  const y1 = band.b;
+  const L = x1 - x0 + 1;
+  const Hh = y1 - y0 + 1;
+  /* h/L — главный числовой критерий задания: 0,335 ± 0,010 */
+  const hOverL = Hh / L;
+  assert.ok(Math.abs(hOverL - 0.335) <= 0.010,
+    `h/L по CPU-кадру ${hOverL.toFixed(3)} должен быть 0,335 ± 0,010 (задание №60, шаг 1)`);
+  /* верхняя кромка — в тех же координатах, что и в линейке */
+  const profile: number[] = [];
+  for (let i = 0; i <= 10; i++) {
+    const x = Math.min(x1, x0 + Math.round((i / 10) * (L - 1)));
+    let top = -1;
+    for (let y = y0; y <= y1; y++) if (mask[y * W + x]) { top = y; break; }
+    profile.push(top < 0 ? NaN : ((y1 - top) / Hh) * 100);
+  }
+  /* Крыша выше обоих концов. Кадр сцены развёрнут носом ВПРАВО, поэтому
+     слева корма, справа нос: сравнивать «середину с капотом» по индексам
+     нельзя, не зная ориентации. Проверяем то, что не зависит от неё. */
+  const mid = profile[5];
+  const ends = [profile[1], profile[9]];
+  for (const e of ends) {
+    assert.ok(mid > e + 5, `середина (${mid.toFixed(0)} %H) должна быть выше конца (${e.toFixed(0)} %H): крыша-арка, а не клин`);
+  }
+  /* Ступеньки — только на участке 10…90 %L: на самих торцах силуэт падает
+     отвесно (бампер), и это не дефект формы, а край. Порог 20 %H на 10 %L
+     ловит клин из двух прямых, но пропускает скат лобового. */
+  for (let i = 2; i < profile.length - 1; i++) {
+    const d = Math.abs(profile[i] - profile[i - 1]);
+    assert.ok(d < 20, `ступенька ${d.toFixed(0)} %H между ${(i - 1) * 10} и ${i * 10} %L — силуэт ломается`);
+  }
+  /* Клиренс: низ силуэта над землёй 3,7 %L = 11 %H (0,185 м при высоте 1,645). */
+  let bottom = -1;
+  const xMid = Math.round((x0 + x1) / 2);
+  for (let y = y1; y >= y0; y--) if (mask[y * W + xMid]) { bottom = y; break; }
+  const clearanceH = ((y1 - bottom) / Hh) * 100;
+  assert.ok(clearanceH < 16, `низ кузова над землёй ${clearanceH.toFixed(1)} %H — это клиренс 0,185 м (11 %H), а не 0`);
+});

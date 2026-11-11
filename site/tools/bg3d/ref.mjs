@@ -295,11 +295,17 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     const depth = 0.58;
     const sc = mix(0.80, 0.46, depth);
     t(1, 3);
-    const cpx = 0.24 + U.pointer[0] * 0.10 * (1.0 - depth);
-    const cpy = hy - 0.155 - U.scroll * 0.05 + U.pointer[1] * 0.035;
+    /* как в шейдере: на узком кадре силуэт тянем к центру и приподнимаем */
+    const aspectR = U.res[0] / Math.max(U.res[1], 1);
+    const wide = smoothstep(0.46, 1.40, aspectR);
+    const kx = mix(0.35, 1.0, wide);
+    const ky = mix(0.55, 1.0, wide);
+    const scA = sc * mix(0.62, 1.0, smoothstep(0.40, 0.86, aspectR));
+    const cpx = (0.24 + U.pointer[0] * 0.10 * (1.0 - depth)) * kx;
+    const cpy = hy - 0.155 - U.scroll * 0.05 + U.pointer[1] * 0.035 - (1.0 - ky) * 0.30;
     t(9, 9);
-    const qx = (px - cpx) / sc;
-    const qy = (py - cpy) / sc;
+    const qx = (px - cpx) / scA;
+    const qy = (py - cpy) / scA;
     t(4, 4);
     const fogC = Math.exp(-depth * 1.15);
     t(3, 4);

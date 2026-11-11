@@ -95,6 +95,47 @@ const wheels = runs.filter(([a, b]) => b - a > 80).map(([a, b]) => {
 if (wheels.length !== 2) throw new Error(`Ожидались 2 колеса, найдено ${wheels.length}`);
 const [leftWheel, rightWheel] = wheels.sort((a, b) => a.cx - b.cx);
 
+/* Уточнение осей по красным суппортам.
+   Полосы тёмного по столбцам (порог L<70) дают центры 295 и 1119: они включают
+   юбку и арку, и база выходит 824 px вместо настоящих 786 — то есть масштаб
+   занижался на 4,8 %, а на корме это 20 %H ошибки формы (круг 33, задание №60).
+   Красный суппорт есть только у диска, поэтому его центроид — надёжная метка
+   оси: 294 и 1080 px, база 786 px = 265,5 px/м (паспорт 2,96 м).
+   Если суппортов не два (другой кадр, ч/б), остаются старые центры полос. */
+{
+  const isRed = (x, y) => {
+    const i = (y * W + x) * CH;
+    const R = data[i], G = data[i + 1], B = data[i + 2];
+    return R > 90 && R - G > 45 && R - B > 45;
+  };
+  const reds = [];
+  for (let y = 400; y < 700; y++) for (let x = 0; x < W; x++) if (isRed(x, y)) reds.push(x);
+  if (reds.length > 200) {
+    const sorted = reds.sort((a, b) => a - b);
+    const cluster = [];
+    let start = sorted[0];
+    for (let i = 0; i < sorted.length; i++) {
+      if (i === sorted.length - 1 || sorted[i + 1] - sorted[i] > 40) {
+        cluster.push([start, sorted[i]]);
+        start = sorted[i + 1];
+      }
+    }
+    if (cluster.length === 2) {
+      const cx = cluster.map(([a, b]) => Math.round((a + b) / 2)).sort((p, q) => p - q);
+      leftWheel.cx = cx[0];
+      rightWheel.cx = cx[1];
+      /* пересчитать полосу тёмного вокруг новой оси, чтобы земля читалась там же */
+      for (const wheel of [leftWheel, rightWheel]) {
+        let a = wheel.cx, b = wheel.cx;
+        while (a > 0 && isDark(a, wheel.top + 40)) a--;
+        while (b < W - 1 && isDark(b, wheel.top + 40)) b++;
+        wheel.x0 = a; wheel.x1 = b; wheel.width = b - a;
+      }
+      console.log(`оси уточнены по суппортам: ${cx[0]} и ${cx[1]} px (полоса давала ${wheels[0].cx} и ${wheels[1].cx})`);
+    }
+  }
+}
+
 /* края кузова — по тёмному низу (бамперы и юбка): светлая краска по яркости
    не отличается от брусчатки, а низ — отличается */
 const lowerBand = (x) => {
