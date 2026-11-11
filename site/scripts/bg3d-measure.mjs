@@ -105,7 +105,21 @@ report.measured.weights = {
 };
 console.log(`  чанк фона ${mainJs ? `${mainJs[0]}: ${kb(mainJs[1].raw)} raw / ${kb(mainJs[1].gzip)} gzip` : '—'}`);
 console.log(`  вход слоя ${entryJs ? kb(entryJs[1].gzip) : '—'} + css ${cssFile ? kb(cssFile[1].gzip) : '—'} → маргинально для страницы: ${kb(marginal)} gzip`);
-console.log(`  текстуры: 0 (шейдер процедурный; выборок в SPIR-V — см. §2)`);
+/* Круг 35 (задание №62): текстура теперь есть — фото-пластина машины. Считаем её
+   вес отдельно и отдельно же — во сколько она обходится странице: файл грузится
+   только там, где включён слой фона, и только когда слой реально виден. */
+const plateDir = join(SITE, 'public', 'img', 'bg3d');
+const plateFiles = {};
+try {
+  for (const f of readdirSync(plateDir)) {
+    if (!/\.webp$/.test(f)) continue;
+    const buf = readFileSync(join(plateDir, f));
+    plateFiles[f] = { bytes: buf.byteLength, kb: num(buf.byteLength / 1024, 1) };
+  }
+} catch { console.log('  НЕТ public/img/bg3d/ — пластина машины не собрана'); }
+const plateMain = plateFiles['car-1600.webp'] ?? null;
+const plateWide = Object.values(plateFiles).sort((a, b) => b.bytes - a.bytes)[0] ?? null;
+console.log(`  пластина машины: ${Object.entries(plateFiles).map(([f, v]) => `${f} ${v.kb} КБ`).join(' · ') || '—'}`);
 
 /* ============ 2. ШЕЙДЕР: компиляция, SPIR-V, текстуры ============ */
 console.log('\n== 2. Шейдер: glslang + SPIR-V (измерено) ==');
@@ -384,6 +398,29 @@ for (const [k, v] of [['deviceMemory', 8], ['hardwareConcurrency', 8]]) {
   try { Object.defineProperty(win.navigator, k, { value: v, configurable: true }); } catch { /* read-only — оставим как есть */ }
 }
 
+/* Круг 35 (задание №62): движок грузит фото-пластину через new Image(). В jsdom
+   картинок нет, и без подмены текстура не создавалась бы вовсе — тогда замер уборки
+   «не видел» бы ни одного GL-объекта этого типа и не мог бы подтвердить, что он удалён.
+   Подставляем Image, который сразу «загружается» (naturalWidth/Height и decode()),
+   и заодно подменяем createElement('img') — на случай, если движок пойдёт этим путём. */
+class FakeImage {
+  constructor() {
+    this.naturalWidth = 1600;
+    this.naturalHeight = 566;
+    this.width = 1600;
+    this.height = 566;
+    this.complete = true;
+    this.decoding = 'async';
+    this._src = '';
+    queueMicrotask(() => { if (typeof this.onload === 'function') this.onload(); });
+  }
+  set src(v) { this._src = v; }
+  get src() { return this._src; }
+  decode() { return Promise.resolve(); }
+}
+win.Image = FakeImage;
+globalThis.Image = FakeImage;
+
 const { patchCanvas } = await import(join(SITE, 'tools', 'bg3d', 'mockgl.mjs'));
 const canvasPatch = patchCanvas(win, { webgl2: true, renderer: 'Mock GPU (jsdom harness)' });
 
@@ -537,7 +574,11 @@ console.log(`  вердикт: ${report.measured.lifecycle.verdict}`);
 report.summary = {
   shaderGzipBytes: shaderSize.gzip,
   shaderLimitGzipBytes: 14 * 1024,
-  textures: 0,
+  /* texture — это ТЕКСТУРНЫЙ ФАЙЛ пластины (их два: 1600 и 800 для srcset),
+     а не число выборок в шейдере; выборок ровно 1, их считает bg3d-shader-check. */
+  textureFiles: Object.keys(plateFiles).length,
+  plateBytes: plateFiles,
+  plateGzipBytes: plateWide ? size(readFileSync(join(plateDir, 'car-1600.webp'))).gzip : 0,
   marginalGzipBytes: marginal,
   opsPerPx: OPS_PER_PX,
   opsBudget: OPS_BUDGET,
@@ -548,5 +589,5 @@ report.summary = {
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, 'measurements.json'), JSON.stringify(report, null, 2));
 console.log(`\nотчёт: ${join(OUT, 'measurements.json')}`);
-console.log(`итог: шейдер ${shaderSize.gzip} Б gzip из ${14 * 1024} · текстур 0 · маргинальный вес ${kb(marginal)} gzip · утечек ${report.measured.lifecycle.ok ? 'нет' : 'ЕСТЬ'} · fps/батарея — модель`);
+console.log(`итог: шейдер ${shaderSize.gzip} Б gzip из ${14 * 1024} · пластина ${plateMain ? `${plateMain.kb} КБ` : '—'} · маргинальный вес ${kb(marginal)} gzip · утечек ${report.measured.lifecycle.ok ? 'нет' : 'ЕСТЬ'} · fps/батарея — модель`);
 process.exit(report.measured.shader?.ok === false || !report.measured.lifecycle.ok ? 1 : 0);

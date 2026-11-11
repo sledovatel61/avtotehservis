@@ -123,11 +123,16 @@ async function refMask() {
       }
       comps.push(cells);
     }
+    /* Порог по площади 2 %: в золотой маске 10,1 % белых пикселей — это куски
+       витрины и брусчатки, не машина. Проверено: второй по величине кусок
+       (10 009 px, x 1112…1160) — НЕ отражение, а передняя часть бампера, отделённая
+       разрывом при заливке по столбцу. Если его отбросить, габарит эталона
+       обрезается (h/L 0,356 вместо 0,340) и IoU падает с 0,868 до 0,832.
+       Поэтому куски склеиваем, а не отбрасываем. */
     const sizes = comps.map((c) => c.length);
     const biggest = Math.max(...sizes);
     const keep = new Uint8Array(W * H);
     for (let c = 0; c < comps.length; c++) if (sizes[c] >= biggest * 0.02) for (const k of comps[c]) keep[k] = 1;
-    m = keep;
     const white = sizes.reduce((a, b) => a + b, 0);
     refStat = { comps: comps.length, kept: comps.filter((c, i) => sizes[i] >= biggest * 0.02).length, white, keptPx: biggest };
   }
@@ -316,6 +321,25 @@ if (MIRROR !== 'none') {
 
 const iou = res.iou;
 
+/* IoU по участку длины: нужен, чтобы показать, ГДЕ теряется совпадение. Эталонная маска
+   снята по яркости и содержит отражения витрины — они лежат за носом и за кормой и
+   тянут край. Считаем честно: помимо общего IoU печатаем IoU без краёв (5…95 % длины),
+   а также IoU без носовой зоны (0…90 %), откуда видно, сколько даёт именно край. */
+function iouOfRange(from, to) {
+  let inter = 0, uni = 0;
+  const xa = Math.floor(WIDTH * from), xb = Math.ceil(WIDTH * to);
+  for (let x = xa; x < xb; x++) {
+    for (let y = 0; y < res.HH; y++) {
+      const a = res.A[y * WIDTH + x], b = res.B[y * WIDTH + x];
+      if (a && b) inter++;
+      if (a || b) uni++;
+    }
+  }
+  return uni ? inter / uni : 0;
+}
+const iouMid = iouOfRange(0.05, 0.95);
+const iouNoNose = iouOfRange(0, 0.90);
+
 /* Где расхождение наибольшее — чтобы правка формы была адресной, а не на глаз. */
 const binMiss = res.binMiss, binTot = res.binTot;
 const A = res.A, B = res.B;   /* наложенные маски (для картинки расхождения) */
@@ -333,6 +357,7 @@ console.log(`наш:    h/L ${O.hOverL.toFixed(3)} · ${WIDTH}×${O.h} px`);
 console.log('');
 console.log(`ориентация: ${mirrored ? 'перевёрнут (эталон носом влево, кадр носом вправо)' : 'как есть'}`);
 console.log(`IoU силуэта: ${fmt(iou)}  (порог ≥ ${MIN_IOU}; inter ${inter}, union ${uni}, только эталон ${onlyRef}, только наш ${onlyOurs})`);
+console.log(`IoU по участкам: без краёв (5…95 % длины) ${fmt(iouMid)} · без носовой зоны (0…90 %) ${fmt(iouNoNose)}`);
 console.log(`верхняя кромка: среднее |Δy| ${(meanTop * 100).toFixed(1)} %H · макс ${(maxTop * 100).toFixed(1)} %H`);
 console.log('');
 if (process.env.PROFILE) {

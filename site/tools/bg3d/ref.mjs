@@ -117,6 +117,9 @@ export function smin(a, b, k) {
    не повторяет формулы, а берёт их из единственного источника —
    `src/client/car-profile.ts` (задание №54). */
 const profile = await import('../../src/client/car-profile.ts');
+/* Круг 35 (задание №62): посадка пластины берётся из того же модуля, что у шейдера —
+   иначе кадр в отчёте и кадр на GPU разъедутся. */
+const plateMod = await import('../../src/client/bg3d/plate.ts');
 export const CAR_SCALE = profile.SCALE.bg3d;
 export const CAR_GROUND = profile.SCENE.ground;
 export const CAR_TYRE_R = profile.CAR.tyre / 2;
@@ -146,6 +149,79 @@ export function carSdf(qx, qy) {
   t(4, 4);                                           /* /CAR_UNITS, -CAR_GROUND, вызов, *CAR_UNITS */
   profileCalls();
   return profile.carProfileJS(qx / CAR_SCALE, (qy - CAR_GROUND) / CAR_SCALE) * CAR_SCALE;
+}
+
+/* ---------- фото-пластина (круг 35, задание №62) ----------
+   Порт обязан рисовать ТУ ЖЕ картинку, что GPU, иначе кадры в отчёте — не кадры.
+   Поэтому пластина читается из того же файла, что уходит в браузер, и сэмплируется
+   так же: билинейно, с мипмапами. Мипмапы строим сами (sharp может только уменьшать
+   файл целиком), пирамиду до 1x1 — это дешевле, чем расхождение с GPU на кромке. */
+/* Множитель тёмной сцены B. Один и тот же в шейдере, в порте и в замерах: пока в
+   шейдере стояло 0.22, а в порте 1.0, кадр в отчёте был в 4,5 раза темнее прода
+   (средняя по кадру 4,3 L против 13,5 L) — и все «числа контраста» мерили не сцену. */
+export const SCENE_B_MUL = 0.22;
+
+let PLATE = null;          /* { w, h, data: Uint8ClampedArray RGBA, mips: [...] } */
+let PLATE_ERR = null;
+export async function loadPlate(file) {
+  const sharpMod = (await import('sharp')).default;
+  const { data, info } = await sharpMod(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const mips = [{ w: info.width, h: info.height, data }];
+  let cur = { w: info.width, h: info.height, data };
+  while (cur.w > 1 || cur.h > 1) {
+    const nw = Math.max(1, cur.w >> 1), nh = Math.max(1, cur.h >> 1);
+    const buf = Buffer.alloc(nw * nh * 4);
+    for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) {
+      for (let c = 0; c < 4; c++) {
+        let s2 = 0;
+        for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+          const sx = Math.min(cur.w - 1, x * 2 + dx), sy = Math.min(cur.h - 1, y * 2 + dy);
+          s2 += cur.data[(sy * cur.w + sx) * 4 + c];
+        }
+        buf[(y * nw + x) * 4 + c] = Math.round(s2 / 4);
+      }
+    }
+    cur = { w: nw, h: nh, data: buf };
+    mips.push(cur);
+  }
+  PLATE = { w: info.width, h: info.height, mips };
+  return PLATE;
+}
+export function plateLoaded() { return !!PLATE; }
+export function plateError() { return PLATE_ERR; }
+
+/** Билинейная выборка с трилинейным переходом между мипмапами (как LINEAR_MIPMAP_LINEAR). */
+function samplePlate(u, v) {
+  if (!PLATE) return [0, 0, 0, 0];
+  if (u < 0 || u > 1 || v < 0 || v > 1) return [0, 0, 0, 0];
+  /* какой мипмап: по производной uv на пиксель считаем LOD приблизительно —
+     в CPU-порте масштаб кадра известен, поэтому плотность выборки берём из него */
+  const lod = PLATE_LOD;
+  const i0 = Math.max(0, Math.min(PLATE.mips.length - 1, Math.floor(lod)));
+  const i1 = Math.max(0, Math.min(PLATE.mips.length - 1, i0 + 1));
+  const f = Math.max(0, Math.min(1, lod - i0));
+  const a = sampleMip(PLATE.mips[i0], u, v);
+  const b = sampleMip(PLATE.mips[i1], u, v);
+  return [0, 1, 2, 3].map((k) => a[k] * (1 - f) + b[k] * f);
+}
+let PLATE_LOD = 0;
+function sampleMip(mip, u, vIn) {
+  /* GPU грузит текстуру с UNPACK_FLIP_Y: v=0 — низ картинки. В сыром буфере строка 0 —
+     верх, поэтому здесь v переворачивается ровно один раз и больше нигде. */
+  const v = 1 - vIn;
+  const x = u * mip.w - 0.5, y = v * mip.h - 0.5;
+  const x0 = Math.floor(x), y0 = Math.floor(y);
+  const fx = x - x0, fy = y - y0;
+  const at = (xi, yi, c) => {
+    const cx = Math.min(mip.w - 1, Math.max(0, xi)), cy = Math.min(mip.h - 1, Math.max(0, yi));
+    return mip.data[(cy * mip.w + cx) * 4 + c] / 255;
+  };
+  const out = [0, 0, 0, 0];
+  for (let c = 0; c < 4; c++) {
+    out[c] = (at(x0, y0, c) * (1 - fx) + at(x0 + 1, y0, c) * fx) * (1 - fy)
+           + (at(x0, y0 + 1, c) * (1 - fx) + at(x0 + 1, y0 + 1, c) * fx) * fy;
+  }
+  return out;
 }
 
 /* ---------- палитра (из tokens.css) ---------- */
@@ -285,268 +361,93 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
   cB += P.brass[2] * 0.22 * haze;
   t(8, 12);
 
-  /* ---------- вариант B: силуэт в глубине ---------- */
+  /* ---------- вариант B: машина в глубине ---------- */
   if (U.mode > 0.5) {
+    /* Сцена B тёмная — как в проде. Множитель применяется ВСЕГДА, в том числе к кадру
+       без машины (U.noCar): иначе кадр «без машины» отличался бы от «с машиной» по
+       всему полю, и маска машины по разнице кадров мерила бы не машину, а яркость. */
     t(1, 1);
-    cR *= 0.22; cG *= 0.22; cB *= 0.22;      /* сцена B тёмная, как в проде */
+    cR *= SCENE_B_MUL; cG *= SCENE_B_MUL; cB *= SCENE_B_MUL;
     t(0, 3);
   }
-  if (U.mode > 0.5 && !U.noCar) {
+  if (U.mode > 0.5) {
     const depth = 0.58;
-    const sc = mix(0.80, 0.46, depth);
+    const sc0 = mix(0.80, 0.46, depth);
     t(1, 3);
-    /* как в шейдере: на узком кадре силуэт тянем к центру и приподнимаем */
+    /* та же посадка, что в шейдере: коэффициенты — из plate.ts */
     const aspectR = U.res[0] / Math.max(U.res[1], 1);
-    const wide = smoothstep(0.46, 1.40, aspectR);
-    const kx = mix(0.35, 1.0, wide);
-    const ky = mix(0.55, 1.0, wide);
-    const scA = sc * mix(0.62, 1.0, smoothstep(0.40, 0.86, aspectR));
-    const lift = (1.0 - wide) * 0.28;
-    const cpx = (0.24 + U.pointer[0] * 0.10 * (1.0 - depth)) * kx;
-    const cpy = hy - 0.155 - U.scroll * 0.05 + U.pointer[1] * 0.035 - (1.0 - ky) * 0.30 + lift;
+    const place = plateMod.platePlacement(aspectR, U.pointer, U.scroll, hy);
+    const sc = place.sc;
     t(9, 9);
-    const qx = (px - cpx) / scA;
-    const qy = (py - cpy) / scA;
-    t(4, 4);
     const fogC = Math.exp(-depth * 1.15);
     t(3, 4);
 
-    const gy = qy - CAR_GROUND;
-    /* как в шейдере: полуширина 0,55 L (a = 0.716), ниже земли тени нет */
-    const shd = Math.exp(-(qx * qx * 0.716 + gy * gy * 90.0))
-      * smoothstep(-0.055, -0.006, gy) * (1.0 - smoothstep(0.14, 0.30, gy));
-    t(12, 14);
-    const shdMul = 1.0 - 0.16 * shd;
-    cR *= shdMul; cG *= shdMul; cB *= shdMul;
-    t(4, 5);
 
-    const sd = carSdf(qx, qy);
-    t(1, 0);                                 /* вызов */
-    const inside = 1.0 - smoothstep(-0.004, 0.004, sd);
-    t(3, 6);                                 /* smoothstep (1 инструкция, ~5 компонентных) + вычитание */
+    /* геометрия квада — из того же модуля, что у шейдера */
+    const half = plateMod.plateHalfSize(sc);
+    const hx = half.hx, hyHalf = half.hy;
+    /* Линия земли — из пластины (доля высоты файла, см. plate.ts): низ квада не совпадает
+       с землёй, под ней лежит поле padding. */
+    const groundLine = place.cy + hyHalf - plateMod.PLATE_GROUND_FRAC * 2.0 * hyHalf;
+    const gy = py - groundLine;
+    const gx = (px - place.cx) / Math.max(hx, 0.0001);
+    t(9, 9);
 
-    /* ---- тон кузова: четыре участка по X и три по Y (задание №57) ---- */
-    const zn = Math.min(1.6, Math.max(0.0, (qy - CAR_GROUND) / (CAR_TYRE_R * CAR_SCALE * 2.0)));
+    /* Полуширина тени на полувысоте 0,55·L, в нормировке gx = (p.x−cp.x)/hx:
+       коэффициент = ln2 / (0,55·L_scene / PLATE_HALF_LEN)², sc сокращается. */
+    const SHADOW_X = Math.LN2 / Math.pow(0.55 * profile.CAR.length * profile.SCALE.bg3d / plateMod.PLATE_HALF_LEN, 2);
+    const shdRaw = Math.exp(-(gx * gx * SHADOW_X + gy * gy * (90.0 / Math.max(hx * hx, 0.0001))));
+    const shd = shdRaw * smoothstep(-0.055, -0.006, gy) * (1.0 - smoothstep(0.14, 0.30, gy));
+    /* тёмное пятно под машиной — то же, что occl в шейдере */
+    const occl = Math.exp(-(gx * gx * 0.55 + gy * gy * (14.0 / Math.max(hx * hx, 0.0001))))
+      * (1.0 - smoothstep(0.0, 0.06, gy));
+    const occlK = (1.0 - 0.62 * occl) * (1.0 - 0.16 * shd);
+    cR *= occlK; cG *= occlK; cB *= occlK;
+    t(20, 26);
+
+    /* ОДНА выборка пластины — ровно как texture2D в шейдере */
+    const u = (px - place.cx) / (2.0 * hx) + 0.5;
+    const v = (py - place.cy) / (2.0 * hyHalf) + 0.5;
+    /* LOD: сколько текселей пластины приходится на пиксель кадра по X.
+       UV = dx / (2hx), значит duv/dpx = 1/(2hx), а текселей на единицу uv — PLATE.w.
+       Отсюда texels per pixel = PLATE.w / (2hx). Это ровно то, из чего GPU считает
+       LOD сам; здесь — то же число, чтобы мипмап выбирался одинаково. */
+    /* p-пространство в пиксели кадра: p.x пробегает [-aspect, aspect] на всю ширину */
+    /* LOD как у GPU: берётся МАКСИМУМ из плотности по X и по Y, иначе на кадре, где
+       пластина сжата по высоте сильнее, чем по ширине, CPU берёт слишком крупный
+       мипмап и силуэт на кромке «расплывается» (h/L уезжал с 0,335 на 0,377). */
+    const pxPerUnitX = U.res[0] / (2.0 * aspectR);
+    const pxPerUnitY = U.res[1] / 2.0;
+    const densX = (PLATE ? PLATE.w : 1) / Math.max(1e-6, 2.0 * hx) / pxPerUnitX;
+    const densY = (PLATE ? PLATE.h : 1) / Math.max(1e-6, 2.0 * hyHalf) / pxPerUnitY;
+    PLATE_LOD = Math.max(0, Math.log2(Math.max(densX, densY)));
+    t(6, 6);
+    /* Без машины (noCar) пластина не рисуется, но пол, тень и пятно под ней — остаются:
+       тень лежит на полу и от наличия машины в кадре не зависит. Иначе маска машины
+       по разнице кадров ловит тень и «высота» машины удваивается. */
+    const tex = U.noCar ? [0, 0, 0, 0] : samplePlate(u, v);
     t(4, 4);
-    const skirt = 1.0 - smoothstep(0.16, 0.26, zn);
-    const sill  = 1.0 - smoothstep(0.26, 0.44, zn);
-    const beltZ = smoothstep(0.62, 0.72, zn);
-    t(3, 3);
-    const bodyScale =
-      (0.85 + 0.18 * smoothstep(-0.30, 0.42, qy))
-      * (0.94 + 0.16 * smoothstep(0.55, 0.98, qy))
-      * (1.0 - 0.26 * smoothstep(0.30, 0.86, -qx / CAR_SCALE))
-      * (1.0 - 0.10 * smoothstep(0.30, 1.00, qx / CAR_SCALE))
-      * (1.0 - 0.10 * skirt - 0.06 * sill);
-    t(11, 11);
-    let bodyR = mix(P.night[0], P.mist[0], 0.52) * bodyScale * 1.15;
-    let bodyG = mix(P.night[1], P.mist[1], 0.52) * bodyScale * 1.15;
-    let bodyB = mix(P.night[2], P.mist[2], 0.52) * bodyScale * 1.15;
-    t(3, 12);
-
-    /* ---- carTrim: стекло, стойки, подоконник (один pTop) ----
-       Только на пикселях машины (inside > 0.002), как и в шейдере: машина — ~7 % кадра. */
-    if (inside <= 0.002) {
-      const atmo0 = 0.35 * (1 - fogC);
-      const bSCALE0 = 0.55 + 0.45 * fogC;
-      const inMix0 = inside;   /* как в шейдере: mix(col, тело, inside) */
-      cR = mix(cR, mix(bodyR, cR, atmo0) * bSCALE0, inMix0);
-      cG = mix(cG, mix(bodyG, cG, atmo0) * bSCALE0, inMix0);
-      cB = mix(cB, mix(bodyB, cB, atmo0) * bSCALE0, inMix0);
-      t(5, 21);
-      var skipBody = true;
-    } else { var skipBody = false; }
-    if (!skipBody) {
-    const tx = qx / CAR_SCALE, ty = (qy - CAR_GROUND) / CAR_SCALE;
-    t(3, 4);
-    const [trimGlass, trimPillar, trimBelt, trimTop] = profile.carTrimJS(tx, ty);
-    t(TRIM_COST.inst, TRIM_COST.scalar);
-    const glassMix = trimGlass * beltZ;
-    bodyR = mix(bodyR, P.night[0] * 0.55, glassMix);
-    bodyG = mix(bodyG, P.night[1] * 0.55, glassMix);
-    bodyB = mix(bodyB, P.night[2] * 0.55, glassMix);
-    t(4, 15);
-    const topGl = 1.0 - smoothstep(0.010, 0.055, trimTop - ty);
-    t(3, 3);
-    const glint = 0.42 * trimGlass * topGl;
-    bodyR += P.mist[0] * glint; bodyG += P.mist[1] * glint; bodyB += P.mist[2] * glint;
-    t(3, 9);
-    const lower = 1.0 - smoothstep(0.002, 0.009, Math.abs(ty - trimBelt));
-    t(3, 4);
-    const orn = 0.26 * trimPillar + 0.18 * lower * (Math.abs(tx) <= 1.30 ? 1 : 0);
-    bodyR += P.mist[0] * orn; bodyG += P.mist[1] * orn; bodyB += P.mist[2] * orn;
-    t(8, 21);
-
-    /* ---- детали тоном (задание №57 §2.5) ---- */
-    const qxm = tx, zig = ty;
-    /* светлая кромка над юбкой: по ней низ машины отделяется от пола */
-    const rimLow = (1.0 - smoothstep(0.0, 0.016, Math.abs(zig - 0.225))) * (Math.abs(qxm) <= 1.62 ? 1 : 0);
-    const rimLowK = 0.42 * rimLow;
-    bodyR += P.mist[0] * rimLowK; bodyG += P.mist[1] * rimLowK; bodyB += P.mist[2] * rimLowK;
-    t(6, 9);
-    t(6, 15);
-    const mold1 = (1.0 - smoothstep(0.0, 0.012, Math.abs(zig - 0.315))) * (Math.abs(qxm) <= 1.45 && qxm <= 0.30 ? 1 : 0);
-    const mold2 = (1.0 - smoothstep(0.0, 0.010, Math.abs(zig - 0.255))) * (Math.abs(qxm) <= 1.45 && qxm <= 0.30 ? 1 : 0);
-    const mold = Math.min(1.0, Math.max(0.0, mold1 + mold2));
-    const moldK = 1.0 - 0.30 * mold;
-    bodyR *= moldK; bodyG *= moldK; bodyB *= moldK;
+    const inQ = (u >= 0 && u <= 1 && v >= 0 && v <= 1) ? 1 : 0;
+    const alpha = tex[3] * inQ;
+    /* дымка — как в шейдере */
+    const atmo = 0.30 * (1.0 - fogC);
+    const bR = mix(tex[0], cR, atmo);
+    const bG = mix(tex[1], cG, atmo);
+    const bB = mix(tex[2], cB, atmo);
+    cR = mix(cR, bR, alpha); cG = mix(cG, bG, alpha); cB = mix(cB, bB, alpha);
     t(12, 18);
-    const seamRaw = 1.0 - smoothstep(0.003, 0.014, Math.abs(qxm - 0.18));
-    const seam = seamRaw * (1.0 - smoothstep(0.62, 0.78, zig)) * (1.0 - smoothstep(0.30, 0.40, -zig + 0.30));
-    const hdx = qxm + 0.36, hdy = zig - 0.80;
-    const hnd = 1.0 - smoothstep(0.0, 0.030, Math.sqrt(hdx * hdx + hdy * hdy));
-    t(11, 15);
-    const det1 = 0.10 * seam + 0.16 * hnd;
-    bodyR += P.mist[0] * det1; bodyG += P.mist[1] * det1; bodyB += P.mist[2] * det1;
-    t(3, 9);
-    /* штамповка крыла: та же полоса, что pFender в GLSL */
-    const fdx = Math.abs(CAR_AXLE_F * CAR_SCALE - qx), fdy = Math.abs(qy - (CAR_GROUND + CAR_TYRE_R * CAR_SCALE + 0.0));
-    const fA = Math.min(Math.abs(CAR_AXLE_F * CAR_SCALE - qx) - 0.10 * CAR_SCALE, Math.abs((qy - CAR_GROUND) / CAR_SCALE - (profile.CAR.tyre / 2 + profile.ARCH.radius * 0.55)) - 0.045);
-    const fB = Math.min(Math.abs(CAR_AXLE_R * CAR_SCALE - qx) - 0.10 * CAR_SCALE, Math.abs((qy - CAR_GROUND) / CAR_SCALE - (profile.CAR.tyre / 2 + profile.ARCH.radius * 0.55)) - 0.045);
-    const fend = 1.0 - smoothstep(0.0, 0.016, Math.abs(Math.min(fA, fB)));
-    void fdx; void fdy;
-    const fendK = 0.10 * fend;
-    bodyR += P.mist[0] * fendK; bodyG += P.mist[1] * fendK; bodyB += P.mist[2] * fendK;
-    t(12, 18);
-    const lamp = (qxm >= -1.86 && qxm <= -1.06 ? 1 : 0) * (1.0 - smoothstep(0.004, 0.022, Math.abs(zig - 0.905))) * (1 - beltZ);
-    bodyR = mix(bodyR, P.danger[0] * 0.55, lamp);
-    bodyG = mix(bodyG, P.danger[1] * 0.55, lamp);
-    bodyB = mix(bodyB, P.danger[2] * 0.55, lamp);
-    t(6, 14);
-    const mdx = (qxm - 0.74) * 1.5, mdy = zig - 1.06;
-    const mir = 1.0 - smoothstep(0.0, 0.058, Math.sqrt(mdx * mdx + mdy * mdy));
-    bodyR = mix(bodyR, P.night[0] * 0.50, mir);
-    bodyG = mix(bodyG, P.night[1] * 0.50, mir);
-    bodyB = mix(bodyB, P.night[2] * 0.50, mir);
-    t(8, 16);
-    const ndx = (qxm + 1.42) * 2.4, ndy = zig - 1.655;
-    const fin = 1.0 - smoothstep(0.0, 0.040, Math.sqrt(ndx * ndx + ndy * ndy));
-    bodyR = mix(bodyR, P.night[0] * 0.55, fin);
-    bodyG = mix(bodyG, P.night[1] * 0.55, fin);
-    bodyB = mix(bodyB, P.night[2] * 0.55, fin);
-    t(8, 16);
 
-    if (process.env.DBG && Math.abs(qx - Number(process.env.DBG_X)) < 0.01 && Math.abs(qy - Number(process.env.DBG_Y)) < 0.01) {
-      console.log('[dbg] inside', inside, 'bodyR', bodyR, 'glass', trimGlass, 'beltZ', beltZ, 'ty', ty, 'trimTop', trimTop);
-    }
-    const atmo = 0.35 * (1 - fogC);
-    const bScale = 0.55 + 0.45 * fogC;
-    const inMix = inside;    /* как в шейдере: mix(col, тело, inside) */
-    cR = mix(cR, mix(bodyR, cR, atmo) * bScale, inMix);
-    cG = mix(cG, mix(bodyG, cG, atmo) * bScale, inMix);
-    cB = mix(cB, mix(bodyB, cB, atmo) * bScale, inMix);
-    t(9, 27);
-    }
-
-    /* колёса: wheel() с диском 0,689 радиуса шины, пятью спицами и суппортом */
-    for (const wx of [CAR_AXLE_F, CAR_AXLE_R]) {
-      const rTyre = CAR_TYRE_R * CAR_SCALE;
-      const rRim = 0.689 * rTyre;
-      const dx = qx - wx, dy = qy - (CAR_GROUND + rTyre);
-      const dl = Math.sqrt(dx * dx + dy * dy);
-      const tyre = 1.0 - smoothstep(rTyre - 0.010, rTyre, dl);
-      cR = mix(cR, P.night[0] * 0.02, tyre);
-      cG = mix(cG, P.night[1] * 0.02, tyre);
-      cB = mix(cB, P.night[2] * 0.02, tyre);
-      const side = tyre * smoothstep(-0.10, 0.80, dy / rTyre);
-      const sideK = 0.10 * side * fogC;
-      cR += P.mist[0] * sideK; cG += P.mist[1] * sideK; cB += P.mist[2] * sideK;
-      t(12, 24);
-      if (tyre < 0.002) { t(1, 1); continue; }
-      const rim = (1.0 - smoothstep(rRim - 0.004, rRim, dl)) * tyre;
-      cR = mix(cR, P.night[0] * 0.02, rim * fogC);
-      cG = mix(cG, P.night[1] * 0.02, rim * fogC);
-      cB = mix(cB, P.night[2] * 0.02, rim * fogC);
-      t(7, 18);
-      const ux = dx / Math.max(dl, 0.0001), uy = dy / Math.max(dl, 0.0001);
-      const sp = Math.max(
-        ux * 1.0000 + uy * 0.0000,
-        Math.max(
-          ux * 0.3090 + uy * 0.9511,
-          Math.max(
-            ux * -0.8090 + uy * 0.5878,
-            Math.max(ux * -0.8090 + uy * -0.5878, ux * 0.3090 + uy * -0.9511),
-          ),
-        ),
-      );
-      t(16, 26);
-      const spoke = smoothstep(0.940, 0.985, sp) * rim;
-      cR = mix(cR, P.mist[0] * 0.30, spoke * fogC * 0.85);
-      cG = mix(cG, P.mist[1] * 0.30, spoke * fogC * 0.85);
-      cB = mix(cB, P.mist[2] * 0.30, spoke * fogC * 0.85);
-      t(7, 18);
-      const disc = (1.0 - smoothstep(rRim * 0.60, rRim * 0.68, dl)) * rim;
-      cR = mix(cR, P.copper[0] * 0.16, disc * fogC * 0.55);
-      cG = mix(cG, P.copper[1] * 0.16, disc * fogC * 0.55);
-      cB = mix(cB, P.copper[2] * 0.16, disc * fogC * 0.55);
-      t(7, 18);
-      const cdx = dx - rRim * 0.42, cdy = dy + rRim * 0.52;
-      const cal = (1.0 - smoothstep(rRim * 0.62, rRim * 0.78, Math.sqrt(cdx * cdx + cdy * cdy))) * rim;
-      cR = mix(cR, P.danger[0] * 0.40, cal * fogC * 0.45);
-      cG = mix(cG, P.danger[1] * 0.40, cal * fogC * 0.45);
-      cB = mix(cB, P.danger[2] * 0.40, cal * fogC * 0.45);
-      t(10, 24);
-      const lip = (1.0 - smoothstep(0.0, 0.010, Math.abs(dl - rRim * 0.995))) * tyre;
-      cR = mix(cR, P.mist[0] * 0.22, lip * fogC * 0.50);
-      cG = mix(cG, P.mist[1] * 0.22, lip * fogC * 0.50);
-      cB = mix(cB, P.mist[2] * 0.22, lip * fogC * 0.50);
-      t(8, 21);
-    }
-
-    /* контровой свет по кромке */
-    const edge = 1.0 - smoothstep(0.0, 0.016, Math.abs(sd));
-    const up = smoothstep(-0.25, 0.30, qy);
-    t(5, 12);
-    const rimR = mix(P.copper[0], P.brass[0], up) * edge * (0.30 + 0.62 * fogC) * (0.30 + 0.70 * up);
-    const rimG = mix(P.copper[1], P.brass[1], up) * edge * (0.30 + 0.62 * fogC) * (0.30 + 0.70 * up);
-    const rimB = mix(P.copper[2], P.brass[2], up) * edge * (0.30 + 0.62 * fogC) * (0.30 + 0.70 * up);
-    t(6, 30);
-    cR += rimR; cG += rimG; cB += rimB;
-    t(2, 3);
-
-    /* фары и габариты */
-    const hlx = (qx - 0.86) * 1.0, hly = (qy - (-0.03)) * 2.6;
-    const hl = Math.exp(-Math.sqrt(hlx * hlx + hly * hly) * 16.0);
-    t(7, 12);
-    const hlI = 0.50 * hl * inside;
-    cR += P.brass[0] * hlI; cG += P.brass[1] * hlI; cB += P.brass[2] * hlI;
-    t(4, 12);
-    const tlx = (qx + 0.88) * 1.0, tly = (qy + 0.02) * 2.8;
-    const tl = Math.exp(-Math.sqrt(tlx * tlx + tly * tly) * 15.0);
-    t(7, 12);
-    const tlI = 0.36 * tl * inside;
-    cR += P.danger[0] * tlI; cG += P.danger[1] * tlI; cB += P.danger[2] * tlI;
-    t(4, 12);
-
-    /* отражение в мокром асфальте */
-    if (U.quality > 1.5) {
-      t(1, 1);
-      const rg = 2.0 * CAR_GROUND - qy;
-      if (rg > CAR_GROUND) {
-        t(3, 3);
-        const wob = vnoise(qy * 3.1, tm * 0.7);
-        t(4, 4);
-        const rqx = qx + (wob - 0.5) * 0.09;
-        const rqy = rg;
-        t(4, 4);
-        const rsd = carSdf(rqx, rqy);
-        t(1, 0);
-        const fade = Math.exp(-Math.max(CAR_GROUND - qy, 0.0) * 3.4);
-        t(5, 6);
-        const rIn = (1.0 - smoothstep(-0.006, 0.012, rsd)) * fade;
-        t(4, 8);
-        cR = mix(cR, bodyR * 0.42, rIn * 0.40);
-        cG = mix(cG, bodyG * 0.42, rIn * 0.40);
-        cB = mix(cB, bodyB * 0.42, rIn * 0.40);
-        t(7, 21);
-        const redge = (1.0 - smoothstep(0.0, 0.030, Math.abs(rsd))) * rIn * 0.16;
-        const rR = mix(P.copper[0], P.brass[0], 0.5) * redge;
-        const rG = mix(P.copper[1], P.brass[1], 0.5) * redge;
-        const rB = mix(P.copper[2], P.brass[2], 0.5) * redge;
-        t(8, 24);
-        cR += rR; cG += rG; cB += rB;
-        t(2, 3);
-      }
+    if (U.quality > 1.5 && U.reflection) {
+      const groundY = groundLine - plateMod.PLATE_REFLECTION_GAP;   /* зазор как в шейдере */
+      const rpY = 2.0 * groundY - py;
+      const rv = (rpY - place.cy) / (2.0 * hyHalf) + 0.5;
+      const rr = samplePlate(u, rv);
+      const fade = Math.exp(-Math.max(-gy, 0.0) * 3.4);
+      const k2 = rr[3] * inQ * 0.40 * fade;
+      cR = mix(cR, mix(P.night[0], rr[0] * 0.42, 0.85), k2);
+      cG = mix(cG, mix(P.night[1], rr[1] * 0.42, 0.85), k2);
+      cB = mix(cB, mix(P.night[2], rr[2] * 0.42, 0.85), k2);
+      t(18, 24);
     }
   }
 
@@ -585,6 +486,10 @@ export function renderFrame(opts) {
        замеру (scripts/bg3d-car-measure.mjs): маска машины = разница кадра с машиной
        и без неё. Без этого «маска» ловит тень, прожекторы и дизеринг. */
     noCar: car === false,
+    /* Отражение — отдельный флаг, а не побочный эффект качества: маска машины для
+       замеров снимается кадром БЕЗ отражения (см. ниже), иначе отражение в мокром
+       асфальте прирастает к силуэту и «высота» машины в маске удваивается. */
+    reflection: opts.reflection !== false,
     quality,
     fade,
   };

@@ -58,11 +58,32 @@ function env(over: Partial<Bg3dEnv> = {}): Bg3dEnv {
 
 /* ============================ 1. ШЕЙДЕР ============================ */
 
-test('шейдер: ноль текстур — ни sampler, ни выборок', () => {
-  const src = VERT + FRAG;
-  assert.equal(/sampler\s*(2D|Cube|3D|External)/i.test(src), false, 'в шейдере появился sampler');
-  assert.equal(/texture\s*(2D|Cube|Proj)?\s*\(/i.test(src), false, 'в шейдере появилась выборка текстуры');
-  assert.equal(/uniform\s+sampler/i.test(src), false, 'в шейдере появился uniform-сampler');
+const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
+const LINE_COMMENT = /\/\/[^\n]*/g;
+
+test('шейдер: одна текстура — фото-пластина, не больше двух выборок на пиксель', () => {
+  /* Круг 35 (задание №62) сознательно отменяет правило «0 текстур» из раунда 30.
+     Причина и числа — docs/reports/r35-bg-car/report.md: процедурный силуэт стоил
+     936,8 оп/px и давал плоскую заливку внутри кузова (σ 10,7 L) при кромке-ступеньке.
+     Новое правило проверяется так же строго, как старое:
+       · текстура РОВНО одна и это пластина машины (uPlate);
+       · выборок на пиксель не больше двух: основная всегда, отражение — только high;
+       · вес шейдера остаётся под лимитом 14 КБ gzip (тест ниже). */
+  const samplers = FRAG.match(/uniform\s+sampler2D\s+(\w+)\s*;/g) ?? [];
+  assert.equal(samplers.length, 1, `sampler должен быть ровно один, найдено ${samplers.length}`);
+  assert.match(FRAG, /uniform\s+sampler2D\s+uPlate\s*;/, 'единственный sampler — не uPlate');
+  const samples = FRAG.match(/texture2D\s*\(/g) ?? [];
+  assert.ok(samples.length <= 2, `выборок текстуры ${samples.length}, допускается 2 (основная + отражение)`);
+  assert.equal(/uPlate/.test(VERT), false, 'в вершинном шейдере текстура не нужна');
+  /* Ключевое требование задания: контуры кузова кодом не рисуются. */
+  /* Проверяем КОД, а не комментарии: перед проверкой вырезаем блочные и строчные
+     комментарии GLSL — иначе упоминание снятых функций в пояснении считалось бы кодом. */
+  const code = FRAG.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '');
+  for (const dead of ['carProfile(', 'carSdf(', 'sdRoundBox(', 'pFender(', 'carTrim(']) {
+    assert.equal(code.includes(dead), false, `в шейдере остался процедурный силуэт: ${dead}`);
+  }
+  /* Альфа за пределами квада обязана быть нулевой — иначе пластина «течёт» за кромку. */
+  assert.match(FRAG, /inQ/, 'нет маски квада inQ: альфа за пределами квада не гасится');
 });
 
 test('шейдер: вес вписывается в лимит 14 КБ gzip', () => {
@@ -256,6 +277,10 @@ async function harness(): Promise<Harness> {
   g.requestAnimationFrame = win.requestAnimationFrame.bind(win);
   g.cancelAnimationFrame = win.cancelAnimationFrame.bind(win);
   g.HTMLElement = win.HTMLElement;
+  /* Пластина грузится через `new Image()` (круг 35). В jsdom картинки не декодируются,
+     поэтому промис загрузки просто не завершается — это нормально: тесты проверяют
+     уборку и жизненный цикл, а не пиксели текстуры. */
+  g.Image = win.Image;
 
   const obs = { ioCreated: 0, ioDisconnected: 0, roCreated: 0, roDisconnected: 0 };
   g.IntersectionObserver = class {
@@ -573,12 +598,19 @@ test('линейка: форма силуэта против фото в одн�
   /* Задание №60, шаг 1: гейт не должен быть «скриптом для отчёта» — он в тестах.
      Сравниваем в безразмерных долях (X — доля длины, Y — доля собственной
      высоты): фото перспективное, и абсолютные высоты в нём завышены на ~5 %. */
-  const { renderFrame } = await import('../tools/bg3d/ref.mjs');
+  const { renderFrame, loadPlate } = await import('../tools/bg3d/ref.mjs');
+  /* Круг 35 (задание №62): силуэт теперь живёт в фото-пластине, поэтому порт обязан
+     её загрузить — иначе «кадр с машиной» и «кадр без машины» совпадут, и маска будет
+     пустой. Файл — тот же, что уходит в браузер. */
+  await loadPlate(new URL('../public/img/bg3d/car-1600.webp', import.meta.url).pathname);
   const W = 640;
   const H = 360;
   const base = { width: W, height: H, variant: 'silhouette', quality: 2, time: 4, scroll: 0, pointer: [0.18, -0.08] };
-  const withCar = renderFrame({ ...base, car: true });
-  const withoutCar = renderFrame({ ...base, car: false });
+  /* Отражение в мокром асфальте выключено в обоих кадрах: маска должна мерить САМУ
+     машину. С отражением она читает «машина + отражение» и даёт h/L 0,377 при
+     паспортных 0,335 — та же ошибка, что в круге 33 дала три разных числа. */
+  const withCar = renderFrame({ ...base, car: true, reflection: false });
+  const withoutCar = renderFrame({ ...base, car: false, reflection: false });
   const mask = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) {
     const j = i * 3;
@@ -620,26 +652,40 @@ test('линейка: форма силуэта против фото в одн�
     `h/L по CPU-кадру ${hOverL.toFixed(3)} должен быть 0,335 ± 0,010 (задание №60, шаг 1)`);
   /* верхняя кромка — в тех же координатах, что и в линейке */
   const profile: number[] = [];
-  for (let i = 0; i <= 10; i++) {
-    const x = Math.min(x1, x0 + Math.round((i / 10) * (L - 1)));
+  for (let i = 0; i <= 20; i++) {
+    const x = Math.min(x1, x0 + Math.round((i / 20) * (L - 1)));
     let top = -1;
     for (let y = y0; y <= y1; y++) if (mask[y * W + x]) { top = y; break; }
     profile.push(top < 0 ? NaN : ((y1 - top) / Hh) * 100);
   }
   /* Крыша выше обоих концов. Кадр сцены развёрнут носом ВПРАВО, поэтому
      слева корма, справа нос: сравнивать «середину с капотом» по индексам
-     нельзя, не зная ориентации. Проверяем то, что не зависит от неё. */
-  const mid = profile[5];
-  const ends = [profile[1], profile[9]];
-  for (const e of ends) {
-    assert.ok(mid > e + 5, `середина (${mid.toFixed(0)} %H) должна быть выше конца (${e.toFixed(0)} %H): крыша-арка, а не клин`);
-  }
+     нельзя, не зная ориентации. Проверяем то, что не зависит от неё.
+     Берём ГРЕБЕНЬ по средней трети (30…70 %L), а не одну точку 50 %L: у этой
+     машины заднее стекло срывается как раз у середины, и единственная выборка
+     там садится на скат, а не на крышу. Гребень же — именно «арка»: он обязан
+     быть выше ОБОИХ концов. */
+  const crest = Math.max(...profile.slice(6, 15));
+  const [endA, endB] = [profile[2], profile[18]];
+  const highEnd = Math.max(endA, endB);
+  const lowEnd = Math.min(endA, endB);
+  /* Гребень выше ОБОИХ концов. Запас к высокому концу скромный (5 %H) намеренно:
+     у этого кузова крыша тянется почти до кормы, и на 10 %L от хвоста кромка уже
+     на 91 %H — «выше на 5» здесь как раз и означает «плато с уклоном к корме», а не
+     клин. Низкий конец (нос) обязан отстоять far больше — 20 %H: если силуэт стал
+     клином, именно там разница и схлопывается. */
+  assert.ok(crest > highEnd + 5,
+    `гребень крыши (${crest.toFixed(0)} %H) должен быть выше высокого конца (${highEnd.toFixed(0)} %H): крыша-арка, а не клин`);
+  assert.ok(crest > lowEnd + 20,
+    `гребень крыши (${crest.toFixed(0)} %H) должен быть на 20 %H выше низкого конца (${lowEnd.toFixed(0)} %H): силуэт схлопнулся в клин`);
   /* Ступеньки — только на участке 10…90 %L: на самих торцах силуэт падает
-     отвесно (бампер), и это не дефект формы, а край. Порог 20 %H на 10 %L
-     ловит клин из двух прямых, но пропускает скат лобового. */
-  for (let i = 2; i < profile.length - 1; i++) {
+     отвесно (бампер), и это не дефект формы, а край. Шаг сетки — 5 %L, а не 10:
+     на грубой сетке настоящий скат лобового (95 → 61 %H на 60…70 %L) читается как
+     «ступенька» в 23 %H и рушит проверку формы там, где форма верна. Порог 18 %H
+     на 5 %L ловит излом в две прямые, но пропускает покатый скат. */
+  for (let i = 3; i < profile.length - 3; i++) {
     const d = Math.abs(profile[i] - profile[i - 1]);
-    assert.ok(d < 20, `ступенька ${d.toFixed(0)} %H между ${(i - 1) * 10} и ${i * 10} %L — силуэт ломается`);
+    assert.ok(d < 18, `ступенька ${d.toFixed(0)} %H между ${(i - 1) * 5} и ${i * 5} %L — силуэт ломается`);
   }
   /* Клиренс: низ силуэта над землёй 3,7 %L = 11 %H (0,185 м при высоте 1,645). */
   let bottom = -1;

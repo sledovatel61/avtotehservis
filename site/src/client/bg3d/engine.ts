@@ -30,6 +30,7 @@
  */
 import { fitScale } from './gate.ts';
 import { FRAG, PALETTE, VERT } from './shader.ts';
+import { PLATE_SRC, PLATE_SRCSET } from './plate-asset.ts';
 
 export type Variant = 'depth' | 'silhouette';
 
@@ -185,6 +186,8 @@ export class Bg3d {
   private glVersion = '';
   private resizeQueued = false;
   private budgetScale = 1;
+  private plateTex: WebGLTexture | null = null;
+  private isWebGL2 = false;
 
   constructor(cfg: Bg3dConfig) {
     this.cfg = {
@@ -207,6 +210,7 @@ export class Bg3d {
       ?? this.canvas.getContext('experimental-webgl', GL_ATTRS)) as WebGLRenderingContext | WebGL2RenderingContext | null;
     if (!gl) return false;
     this.gl = gl;
+    this.isWebGL2 = typeof (gl as WebGL2RenderingContext).createVertexArray === 'function';
 
     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
     this.renderer = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : '';
@@ -243,7 +247,7 @@ export class Bg3d {
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
     if (vao) (gl as WebGL2RenderingContext).bindVertexArray(null);
 
-    for (const n of ['uRes', 'uTime', 'uScroll', 'uPointer', 'uMode', 'uQuality', 'uFade', 'uNight', 'uDeep', 'uBrass', 'uCopper', 'uMist', 'uDanger']) {
+    for (const n of ['uRes', 'uTime', 'uScroll', 'uPointer', 'uMode', 'uQuality', 'uFade', 'uNight', 'uDeep', 'uBrass', 'uCopper', 'uMist', 'uDanger', 'uPlate', 'uHasPlate']) {
       this.u[n] = gl.getUniformLocation(prog, n);
     }
     gl.uniform1f(this.u.uMode, this.cfg.variant === 'silhouette' ? 1 : 0);
@@ -254,6 +258,12 @@ export class Bg3d {
     gl.uniform3fv(this.u.uCopper, PALETTE.copper);
     gl.uniform3fv(this.u.uMist, PALETTE.mist);
     gl.uniform3fv(this.u.uDanger, PALETTE.danger);
+    gl.uniform1i(this.u.uPlate, 0);
+    gl.uniform1f(this.u.uHasPlate, 0);
+    /* Пластина грузится асинхронно: до её прихода кадр рисуется без машины (uHasPlate 0),
+       а не с процедурным суррогатом. Так в кадре никогда не бывает «двух машин», а
+       страница не ждёт картинку перед первым кадром. */
+    void this.loadPlate();
 
     /* Замер реального времени GPU: расширение есть в Chrome (desktop и Android).
        Без него gpuMs остаётся null, и в отчёте честно пишется «не измерялось». */
@@ -268,6 +278,66 @@ export class Bg3d {
     this.t0 = performance.now();
     this.fpsWindowStart = this.t0;
     return true;
+  }
+
+  /** Текстура пластины: 0 — ещё не загружена, 1 — загружена. */
+  private plateReady = 0;
+  private plateLoading = false;
+
+  /**
+   * Загрузка фото-пластины машины (круг 35, задание №62).
+   *
+   * Почему так, а не `new Image()` + `texImage2D` сразу. Пластина — обычный webp с
+   * альфой; его надо декодировать и залить в текстуру. Мипмапы строит GPU
+   * (`generateMipmap`), поэтому в браузере нет ни второй копии картинки, ни ручной
+   * пирамиды: на уменьшении кадра выборка идёт из мипмапа и кромка не «звенит».
+   * Разрешение текстуры берём ближайшее к 1600 (или 800 на узком экране): аспект
+   * пластины не меняется, файлы отличаются только шириной.
+   *
+   * Пока картинка не пришла, кадр рисуется без машины: лучше пустая сцена, чем
+   * процедурный суррогат рядом с фотопластиной.
+   */
+  private async loadPlate(): Promise<void> {
+    const gl = this.gl;
+    if (!gl || this.plateLoading || this.plateReady) return;
+    /* В jsdom и в среде без DOM картинок нет вовсе: тогда пластина просто не грузится,
+       а кадр рисуется без машины (uHasPlate 0). Без этой проверки замер жизненного
+       цикла падал на `new Image()` вместо того, чтобы мерить уборку. */
+    if (typeof Image === 'undefined') return;
+    this.plateLoading = true;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = window.innerWidth <= 640 ? PLATE_SRCSET[0] : PLATE_SRC;
+    try {
+      if (typeof img.decode === 'function') await img.decode();
+      else await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error('plate')); });
+    } catch { this.plateLoading = false; return; }
+    if (this.destroyed || !this.gl) { this.plateLoading = false; return; }
+    const tex = gl.createTexture();
+    if (!tex) { this.plateLoading = false; return; }
+    this.plateTex = tex;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    /* UNPACK_FLIP_Y: vUv растёт снизу вверх, а картинка — сверху вниз */
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    /* NPOT: в WebGL1 мипмапы для не-степени-двух запрещены, поэтому REPEAT/мипмап
+       включаем только там, где это законно (WebGL2 или POT-размер). */
+    const pot = (v: number) => (v & (v - 1)) === 0;
+    const canMip = this.isWebGL2 || (pot(img.naturalWidth) && pot(img.naturalHeight));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    if (canMip) {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    } else {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.drawFrame();
+    this.plateLoading = false;
+    this.plateReady = 1;
   }
 
   private compile(type: number, src: string): WebGLShader | null {
@@ -525,6 +595,16 @@ export class Bg3d {
     gl.uniform1f(this.u.uScroll, this.scroll);
     gl.uniform2f(this.u.uPointer, this.pointer.x, this.pointer.y);
     gl.uniform1f(this.u.uFade, this.fade);
+    /* Текстура пластины: юнит 0, только если она реально загружена. Без этого
+       шейдер умножал бы кадр на неполную текстуру и машина «мерцала» бы белым. */
+    if (this.plateTex && this.plateReady) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.plateTex);
+      gl.uniform1i(this.u.uPlate, 0);
+      gl.uniform1f(this.u.uHasPlate, 1);
+    } else {
+      gl.uniform1f(this.u.uHasPlate, 0);
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     if (this.vao) (gl as WebGL2RenderingContext).bindVertexArray(null);
   }
@@ -593,6 +673,7 @@ export class Bg3d {
     if (gl) {
       if (this.vao) (gl as WebGL2RenderingContext).deleteVertexArray?.(this.vao);
       if (this.vbo) gl.deleteBuffer(this.vbo);
+      if (this.plateTex) gl.deleteTexture(this.plateTex);
       if (this.prog) gl.deleteProgram(this.prog);
       /* 셰деры уже удалены в init() после линковки — проверяем, что не осталось ничего. */
       if (this.timerQuery) {
@@ -609,6 +690,7 @@ export class Bg3d {
     this.timerQuery = null;
     this.timerExt = null;
     this.prog = null; this.vbo = null; this.vao = null; this.gl = null; this.u = {};
+    this.plateTex = null; this.plateReady = 0;
     this.ring.reset();
     if (this.ownCanvas && this.canvas.parentNode) this.canvas.parentNode.removeChild(this.canvas);
     this.cfg.onDestroyed?.();
