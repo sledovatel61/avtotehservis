@@ -330,7 +330,7 @@ vec4 carTrim(vec2 p){
   float s = max(belt - p.y, p.y - (top - 0.02));
   s = max(s, p.x - xf);
   s = max(s, xr - p.x);
-  float glass = 1.0 - smoothstep(-0.014, 0.014, s);
+  float glass = 1.0 - smoothstep(-0.005, 0.005, s);
   /* стойки и разделитель между стёклами передней и задней двери: 1 на линии */
   float pf = 1.0 - smoothstep(0.008, 0.026, abs(p.x - xf));
   float pr = 1.0 - smoothstep(0.008, 0.026, abs(p.x - xr));
