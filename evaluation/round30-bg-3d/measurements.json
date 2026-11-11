@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T12:17:03.205Z",
+  "generatedAt": "2026-11-11T13:01:45.700Z",
   "host": {
     "node": "v22.22.3",
     "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -83,255 +83,7 @@
       }
     },
     "shader": {
-      "generatedAt": "2026-11-11T12:17:03.917Z",
-      "toolchain": {
-        "glslang": "16.6.0 (Khronos, WASM)",
-        "validator": "@moreplease/glslang 16.6.0-1",
-        "opcodeTables": {
-          "_provenance": "KhronosGroup/SPIRV-Headers, include/spirv/unified1/{spirv.core.grammar.json, extinst.glsl.std.450.grammar.json}, получено через api.github.com 10.11.2026",
-          "_license": "MIT (Khronos Group)",
-          "_revision_core": 7,
-          "_version_core": null,
-          "_revision_glsl": 2,
-          "_version_glsl": 100
-        }
-      },
-      "essl310Note": "SPIR-V собран из механически преобразованной ESSL 3.10 версии (меняются только объявления входа/выхода); валидация шага 1 — по настоящему ESSL 1.00",
-      "validation": {
-        "webgl1": {
-          "ok": true,
-          "diagnostics": []
-        },
-        "webgl2": {
-          "ok": true,
-          "diagnostics": []
-        }
-      },
-      "fragment": {
-        "total": 2284,
-        "executable": 1518,
-        "arithmetic": 717,
-        "transcendental": 23,
-        "memory": 748,
-        "composite": 53,
-        "texture": 0,
-        "branch": 19,
-        "controlFlow": 19,
-        "spirvBytes": 39512,
-        "unknownOpcodes": [],
-        "byOpcode": {
-          "OpCapability": 1,
-          "OpExtInstImport": 1,
-          "OpMemoryModel": 1,
-          "OpEntryPoint": 1,
-          "OpExecutionMode": 1,
-          "OpSource": 1,
-          "OpName": 186,
-          "OpDecorate": 29,
-          "OpTypeVoid": 1,
-          "OpTypeFunction": 6,
-          "OpTypeFloat": 1,
-          "OpTypePointer": 11,
-          "OpTypeVector": 3,
-          "OpConstant": 206,
-          "OpTypeBool": 1,
-          "OpTypeInt": 1,
-          "OpConstantComposite": 17,
-          "OpVariable": 159,
-          "OpFunction": 12,
-          "OpLabel": 50,
-          "OpLoad": 463,
-          "OpStore": 199,
-          "OpAccessChain": 86,
-          "OpExtInst": 159,
-          "OpFDiv": 30,
-          "OpCompositeConstruct": 49,
-          "OpFSub": 125,
-          "OpVectorTimesScalar": 76,
-          "OpFMul": 158,
-          "OpFAdd": 84,
-          "OpFunctionCall": 24,
-          "OpFNegate": 16,
-          "OpFOrdLessThan": 13,
-          "OpSelectionMerge": 19,
-          "OpBranchConditional": 19,
-          "OpFOrdGreaterThan": 7,
-          "OpBranch": 7,
-          "OpVectorShuffle": 1,
-          "OpCompositeExtract": 3,
-          "OpReturn": 1,
-          "OpFunctionEnd": 12,
-          "OpFunctionParameter": 15,
-          "OpReturnValue": 23,
-          "OpLogicalOr": 1,
-          "OpDot": 5
-        },
-        "byExt": {
-          "FMax": 20,
-          "FClamp": 7,
-          "FMix": 28,
-          "Pow": 1,
-          "SmoothStep": 43,
-          "Length": 12,
-          "Exp": 10,
-          "FAbs": 23,
-          "Step": 9,
-          "FMin": 2,
-          "Fract": 3,
-          "Floor": 1
-        },
-        "byFunc": {
-          "main": {
-            "executable": 896,
-            "arithmetic": 426,
-            "transcendental": 20,
-            "memory": 431,
-            "composite": 39
-          },
-          "pTop(f1;": {
-            "executable": 163,
-            "arithmetic": 101,
-            "transcendental": 0,
-            "memory": 62,
-            "composite": 0
-          },
-          "pBottom(f1;": {
-            "executable": 27,
-            "arithmetic": 17,
-            "transcendental": 0,
-            "memory": 10,
-            "composite": 0
-          },
-          "pBelt(f1;": {
-            "executable": 7,
-            "arithmetic": 6,
-            "transcendental": 0,
-            "memory": 1,
-            "composite": 0
-          },
-          "pArch(vf2;f1;": {
-            "executable": 13,
-            "arithmetic": 5,
-            "transcendental": 1,
-            "memory": 7,
-            "composite": 1
-          },
-          "carProfile(vf2;": {
-            "executable": 34,
-            "arithmetic": 12,
-            "transcendental": 0,
-            "memory": 22,
-            "composite": 0
-          },
-          "carTrim(vf2;": {
-            "executable": 88,
-            "arithmetic": 34,
-            "transcendental": 0,
-            "memory": 53,
-            "composite": 1
-          },
-          "pFender(vf2;": {
-            "executable": 32,
-            "arithmetic": 14,
-            "transcendental": 0,
-            "memory": 17,
-            "composite": 1
-          },
-          "hash21(vf2;": {
-            "executable": 19,
-            "arithmetic": 7,
-            "transcendental": 0,
-            "memory": 12,
-            "composite": 0
-          },
-          "vnoise(vf2;": {
-            "executable": 47,
-            "arithmetic": 16,
-            "transcendental": 0,
-            "memory": 30,
-            "composite": 1
-          },
-          "carSdf(vf2;": {
-            "executable": 11,
-            "arithmetic": 5,
-            "transcendental": 0,
-            "memory": 5,
-            "composite": 1
-          },
-          "wheel(vf3;vf2;f1;f1;": {
-            "executable": 181,
-            "arithmetic": 74,
-            "transcendental": 2,
-            "memory": 98,
-            "composite": 9
-          }
-        }
-      },
-      "vertex": {
-        "total": 57,
-        "executable": 11,
-        "arithmetic": 2,
-        "transcendental": 0,
-        "memory": 5,
-        "composite": 4,
-        "texture": 0,
-        "branch": 0,
-        "controlFlow": 0,
-        "spirvBytes": 968,
-        "unknownOpcodes": [],
-        "byOpcode": {
-          "OpCapability": 1,
-          "OpExtInstImport": 1,
-          "OpMemoryModel": 1,
-          "OpEntryPoint": 1,
-          "OpSource": 1,
-          "OpName": 7,
-          "OpMemberName": 2,
-          "OpDecorate": 5,
-          "OpMemberDecorate": 2,
-          "OpTypeVoid": 1,
-          "OpTypeFunction": 1,
-          "OpTypeFloat": 1,
-          "OpTypeVector": 2,
-          "OpTypePointer": 5,
-          "OpVariable": 5,
-          "OpConstant": 4,
-          "OpTypeStruct": 1,
-          "OpTypeInt": 1,
-          "OpFunction": 1,
-          "OpLabel": 1,
-          "OpLoad": 2,
-          "OpVectorTimesScalar": 1,
-          "OpCompositeConstruct": 2,
-          "OpFAdd": 1,
-          "OpStore": 2,
-          "OpCompositeExtract": 2,
-          "OpAccessChain": 1,
-          "OpReturn": 1,
-          "OpFunctionEnd": 1
-        },
-        "byExt": {},
-        "byFunc": {
-          "main": {
-            "executable": 11,
-            "arithmetic": 2,
-            "transcendental": 0,
-            "memory": 5,
-            "composite": 4
-          }
-        }
-      },
-      "weights": {
-        "rawBytes": 33790,
-        "gzipBytes": 11459,
-        "brotliBytes": 10001,
-        "fragRawBytes": 33649,
-        "fragGzipBytes": 11399,
-        "spirvBytes": 39512,
-        "lines": 507,
-        "limitGzipBytes": 14336
-      },
-      "ok": true
+      "error": "Command failed: /usr/local/bin/node /home/user/avtotehservis/site/scripts/bg3d-shader-check.mjs --json /home/user/avtotehservis/evaluation/round30-bg-3d/shader-report.json | Не найден пакет @moreplease/glslang в /home/user/avtotehservis/site/tools/shader-check/node_modules |   cd site/tools/shader-check && npm ci"
     },
     "cpuCost": {
       "window": "640×360, t=4.0, scroll=0.15, pointer=0.18/-0.08; второй прогон 320×180 для проверки независимости от размера",
@@ -342,24 +94,24 @@
             "instPerPxMax": 265,
             "scalarPerPx": 373.9,
             "scalarPerPxMax": 450,
-            "cpuNsPerPx": 863,
-            "cpuNsPerPxRun2": 1186
+            "cpuNsPerPx": 1119,
+            "cpuNsPerPxRun2": 2359
           },
           "1": {
             "instPerPx": 249.9,
             "instPerPxMax": 319,
             "scalarPerPx": 415,
             "scalarPerPxMax": 527,
-            "cpuNsPerPx": 375,
-            "cpuNsPerPxRun2": 372
+            "cpuNsPerPx": 647,
+            "cpuNsPerPxRun2": 654
           },
           "2": {
             "instPerPx": 278.7,
             "instPerPxMax": 373,
             "scalarPerPx": 460.3,
             "scalarPerPxMax": 612,
-            "cpuNsPerPx": 405,
-            "cpuNsPerPxRun2": 421
+            "cpuNsPerPx": 697,
+            "cpuNsPerPxRun2": 699
           }
         },
         "silhouette": {
@@ -368,98 +120,27 @@
             "instPerPxMax": 771,
             "scalarPerPx": 762.5,
             "scalarPerPxMax": 1139,
-            "cpuNsPerPx": 2090,
-            "cpuNsPerPxRun2": 884
+            "cpuNsPerPx": 3187,
+            "cpuNsPerPxRun2": 1439
           },
           "1": {
             "instPerPx": 532.3,
             "instPerPxMax": 825,
             "scalarPerPx": 803.6,
             "scalarPerPxMax": 1216,
-            "cpuNsPerPx": 911,
-            "cpuNsPerPxRun2": 1003
+            "cpuNsPerPx": 1423,
+            "cpuNsPerPxRun2": 1417
           },
           "2": {
             "instPerPx": 635.3,
             "instPerPxMax": 880,
             "scalarPerPx": 936.7,
             "scalarPerPxMax": 1302,
-            "cpuNsPerPx": 1023,
-            "cpuNsPerPxRun2": 1025
+            "cpuNsPerPx": 1660,
+            "cpuNsPerPxRun2": 1706
           }
         }
       }
-    },
-    "crossCheck": {
-      "perFunction": {
-        "hash21": {
-          "refInstTotal": 7,
-          "refInstOwnBody": 7,
-          "callsSubtracted": [],
-          "spirvFunc": "hash21(vf2;",
-          "spirvArith": 7,
-          "spirvComposite": 0,
-          "delta": 0
-        },
-        "sdRoundBox": {
-          "refInstTotal": 7,
-          "refInstOwnBody": 7,
-          "callsSubtracted": [],
-          "spirvFunc": null,
-          "spirvArith": null,
-          "spirvComposite": null,
-          "delta": null
-        },
-        "sdCircle": {
-          "refInstTotal": 1,
-          "refInstOwnBody": 1,
-          "callsSubtracted": [],
-          "spirvFunc": null,
-          "spirvArith": null,
-          "spirvComposite": null,
-          "delta": null
-        },
-        "sdSeg": {
-          "refInstTotal": 8,
-          "refInstOwnBody": 8,
-          "callsSubtracted": [],
-          "spirvFunc": null,
-          "spirvArith": null,
-          "spirvComposite": null,
-          "delta": null
-        },
-        "smin": {
-          "refInstTotal": 10,
-          "refInstOwnBody": 10,
-          "callsSubtracted": [],
-          "spirvFunc": null,
-          "spirvArith": null,
-          "spirvComposite": null,
-          "delta": null
-        },
-        "vnoise": {
-          "refInstTotal": 44,
-          "refInstOwnBody": 16,
-          "callsSubtracted": [
-            "4×hash21"
-          ],
-          "spirvFunc": "vnoise(vf2;",
-          "spirvArith": 16,
-          "spirvComposite": 1,
-          "delta": 0
-        },
-        "carSdf": {
-          "refInstTotal": 149,
-          "refInstOwnBody": 149,
-          "callsSubtracted": [],
-          "spirvFunc": "carSdf(vf2;",
-          "spirvArith": 5,
-          "spirvComposite": 1,
-          "delta": 144
-        }
-      },
-      "worstAbsDelta": 144,
-      "note": "сравнивается тело функции без вложенных вызовов: SPIR-V byFunc считает OpFunctionCall в теле вызывающей, а порт накапливает счётчик и внутри вызванных. Наибольшее расхождение — 1 инструкция, т.е. порт и независимый компилятор Khronos считают одну и ту же математику; именно поэтому оп/px из порта можно переносить в модель"
     },
     "lifecycle": {
       "harness": "jsdom 30 + tools/bg3d/mockgl.mjs (WebGL не исполняется: журнал считает create/delete объектов, drawArrays и loseContext); observer'ы — заглушки, считающие disconnect",
@@ -469,36 +150,36 @@
         "height": 300
       },
       "tierObserved": "high",
-      "heapMbBefore": 41.95,
-      "heapMbAfter": 43.13,
+      "heapMbBefore": 41.92,
+      "heapMbAfter": 43.1,
       "heapDeltaMb": 1.18,
       "heapTrend": {
-        "heapMbCycle1": 42.15,
-        "heapMbCycle10": 42.87,
-        "heapMbCycle20": 43.13,
-        "deltaCycles1to10Kb": 737.3,
+        "heapMbCycle1": 42.11,
+        "heapMbCycle10": 42.84,
+        "heapMbCycle20": 43.1,
+        "deltaCycles1to10Kb": 747.5,
         "deltaCycles10to20Kb": 266.2,
         "leakPerCycleKbLast10": 26.6,
         "plateau": true
       },
       "controlRunWithoutBg3d": {
         "note": "20 циклов создания/удаления того же хоста без монтажа фона — базовая линия jsdom/V8",
-        "heapMbStart": 43.13,
-        "heapMbEnd": 43.19,
+        "heapMbStart": 43.1,
+        "heapMbEnd": 43.16,
         "heapDeltaMb": 0.06,
         "perCycleKb": 2.9,
         "rows": [
           {
             "cycle": 1,
-            "heapMb": 43.14
+            "heapMb": 43.11
           },
           {
             "cycle": 10,
-            "heapMb": 43.16
+            "heapMb": 43.13
           },
           {
             "cycle": 20,
-            "heapMb": 43.19
+            "heapMb": 43.16
           }
         ]
       },
@@ -509,7 +190,7 @@
         "mocksPerCycle": 2,
         "kbPerCycleAttributableToHarness": 10.2
       },
-      "framesRenderedTotal": 178,
+      "framesRenderedTotal": 179,
       "glContexts": {
         "total": 40,
         "engine": 20,
@@ -532,7 +213,7 @@
           "query": 0
         },
         "asymmetric": [],
-        "draws": 178
+        "draws": 179
       },
       "observers": {
         "ioCreated": 20,
@@ -548,9 +229,9 @@
           "cycle": 1,
           "tier": "high",
           "quality": 2,
-          "frames": 8,
+          "frames": 9,
           "destroyed": false,
-          "heapMb": 42.15,
+          "heapMb": 42.11,
           "registry": 0,
           "listeners": 0,
           "glContexts": 2
@@ -561,7 +242,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.32,
+          "heapMb": 42.29,
           "registry": 0,
           "listeners": 0,
           "glContexts": 4
@@ -572,7 +253,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.39,
+          "heapMb": 42.36,
           "registry": 0,
           "listeners": 0,
           "glContexts": 6
@@ -583,7 +264,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.51,
+          "heapMb": 42.47,
           "registry": 0,
           "listeners": 0,
           "glContexts": 8
@@ -594,7 +275,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.54,
+          "heapMb": 42.51,
           "registry": 0,
           "listeners": 0,
           "glContexts": 10
@@ -603,9 +284,9 @@
           "cycle": 6,
           "tier": "high",
           "quality": 2,
-          "frames": 8,
+          "frames": 9,
           "destroyed": false,
-          "heapMb": 42.57,
+          "heapMb": 42.54,
           "registry": 0,
           "listeners": 0,
           "glContexts": 12
@@ -616,7 +297,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.62,
+          "heapMb": 42.59,
           "registry": 0,
           "listeners": 0,
           "glContexts": 14
@@ -627,7 +308,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.79,
+          "heapMb": 42.76,
           "registry": 0,
           "listeners": 0,
           "glContexts": 16
@@ -638,7 +319,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.83,
+          "heapMb": 42.8,
           "registry": 0,
           "listeners": 0,
           "glContexts": 18
@@ -649,7 +330,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.87,
+          "heapMb": 42.84,
           "registry": 0,
           "listeners": 0,
           "glContexts": 20
@@ -660,7 +341,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.9,
+          "heapMb": 42.87,
           "registry": 0,
           "listeners": 0,
           "glContexts": 22
@@ -671,7 +352,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.92,
+          "heapMb": 42.89,
           "registry": 0,
           "listeners": 0,
           "glContexts": 24
@@ -682,7 +363,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.94,
+          "heapMb": 42.91,
           "registry": 0,
           "listeners": 0,
           "glContexts": 26
@@ -693,7 +374,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.97,
+          "heapMb": 42.94,
           "registry": 0,
           "listeners": 0,
           "glContexts": 28
@@ -704,7 +385,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.99,
+          "heapMb": 42.96,
           "registry": 0,
           "listeners": 0,
           "glContexts": 30
@@ -715,7 +396,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 43.02,
+          "heapMb": 42.99,
           "registry": 0,
           "listeners": 0,
           "glContexts": 32
@@ -726,7 +407,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 43.04,
+          "heapMb": 43.01,
           "registry": 0,
           "listeners": 0,
           "glContexts": 34
@@ -735,9 +416,9 @@
           "cycle": 18,
           "tier": "high",
           "quality": 2,
-          "frames": 9,
+          "frames": 8,
           "destroyed": false,
-          "heapMb": 43.08,
+          "heapMb": 43.05,
           "registry": 0,
           "listeners": 0,
           "glContexts": 36
@@ -748,7 +429,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 43.1,
+          "heapMb": 43.07,
           "registry": 0,
           "listeners": 0,
           "glContexts": 38
@@ -759,14 +440,14 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 43.13,
+          "heapMb": 43.1,
           "registry": 0,
           "listeners": 0,
           "glContexts": 40
         }
       ],
       "ok": true,
-      "verdict": "утечек нет: все GL-объекты удалены (баланс create/delete сходится), слушатели сняты (осталось 0), observer'ы разорваны, реестр пуст, все 40 контекстов помечены потерянными; куча вышла на плато (737.3 КБ за циклы 1–10 и 266.2 КБ за 10–20)"
+      "verdict": "утечек нет: все GL-объекты удалены (баланс create/delete сходится), слушатели сняты (осталось 0), observer'ы разорваны, реестр пуст, все 40 контекстов помечены потерянными; куча вышла на плато (747.5 КБ за циклы 1–10 и 266.2 КБ за 10–20)"
     }
   },
   "modeled": {
@@ -1206,8 +887,8 @@
       },
       "softwareRasterizer": {
         "note": "SwiftShader/llvmpipe-класс: цена измерена CPU-портом на этой машине, не смоделирована",
-        "cpuNsPerPx": 1023,
-        "coresNeededFor1280x720x30": 28.3,
+        "cpuNsPerPx": 1660,
+        "coresNeededFor1280x720x30": 45.9,
         "consequence": "поэтому gate.ts гасит фон на программных растеризаторах (BLOCKED_RENDERER)"
       }
     },
