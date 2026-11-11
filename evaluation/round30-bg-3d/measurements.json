@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T07:31:39.486Z",
+  "generatedAt": "2026-11-11T10:59:03.185Z",
   "host": {
     "node": "v22.22.3",
     "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -83,7 +83,7 @@
       }
     },
     "shader": {
-      "generatedAt": "2026-11-11T07:31:40.301Z",
+      "generatedAt": "2026-11-11T10:59:03.906Z",
       "toolchain": {
         "glslang": "16.6.0 (Khronos, WASM)",
         "validator": "@moreplease/glslang 16.6.0-1",
@@ -342,24 +342,24 @@
             "instPerPxMax": 265,
             "scalarPerPx": 373.9,
             "scalarPerPxMax": 450,
-            "cpuNsPerPx": 875,
-            "cpuNsPerPxRun2": 1147
+            "cpuNsPerPx": 911,
+            "cpuNsPerPxRun2": 1190
           },
           "1": {
             "instPerPx": 249.9,
             "instPerPxMax": 319,
             "scalarPerPx": 415,
             "scalarPerPxMax": 527,
-            "cpuNsPerPx": 419,
-            "cpuNsPerPxRun2": 420
+            "cpuNsPerPx": 420,
+            "cpuNsPerPxRun2": 416
           },
           "2": {
             "instPerPx": 278.7,
             "instPerPxMax": 373,
             "scalarPerPx": 460.3,
             "scalarPerPxMax": 612,
-            "cpuNsPerPx": 450,
-            "cpuNsPerPxRun2": 469
+            "cpuNsPerPx": 464,
+            "cpuNsPerPxRun2": 461
           }
         },
         "silhouette": {
@@ -368,24 +368,24 @@
             "instPerPxMax": 771,
             "scalarPerPx": 762.6,
             "scalarPerPxMax": 1139,
-            "cpuNsPerPx": 1981,
-            "cpuNsPerPxRun2": 1761
+            "cpuNsPerPx": 1944,
+            "cpuNsPerPxRun2": 895
           },
           "1": {
             "instPerPx": 532.4,
             "instPerPxMax": 825,
             "scalarPerPx": 803.7,
             "scalarPerPxMax": 1216,
-            "cpuNsPerPx": 941,
-            "cpuNsPerPxRun2": 988
+            "cpuNsPerPx": 901,
+            "cpuNsPerPxRun2": 947
           },
           "2": {
             "instPerPx": 635.3,
             "instPerPxMax": 880,
             "scalarPerPx": 936.8,
             "scalarPerPxMax": 1302,
-            "cpuNsPerPx": 1033,
-            "cpuNsPerPxRun2": 1051
+            "cpuNsPerPx": 1048,
+            "cpuNsPerPxRun2": 1026
           }
         }
       }
@@ -509,7 +509,7 @@
         "mocksPerCycle": 2,
         "kbPerCycleAttributableToHarness": 10.2
       },
-      "framesRenderedTotal": 179,
+      "framesRenderedTotal": 180,
       "glContexts": {
         "total": 40,
         "engine": 20,
@@ -532,7 +532,7 @@
           "query": 0
         },
         "asymmetric": [],
-        "draws": 179
+        "draws": 180
       },
       "observers": {
         "ioCreated": 20,
@@ -636,7 +636,7 @@
           "cycle": 9,
           "tier": "high",
           "quality": 2,
-          "frames": 8,
+          "frames": 9,
           "destroyed": false,
           "heapMb": 42.85,
           "registry": 0,
@@ -1206,8 +1206,8 @@
       },
       "softwareRasterizer": {
         "note": "SwiftShader/llvmpipe-класс: цена измерена CPU-портом на этой машине, не смоделирована",
-        "cpuNsPerPx": 1033,
-        "coresNeededFor1280x720x30": 28.6,
+        "cpuNsPerPx": 1048,
+        "coresNeededFor1280x720x30": 29,
         "consequence": "поэтому gate.ts гасит фон на программных растеризаторах (BLOCKED_RENDERER)"
       }
     },

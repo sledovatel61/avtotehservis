@@ -72,6 +72,7 @@ async function refMask() {
   for (let i = 0; i < W * H; i++) m[i] = data[i * C] > THRESH_REF ? 1 : 0;
 
   /* Диагностика: сколько разрывов по столбцу было до заливки (дыры = стёкла, диски). */
+  let refStat = null;
   let holes = 0;
   for (let x = 0; x < W; x++) {
     let runs = 0, prev = 0;
@@ -88,6 +89,38 @@ async function refMask() {
     for (let y = 0; y < H; y++) if (m[y * W + x]) { if (t < 0) t = y; b = y; }
     if (t >= 0) for (let y = t; y <= b; y++) m[y * W + x] = 1;
   }
+  /* Порог площади компоненты. Заливка «от верхнего белого до нижнего» склеивает
+     силуэт с пятнами отражений витрины над капотом и кормой: в золотой маске
+     10,1 % белых пикселей — это куски витрины и брусчатки, не машина. Без фильтра
+     эталон получается h/L 0,500 вместо 0,340, и любой корректный силуэт против
+     него «проваливает» гейт. Фильтр: компонента ≥ 2 % крупнейшей. */
+  {
+    const seen = new Uint8Array(W * H);
+    const comps = [];
+    for (let i = 0; i < W * H; i++) {
+      if (!m[i] || seen[i]) continue;
+      const st = [i]; seen[i] = 1; const cells = [];
+      while (st.length) {
+        const k = st.pop(); cells.push(k);
+        const kx = k % W, ky = (k / W) | 0;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const xx = kx + dx, yy = ky + dy;
+          if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+          const kk = yy * W + xx;
+          if (m[kk] && !seen[kk]) { seen[kk] = 1; st.push(kk); }
+        }
+      }
+      comps.push(cells);
+    }
+    const sizes = comps.map((c) => c.length);
+    const biggest = Math.max(...sizes);
+    const keep = new Uint8Array(W * H);
+    for (let c = 0; c < comps.length; c++) if (sizes[c] >= biggest * 0.02) for (const k of comps[c]) keep[k] = 1;
+    m = keep;
+    const white = sizes.reduce((a, b) => a + b, 0);
+    refStat = { comps: comps.length, kept: comps.filter((c, i) => sizes[i] >= biggest * 0.02).length, white, keptPx: biggest };
+  }
+
   /* медиана 3×3: срезает одиночные «усы» трассировки по краю */
   const o = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) {
@@ -102,7 +135,7 @@ async function refMask() {
       o[y * W + x] = s * 2 >= n ? 1 : 0;
     }
   }
-  return { m: o, W, H, holes };
+  return { m: o, W, H, holes, stat: refStat };
 }
 
 /** Маска кадра: разница с кадром без машины, затем плотные строки/столбцы. */
@@ -283,7 +316,8 @@ console.log(`кадр:   ${carFile}`);
 console.log(`эталон: ${REF}`);
 console.log(`маска:  ${bgFile ? `разница с ${bgFile}, порог ${DIFF}` : 'по яркости (числа про свет!)'}`);
 console.log('');
-console.log(`эталон: h/L ${R.hOverL.toFixed(3)} · ${WIDTH}×${R.h} px · дыр в маске (стёкла/диски) ${ref.holes} столбцов`);
+console.log(`эталон: h/L ${R.hOverL.toFixed(3)} · ${WIDTH}×${R.h} px · компонент ${ref.stat.comps}, оставлено ${ref.stat.kept}, `
+  + `белых ${ref.stat.white} px (отражения витрины отсеяны)`);
 console.log(`наш:    h/L ${O.hOverL.toFixed(3)} · ${WIDTH}×${O.h} px`);
 console.log('');
 console.log(`ориентация: ${mirrored ? 'перевёрнут (эталон носом влево, кадр носом вправо)' : 'как есть'}`);
