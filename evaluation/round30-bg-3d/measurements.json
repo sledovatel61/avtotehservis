@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T21:12:11.373Z",
+  "generatedAt": "2026-11-11T03:42:23.257Z",
   "host": {
     "node": "v22.22.3",
     "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -10,12 +10,12 @@
   "measured": {
     "weights": {
       "shaderSource": {
-        "raw": 15398,
-        "gzip": 5838,
-        "brotli": 5022,
+        "raw": 15511,
+        "gzip": 5890,
+        "brotli": 5080,
         "limitGzipBytes": 14336,
         "fitsLimit": true,
-        "headroomPct": 59.3
+        "headroomPct": 58.9
       },
       "clientFiles": {
         "Bg3dLayer.BuZw-ZRo.css": {
@@ -24,10 +24,10 @@
           "brotli": 478,
           "hasShader": false
         },
-        "Bg3dLayer.astro_astro_type_script_index_0_lang.sNYIt0pz.js": {
+        "Bg3dLayer.astro_astro_type_script_index_0_lang.DGRWP3i1.js": {
           "raw": 166,
-          "gzip": 142,
-          "brotli": 114,
+          "gzip": 143,
+          "brotli": 106,
           "hasShader": false
         },
         "bg3d.Cklxkgcd.css": {
@@ -36,32 +36,32 @@
           "brotli": 1087,
           "hasShader": false
         },
-        "bg3d.Js0iOXvw.js": {
-          "raw": 35631,
-          "gzip": 13735,
-          "brotli": 12064,
+        "bg3d.Dj8e6LaS.js": {
+          "raw": 35797,
+          "gzip": 13821,
+          "brotli": 12144,
           "hasShader": true
         },
-        "bg3d.astro_astro_type_script_index_0_lang.CXmLmXJP.js": {
+        "bg3d.astro_astro_type_script_index_0_lang.B9wddqmR.js": {
           "raw": 7748,
           "gzip": 3244,
-          "brotli": 2763,
+          "brotli": 2762,
           "hasShader": false
         }
       },
       "marginalForServicePage": {
         "js": {
-          "file": "bg3d.Js0iOXvw.js",
-          "raw": 35631,
-          "gzip": 13735,
-          "brotli": 12064,
+          "file": "bg3d.Dj8e6LaS.js",
+          "raw": 35797,
+          "gzip": 13821,
+          "brotli": 12144,
           "hasShader": true
         },
         "entryJs": {
-          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.sNYIt0pz.js",
+          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.DGRWP3i1.js",
           "raw": 166,
-          "gzip": 142,
-          "brotli": 114,
+          "gzip": 143,
+          "brotli": 106,
           "hasShader": false
         },
         "css": {
@@ -71,13 +71,13 @@
           "brotli": 1087,
           "hasShader": false
         },
-        "gzipTotal": 15140,
+        "gzipTotal": 15227,
         "note": "лаборатория (bg3d.astro) собирается только при BG3D_LAB=1 и на прод-страницы не попадает",
         "labJs": {
-          "file": "bg3d.astro_astro_type_script_index_0_lang.CXmLmXJP.js",
+          "file": "bg3d.astro_astro_type_script_index_0_lang.B9wddqmR.js",
           "raw": 7748,
           "gzip": 3244,
-          "brotli": 2763,
+          "brotli": 2762,
           "hasShader": false
         }
       }
@@ -94,24 +94,24 @@
             "instPerPxMax": 265,
             "scalarPerPx": 373.9,
             "scalarPerPxMax": 450,
-            "cpuNsPerPx": 862,
-            "cpuNsPerPxRun2": 1235
+            "cpuNsPerPx": 592,
+            "cpuNsPerPxRun2": 901
           },
           "1": {
             "instPerPx": 249.9,
             "instPerPxMax": 319,
             "scalarPerPx": 415,
             "scalarPerPxMax": 527,
-            "cpuNsPerPx": 695,
-            "cpuNsPerPxRun2": 679
+            "cpuNsPerPx": 446,
+            "cpuNsPerPxRun2": 451
           },
           "2": {
             "instPerPx": 278.7,
             "instPerPxMax": 373,
             "scalarPerPx": 460.3,
             "scalarPerPxMax": 612,
-            "cpuNsPerPx": 760,
-            "cpuNsPerPxRun2": 1021
+            "cpuNsPerPx": 495,
+            "cpuNsPerPxRun2": 503
           }
         },
         "silhouette": {
@@ -120,24 +120,24 @@
             "instPerPxMax": 538,
             "scalarPerPx": 779.9,
             "scalarPerPxMax": 856,
-            "cpuNsPerPx": 1337,
-            "cpuNsPerPxRun2": 1165
+            "cpuNsPerPx": 894,
+            "cpuNsPerPxRun2": 792
           },
           "1": {
             "instPerPx": 522.9,
             "instPerPxMax": 592,
             "scalarPerPx": 821,
             "scalarPerPxMax": 933,
-            "cpuNsPerPx": 1390,
-            "cpuNsPerPxRun2": 1222
+            "cpuNsPerPx": 775,
+            "cpuNsPerPxRun2": 785
           },
           "2": {
             "instPerPx": 625.9,
             "instPerPxMax": 878,
             "scalarPerPx": 954.1,
             "scalarPerPxMax": 1293,
-            "cpuNsPerPx": 1433,
-            "cpuNsPerPxRun2": 1489
+            "cpuNsPerPx": 887,
+            "cpuNsPerPxRun2": 898
           }
         }
       }
@@ -154,10 +154,10 @@
       "heapMbAfter": 42.84,
       "heapDeltaMb": 1.18,
       "heapTrend": {
-        "heapMbCycle1": 41.85,
+        "heapMbCycle1": 41.86,
         "heapMbCycle10": 42.58,
         "heapMbCycle20": 42.84,
-        "deltaCycles1to10Kb": 747.5,
+        "deltaCycles1to10Kb": 737.3,
         "deltaCycles10to20Kb": 266.2,
         "leakPerCycleKbLast10": 26.6,
         "plateau": true
@@ -165,7 +165,7 @@
       "controlRunWithoutBg3d": {
         "note": "20 циклов создания/удаления того же хоста без монтажа фона — базовая линия jsdom/V8",
         "heapMbStart": 42.84,
-        "heapMbEnd": 42.89,
+        "heapMbEnd": 42.9,
         "heapDeltaMb": 0.06,
         "perCycleKb": 2.9,
         "rows": [
@@ -179,7 +179,7 @@
           },
           {
             "cycle": 20,
-            "heapMb": 42.89
+            "heapMb": 42.9
           }
         ]
       },
@@ -231,7 +231,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 41.85,
+          "heapMb": 41.86,
           "registry": 0,
           "listeners": 0,
           "glContexts": 2
@@ -253,7 +253,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.09,
+          "heapMb": 42.1,
           "registry": 0,
           "listeners": 0,
           "glContexts": 6
@@ -264,7 +264,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.21,
+          "heapMb": 42.22,
           "registry": 0,
           "listeners": 0,
           "glContexts": 8
@@ -275,7 +275,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.25,
+          "heapMb": 42.26,
           "registry": 0,
           "listeners": 0,
           "glContexts": 10
@@ -286,7 +286,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.28,
+          "heapMb": 42.29,
           "registry": 0,
           "listeners": 0,
           "glContexts": 12
@@ -319,7 +319,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.54,
+          "heapMb": 42.55,
           "registry": 0,
           "listeners": 0,
           "glContexts": 18
@@ -341,7 +341,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.6,
+          "heapMb": 42.61,
           "registry": 0,
           "listeners": 0,
           "glContexts": 22
@@ -363,7 +363,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.65,
+          "heapMb": 42.66,
           "registry": 0,
           "listeners": 0,
           "glContexts": 26
@@ -374,7 +374,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.67,
+          "heapMb": 42.68,
           "registry": 0,
           "listeners": 0,
           "glContexts": 28
@@ -385,7 +385,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.7,
+          "heapMb": 42.71,
           "registry": 0,
           "listeners": 0,
           "glContexts": 30
@@ -407,7 +407,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.75,
+          "heapMb": 42.76,
           "registry": 0,
           "listeners": 0,
           "glContexts": 34
@@ -418,7 +418,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.78,
+          "heapMb": 42.79,
           "registry": 0,
           "listeners": 0,
           "glContexts": 36
@@ -429,7 +429,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.81,
+          "heapMb": 42.82,
           "registry": 0,
           "listeners": 0,
           "glContexts": 38
@@ -447,7 +447,7 @@
         }
       ],
       "ok": true,
-      "verdict": "утечек нет: все GL-объекты удалены (баланс create/delete сходится), слушатели сняты (осталось 0), observer'ы разорваны, реестр пуст, все 40 контекстов помечены потерянными; куча вышла на плато (747.5 КБ за циклы 1–10 и 266.2 КБ за 10–20)"
+      "verdict": "утечек нет: все GL-объекты удалены (баланс create/delete сходится), слушатели сняты (осталось 0), observer'ы разорваны, реестр пуст, все 40 контекстов помечены потерянными; куча вышла на плато (737.3 КБ за циклы 1–10 и 266.2 КБ за 10–20)"
     }
   },
   "modeled": {
@@ -887,8 +887,8 @@
       },
       "softwareRasterizer": {
         "note": "SwiftShader/llvmpipe-класс: цена измерена CPU-портом на этой машине, не смоделирована",
-        "cpuNsPerPx": 1433,
-        "coresNeededFor1280x720x30": 39.6,
+        "cpuNsPerPx": 887,
+        "coresNeededFor1280x720x30": 24.5,
         "consequence": "поэтому gate.ts гасит фон на программных растеризаторах (BLOCKED_RENDERER)"
       }
     },
@@ -954,10 +954,10 @@
     }
   },
   "summary": {
-    "shaderGzipBytes": 5838,
+    "shaderGzipBytes": 5890,
     "shaderLimitGzipBytes": 14336,
     "textures": 0,
-    "marginalGzipBytes": 15140,
+    "marginalGzipBytes": 15227,
     "opsPerPx": {
       "depth": [
         374,

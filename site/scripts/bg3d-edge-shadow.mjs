@@ -28,7 +28,7 @@
  *
  * Запуск: node scripts/bg3d-edge-shadow.mjs [--json путь]
  */
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -185,8 +185,26 @@ const edgeOldBandPx = EDGE_WIDTH * convOld.pxPerUnitQ;
 /* 5. Тень: профиль по x и по y                                         */
 /* ------------------------------------------------------------------ */
 
-function shadowProfile(ground) {
-  const shd = (x, y) => Math.exp(-((x * x) * 0.75 + (y - ground) * (y - ground) * 20.0));
+/* Константы «до» (старый шейдер 92fb168) и «после» (живой bg3d/shader.ts).
+   «После» больше не зашиты: коэффициент по x считается из длины кузова ровно так же,
+   как в шейдере (SHADOW_X = ln2 / (0.97·L/2)²), а 20.0 и множитель 0.62 читаются
+   из исходника — иначе гейт мерил бы воспоминание, а не то, что рисуется. */
+const OLD_SHADOW = { x: 0.75, y: 20.0, mul: 0.62 };
+const SHADER_SRC = readFileSync(join(ROOT, 'src/client/bg3d/shader.ts'), 'utf8');
+const liveY = SHADER_SRC.match(/gy \* gy \* ([\d.]+)\)/);
+const liveMul = SHADER_SRC.match(/col \*= 1\.0 - ([\d.]+) \* shd;/);
+if (!liveY || !liveMul) {
+  console.error('FAIL  не нашёл константы тени в src/client/bg3d/shader.ts — формула переписана, скрипт мерить не может');
+  process.exit(1);
+}
+const LIVE_SHADOW = {
+  x: Math.LN2 / Math.pow(0.97 * profile.CAR.length * CAR_UNITS * 0.5, 2),
+  y: Number(liveY[1]),
+  mul: Number(liveMul[1]),
+};
+
+function shadowProfile(ground, k) {
+  const shd = (x, y) => Math.exp(-((x * x) * k.x + (y - ground) * (y - ground) * k.y));
   const peak = shd(0, ground);
   const halfWidthX = (() => { let x = 0; while (shd(x, ground) > 0.5 * peak && x < 5) x += 0.001; return x; })();
   const tenthWidthX = (() => { let x = 0; while (shd(x, ground) > 0.1 * peak && x < 5) x += 0.001; return x; })();
@@ -194,8 +212,8 @@ function shadowProfile(ground) {
   const tenthWidthY = (() => { let y = 0; while (shd(0, ground + y) > 0.1 * peak && y < 3) y += 0.001; return y; })();
   return { peak, halfWidthX, tenthWidthX, halfWidthY, tenthWidthY };
 }
-const shdNew = shadowProfile(CAR_GROUND);
-const shdOld = shadowProfile(OLD_GROUND);
+const shdNew = shadowProfile(CAR_GROUND, LIVE_SHADOW);
+const shdOld = shadowProfile(OLD_GROUND, OLD_SHADOW);
 
 /* ------------------------------------------------------------------ */
 /* 6. Вывод                                                             */
@@ -230,7 +248,7 @@ console.log(`    фактическая полоса по нормали на к
 console.log(`    доля от высоты кузова: до ${rel(EDGE_WIDTH, before.height)}, после ${rel(EDGE_WIDTH, after.height)}`);
 console.log(`    → на экране толщина та же (${edgePx.toFixed(2)} px), относительно кузова кромка стала ${((EDGE_WIDTH / after.height) / (EDGE_WIDTH / before.height) * 100 - 100).toFixed(1)} % заметнее, потому что кузов ниже`);
 
-console.log('\n  тень (shd = exp(−(q.x² · 0.75 + gy² · 20)), множитель 0.62):');
+console.log(`\n  тень (до: shd = exp(−(q.x² · ${OLD_SHADOW.x} + gy² · ${OLD_SHADOW.y})), множитель ${OLD_SHADOW.mul}); после: q.x² · ${LIVE_SHADOW.x.toFixed(4)} + gy² · ${LIVE_SHADOW.y}, множитель ${LIVE_SHADOW.mul}):`);
 console.log(`    пик: до ${shdOld.peak.toFixed(3)}, после ${shdNew.peak.toFixed(3)} (в обоих случаях gy = 0 на линии земли)`);
 console.log(`    полуширина по x (0.5/0.1 от пика): до ${shdOld.halfWidthX.toFixed(3)} / ${shdOld.tenthWidthX.toFixed(3)} ед., после ${shdNew.halfWidthX.toFixed(3)} / ${shdNew.tenthWidthX.toFixed(3)} ед.`);
 console.log(`    полуширина по y (0.5/0.1 от пика): до ${shdOld.halfWidthY.toFixed(3)} / ${shdOld.tenthWidthY.toFixed(3)} ед., после ${shdNew.halfWidthY.toFixed(3)} / ${shdNew.tenthWidthY.toFixed(3)} ед.`);
@@ -242,7 +260,7 @@ console.log(`    в пикселях 640×360: по x ${shdNew.halfWidthX.toFixe
 const shdRelBefore = (shdOld.halfWidthX * 2) / before.width;
 const shdRelAfter = (shdNew.halfWidthX * 2) / after.width;
 console.log(`    тень относительно машины: до ${(shdOld.halfWidthX * 2).toFixed(3)} ед. при длине кузова ${before.width.toFixed(3)} = ${shdRelBefore.toFixed(2)} длины; после ${(shdNew.halfWidthX * 2).toFixed(3)} при ${after.width.toFixed(3)} = ${shdRelAfter.toFixed(2)} длины`);
-console.log(`    → тень стала ${rel(shdRelAfter, shdRelBefore)} от прежней относительно кузова (константы 0.75/20.0/0.62 не пересчитаны под новый масштаб)`);
+console.log(`    → тень стала ${rel(shdRelAfter, shdRelBefore)} от прежней относительно кузова; коэффициент по x ${LIVE_SHADOW.x.toFixed(4)} посчитан из длины кузова (0.97 длины по построению)`);
 console.log(`    кромка изотропна: 1 ед. q = ${conv.pxPerUnitQ.toFixed(1)} px и по x, и по y (width/aspect = height), поэтому «жирнеть» по одной оси она не может`);
 
 const report = {
@@ -275,7 +293,7 @@ const report = {
   shadow: {
     before: shdOld, after: shdNew, pxPerUnitQ: conv.pxPerUnitQ,
     relativeToBodyLength: { before: shdRelBefore, after: shdRelAfter, ratio: shdRelAfter / shdRelBefore },
-    note: 'константы тени (0.75, 20.0, 0.62) не менялись; привязка к CAR_GROUND точная, но относительно кузова тень стала шире, потому что кузов уменьшился',
+    note: 'коэффициент по x пересчитан: SHADOW_X = ln2 / (0.97·L/2)² при L = длина кузова в единицах сцены; по y (20.0) и множитель (0.62) не менялись — они отвечают за мягкость книзу, а не за длину',
   },
 };
 

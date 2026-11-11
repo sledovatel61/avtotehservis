@@ -119,6 +119,9 @@ export function smin(a, b, k) {
 const profile = await import('../../src/client/car-profile.ts');
 export const CAR_SCALE = profile.SCALE.bg3d;
 export const CAR_GROUND = profile.SCENE.ground;
+/* Коэффициент тени по x — ровно как в bg3d/shader.ts (SHADOW_X = ln2 / (0.97·L/2)²):
+   тень держится 0.97 длины кузова. По y и множитель не менялись. */
+export const SHADOW_X = Math.LN2 / Math.pow(0.97 * profile.CAR.length * profile.SCALE.bg3d * 0.5, 2);
 export const CAR_TYRE_R = profile.CAR.tyre / 2;
 export const CAR_AXLE_F = profile.SCENE.axleFront;
 export const CAR_AXLE_R = profile.SCENE.axleRear;
@@ -293,7 +296,7 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     t(3, 4);
 
     const gy = qy - CAR_GROUND;
-    const shd = Math.exp(-(qx * qx * 0.75 + gy * gy * 20.0));
+    const shd = Math.exp(-(qx * qx * SHADOW_X + gy * gy * 20.0));
     t(8, 10);
     const shdMul = 1.0 - 0.62 * shd;
     cR *= shdMul; cG *= shdMul; cB *= shdMul;
