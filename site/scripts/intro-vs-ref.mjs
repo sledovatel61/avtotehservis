@@ -369,6 +369,34 @@ const addRatio = (name, ours, refVal, lo, hi, unit, note = '') => {
   add(`релинги: длина выступа`, `${bA.width.toFixed(1)} %W`, `≤ ${(bB.width * 1.3).toFixed(1)} %W`, bA.width <= bB.width * 1.3, 'выступ не должен тянуться вдоль крыши');
 }
 
+// 12. Материал внутри силуэта: свет и фактура, а не залитая фигура.
+// Эта проверка должна была появиться ещё в круге 32: контур был верный, внутри — пусто.
+// Меряем в полосе 10…45 %H, где у эталона капот, стойки, стёкла и кромки.
+{
+  const material = (im) => {
+    const vals = [];
+    for (let yp = 10; yp <= 45; yp += 0.5) {
+      const y = Math.round((yp / 100) * im.H);
+      for (let xp = 22; xp <= 78; xp += 0.5) {
+        const x = Math.round((xp / 100) * im.W);
+        if (isCar(im, x, y)) vals.push(luma(im, x, y));
+      }
+    }
+    if (vals.length < 100) return null;
+    const sorted = [...vals].sort((a, b) => a - b);
+    const mid = sorted.filter((v) => v >= 6 && v <= 40).length / sorted.length * 100;
+    return { med: sorted[Math.floor(sorted.length / 2)], mid };
+  };
+  const mA = material(A);
+  const mB = material(B);
+  if (!mA || !mB) {
+    add('материал внутри силуэта', 'окно пустое', 'медиана ≥ 4 L', false);
+  } else {
+    addRatio('материал: медиана', mA.med, mB.med, 0.8, 2.2, 'L', 'внутри фактура, а не заливка');
+    addRatio('материал: доля 6…40 L', mA.mid, mB.mid, 0.75, 1.6, '%', 'свет на капоте, стойках и стёклах');
+  }
+}
+
 const pad = (s, n) => String(s).padEnd(n);
 console.log(`\nкадр:   ${shot}`);
 console.log(`эталон: ${ref}`);
