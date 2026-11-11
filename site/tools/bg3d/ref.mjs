@@ -301,8 +301,9 @@ export function shadePixel(uvx, uvy, fcx, fcy, U) {
     const kx = mix(0.35, 1.0, wide);
     const ky = mix(0.55, 1.0, wide);
     const scA = sc * mix(0.62, 1.0, smoothstep(0.40, 0.86, aspectR));
+    const lift = (1.0 - wide) * 0.28;
     const cpx = (0.24 + U.pointer[0] * 0.10 * (1.0 - depth)) * kx;
-    const cpy = hy - 0.155 - U.scroll * 0.05 + U.pointer[1] * 0.035 - (1.0 - ky) * 0.30;
+    const cpy = hy - 0.155 - U.scroll * 0.05 + U.pointer[1] * 0.035 - (1.0 - ky) * 0.30 + lift;
     t(9, 9);
     const qx = (px - cpx) / scA;
     const qy = (py - cpy) / scA;

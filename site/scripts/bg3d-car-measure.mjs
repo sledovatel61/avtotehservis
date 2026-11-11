@@ -275,6 +275,28 @@ console.log(`   паспорт (§2.4):            0.0:25 0.1:69 0.2:73 0.3:77 0
   }
 }
 
+/* Клиренс — числом (задание №60, §5.2).
+   Меряется по ТОНУ КУЗОВА, а не по маске: маска «разница с кадром без машины»
+   включает контактную тень, и её низ уходит ниже шины — по маске клиренс
+   получался −4,9 %L, то есть «отрицательный». Кузов светлый (55–70 L), пол под
+   ним 20–24 L, поэтому низ кузова — последняя строка, где у середины кузова
+   яркость выше 1,8 тона пола; земля — низ шины на оси переднего колеса. */
+{
+  const xMid = Math.round((x0 + x1) / 2);
+  const floorL = lum(xMid, Math.min(H - 1, y1 + 6));
+  const thr = Math.max(floorL * 1.8, floorL + 14);
+  let bodyBottom = -1;
+  for (let y = y0; y <= Math.min(H - 1, y1 + 12); y++) if (lum(xMid, y) > thr) bodyBottom = y;
+  const xAxle = Math.round(x0 + len * 0.198);
+  let tyreBottom = -1;
+  for (let y = y0; y <= Math.min(H - 1, y1 + 12); y++) if (isCar(xAxle, y)) tyreBottom = y;
+  const clearPx = tyreBottom - bodyBottom;
+  const clearPctL = (clearPx / len) * 100;
+  const okC = Math.abs(clearPctL - 3.7) <= 0.8;
+  console.log(`\n6. клиренс: порог ${bodyBottom}, земля ${tyreBottom} → ${clearPx} px = ${clearPctL.toFixed(1)} %L`
+    + ` (паспорт 3,7 %L = 0,18 м → ${okC ? 'PASS' : 'FAIL'})`);
+}
+
 /* Остекление: контраст между полосой 20…40 % высоты и 55…75 % высоты. */
 {
   const bandMean = (a, b) => {
