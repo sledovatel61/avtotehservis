@@ -76,6 +76,11 @@ export const BW = 1150.0, BX = 960.0, BY0 = 95.0, BH = 715.0, BOT = 810.0, FLOOR
 export const BODY = [0.004, 0.004, 0.004];
 export const WARM = [1.00, 0.26, 0.10];
 export const WHITE = [1.00, 0.98, 0.96];
+/* круг 32 (A12): кромка — #791003 без белого ядра, отблеск — тот же тон шире */
+export const RIM = [0.4745, 0.0627, 0.0118];
+export const SHEEN = [0.62, 0.085, 0.020];
+/* нейтральная подсветка двери/стойки ниже отблеска (круг 32, правка 2) */
+export const NEUT = [0.052, 0.048, 0.045];
 
 /** float hash12(vec2 p) — 9 инструкций, 23 компонентных (как hash13 старой сцены). */
 export function hash12(px, py) {
@@ -203,33 +208,39 @@ export function vnoise(px, py) {
   return r;
 }
 
-/* лесенка полуширины: 11 строк FRONT.md §2.1–2.2 */
-const HALFW_ROWS = [
-  [0.000, 0.035, 3.0], [0.035, 0.056, 28.0], [0.091, 0.056, 22.0], [0.147, 0.056, 19.0],
-  [0.203, 0.056, 19.0], [0.259, 0.056, 9.0], [0.315, 0.112, 101.0], [0.427, 0.111, 29.0],
-  [0.538, 0.112, 13.0], [0.650, 0.112, 5.0], [0.762, 0.238, 2.0],
-];
+/* Круг 32 (A12): полуширина переснята по run-маске эталона — стойки линейны от
+   макушки, плечо одним гладким разбегом, борт почти вертикален. Лесенки больше нет:
+   три smoothstep вместо одиннадцати clamp-строк, и это Дешевле прежних 55/55. */
 
-/** float halfW(float t) — 55 инструкций, 55 компонентных (11 строк по 5 операций). */
+/** float halfW(float t) — 17 инструкций, 26 компонентных. */
 export function halfW(tt) {
-  let w = 330.0;
-  for (const [c0, c1, amp] of HALFW_ROWS) {
-    w += amp * clampf((tt - c0) / c1, 0.0, 1.0);
-    t(4, 4);                                 /* t-c0, /c1, *amp, w += … (clamp посчитан внутри) */
-  }
-  return w;
+  const y = BY0 + tt * BH;
+  t(2, 2);                                   /* t * BH, + BY0 */
+  let w = Math.min(333.0 + Math.max(y - 120.0, 0.0) * 0.517, 430.0);
+  t(5, 5);                                   /* y-120, max, *0.517, +333, min */
+  w += 60.0 * smoothstep(300.0, 350.0, y);
+  t(3, 6);                                   /* smoothstep (1,4), *60, += */
+  w += 60.0 * smoothstep(330.0, 410.0, y);
+  t(3, 6);
+  w += 40.0 * smoothstep(390.0, 500.0, y);
+  t(3, 6);
+  t(1, 1);                                   /* min(w, 580.0) */
+  return Math.min(w, 580.0);
 }
 
-/** float bodyOnly(vec2 p) — 74 инструкции, 76 компонентных (halfW 55 + своё 19). */
+/** float bodyOnly(vec2 p) — halfW + 12 инструкций, 14 компонентных своих. */
 export function bodyOnly(px, py) {
   const tt = clampf((py - BY0) / BH, 0.0, 1.0);
   t(2, 2);                                   /* p.y - BY0, / BH (clamp посчитан) */
-  const dSide = halfW(tt) - Math.abs(px - BX);
-  t(2, 2);                                   /* p.x - BX, abs; вычитание — в составе halfW-строки */
+  const ax = Math.abs(px - BX);
+  t(2, 2);                                   /* p.x - BX, abs */
+  const dSide = halfW(tt) - ax;
   t(1, 1);
-  const dEdge = Math.min(py - BY0, BOT - py);
+  const yTop = 97.0 + 9.0 * (ax / 333.0) * (ax / 333.0);
+  t(4, 4);                                   /* ax/333, квадрат, *9, +97 */
+  const dEdge = Math.min(py - yTop, BOT - py);
   t(3, 3);                                   /* два вычитания, min */
-  return smin(dSide, dEdge, 26.0);
+  return smin(dSide, dEdge, 44.0);
 }
 
 /** vec2 rot2(vec2 p, float a) — 8 инструкций, 8 компонентных (cos, sin, 6 «*»/«±»). */
@@ -276,16 +287,20 @@ export function railsSd(px, py) {
   return Math.min(a, b);
 }
 
-const MIR_A = [519.0, 254.0], MIR_B = [490.0, 243.0], MIR_C = [458.0, 296.0], MIR_D = [527.0, 302.0];
+const MIR_A = [500.0, 236.0], MIR_B = [452.0, 240.0], MIR_C = [417.0, 296.0], MIR_D = [509.0, 313.0];
 
-/** float mirrorSd(vec2 p) — 79 инструкций, 121 компонентная. */
+/** float mirrorSd(vec2 p) — круг 32 (A12): камень + губа + короткая ножка. */
 export function mirrorSd(px, py) {
   const mx = Math.abs(px - BX);
   t(2, 2);                                   /* p.x - BX, abs */
   t(1, 2);                                   /* vec2(mx, p.y) */
-  const blade = sdQuad(mx, py, MIR_A, MIR_B, MIR_C, MIR_D, 15.0);
-  const leg = sdSeg(mx, py, 480.0, 296.0, 477.0, 348.0, 3.5);
-  return smin(blade, leg, 8.0);
+  const cap = sdQuad(mx, py, MIR_A, MIR_B, MIR_C, MIR_D, 26.0);
+  const lipB = finSd(mx - 462.0, py - 306.0, 50.0, 13.0);
+  t(2, 2);                                   /* vec2(q.x − 462, q.y − 306) */
+  t(1, 2);                                   /* vec2(50, 13) — константы, компилятор держит */
+  const stone = smin(cap, lipB, 7.0);
+  const leg = sdSeg(mx, py, 503.0, 303.0, 521.0, 331.0, 5.0);
+  return smin(stone, leg, 6.0);
 }
 
 /* ---------- знак: сэмплер подменяемый, по умолчанию знак выключен ---------- */
@@ -360,15 +375,13 @@ export function layers(px, py, tt) {
   t(1, 1);                                   /* trace + 0.10 */
   const ad = Math.abs(dBody);
   t(1, 1);
-  const L1 = WARM.map((c) => c * expf(-ad * 0.16) * shown * 0.26);
-  t(4, 4);                                   /* -ad, *0.16, *shown, *0.26 */
-  t(1, 3);                                   /* WARM * … */
+  const outward = smoothstep(3.0, -3.0, dBody);
+  const rimK = (0.14 * expf(-ad * 0.16) + 0.28 * expf(-ad * 0.055) * outward) * shown;
+  t(7, 7);                                   /* два exp по 2 скаляра, *0.14, *0.28, *outward, сложение, *shown */
+  const L1 = RIM.map((c) => c * rimK);
+  t(1, 3);                                   /* RIM * … */
   light = [light[0] + L1[0], light[1] + L1[1], light[2] + L1[2]];
-  t(1, 3);                                   /* light += WARM * … */
-  const L2v = smoothstep(2.0, 0.0, ad) * shown * 0.80;
-  t(2, 2);                                   /* *shown, *0.80 */
-  light = [light[0] + 1.00 * L2v, light[1] + 0.56 * L2v, light[2] + 0.38 * L2v];
-  t(1, 3);                                   /* light += vec3(…) * … */
+  t(1, 3);                                   /* light += RIM * … */
 
   /* свечение зеркала — только по внешней кромке */
   const dMir = Math.abs(dMirRaw);
@@ -376,100 +389,112 @@ export function layers(px, py, tt) {
   const mirGlow = smoothstep(0.02, 0.40, (Math.abs(px - BX) - 452.0) / 94.0) * smoothstep(332.0, 292.0, py);
   t(4, 4);                                   /* abs(p.x-BX), -452, /94, умножение smoothstep'ов */
   t(1, 1);
-  const L3 = WARM.map((c) => c * expf(-dMir * 0.18) * shown * 0.20 * mirGlow);
-  t(5, 5);                                   /* -dMir, *0.18, *shown, *0.20, *mirGlow */
-  t(1, 3);                                   /* WARM * … */
+  const L3 = RIM.map((c) => c * expf(-dMir * 0.18) * shown * 0.42 * mirGlow);
+  t(5, 5);                                   /* -dMir, *0.18, *shown, *0.42, *mirGlow */
+  t(1, 3);                                   /* RIM * … */
   light = [light[0] + L3[0], light[1] + L3[1], light[2] + L3[2]];
   t(1, 3);
-  const L4v = smoothstep(1.6, 0.0, dMir) * shown * 0.85 * mirGlow;
-  t(3, 3);
-  light = [light[0] + 1.00 * L4v, light[1] + 0.60 * L4v, light[2] + 0.42 * L4v];
+  const mirCore = smoothstep(2.4, 0.0, dMir) * shown * 0.12 * mirGlow;
+  t(3, 3);                                   /* *shown, *0.12, *mirGlow */
+  light = [light[0] + RIM[0] * mirCore, light[1] + RIM[1] * mirCore, light[2] + RIM[2] * mirCore];
+  t(1, 3);
+  /* светлая кромка по нижней губе зеркала */
+  const mirLip = smoothstep(2.2, 0.0, dMir) * smoothstep(276.0, 296.0, py) * shown;
+  t(2, 2);                                   /* два smoothstep посчитаны как (1,4) каждый; здесь *shown и ниже *0.30 */
+  const lipV = mirLip * 0.30;
+  t(1, 1);
+  light = [light[0] + 0.66 * lipV, light[1] + 0.086 * lipV, light[2] + 0.033 * lipV];
+  t(1, 3);                                   /* light += vec3(…) * … */
+
+  /* отблеск кузова: капот и плечи (круг 32, A12; правка 2 — σ 15 и один пик по x) */
+  const grow = smoothstep(0.40, 0.60, tt);
+  const sheenY = expf(-powf((py - 352.0) / 15.0, 2.0));
+  t(3, 3);                                   /* p.y-352, /15, отрицание (pow/exp посчитаны) */
+  const sxA = Math.abs(px - BX);
+  t(2, 2);                                   /* p.x-BX, abs */
+  const sh1 = expf(-powf((sxA - 300.0) / 75.0, 2.0)) * 0.45;
+  t(4, 4);                                   /* -300, /75, отрицание, *0.45 (pow/exp посчитаны) */
+  const sheenX = 0.05 + sh1;
+  t(1, 1);                                   /* сложение */
+  const sheenK = sheenY * sheenX * inside * grow;
+  t(3, 3);                                   /* три умножения (smoothstep посчитан как (1,4)) */
+  light = [light[0] + SHEEN[0] * sheenK, light[1] + SHEEN[1] * sheenK, light[2] + SHEEN[2] * sheenK];
+  t(1, 3);
+  /* нейтральная подсветка двери и стойки ниже отблеска (круг 32, правка 2) */
+  const fillY = smoothstep(348.0, 404.0, py) * (1.0 - smoothstep(404.0, 428.0, py));
+  t(2, 2);                                   /* 1.0-…, умножение (два smoothstep посчитаны сами) */
+  const fillX = 0.30 + 0.70 * smoothstep(120.0, 470.0, sxA);
+  t(2, 2);                                   /* *0.70, +0.30 */
+  const fillK = fillY * fillX * inside * grow;
+  t(3, 3);                                   /* три умножения */
+  light = [light[0] + NEUT[0] * fillK, light[1] + NEUT[1] * fillK, light[2] + NEUT[2] * fillK];
   t(1, 3);
 
-  /* тёплый отблеск на капоте */
-  const hood = WARM.map((c) => c * expf(-Math.abs(py - 340.0) / 7.0) * inside * smoothstep(0.40, 0.60, tt) * 0.75
-    * (1.0 - smoothstep(380.0, 470.0, Math.abs(px - BX))));
-  t(8, 8);                                   /* p.y-340, abs, /7, отрицание, *inside, *0.75, 1.0-…, abs(p.x-BX) */
-  t(2, 2);                                   /* два smoothstep */
-  t(1, 3);                                   /* WARM * … */
-  light = [light[0] + hood[0], light[1] + hood[1], light[2] + hood[2]];
-  t(1, 3);
-
-  /* полоса ДХО */
+  /* полоса ДХО: кривая эталона, клин, скруглённые концы, ореол (круг 32, A12) */
   const reveal = smoothstep(0.12, 0.44, tt);
   const mx = Math.abs(px - BX);
   t(2, 2);                                   /* p.x - BX, abs */
-  const sy = 450.0 - (mx - 51.0) * 0.0625;
-  t(3, 3);                                   /* mx-51, *0.0625, вычитание */
-  const along = (mx - 51.0) / 491.0;
-  t(2, 2);
-  const on = stepf(0.0, along) * stepf(along, 1.0);
-  t(1, 1);                                   /* умножение двух step */
-  const cut = smoothstep(along - 0.015, along + 0.015, reveal);
-  t(2, 2);                                   /* along±0.015 */
-  const dl = WHITE.map((c) => c * smoothstep(3.7, 1.9, Math.abs(py - sy)) * on * cut * 1.75);
-  t(5, 5);                                   /* p.y-sy, abs, *on, *cut, *1.75 */
-  t(1, 1);                                   /* smoothstep посчитан выше как t(1,4) */
-  t(1, 3);                                   /* WHITE * … */
-  light = [light[0] + dl[0], light[1] + dl[1], light[2] + dl[2]];
+  const knee = clampf((540.0 - mx) / 252.0, 0.0, 1.0);
+  t(2, 2);                                   /* 540-mx, /252 (clamp посчитан) */
+  const sy = 447.7 - 31.2 * (1.0 - smoothstep(0.0, 1.0, knee));
+  t(3, 3);                                   /* 1.0-…, *31.2, вычитание */
+  const hw = 2.1 + 14.2 * knee * (1.0 - knee);
+  t(4, 4);                                   /* 1.0-knee, *knee, *14.2, +2.1 */
+  const axEnd = Math.max(Math.max(mx - 542.0, 51.0 - mx), 0.0);
+  t(4, 4);                                   /* mx-542, 51-mx, два max */
+  const rBar = length2(axEnd, py - sy);
+  t(1, 1);                                   /* p.y - sy (length посчитан) */
+  const cut = 1.0 - smoothstep(reveal * 542.0 - 6.0, reveal * 542.0 + 2.0, mx);
+  t(3, 3);                                   /* reveal*542-6, +2, 1.0-… */
+  const barCore = (1.0 - smoothstep(hw - 0.7, hw + 2.3, rBar)) * cut;
+  t(3, 3);                                   /* hw±, 1.0-…, *cut */
+  light = [light[0] + WHITE[0] * barCore, light[1] + WHITE[1] * barCore, light[2] + WHITE[2] * barCore];
+  t(1, 3);
+  const barHalo = expf(-powf(rBar / 12.0, 2.0)) * cut * 0.12;
+  t(3, 3);                                   /* /12, *cut, *0.12 (pow/exp посчитаны) */
+  light = [light[0] + WHITE[0] * barHalo, light[1] + WHITE[1] * barHalo, light[2] + WHITE[2] * barHalo];
   t(1, 3);
 
   /* «искра» на кончике прорисовки */
-  const spark = expf(-length2((along - reveal) * 512.0, py - sy) * 0.16)
+  const drawEnd = 51.0 + reveal * 491.0;
+  t(2, 2);                                   /* reveal*491, +51 */
+  const spark = expf(-length2((mx - drawEnd) * 1.04, py - sy) * 0.16)
     * stepf(0.02, reveal) * (1.0 - smoothstep(0.90, 1.0, reveal));
-  t(6, 6);                                   /* along-reveal, *512, p.y-sy, *0.16, отрицание, 1.0-… */
-  t(2, 2);                                   /* два множителя (step, smoothstep) */
+  t(4, 4);                                   /* mx-drawEnd, *1.04, *0.16, отрицание */
   t(1, 2);                                   /* vec2(…, …) под length */
+  t(2, 2);                                   /* два множителя (step, 1.0-…) */
   const sp = WHITE.map((c) => c * spark * 3.2);
   t(2, 2);                                   /* *3.2, WHITE * … */
   t(1, 3);
   light = [light[0] + sp[0], light[1] + sp[1], light[2] + sp[2]];
   t(1, 3);
 
-  /* «бровь» над внешним концом */
-  const browIn = smoothstep(0.22, 0.34, tt);
-  const browX = smoothstep(392.0, 408.0, mx) * (1.0 - smoothstep(534.0, 548.0, mx));
-  t(3, 3);                                   /* 1.0-…, умножение */
-  const browY = 412.0 - (mx - 30.0) * 0.02;
-  t(3, 3);
-  const br = WHITE.map((c) => c * smoothstep(2.6, 1.2, Math.abs(py - browY)) * browX * browIn * 0.8);
-  t(5, 5);                                   /* p.y-browY, abs, *browX, *browIn, *0.8 */
-  t(1, 3);                                   /* WHITE * … */
-  light = [light[0] + br[0], light[1] + br[1], light[2] + br[2]];
-  t(1, 3);
-
-  /* знак: контур → заливка, одна вспышка ореола */
-  const ec = [BX, 497.0];
-  const eh = [30.4, 42.7];                   /* константы: в SPIR-V свернуты, порт не считает */
+  /* знак: пропорция эталона, без переворота, ядро через max() (круг 32, A12) */
+  const ec = [961.0, 490.0];
+  const eh = [37.5, 46.5];                   /* константы: в SPIR-V свернуты, порт не считает */
   const euvx = (px - ec[0]) / (eh[0] * 2.0) + 0.5;
-  const euvy = 0.5 - (py - ec[1]) / (eh[1] * 2.0);
-  t(5, 5);                                   /* p.x-ec.x, /60.8, +0.5, p.y-ec.y, /85.4 */
-  t(1, 1);                                   /* 0.5 - … */
+  const euvy = 0.5 + (py - ec[1]) / (eh[1] * 2.0);
+  t(5, 5);                                   /* p.x-ec.x, /75, +0.5, p.y-ec.y, /93 */
+  t(1, 1);                                   /* 0.5 + … */
   t(2, 2);                                   /* eh.x*2 и eh.y*2 — glslang НЕ сворачивает: видно в SPIR-V */
   const inBox = stepf(0.0, euvx) * stepf(euvx, 1.0) * stepf(0.0, euvy) * stepf(euvy, 1.0);
   t(3, 3);                                   /* три умножения step */
-  const aMark = markAlpha(clamp(euvx, 0, 1), clamp(euvy, 0, 1)) * inBox;
-  t(1, 1);                                   /* * inBox (clamp(euv) — одна FClamp над vec2) */
+  const aMark = markAlpha(clampf(euvx, 0, 1), clampf(euvy, 0, 1)) * inBox * 1.0;
+  t(2, 2);                                   /* * inBox, * uMarkOn (clamp(euv) — FClamp над vec2) */
   if (aMark > 0) COUNT.markPixels++;
-  const m1 = clampf(aMark * (1.0 - aMark) * 4.0, 0.0, 1.0) * smoothstep(0.34, 0.42, tt) * 1.4;
-  t(5, 5);                                   /* 1-a, *, *4, clamp, *1.4 */
-  light = [light[0] + WHITE[0] * m1, light[1] + WHITE[1] * m1, light[2] + WHITE[2] * m1];
+  const ink = smoothstep(0.40, 0.60, aMark);
+  const edge = clampf(aMark * (1.0 - aMark) * 4.0, 0.0, 1.0);
+  t(4, 4);                                   /* 1-a, *, *4, clamp */
+  const core = Math.max(ink * smoothstep(0.40, 0.48, tt),
+    edge * smoothstep(0.34, 0.42, tt) * (1.0 - smoothstep(0.42, 0.50, tt)));
+  t(6, 6);                                   /* ink*ss, edge*ss, 1.0-ss, *, max — smoothstep'ы как (1,4) */
+  light = [light[0] + WHITE[0] * core, light[1] + WHITE[1] * core, light[2] + WHITE[2] * core];
   t(1, 3);
-  const m2 = aMark * smoothstep(0.42, 0.50, tt) * 1.55;
-  t(2, 2);
-  light = [light[0] + 0.88 * m2, light[1] + 0.96 * m2, light[2] + 1.00 * m2];
-  t(1, 3);
-  const flash = expf(-powf((tt - 0.44) / 0.04, 2.0));
-  t(3, 3);                                   /* t-0.44, /0.04, отрицание */
-  t(1, 2);                                   /* p - ec (векторное вычитание) */
-  const m3 = expf(-length2(px - ec[0], py - ec[1]) * 0.10) * flash * 1.1;
-  t(4, 4);                                   /* *0.10, отрицание, *flash, *1.1 */
-  light = [light[0] + 0.55 * m3, light[1] + 0.75 * m3, light[2] + 1.00 * m3];
-  t(1, 3);
-  const halo = expf(-powf(length2((px - ec[0]) / 1.55, py - ec[1]) / 26.0, 2.0)) * smoothstep(0.42, 0.50, tt) * 0.95;
-  t(6, 6);                                   /* p.x-ec.x, /1.55, length, /26, отрицание, *ss*0.95 */
-  t(1, 1);                                   /* smoothstep(0.42,0.50,t) — уже считался выше? нет, отдельный */
-  light = [light[0] + 0.62 * halo, light[1] + 0.80 * halo, light[2] + 1.00 * halo];
+  const glow = expf(-powf(length2((px - ec[0]) / 1.5, py - ec[1]) / 34.0, 2.0))
+    * smoothstep(0.42, 0.50, tt) * 0.32;
+  t(5, 5);                                   /* p.x-ec.x, /1.5, /34, отрицание, *ss*0.32 */
+  t(1, 2);                                   /* vec2(…, …) под length */
+  light = [light[0] + WHITE[0] * glow, light[1] + WHITE[1] * glow, light[2] + WHITE[2] * glow];
   t(1, 3);
 
   return { body, light };
@@ -717,34 +742,35 @@ export function layersCostDynamic(px = 960, py = 500, tt = 0.5) {
 export const PORT_SOURCE_LITERALS = [
   ['кадр 1920×1080: BW 1150, BX 960, BY0 95, BH 715, BOT 810, FLOOR 730',
     /const float BW\s+= 1150\.0;[\s\S]{0,600}const float FLOOR = 730\.0;/],
-  ['полуширина: лесенка 330 + 11 строк (3/0.035 … 2/0.238)',
-    /float w = 330\.0;[\s\S]{0,700}2\.0 \* clamp\(\(t - 0\.762\) \/ 0\.238/],
-  ['кузов: smin(dSide, dEdge, 26.0)', /smin\(dSide, dEdge, 26\.0\)/],
+  ['полуширина: стойки 333+0,517·(y−120) до 430, плечо 60/60/40, борт 580 (круг 32)',
+    /float w = min\(333\.0 \+ max\(y - 120\.0, 0\.0\) \* 0\.517, 430\.0\);[\s\S]{0,300}40\.0 \* smoothstep\(390\.0, 500\.0, y\)/],
+  ['кузов: купол yTop 97+9·(ax/333)², smin(dSide, dEdge, 44.0) (круг 32)',
+    /float yTop = 97\.0 \+ 9\.0 \* \(ax \/ 333\.0\) \* \(ax \/ 333\.0\);[\s\S]{0,160}smin\(dSide, dEdge, 44\.0\)/],
   ['плавники: finSd(rot2(653.5,97.5,0.10),16,9.5) и finSd(rot2(1264,98,-0.10),15,9)',
     /finSd\(rot2\(vec2\(p\.x - 653\.5, p\.y - 97\.5\), 0\.10\), vec2\(16\.0, 9\.5\)\)[\s\S]{0,160}finSd\(rot2\(vec2\(p\.x - 1264\.0, p\.y - 98\.0\), -0\.10\), vec2\(15\.0, 9\.0\)\)/],
   ['объединение с кузовом гладкое: -smin(-bodyOnly(p), dRail, 3.0)', /-smin\(-bodyOnly\(p\), dRail, 3\.0\)/],
   ['полосы-гейты: рейлинги p.y < 130, зеркало 190…372',
     /p\.y < 130\.0 \? railsSd\(p\) : 9999\.0[\s\S]{0,400}p\.y > 190\.0 && p\.y < 372\.0/],
-  ['зеркало: четырёхугольник (519,254)(490,243)(458,296)(527,302) r15 + ножка (480,296)-(477,348) r3.5',
-    /vec2\(519\.0, 254\.0\), b = vec2\(490\.0, 243\.0\), c = vec2\(458\.0, 296\.0\), d = vec2\(527\.0, 302\.0\)[\s\S]{0,220}sdSeg\(q, vec2\(480\.0, 296\.0\), vec2\(477\.0, 348\.0\), 3\.5\)/],
+  ['зеркало: камень (500,236)(452,240)(417,296)(509,313) r26 + губа finSd(462,306,50,13) + ножка (503,303)-(521,331) r5',
+    /vec2 a = vec2\(500\.0, 236\.0\), b = vec2\(452\.0, 240\.0\), c = vec2\(417\.0, 296\.0\), d = vec2\(509.0, 313.0\)[\s\S]{0,420}sdSeg\(q, vec2\(503\.0, 303\.0\), vec2\(521\.0, 331\.0\), 5\.0\)/],
   ['заливка: mouth 448, wob 0.011/3.7 и 0.041/9.1, spread 0.44…0.72 × 470',
     /float mouth = abs\(p\.y - 448\.0\);[\s\S]{0,300}smoothstep\(0\.44, 0\.72, t\) \* 470\.0/],
-  ['контровой свет: rimProg 0.42…0.68, trace /700, exp(-ad*0.16)*0.26, ss(2,0)*0.80',
-    /smoothstep\(0\.42, 0\.68, t\)[\s\S]{0,300}exp\(-ad \* 0\.16\) \* shown \* 0\.26[\s\S]{0,120}smoothstep\(2\.0, 0\.0, ad\) \* shown \* 0\.80/],
-  ['свечение зеркала: 452/94, 332…292, exp(-dMir*0.18)*0.20, ss(1.6,0)*0.85',
-    /\(abs\(p\.x - BX\) - 452\.0\) \/ 94\.0[\s\S]{0,260}exp\(-dMir \* 0\.18\) \* shown \* 0\.20[\s\S]{0,120}smoothstep\(1\.6, 0\.0, dMir\) \* shown \* 0\.85/],
-  ['отблеск капота: 340/7, ss(0.40,0.60), 380…470, ×0.75',
-    /exp\(-abs\(p\.y - 340\.0\) \/ 7\.0\) \* inside \* smoothstep\(0\.40, 0\.60, t\) \* 0\.75/],
-  ['ДХО: reveal 0.12…0.44, sy 450-(mx-51)*0.0625, along /491, ss(3.7,1.9)×1.75',
-    /float reveal = smoothstep\(0\.12, 0\.44, t\);[\s\S]{0,300}450\.0 - \(mx - 51\.0\) \* 0\.0625;[\s\S]{0,300}smoothstep\(3\.7, 1\.9, abs\(p\.y - sy\)\) \* on \* cut \* 1\.75;/],
-  ['искра: ×512, exp ×0.16, ×3.2, гаснет на reveal 0.90…1.0',
-    /exp\(-length\(vec2\(\(along - reveal\) \* 512\.0, p\.y - sy\)\) \* 0\.16\)/],
-  ['бровь: 0.22…0.34, 392…408, 534…548, 412-(mx-30)*0.02, ss(2.6,1.2)×0.8',
-    /smoothstep\(0\.22, 0\.34, t\)[\s\S]{0,200}412\.0 - \(mx - 30\.0\) \* 0\.02[\s\S]{0,160}smoothstep\(2\.6, 1\.2, abs\(p\.y - browY\)\) \* browX \* browIn \* 0\.8/],
-  ['знак: ec (960,497), eh (30.4,42.7), контур ss(0.34,0.42)×1.4, заливка ss(0.42,0.50)×1.55',
-    /vec2 ec = vec2\(BX, 497\.0\);\s*vec2 eh = vec2\(30\.4, 42\.7\);[\s\S]{0,500}smoothstep\(0\.34, 0\.42, t\) \* 1\.4[\s\S]{0,120}smoothstep\(0\.42, 0\.50, t\) \* 1\.55/],
-  ['вспышка знака: (t-0.44)/0.04, ореол /1.55 и /26, ×0.95',
-    /exp\(-pow\(\(t - 0\.44\) \/ 0\.04, 2\.0\)\)[\s\S]{0,300}\(p\.x - ec\.x\) \/ 1\.55, p\.y - ec\.y\)\) \/ 26\.0, 2\.0\)\)/],
+  ['контровой свет: rimProg 0.42…0.68, trace /700, outward ss(3,−3,dBody), RIM·shown·(0.14·exp(-ad*0.16) + 0.28·exp(-ad*0.055)·outward) — узкий спад внутрь, пологое плато наружу, без белого ядра и без WARM',
+    /smoothstep\(0\.42, 0\.68, t\)[\s\S]{0,1900}float outward = smoothstep\(3\.0, -3\.0, dBody\);\s*light \+= RIM \* shown \* \(0\.14 \* exp\(-ad \* 0\.16\) \+ 0\.28 \* exp\(-ad \* 0\.055\) \* outward\);/],
+  ['свечение зеркала: 452/94, 332…292, RIM exp(-dMir*0.18)*0.42, RIM ss(2.4,0)*0.12, губа ss(2.2,0)*ss(276,296)*0.30',
+    /\(abs\(p\.x - BX\) - 452\.0\) \/ 94\.0[\s\S]{0,260}RIM \* exp\(-dMir \* 0\.18\) \* shown \* 0\.42[\s\S]{0,120}smoothstep\(2\.4, 0\.0, dMir\) \* shown \* 0\.12[\s\S]{0,200}smoothstep\(276\.0, 296\.0, p\.y\) \* shown/],
+  ['отблеск кузова: grow ss(0.40,0.60), sheenY exp(-((y-352)/15)²), sheenX 0,05+0,45·exp(-((ax-300)/75)²)',
+    /float grow = smoothstep\(0\.40, 0\.60, t\);\s*float sheenY = exp\(-pow\(\(p\.y - 352\.0\) \/ 15\.0, 2\.0\)\);\s*float sheenX = 0\.05 \+ 0\.45 \* exp\(-pow\(\(abs\(p\.x - BX\) - 300\.0\) \/ 75\.0, 2\.0\)\);\s*light \+= SHEEN \* sheenY \* sheenX \* inside \* grow;/],
+  ['нейтральная подсветка двери: fillY ss(348,404)·(1−ss(404,428)), fillX 0,30+0,70·ss(120,470), NEUT·inside·grow',
+    /float fillY = smoothstep\(348\.0, 404\.0, p\.y\) \* \(1\.0 - smoothstep\(404\.0, 428\.0, p\.y\)\);\s*float fillX = 0\.30 \+ 0\.70 \* smoothstep\(120\.0, 470\.0, abs\(p\.x - BX\)\);\s*light \+= NEUT \* fillY \* fillX \* inside \* grow;/],
+  ['ДХО: reveal 0.12…0.44, колено sy 447,7−31,2·(1−ss(knee)), клин hw 2,1+14,2·knee·(1−knee), концы axEnd, ядро ss(hw−0,7,hw+2,3), ореол exp(-(rBar/12)²)*0.12',
+    /float reveal = smoothstep\(0\.12, 0\.44, t\);[\s\S]{0,500}447\.7 - 31\.2 \* \(1\.0 - smoothstep\(0\.0, 1\.0, knee\)\)[\s\S]{0,900}float hw = 2\.1 \+ 14\.2 \* knee \* \(1\.0 - knee\);[\s\S]{0,700}smoothstep\(hw - 0\.7, hw \+ 2\.3, rBar\)[\s\S]{0,400}light \+= WHITE \* exp\(-pow\(rBar \/ 12\.0, 2\.0\)\) \* cut \* 0\.12;/],
+  ['искра: drawEnd 51+reveal*491, ×1.04, exp ×0.16, ×3.2, гаснет на reveal 0.90…1.0',
+    /exp\(-length\(vec2\(\(mx - drawEnd\) \* 1\.04, p\.y - sy\)\) \* 0\.16\)/],
+  ['знак: ec (961,490), eh (37.5,46.5), uv без переворота, ядро max(ink·ss, edge·ss·(1−ss)) = WHITE*core',
+    /vec2 ec = vec2\(961\.0, 490\.0\);\s*vec2 eh = vec2\(37\.5, 46\.5\);[\s\S]{0,700}float core = max\(ink \* smoothstep\(0\.40, 0\.48, t\),[\s\S]{0,200}light \+= WHITE \* core;/],
+  ['свечение знака: exp(-pow(length((x−ec)/1.5, y−ec)/34, 2)) · ss(0.42,0.50) · 0.32 (≤ 0.35)',
+    /exp\(-pow\(length\(vec2\(\(p\.x - ec\.x\) \/ 1\.5, p\.y - ec\.y\)\) \/ 34\.0, 2\.0\)\)[\s\S]{0,120}\* 0\.32;/],
   ['фон: q /1520 и /780 от (960,120), горизонт 722/22, пул 700/790/165, низ 740…1100 ×0.55, ss(0,0.18)',
     /\(p\.x - BX\) \/ 1520\.0, \(p\.y - 120\.0\) \/ 780\.0[\s\S]{0,800}c \*= smoothstep\(0\.0, 0\.18, t\);/],
   ['ночь: ss(0.72,1.0) к #070B12 (0.0322,0.0504,0.0826), финал ×0.62',
