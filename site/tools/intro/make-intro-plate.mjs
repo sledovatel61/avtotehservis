@@ -131,7 +131,7 @@ const fillColumn = (x, y) => {
   const w = b === a ? 0 : (y - a) / (b - a);
   for (let c = 0; c < 3; c++) body[(y * W + x) * 3 + c] = P(x, a, c) * (1 - w) + P(x, b, c) * w;
 };
-for (let x = 400; x <= 1520; x++) for (let y = 0; y < H; y++) if (marked[y * W + x]) fillColumn(x, y);
+/* fillColumn отключён по заданию №61 §1 — см. пояснение у void sm ниже. */
 /* заплату пригладить: среднее 3×3 только по помеченным */
 const sm = Float64Array.from(body);
 for (let y = 1; y < H - 1; y++) {
@@ -144,7 +144,12 @@ for (let y = 1; y < H - 1; y++) {
     }
   }
 }
-body.set(sm);
+/* Задание №61 §1: пластина — полное фото, инпейнт запрещён. Штампование
+   (fillColumn по столбцам) дорисовывало на кузове несуществующие детали:
+   полоса ДХО утолщалась до 7,2 px, ореол раздувался до 28 L, штрихи знака
+   слипались (38 %). Смуз-массив sm остаётся только источником для кромки —
+   в тело кузова он больше не идёт. */
+void sm;
 
 /* ---------- фон: достройка под силуэтом ---------- */
 /* маска, раздутая на 10 px (разделимый max), чтобы перо кузова легло на достроенный фон */
@@ -286,20 +291,33 @@ const bodyRGBA = Buffer.alloc(CW * CH * 4);
   for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
     const sx0 = CX0 + x, sy0 = CY0 + y, si = sy0 * W + sx0, o = (y * CW + x) * 4;
     let r = bodyPre[si * 3], g = bodyPre[si * 3 + 1], b = bodyPre[si * 3 + 2];
-    if (!silh[si]) {
+    /* Внутри тела обязан стоять сам фото-пиксель. near[] — цвет эрозии, он нужен
+       только там, где фото на кромке яркое (фон/блик): иначе билинейная выборка
+       тянет красный фон. Замер: hero(408,410) в фото (22,6,6) — r−b=16, силуэт
+       проходит, — а из near[] приходило (36,9,21) с r−b=15, и в кадре пиксель
+       выпадал: гейт терял кромку и брал серый блик левее (G/R 0,33). */
+    const insideBody = silh[si] && alphaBin[si];
+    const edgeDark = !silh[si] && alphaBin[si]
+      && bodyPre[si * 3] < 60 && bodyPre[si * 3] - bodyPre[si * 3 + 2] <= 18;
+    if (!insideBody && !edgeDark) {
       r = near[si * 3]; g = near[si * 3 + 1]; b = near[si * 3 + 2];
     }
     /* тёмная кромка: билинейная выборка на борту подмешивает фон (r−b ≈ 100) и
        выносит r−b к 30 — порог силуэта гейта требует r−b < 18. Поднимаем синий
        только у тёмных пикселей кромки; яркое красное перо капота (r > 60) не трогаем */
-    if (!silh[si] ? r < 60 : false) b = Math.max(b, r - 12);
+    /* Страховка синего — только на светлой кромке, куда дилатация подмешала
+       яркий фон (r−b > 18 при тёмном r). Глухое r < 60 поднимало синий и на
+       честном тёмном борту: фото (22,6,6) -> (36,9,21), и пиксель выпадал
+       из силуэта в кадре. */
+    const edgeBand = !silh[si] && alphaBin[si] && !edgeDark;
+    if (edgeBand && r < 60 && r - b > 18) b = Math.max(b, r - 12);
     bodyRGBA[o] = Math.round(r); bodyRGBA[o + 1] = Math.round(g); bodyRGBA[o + 2] = Math.round(b);
     bodyRGBA[o + 3] = alphaBin[si] ? 255 : 0;
   }
 }
 const jobs = [
-  [bodyRGBA, CW, CH, Math.round(CW * 1600 / W), `${OUT}/body-1600.webp`],
-  [bodyRGBA, CW, CH, Math.round(CW * 800 / W), `${OUT}/body-800.webp`],
+  [bodyRGBA, CW, CH, CW, `${OUT}/body-1600.webp`],
+  [bodyRGBA, CW, CH, Math.round(CW * 800 / 1181), `${OUT}/body-800.webp`],
   [bgPre, W, H, 1600, `${OUT}/plate-bg-1600.webp`],
   [bgPre, W, H, 800, `${OUT}/plate-bg-800.webp`],
 ];
@@ -314,7 +332,7 @@ for (const [buf, w, h, tw, file] of jobs) {
   const rgba = buf.length === w * h * 3 ? toRGBA(buf, w, h) : buf;
   await sharp(rgba, { raw: { width: w, height: h, channels: 4 } })
     .resize({ width: tw, kernel: 'lanczos3' })
-    .webp({ quality: 82, effort: 6, smartSubsampling: false })
+    .webp({ quality: 92, effort: 6, smartSubsampling: false, alphaQuality: 100 })
     .toFile(file);
   const st = await sharp(file).metadata();
   const { size } = await (await import('node:fs/promises')).stat(file);

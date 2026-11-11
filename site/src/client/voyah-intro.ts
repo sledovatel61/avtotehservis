@@ -90,13 +90,10 @@ float vnoise(vec2 p){
    из пластины со сдвигом uPar */
 vec4 bodyAt(vec2 p){
   vec4 bt = texture(uBody, (p - uPar - BC0) / BSZ);
-  /* Хрома-страховка тёмного кузова: webp q82 и JPEG кадра квантуют почти чёрную
-     хрому с шагом 2-4, r−b тёмно-красных панелей вырастает на 3-8 против фото, и
-     порог силуэта (r−b < 18) теряет кромку и низ двери. В тёмных тонах (r < 45)
-     возвращаем G,B к фото-пропорции; красные кромки (r > 51) не трогаем. */
-  float w = 1.0 - smoothstep(0.10, 0.13, bt.r);
-  bt.g = mix(bt.g, max(bt.g, bt.r * 0.32), w);
-  bt.b = mix(bt.b, max(bt.b, bt.r * 0.52), w);
+  /* Задание №61 §1: страховка снята. Она поднимала синий у тёмного кузова
+     (bt.b -> r * 0.52), и в кадре честный тёмный борт терял r−b < 18: признак
+     силуэта не находил кромку и брал серый блик левее — G/R выходил 0,33 при
+     эталонных 0,12. Пластина теперь 1:1 без инпейнта, хрома в ней верная. */
   return bt;
 }
 
@@ -138,7 +135,9 @@ void layers(vec2 p, float t, out vec3 bcol, out float ba, out vec3 light){
                 - texture(uBody, uv - vec2(0.0, 2.5 / BSZ.y)).a);
     vec2 n = g / max(length(g), 1e-5);
     float aOut = texture(uBody, uv + n * 7.0 / BSZ).a;
-    light += RIM * pulse * shown * (1.0 - bt.a) * aOut * 0.55;
+    /* Задание №61 §3: RIM выключен. Ореол и обод полосы ДХО запечены в пластине
+     (полное фото); любой код-рим ложился вторым слоем и давал пересвет ореола. */
+  light += RIM * pulse * shown * (1.0 - bt.a) * aOut * 0.0;
   }
 
   /* полоса ДХО: кривая эталона (docs/reports/r32-brief/reference-samples.md §1),
@@ -152,8 +151,21 @@ void layers(vec2 p, float t, out vec3 bcol, out float ba, out vec3 light){
   float axEnd = max(max(mx - 542.0, 51.0 - mx), 0.0);
   float rBar = length(vec2(axEnd, p.y - sy));
   float cut = 1.0 - smoothstep(reveal * 542.0 - 6.0, reveal * 542.0 + 2.0, mx);
-  light += COOL * (1.0 - smoothstep(hw - 0.7, hw + 2.3, rBar)) * cut;
-  light += COOL * exp(-pow(rBar / 12.0, 2.0)) * cut * 0.12;
+  /* Задание №61 §1: пластина — полное фото, полоса ДХО и её ореол в ней уже
+     запечены. Код рисует полосу только там, где фото тёмное (draw), иначе
+     добавка ложилась на светящуюся полосу вторым слоем и раздувала и плато
+     (7,2 px против 5), и ореол (28 L против 14). */
+  /* Задание №61 §1: в пластине полоса ДХО и её ореол уже запечены, поэтому код
+     не рисует полосу там, где она есть В ФОТО. Признак «яркое» тут не работает:
+     у эталона ореол серый и тёмный (dd6 — 60,62,61; dd8 — 33,33,32; dd10 —
+     19,19,19), max(bt) = 0,08…0,21, и прежний draw по яркости давал 1,0 —
+     код светил в полную силу прямо в ореол и раздувал его (8 -> 15, 6 -> 78 L
+     на dd14 при пластине 6). Берём геометрию: гасим на всю ширину запечённого
+     ореола (радиус ~14 px) и оставляем свет только за ним — на прорисовке
+     машины, где фото действительно тёмное. */
+  float nearBar = 1.0 - smoothstep(11.0, 17.0, rBar);
+  light += COOL * (1.0 - smoothstep(hw - 0.7, hw + 2.3, rBar)) * cut * (1.0 - nearBar);
+  light += COOL * exp(-pow(rBar / 12.0, 2.0)) * cut * 0.12 * (1.0 - nearBar);
 
   /* «искра» на кончике прорисовки */
   float drawEnd = 51.0 + reveal * 491.0;
@@ -172,9 +184,14 @@ void layers(vec2 p, float t, out vec3 bcol, out float ba, out vec3 light){
   float edge = clamp(a * (1.0 - a) * 4.0, 0.0, 1.0);
   float core = max(ink * smoothstep(0.40, 0.48, t),
                    edge * smoothstep(0.34, 0.42, t) * (1.0 - smoothstep(0.42, 0.50, t)));
-  light += COOL * core;
+  /* Задание №61 §1: знак в пластине уже есть — белый, как в эталоне (255 в
+     центре штрихов, сверено по точкам). Код дорисовывал его ПОВЕРХ: в промежутках
+     между штрихами фото тёмное, признак по яркости там не гасился, и SVG-текстура
+     заливала белым сами промежутки. Доля ярких в рамке знака выходила 38 % против
+     эталонных 31 % — штрихи слипались. Теперь свет знака целиком фотографический. */
+  light += COOL * core * 0.0;
   light += COOL * exp(-pow(length(vec2((p.x - ec.x) / 1.5, p.y - ec.y)) / 34.0, 2.0))
-         * smoothstep(0.42, 0.50, t) * 0.32;
+         * smoothstep(0.42, 0.50, t) * 0.32 * 0.0;
 }
 
 /* Фон — пластина: градиент, пол, пятно света; проявление 0-0,18 как прежде */
@@ -560,12 +577,16 @@ function boot(): void {
       h: number;
     };
     let target: Target = { tex: null, texel: null, fbo: null, fboB: null, bw: 0, bh: 0, w: 0, h: 0 };
-    let scale = quick ? 0.55 : 0.62;
+    /* Задание №61 §4: разрешение 1:1. Раньше сцена рисовалась в 0,62 канваса и
+       растягивалась: кромка полосы ДХО размывалась на 4 px вместо 2, плато
+       выходило 7,2 px вместо эталонных 5. Адаптивное понижение ниже остаётся —
+       если кадр не тянет fps, scale всё равно снизится по замеру. */
+    let scale = 1;
 
     const alloc = (): boolean => {
       const cssW = box.clientWidth || innerWidth;
       const cssH = box.clientHeight || innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.max(320, Math.round(cssW * dpr * scale));
       const h = Math.max(200, Math.round(cssH * dpr * scale));
       canvas.width = w;
@@ -668,12 +689,12 @@ function boot(): void {
       if (frames === 8 || frames === 20 || frames === 44) {
         const avg = acc / (frames === 8 ? 7 : frames === 20 ? 12 : 24);
         if (avg > 32 && scale > 0.4) {
-          scale = Math.max(0.4, scale - 0.1);
+          scale = Math.max(0.5, scale - 0.1);
           acc = 0;
           tuned++;
           alloc();
         } else if (avg < 13 && tuned === 0 && scale < (quick ? 0.7 : 0.8)) {
-          scale = Math.min(quick ? 0.7 : 0.8, scale + 0.08);
+          scale = Math.min(1, scale + 0.08);
           alloc();
         }
       }
