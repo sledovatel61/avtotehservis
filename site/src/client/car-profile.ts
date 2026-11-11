@@ -81,16 +81,16 @@ export interface TopSegment {
  * measure:bg3d`), а 10–15 сегментов дают ту же кривую с точностью 8 мм.
  */
 export const TOP_SEGMENTS: TopSegment[] = [
-  { x0: -2.4525, h: 0.2000, a: 0.9166, b: 0.2846, c: 0.1342, d: -0.1342 },
-  { x0: -2.2525, h: 0.6500, a: 1.2012, b: 0.4886, c: -0.1224, d: -0.0118 },
-  { x0: -1.6025, h: 0.6500, a: 1.5556, b: 0.2083, c: -0.2720, d: 0.1259 },
-  { x0: -0.9525, h: 0.6500, a: 1.6178, b: 0.0420, c: 0.0136, d: -0.0338 },
-  { x0: -0.3025, h: 0.6500, a: 1.6396, b: -0.0322, c: -0.0076, d: -0.0464 },
-  { x0: 0.3475, h: 0.6500, a: 1.5534, b: -0.1866, c: -0.3000, d: 0.1996 },
-  { x0: 0.9975, h: 0.6500, a: 1.2665, b: -0.1877, c: 0.2186, d: -0.1193 },
-  { x0: 1.6475, h: 0.4500, a: 1.1780, b: -0.0752, c: 0.1049, d: -0.1251 },
-  { x0: 2.0975, h: 0.2000, a: 1.0827, b: -0.1069, c: -0.1632, d: 0.0180 },
-  { x0: 2.2975, h: 0.1550, a: 0.8306, b: -0.2939, c: -0.2543, d: 0.1272 },
+  { x0: -2.4525, h: 0.2000, a: 1.0252, b: 0.2641, c: 0.1283, d: -0.1283 },
+  { x0: -2.2525, h: 0.6500, a: 1.2893, b: 0.4414, c: -0.1173, d: -0.0110 },
+  { x0: -1.6025, h: 0.6500, a: 1.6024, b: 0.1738, c: -0.2594, d: 0.1201 },
+  { x0: -0.9525, h: 0.6500, a: 1.6368, b: 0.0153, c: 0.0130, d: -0.0322 },
+  { x0: -0.3025, h: 0.6500, a: 1.6330, b: -0.0553, c: -0.0073, d: -0.0441 },
+  { x0: 0.3475, h: 0.6500, a: 1.5263, b: -0.2022, c: -0.2854, d: 0.1899 },
+  { x0: 0.9975, h: 0.6500, a: 1.2286, b: -0.2033, c: 0.2074, d: -0.1130 },
+  { x0: 1.6475, h: 0.4500, a: 1.1198, b: -0.0882, c: 0.1020, d: -0.1205 },
+  { x0: 2.0975, h: 0.2000, a: 1.0130, b: -0.1093, c: -0.1586, d: 0.0195 },
+  { x0: 2.2975, h: 0.1550, a: 0.7647, b: -0.2851, c: -0.2391, d: 0.1196 },
 ];
 
 /**
@@ -137,7 +137,28 @@ export const CABIN = {
   frontTop: 0.6,     // X лобового вверху
   rearTop: -1.62,    // X заднего стекла вверху
   rear: -1.95,       // X двери багажника внизу
+  /** X переднего края форточки задней двери (разделитель стёкол, фото) */
+  div: -0.72,
 } as const;
+
+/**
+ * Стойки лобового и заднего стекла — как прямые через ДВЕ опорные точки:
+ * низ стойки (CABIN.front/rear на подоконнике) и верх (CABIN.frontTop/rearTop
+ * на верхней кромке кузова). Наклон получается из `CABIN` и `pTop`, поэтому
+ * не может разъехаться с профилем (гейт check-profile-copies ловит таблицы).
+ *   лобовое: (1,16; 0,99) → (0,60; 1,4473), K_FRONT ≈ 1,2245 м/м
+ *   заднее:  (−1,95; 1,0476) → (−1,62; 1,5499), K_REAR ≈ 0,6572 м/м
+ */
+const CABIN_Y_FRONT = beltAt(CABIN.front);
+const CABIN_Y_REAR = beltAt(CABIN.rear);
+const CABIN_K_FRONT = (CABIN.front - CABIN.frontTop) / (topAt(CABIN.frontTop) - CABIN_Y_FRONT);
+const CABIN_K_REAR = (CABIN.rearTop - CABIN.rear) / (topAt(CABIN.rearTop) - CABIN_Y_REAR);
+
+/**
+ * Штамповка крыла: подштамповка над аркой на фото идёт от кромки крыла вниз-назад,
+ * ~0,10 м по X и 0,045 м по Y. Это ТОН, а не форма: в SDF не входит.
+ */
+const FENDER = { dx: 0.10, dy: 0.045 } as const;
 
 /** Арка: радиус — паспортное колесо пополам плюс зазор; по Y чуть сжата. */
 export const ARCH = { radius: CAR.tyre / 2 + CAR.archGap, squashY: 1.06 } as const;
@@ -276,12 +297,53 @@ float carProfile(vec2 p){
   return max(max(body, -arch), -p.y);
 }
 
-/* Остекление — для блика на стёклах, не для формы. */
+/* Остекление — для блика на стёклах, не для формы.
+   Обе границы по X были записаны наоборот: (-front - p.x) и (p.x - rear) давали
+   условие x ≥ front И x ≤ rear, то есть ПУСТОЕ множество (front > rear), —
+   поэтому окно не рисовалось ни при каком вызове. Правильно: снизу rear,
+   сверху front, как у carProfile по Y. Исправлено в круге 32 (задание №57). */
 float carCabin(vec2 p){
   float s = max(pBelt(p.x) - p.y, p.y - (pTop(p.x) - 0.02));
-  s = max(s, ${glslF(-CABIN.front)} - p.x);
-  s = max(s, p.x - ${glslF(CABIN.rear)});
+  s = max(s, p.x - ${glslF(CABIN.front)});
+  s = max(s, ${glslF(CABIN.rear)} - p.x);
   return s;
+}
+
+/* Остекление и внутренняя структура кабины (добавлено в круге 32, задание №57).
+   Возвращает сразу четыре маски, потому что все они считаются от Одного pTop:
+     x — стекло (1 внутри), 0 снаружи;
+     y — стойка/разделитель (1 на линии),
+     z — подоконник pBelt, метры (по нему рисуется светлая подоконная линия);
+     w — верх кузова pTop, метры.
+   Так сделано ради бюджета: второй pTop стоил бы ~100 арифметических операций
+   на пиксель (весь кадр — 954), а сверх бюджета задания №57 (+10 %) выходить нельзя.
+
+   Стойки НАКЛОННЫЕ, как на фото: X границы растёт при спуске от крыши к подоконнику.
+   Скорости C_K_FRONT/C_K_REAR посчитаны из CABIN и pTop в этом же модуле, поэтому
+   наклон стоек не может разъехаться с профилем. */
+vec4 carTrim(vec2 p){
+  float top = pTop(p.x);
+  float belt = pBelt(p.x);
+  float xf = ${glslF(CABIN.front)} - ${glslF(CABIN_K_FRONT)} * (p.y - ${glslF(CABIN_Y_FRONT)});
+  float xr = ${glslF(CABIN.rear)} + ${glslF(CABIN_K_REAR)} * (p.y - ${glslF(CABIN_Y_REAR)});
+  /* xr ≤ p.x ≤ xf: нижняя граница по X вычитается из координаты, верхняя — наоборот */
+  float s = max(belt - p.y, p.y - (top - 0.02));
+  s = max(s, p.x - xf);
+  s = max(s, xr - p.x);
+  float glass = 1.0 - smoothstep(-0.005, 0.005, s);
+  /* стойки и разделитель между стёклами передней и задней двери: 1 на линии */
+  float pf = 1.0 - smoothstep(0.008, 0.026, abs(p.x - xf));
+  float pr = 1.0 - smoothstep(0.008, 0.026, abs(p.x - xr));
+  float pd = 1.0 - smoothstep(0.010, 0.030, abs(p.x - ${glslF(CABIN.div)}));
+  return vec4(glass, max(max(pf, pr), pd) * step(belt, p.y), belt, top);
+}
+
+/* Штамповка крыла — тон: 0 внутри полосы подштамповки над аркой. */
+float pFender(vec2 p){
+  vec2 d = vec2(C_AXLE_F - p.x, p.y - (C_TYRE_R + C_ARCH_R * 0.55));
+  float a = max(abs(d.x) - ${glslF(FENDER.dx)}, abs(d.y) - ${glslF(FENDER.dy)});
+  float b = max(abs(C_AXLE_R - p.x) - ${glslF(FENDER.dx)}, abs(d.y) - ${glslF(FENDER.dy)});
+  return min(a, b);
 }
 
 /* Колёса: центр на оси, радиус по паспортному диаметру. */
@@ -311,9 +373,36 @@ export function carProfileJS(x: number, y: number): number {
 
 export function carCabinJS(x: number, y: number): number {
   let s = Math.max(beltAt(x) - y, y - (topAt(x) - 0.02));
-  s = Math.max(s, -CABIN.front - x);
-  s = Math.max(s, x - CABIN.rear);
+  s = Math.max(s, x - CABIN.front);      /* границы по X были перепутаны, см. GLSL */
+  s = Math.max(s, CABIN.rear - x);
   return s;
+}
+
+/** Наклон стоек, которым пользуется GLSL: м/м по X на метр высоты. */
+export const CABIN_SLOPE = { front: CABIN_K_FRONT, rear: CABIN_K_REAR, yFront: CABIN_Y_FRONT, yRear: CABIN_Y_REAR } as const;
+
+/**
+ * Двойник `carTrim` из GLSL — независимая запись той же формулы для гейта и
+ * CPU-порта. Порядок: [стекло, стойка, подоконник, верх].
+ */
+export function carTrimJS(x: number, y: number): [number, number, number, number] {
+  const top = topAt(x);
+  const belt = beltAt(x);
+  const xf = CABIN.front - CABIN_K_FRONT * (y - CABIN_Y_FRONT);
+  const xr = CABIN.rear + CABIN_K_REAR * (y - CABIN_Y_REAR);
+  let s = Math.max(belt - y, y - (top - 0.02));
+  s = Math.max(s, x - xf);
+  s = Math.max(s, xr - x);
+  const ss = Math.min(1, Math.max(0, (s + 0.014) / 0.028));
+  const glass = 1 - ss * ss * (3 - 2 * ss);
+  const band = (a: number, b: number) => {
+    const t = Math.min(1, Math.max(0, (Math.abs(a) - b) / 0.018));
+    return 1 - t * t * (3 - 2 * t);
+  };
+  const pf = band(x - xf, 0.008);
+  const pr = band(x - xr, 0.008);
+  const pd = band(x - CABIN.div, 0.010);
+  return [glass, Math.max(pf, pr, pd) * (y >= belt ? 1 : 0), belt, top];
 }
 
 export function carWheelsJS(x: number, y: number): number {

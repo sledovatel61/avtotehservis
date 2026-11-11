@@ -176,8 +176,8 @@ for (const t of TIMES) {
     layersPerPx: f.ops.layersPerPx,
     reflPixelsRatio: f.ops.reflPixelsRatio,
     texPerPx: f.ops.texPerPx,
-    railPixelsRatio: f.counts.railPixels / f.pixels,
-    mirrorPixelsRatio: f.counts.mirrorPixels / f.pixels,
+    texBodyPerPx: f.counts.texBody / f.pixels,
+    texBgPerPx: f.counts.texBg / f.pixels,
     nsPerPx: timing.nsPerPx,
     cpuMsPerFrame: timing.cpuMs,
   };
@@ -212,19 +212,13 @@ function portFuncCost(name, fn) {
   return { name, inst: ref.T.inst, scalar: ref.T.scalar };
 }
 
+/* Круг 33: формула силуэта заменена пластиной — в сцене остались три шумовые
+   функции, тело (bodyAt), слои и фон. Вызовов SDF-хелперов больше нет. */
 const portFuncs = [
   portFuncCost('hash12', () => ref.hash12(0.3, 1.7)),
-  portFuncCost('smin', () => ref.smin(0.4, 0.9, 0.09)),
-  portFuncCost('sdBox', () => ref.sdBox(0.3, 0.2, 11.0, 13.0, 5.0)),
-  portFuncCost('sideD', () => ref.sideD(0.3, 0.2, 0.0, 0.0, 1.0, 0.5)),
-  portFuncCost('sdQuad', () => ref.sdQuad(500, 280, [519, 254], [490, 243], [458, 296], [527, 302], 15)),
-  portFuncCost('sdSeg', () => ref.sdSeg(480, 300, 480, 296, 477, 348, 3.5)),
   portFuncCost('hash21', () => ref.hash21(0.7, 1.3)),
   portFuncCost('vnoise', () => ref.vnoise(0.7, 1.3)),
-  portFuncCost('halfW', () => ref.halfW(0.4)),
-  portFuncCost('bodyOnly', () => ref.bodyOnly(960, 400)),
-  portFuncCost('railsSd', () => ref.railsSd(653, 96)),
-  portFuncCost('mirrorSd', () => ref.mirrorSd(1450, 280)),
+  portFuncCost('bodyAt', () => ref.bodyAt(960, 400)),
   portFuncCost('bgAt', () => ref.bgAt(960, 400, 0.5)),
   { name: 'layers', ...ref.layersCost() },
 ];
@@ -233,17 +227,13 @@ const portFuncs = [
    в SPIR-V стоимость вызванной функции лежит в ЕЁ записи, а вызов стоит одну OpFunctionCall.
    Сравнивать полные счётчики нельзя — получится двойной счёт (урок раунда 30). */
 const CALL_GRAPH = {
-  hash12: {}, smin: {}, sdBox: {}, sideD: {}, sdSeg: {}, hash21: {}, halfW: {},
-  sdQuad: { sideD: 5 },
+  hash12: {}, hash21: {},
   vnoise: { hash21: 4 },
-  bodyOnly: { halfW: 1, smin: 1 },
-  railsSd: { sdBox: 2 },
-  mirrorSd: { sdQuad: 1, sdSeg: 1, smin: 1 },
+  bodyAt: {},
   bgAt: {},
-  /* layers зовёт bodyOnly (1) и mirrorSd (1); railsSd остаётся за тернарником-гейтом,
-     а вызванные из них halfW/sdQuad/sdSeg/smin/vnoise/hash21 — в записях этих функций.
+  /* layers зовёт bodyAt (1) и vnoise (2); hash21 живёт в записи vnoise.
      Вычитаем только вызовы ПЕРВОГО уровня — иначе двойной счёт (урок раунда 30). */
-  layers: { bodyOnly: 1, railsSd: 1, mirrorSd: 1 },
+  layers: { bodyAt: 1, vnoise: 2 },
 };
 const byNameCost = Object.fromEntries(portFuncs.map((f) => [f.name, f]));
 function ownBody(name) {
@@ -302,7 +292,7 @@ if (SPIRV) {
        Составные (layers, main) идут справочно: компилятор сворачивает в них константы
        и CSE, а `once`-режим порта держит обе ветви тернарников — Δ там legitimately крупнее,
        верность таких функций доказывает сверка пикселей с драйвером (--verify), а не SPIR-V. */
-    const LEAF = new Set(['hash12', 'smin', 'sdBox', 'sideD', 'sdSeg', 'hash21', 'halfW', 'bgAt', 'sdQuad', 'vnoise', 'bodyOnly', 'railsSd', 'mirrorSd']);
+    const LEAF = new Set(['hash12', 'hash21', 'bodyAt', 'bgAt', 'vnoise']);
     console.log('  функция        порт всего   своё тело   вызовов   SPIR-V арифм.        Δ   почему');
     let worstDelta = 0, worstLeafDelta = 0;
     for (const f of portFuncs) {
@@ -610,6 +600,7 @@ const report = {
     phase1WorstScalarPerPx: 3297.9,
     phase1Note: 'точка отсчёта фазы 1: старый рейкастинг заставки (72 шага марша), худший кадр uT=0.95',
     markNote: 'замер снят без знака (uMarkOn=0): коробка знака на 640×360 ≈ 20×28 px (0,24 % кадра), её вклад в среднее ≤ 0,1 оп/px; выборки текстуры печатаются отдельно как tex/px',
+    plateNote: 'круг 33: цвет кузова и фона — выборки пластин uBody/uBg; в scalar не входят, tex/px печатается отдельно',
   },
   portFunctions: portFuncs,
   spirv: spirvReport ? {
@@ -625,7 +616,8 @@ const report = {
     '2487 мс (десктоп) и 1406 мс (мобайл) из задания — время показа сцены целиком, а не стоимость кадра',
     'замер снят ПОСЛЕ правки A5 (сцена v2.1, фронтальный силуэт): сравнивается с «до» из intro-before.json и phase1.md',
     'тернарники-гейты (рейлинги, зеркало) исполняются в каждом пикселе: компилятор раскрывает их в OpSelect, поэтому экономия ветвления — не в операциях, а в отбрасывании результата',
-    'отражение в полу (три дополнительных вызова layers) включается с uT ≥ 0,60 и покрывает 32,5 % пикселей кадра — отсюда скачок 956 → 1763 scalar/px',
+    'отражение в полу (три тапа пластины в цикле) включается с uT ≥ 0,60 и покрывает ~32 % пикселей кадра',
+    'круг 33: арифметика силуэта заменена ВЫБОРКАМИ ПЛАСТИН — они не входят в scalar и печатаются как tex/px (body: 1 + 4 градиент + 1 вынос + 1 фон + 3 отражение)',
   ],
 };
 

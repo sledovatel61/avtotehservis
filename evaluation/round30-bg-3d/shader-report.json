@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T07:42:54.361Z",
+  "generatedAt": "2026-11-11T12:17:03.917Z",
   "toolchain": {
     "glslang": "16.6.0 (Khronos, WASM)",
     "validator": "@moreplease/glslang 16.6.0-1",
@@ -24,16 +24,16 @@
     }
   },
   "fragment": {
-    "total": 1375,
-    "executable": 831,
-    "arithmetic": 349,
-    "transcendental": 21,
-    "memory": 447,
-    "composite": 35,
+    "total": 2284,
+    "executable": 1518,
+    "arithmetic": 717,
+    "transcendental": 23,
+    "memory": 748,
+    "composite": 53,
     "texture": 0,
-    "branch": 6,
-    "controlFlow": 6,
-    "spirvBytes": 23344,
+    "branch": 19,
+    "controlFlow": 19,
+    "spirvBytes": 39512,
     "unknownOpcodes": [],
     "byOpcode": {
       "OpCapability": 1,
@@ -42,65 +42,116 @@
       "OpEntryPoint": 1,
       "OpExecutionMode": 1,
       "OpSource": 1,
-      "OpName": 154,
+      "OpName": 186,
       "OpDecorate": 29,
       "OpTypeVoid": 1,
-      "OpTypeFunction": 7,
+      "OpTypeFunction": 6,
       "OpTypeFloat": 1,
+      "OpTypePointer": 11,
       "OpTypeVector": 3,
-      "OpTypePointer": 10,
-      "OpConstant": 106,
-      "OpConstantComposite": 20,
-      "OpTypeInt": 1,
-      "OpVariable": 126,
+      "OpConstant": 206,
       "OpTypeBool": 1,
-      "OpFunction": 9,
-      "OpLabel": 21,
-      "OpLoad": 254,
-      "OpStore": 145,
-      "OpAccessChain": 48,
-      "OpExtInst": 72,
-      "OpFDiv": 6,
-      "OpCompositeConstruct": 31,
-      "OpFSub": 51,
-      "OpVectorTimesScalar": 44,
-      "OpFMul": 78,
-      "OpFAdd": 45,
+      "OpTypeInt": 1,
+      "OpConstantComposite": 17,
+      "OpVariable": 159,
+      "OpFunction": 12,
+      "OpLabel": 50,
+      "OpLoad": 463,
+      "OpStore": 199,
+      "OpAccessChain": 86,
+      "OpExtInst": 159,
+      "OpFDiv": 30,
+      "OpCompositeConstruct": 49,
+      "OpFSub": 125,
+      "OpVectorTimesScalar": 76,
+      "OpFMul": 158,
+      "OpFAdd": 84,
       "OpFunctionCall": 24,
-      "OpFNegate": 15,
-      "OpFOrdLessThan": 1,
-      "OpSelectionMerge": 6,
-      "OpBranchConditional": 6,
-      "OpFOrdGreaterThan": 5,
-      "OpBranch": 6,
+      "OpFNegate": 16,
+      "OpFOrdLessThan": 13,
+      "OpSelectionMerge": 19,
+      "OpBranchConditional": 19,
+      "OpFOrdGreaterThan": 7,
+      "OpBranch": 7,
       "OpVectorShuffle": 1,
       "OpCompositeExtract": 3,
       "OpReturn": 1,
-      "OpFunctionEnd": 9,
-      "OpFunctionParameter": 19,
-      "OpReturnValue": 8,
-      "OpDot": 2
+      "OpFunctionEnd": 12,
+      "OpFunctionParameter": 15,
+      "OpReturnValue": 23,
+      "OpLogicalOr": 1,
+      "OpDot": 5
     },
     "byExt": {
-      "FMax": 10,
-      "FClamp": 4,
-      "FMix": 18,
+      "FMax": 20,
+      "FClamp": 7,
+      "FMix": 28,
       "Pow": 1,
-      "SmoothStep": 10,
-      "Length": 10,
+      "SmoothStep": 43,
+      "Length": 12,
       "Exp": 10,
-      "FAbs": 4,
+      "FAbs": 23,
+      "Step": 9,
+      "FMin": 2,
       "Fract": 3,
-      "Floor": 1,
-      "FMin": 1
+      "Floor": 1
     },
     "byFunc": {
       "main": {
-        "executable": 563,
-        "arithmetic": 251,
-        "transcendental": 17,
-        "memory": 282,
-        "composite": 30
+        "executable": 896,
+        "arithmetic": 426,
+        "transcendental": 20,
+        "memory": 431,
+        "composite": 39
+      },
+      "pTop(f1;": {
+        "executable": 163,
+        "arithmetic": 101,
+        "transcendental": 0,
+        "memory": 62,
+        "composite": 0
+      },
+      "pBottom(f1;": {
+        "executable": 27,
+        "arithmetic": 17,
+        "transcendental": 0,
+        "memory": 10,
+        "composite": 0
+      },
+      "pBelt(f1;": {
+        "executable": 7,
+        "arithmetic": 6,
+        "transcendental": 0,
+        "memory": 1,
+        "composite": 0
+      },
+      "pArch(vf2;f1;": {
+        "executable": 13,
+        "arithmetic": 5,
+        "transcendental": 1,
+        "memory": 7,
+        "composite": 1
+      },
+      "carProfile(vf2;": {
+        "executable": 34,
+        "arithmetic": 12,
+        "transcendental": 0,
+        "memory": 22,
+        "composite": 0
+      },
+      "carTrim(vf2;": {
+        "executable": 88,
+        "arithmetic": 34,
+        "transcendental": 0,
+        "memory": 53,
+        "composite": 1
+      },
+      "pFender(vf2;": {
+        "executable": 32,
+        "arithmetic": 14,
+        "transcendental": 0,
+        "memory": 17,
+        "composite": 1
       },
       "hash21(vf2;": {
         "executable": 19,
@@ -116,47 +167,19 @@
         "memory": 30,
         "composite": 1
       },
-      "sdRoundBox(vf2;vf2;f1;": {
-        "executable": 20,
-        "arithmetic": 9,
-        "transcendental": 1,
-        "memory": 10,
+      "carSdf(vf2;": {
+        "executable": 11,
+        "arithmetic": 5,
+        "transcendental": 0,
+        "memory": 5,
         "composite": 1
       },
-      "sdCircle(vf2;f1;": {
-        "executable": 4,
-        "arithmetic": 2,
-        "transcendental": 1,
-        "memory": 2,
-        "composite": 0
-      },
-      "sdSeg(vf2;vf2;vf2;f1;": {
-        "executable": 25,
-        "arithmetic": 10,
-        "transcendental": 1,
-        "memory": 15,
-        "composite": 0
-      },
-      "smin(f1;f1;f1;": {
-        "executable": 20,
-        "arithmetic": 10,
-        "transcendental": 0,
-        "memory": 10,
-        "composite": 0
-      },
-      "carSdf(vf2;": {
-        "executable": 97,
-        "arithmetic": 30,
-        "transcendental": 0,
-        "memory": 67,
-        "composite": 0
-      },
       "wheel(vf3;vf2;f1;f1;": {
-        "executable": 36,
-        "arithmetic": 14,
-        "transcendental": 1,
-        "memory": 19,
-        "composite": 3
+        "executable": 181,
+        "arithmetic": 74,
+        "transcendental": 2,
+        "memory": 98,
+        "composite": 9
       }
     }
   },
@@ -215,13 +238,13 @@
     }
   },
   "weights": {
-    "rawBytes": 11797,
-    "gzipBytes": 4654,
-    "brotliBytes": 4002,
-    "fragRawBytes": 11656,
-    "fragGzipBytes": 4598,
-    "spirvBytes": 23344,
-    "lines": 229,
+    "rawBytes": 33790,
+    "gzipBytes": 11459,
+    "brotliBytes": 10001,
+    "fragRawBytes": 33649,
+    "fragGzipBytes": 11399,
+    "spirvBytes": 39512,
+    "lines": 507,
     "limitGzipBytes": 14336
   },
   "ok": true

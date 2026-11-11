@@ -197,10 +197,27 @@ if (!liveY || !liveMul) {
   console.error('FAIL  не нашёл константы тени в src/client/bg3d/shader.ts — формула переписана, скрипт мерить не может');
   process.exit(1);
 }
+/* Коэффициент по x читаем ИЗ ИСХОДНИКА, а не считаем по своей формуле.
+   Причина: в круге 32 тень сужена до 0,55·L (SHADOW_HALF = 0.55 * SHADOW_LEN),
+   а гейт продолжал вычислять ln2/(0.97·L/2)² = 0,921 и печатал PASS про
+   несуществующую тень. Это и был ложный PASS: скрипт мерил воспоминание.
+   Теперь берём готовое число, вписанное в шейдер при сборке (${SHADOW_X.toFixed(4)}),
+   и, если его не найдём, честно падаем. */
+/* В шейдере стоит не число, а подстановка ${SHADOW_X.toFixed(4)}: значит читать надо
+   САМУ константу SHADOW_HALF и пересчитывать ln2/(half·L)² так же, как это делает
+   сборка шейдера. Если константы нет — падаем, а не подставляем своё. */
+const liveHalf = SHADER_SRC.match(/const SHADOW_HALF = ([\d.]+) \* SHADOW_LEN/);
+if (!liveHalf) {
+  console.error('FAIL  не нашёл SHADOW_HALF в shader.ts — формула тени переписана, скрипт мерить не может');
+  process.exit(1);
+}
+const shadowLenUnits = profile.CAR.length * CAR_UNITS;
+const liveX = { 1: String(Math.LN2 / Math.pow(Number(liveHalf[1]) * shadowLenUnits, 2)) };
 const LIVE_SHADOW = {
-  x: Math.LN2 / Math.pow(0.97 * profile.CAR.length * CAR_UNITS * 0.5, 2),
+  x: Number(liveX[1]),
   y: Number(liveY[1]),
   mul: Number(liveMul[1]),
+  halfOfLength: liveHalf ? Number(liveHalf[1]) : null,
 };
 
 function shadowProfile(ground, k) {
@@ -260,7 +277,11 @@ console.log(`    в пикселях 640×360: по x ${shdNew.halfWidthX.toFixe
 const shdRelBefore = (shdOld.halfWidthX * 2) / before.width;
 const shdRelAfter = (shdNew.halfWidthX * 2) / after.width;
 console.log(`    тень относительно машины: до ${(shdOld.halfWidthX * 2).toFixed(3)} ед. при длине кузова ${before.width.toFixed(3)} = ${shdRelBefore.toFixed(2)} длины; после ${(shdNew.halfWidthX * 2).toFixed(3)} при ${after.width.toFixed(3)} = ${shdRelAfter.toFixed(2)} длины`);
-console.log(`    → тень стала ${rel(shdRelAfter, shdRelBefore)} от прежней относительно кузова; коэффициент по x ${LIVE_SHADOW.x.toFixed(4)} посчитан из длины кузова (0.97 длины по построению)`);
+console.log(`    коэффициент по x посчитан из SHADOW_HALF = ${LIVE_SHADOW.halfOfLength} · SHADOW_LEN`
+  + ` (длина ${shadowLenUnits.toFixed(3)} ед.) → ${LIVE_SHADOW.x.toFixed(4)};`
+  + ` полуширина тени на полувысоте = ${LIVE_SHADOW.halfOfLength}·L = ${(LIVE_SHADOW.halfOfLength * shadowLenUnits).toFixed(3)} ед.`);
+console.log(`    → тень стала ${rel(shdRelAfter, shdRelBefore)} от прежней относительно кузова;`
+  + ` коэффициент по x ${LIVE_SHADOW.x.toFixed(4)} посчитан из SHADOW_HALF = ${LIVE_SHADOW.halfOfLength} (было 0.97 · L/2 = 0.9210).`);
 console.log(`    кромка изотропна: 1 ед. q = ${conv.pxPerUnitQ.toFixed(1)} px и по x, и по y (width/aspect = height), поэтому «жирнеть» по одной оси она не может`);
 
 const report = {

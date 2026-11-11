@@ -13,6 +13,10 @@ export default defineConfig({
   server: {
     host: process.env.HOST || '127.0.0.1',
     port: Number(process.env.PORT || 4321),
+    /* Песочница и предпросмотр открывают сайт по внешнему хосту вида
+       <port>-<id>.e2b.app; без этого dev-сервер отвечает 403 «Blocked request».
+       LOCAL_ALLOWED_HOSTS — список через запятую, по умолчанию пусто. */
+    allowedHosts: (process.env.LOCAL_ALLOWED_HOSTS || '').split(',').filter(Boolean),
   },
   vite: {
     build: {

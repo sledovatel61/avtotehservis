@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T05:11:05.234Z",
+  "generatedAt": "2026-11-11T13:01:45.700Z",
   "host": {
     "node": "v22.22.3",
     "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -10,12 +10,12 @@
   "measured": {
     "weights": {
       "shaderSource": {
-        "raw": 15511,
-        "gzip": 5890,
-        "brotli": 5080,
+        "raw": 33790,
+        "gzip": 11459,
+        "brotli": 10001,
         "limitGzipBytes": 14336,
         "fitsLimit": true,
-        "headroomPct": 58.9
+        "headroomPct": 20.1
       },
       "clientFiles": {
         "Bg3dLayer.BuZw-ZRo.css": {
@@ -24,10 +24,10 @@
           "brotli": 478,
           "hasShader": false
         },
-        "Bg3dLayer.astro_astro_type_script_index_0_lang.DGRWP3i1.js": {
+        "Bg3dLayer.astro_astro_type_script_index_0_lang.B0HphQDx.js": {
           "raw": 166,
           "gzip": 143,
-          "brotli": 106,
+          "brotli": 107,
           "hasShader": false
         },
         "bg3d.Cklxkgcd.css": {
@@ -36,32 +36,32 @@
           "brotli": 1087,
           "hasShader": false
         },
-        "bg3d.Dj8e6LaS.js": {
-          "raw": 35797,
-          "gzip": 13821,
-          "brotli": 12144,
+        "bg3d.DPF_Nlqz.js": {
+          "raw": 54287,
+          "gzip": 19878,
+          "brotli": 17145,
           "hasShader": true
         },
-        "bg3d.astro_astro_type_script_index_0_lang.B9wddqmR.js": {
+        "bg3d.astro_astro_type_script_index_0_lang.Bsa2f2aw.js": {
           "raw": 7748,
-          "gzip": 3244,
-          "brotli": 2762,
+          "gzip": 3245,
+          "brotli": 2761,
           "hasShader": false
         }
       },
       "marginalForServicePage": {
         "js": {
-          "file": "bg3d.Dj8e6LaS.js",
-          "raw": 35797,
-          "gzip": 13821,
-          "brotli": 12144,
+          "file": "bg3d.DPF_Nlqz.js",
+          "raw": 54287,
+          "gzip": 19878,
+          "brotli": 17145,
           "hasShader": true
         },
         "entryJs": {
-          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.DGRWP3i1.js",
+          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.B0HphQDx.js",
           "raw": 166,
           "gzip": 143,
-          "brotli": 106,
+          "brotli": 107,
           "hasShader": false
         },
         "css": {
@@ -71,13 +71,13 @@
           "brotli": 1087,
           "hasShader": false
         },
-        "gzipTotal": 15227,
+        "gzipTotal": 21284,
         "note": "лаборатория (bg3d.astro) собирается только при BG3D_LAB=1 и на прод-страницы не попадает",
         "labJs": {
-          "file": "bg3d.astro_astro_type_script_index_0_lang.B9wddqmR.js",
+          "file": "bg3d.astro_astro_type_script_index_0_lang.Bsa2f2aw.js",
           "raw": 7748,
-          "gzip": 3244,
-          "brotli": 2762,
+          "gzip": 3245,
+          "brotli": 2761,
           "hasShader": false
         }
       }
@@ -94,50 +94,50 @@
             "instPerPxMax": 265,
             "scalarPerPx": 373.9,
             "scalarPerPxMax": 450,
-            "cpuNsPerPx": 652,
-            "cpuNsPerPxRun2": 772
+            "cpuNsPerPx": 1119,
+            "cpuNsPerPxRun2": 2359
           },
           "1": {
             "instPerPx": 249.9,
             "instPerPxMax": 319,
             "scalarPerPx": 415,
             "scalarPerPxMax": 527,
-            "cpuNsPerPx": 475,
-            "cpuNsPerPxRun2": 592
+            "cpuNsPerPx": 647,
+            "cpuNsPerPxRun2": 654
           },
           "2": {
             "instPerPx": 278.7,
             "instPerPxMax": 373,
             "scalarPerPx": 460.3,
             "scalarPerPxMax": 612,
-            "cpuNsPerPx": 551,
-            "cpuNsPerPxRun2": 540
+            "cpuNsPerPx": 697,
+            "cpuNsPerPxRun2": 699
           }
         },
         "silhouette": {
           "0": {
-            "instPerPx": 494.1,
-            "instPerPxMax": 538,
-            "scalarPerPx": 779.9,
-            "scalarPerPxMax": 856,
-            "cpuNsPerPx": 994,
-            "cpuNsPerPxRun2": 876
+            "instPerPx": 503.5,
+            "instPerPxMax": 771,
+            "scalarPerPx": 762.5,
+            "scalarPerPxMax": 1139,
+            "cpuNsPerPx": 3187,
+            "cpuNsPerPxRun2": 1439
           },
           "1": {
-            "instPerPx": 522.9,
-            "instPerPxMax": 592,
-            "scalarPerPx": 821,
-            "scalarPerPxMax": 933,
-            "cpuNsPerPx": 1044,
-            "cpuNsPerPxRun2": 880
+            "instPerPx": 532.3,
+            "instPerPxMax": 825,
+            "scalarPerPx": 803.6,
+            "scalarPerPxMax": 1216,
+            "cpuNsPerPx": 1423,
+            "cpuNsPerPxRun2": 1417
           },
           "2": {
-            "instPerPx": 625.9,
-            "instPerPxMax": 878,
-            "scalarPerPx": 954.1,
-            "scalarPerPxMax": 1293,
-            "cpuNsPerPx": 1040,
-            "cpuNsPerPxRun2": 1041
+            "instPerPx": 635.3,
+            "instPerPxMax": 880,
+            "scalarPerPx": 936.7,
+            "scalarPerPxMax": 1302,
+            "cpuNsPerPx": 1660,
+            "cpuNsPerPxRun2": 1706
           }
         }
       }
@@ -150,13 +150,13 @@
         "height": 300
       },
       "tierObserved": "high",
-      "heapMbBefore": 41.66,
-      "heapMbAfter": 42.84,
+      "heapMbBefore": 41.92,
+      "heapMbAfter": 43.1,
       "heapDeltaMb": 1.18,
       "heapTrend": {
-        "heapMbCycle1": 41.85,
-        "heapMbCycle10": 42.58,
-        "heapMbCycle20": 42.84,
+        "heapMbCycle1": 42.11,
+        "heapMbCycle10": 42.84,
+        "heapMbCycle20": 43.1,
         "deltaCycles1to10Kb": 747.5,
         "deltaCycles10to20Kb": 266.2,
         "leakPerCycleKbLast10": 26.6,
@@ -164,22 +164,22 @@
       },
       "controlRunWithoutBg3d": {
         "note": "20 циклов создания/удаления того же хоста без монтажа фона — базовая линия jsdom/V8",
-        "heapMbStart": 42.84,
-        "heapMbEnd": 42.9,
+        "heapMbStart": 43.1,
+        "heapMbEnd": 43.16,
         "heapDeltaMb": 0.06,
         "perCycleKb": 2.9,
         "rows": [
           {
             "cycle": 1,
-            "heapMb": 42.85
+            "heapMb": 43.11
           },
           {
             "cycle": 10,
-            "heapMb": 42.87
+            "heapMb": 43.13
           },
           {
             "cycle": 20,
-            "heapMb": 42.9
+            "heapMb": 43.16
           }
         ]
       },
@@ -190,7 +190,7 @@
         "mocksPerCycle": 2,
         "kbPerCycleAttributableToHarness": 10.2
       },
-      "framesRenderedTotal": 178,
+      "framesRenderedTotal": 179,
       "glContexts": {
         "total": 40,
         "engine": 20,
@@ -213,7 +213,7 @@
           "query": 0
         },
         "asymmetric": [],
-        "draws": 178
+        "draws": 179
       },
       "observers": {
         "ioCreated": 20,
@@ -231,7 +231,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 41.85,
+          "heapMb": 42.11,
           "registry": 0,
           "listeners": 0,
           "glContexts": 2
@@ -242,7 +242,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.03,
+          "heapMb": 42.29,
           "registry": 0,
           "listeners": 0,
           "glContexts": 4
@@ -253,7 +253,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.1,
+          "heapMb": 42.36,
           "registry": 0,
           "listeners": 0,
           "glContexts": 6
@@ -264,7 +264,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.22,
+          "heapMb": 42.47,
           "registry": 0,
           "listeners": 0,
           "glContexts": 8
@@ -275,7 +275,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.25,
+          "heapMb": 42.51,
           "registry": 0,
           "listeners": 0,
           "glContexts": 10
@@ -286,7 +286,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.28,
+          "heapMb": 42.54,
           "registry": 0,
           "listeners": 0,
           "glContexts": 12
@@ -295,9 +295,9 @@
           "cycle": 7,
           "tier": "high",
           "quality": 2,
-          "frames": 8,
+          "frames": 9,
           "destroyed": false,
-          "heapMb": 42.33,
+          "heapMb": 42.59,
           "registry": 0,
           "listeners": 0,
           "glContexts": 14
@@ -308,7 +308,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.5,
+          "heapMb": 42.76,
           "registry": 0,
           "listeners": 0,
           "glContexts": 16
@@ -319,7 +319,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.54,
+          "heapMb": 42.8,
           "registry": 0,
           "listeners": 0,
           "glContexts": 18
@@ -330,7 +330,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.58,
+          "heapMb": 42.84,
           "registry": 0,
           "listeners": 0,
           "glContexts": 20
@@ -341,7 +341,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.61,
+          "heapMb": 42.87,
           "registry": 0,
           "listeners": 0,
           "glContexts": 22
@@ -352,7 +352,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.63,
+          "heapMb": 42.89,
           "registry": 0,
           "listeners": 0,
           "glContexts": 24
@@ -363,7 +363,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.65,
+          "heapMb": 42.91,
           "registry": 0,
           "listeners": 0,
           "glContexts": 26
@@ -374,7 +374,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.68,
+          "heapMb": 42.94,
           "registry": 0,
           "listeners": 0,
           "glContexts": 28
@@ -385,7 +385,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.7,
+          "heapMb": 42.96,
           "registry": 0,
           "listeners": 0,
           "glContexts": 30
@@ -396,7 +396,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.73,
+          "heapMb": 42.99,
           "registry": 0,
           "listeners": 0,
           "glContexts": 32
@@ -407,7 +407,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.75,
+          "heapMb": 43.01,
           "registry": 0,
           "listeners": 0,
           "glContexts": 34
@@ -418,7 +418,7 @@
           "quality": 2,
           "frames": 8,
           "destroyed": false,
-          "heapMb": 42.79,
+          "heapMb": 43.05,
           "registry": 0,
           "listeners": 0,
           "glContexts": 36
@@ -429,7 +429,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.81,
+          "heapMb": 43.07,
           "registry": 0,
           "listeners": 0,
           "glContexts": 38
@@ -440,7 +440,7 @@
           "quality": 2,
           "frames": 9,
           "destroyed": false,
-          "heapMb": 42.84,
+          "heapMb": 43.1,
           "registry": 0,
           "listeners": 0,
           "glContexts": 40
@@ -673,18 +673,18 @@
           ],
           "dprUsed": 1,
           "drawnPx": 576000,
-          "opsPerPx": 954,
-          "requiredGopsPerS": 32.97,
+          "opsPerPx": 936.8,
+          "requiredGopsPerS": 32.38,
           "availableGopsPerS": 712.3,
-          "gpuUtilPct": 4.6,
+          "gpuUtilPct": 4.5,
           "fpsPredicted": 60,
-          "fpsHeadroomX": 21.6,
+          "fpsHeadroomX": 22,
           "gateReasons": [
             "deviceMemory=16 ГБ",
             "hardwareConcurrency=8",
             "WebGL2",
             "итог: high, качество 2, 60 к/с, масштаб 100%",
-            "бюджет: 954 оп/px × 60 к/с, потолок 60 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+            "бюджет: 936.8 оп/px × 60 к/с, потолок 60 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
           ]
         },
         {
@@ -706,18 +706,18 @@
           ],
           "dprUsed": 1,
           "drawnPx": 331938,
-          "opsPerPx": 954,
-          "requiredGopsPerS": 9.5,
+          "opsPerPx": 936.8,
+          "requiredGopsPerS": 9.33,
           "availableGopsPerS": 86.4,
-          "gpuUtilPct": 11,
+          "gpuUtilPct": 10.8,
           "fpsPredicted": 30,
-          "fpsHeadroomX": 9.09,
+          "fpsHeadroomX": 9.26,
           "gateReasons": [
             "deviceMemory=8 ГБ",
             "hardwareConcurrency=4",
             "WebGL2",
             "итог: mid, качество 2, 30 к/с, масштаб 90%",
-            "бюджет: 954 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+            "бюджет: 936.8 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
           ]
         },
         {
@@ -739,19 +739,19 @@
           ],
           "dprUsed": 1.5,
           "drawnPx": 233774,
-          "opsPerPx": 821,
-          "requiredGopsPerS": 5.76,
+          "opsPerPx": 803.7,
+          "requiredGopsPerS": 5.64,
           "availableGopsPerS": 42.5,
-          "gpuUtilPct": 13.5,
+          "gpuUtilPct": 13.3,
           "fpsPredicted": 30,
-          "fpsHeadroomX": 7.39,
+          "fpsHeadroomX": 7.54,
           "gateReasons": [
             "deviceMemory=4 ГБ",
             "hardwareConcurrency=8",
             "тач-устройство",
             "WebGL2",
             "итог: mid, качество 1, 30 к/с, масштаб 75%",
-            "бюджет: 821 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+            "бюджет: 803.7 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
           ]
         },
         {
@@ -804,11 +804,11 @@
               300
             ],
             "drawnPx": 576000,
-            "opsPerPx": 954,
-            "requiredGopsPerS": 32.97,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 32.38,
             "availableGopsPerS": 712.3,
-            "gpuUtilPct": 4.6,
-            "fpsPredicted": 1296.2,
+            "gpuUtilPct": 4.5,
+            "fpsPredicted": 1320,
             "saturated": false,
             "extraW": null,
             "pctPerHourOfVisibility": null,
@@ -827,14 +827,14 @@
               300
             ],
             "drawnPx": 409800,
-            "opsPerPx": 954,
-            "requiredGopsPerS": 23.46,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 23.03,
             "availableGopsPerS": 86.4,
-            "gpuUtilPct": 27.1,
-            "fpsPredicted": 221,
+            "gpuUtilPct": 26.7,
+            "fpsPredicted": 225.1,
             "saturated": false,
-            "extraW": 1.63,
-            "pctPerHourOfVisibility": 2.91,
+            "extraW": 1.6,
+            "pctPerHourOfVisibility": 2.86,
             "batteryWh": 56
           },
           {
@@ -850,11 +850,11 @@
               470
             ],
             "drawnPx": 1396869,
-            "opsPerPx": 954,
-            "requiredGopsPerS": 79.96,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 78.52,
             "availableGopsPerS": 42.5,
-            "gpuUtilPct": 188,
-            "fpsPredicted": 31.9,
+            "gpuUtilPct": 184.6,
+            "fpsPredicted": 32.5,
             "saturated": true,
             "extraW": 1.6,
             "pctPerHourOfVisibility": 8.31,
@@ -873,11 +873,11 @@
               450
             ],
             "drawnPx": 648000,
-            "opsPerPx": 954,
-            "requiredGopsPerS": 37.09,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 36.42,
             "availableGopsPerS": 18.3,
-            "gpuUtilPct": 202.7,
-            "fpsPredicted": 29.6,
+            "gpuUtilPct": 199,
+            "fpsPredicted": 30.1,
             "saturated": true,
             "extraW": 1,
             "pctPerHourOfVisibility": 6.49,
@@ -887,8 +887,8 @@
       },
       "softwareRasterizer": {
         "note": "SwiftShader/llvmpipe-класс: цена измерена CPU-портом на этой машине, не смоделирована",
-        "cpuNsPerPx": 1040,
-        "coresNeededFor1280x720x30": 28.8,
+        "cpuNsPerPx": 1660,
+        "coresNeededFor1280x720x30": 45.9,
         "consequence": "поэтому gate.ts гасит фон на программных растеризаторах (BLOCKED_RENDERER)"
       }
     },
@@ -929,12 +929,12 @@
           "gpu": "Intel UHD Graphics 620",
           "variant": "silhouette",
           "variantLabel": "B «силуэт в глубине»",
-          "gpuUtilPct": 11,
+          "gpuUtilPct": 10.8,
           "loadDeltaW": 6,
-          "extraW": 0.66,
+          "extraW": 0.65,
           "batteryWh": 56,
-          "pctPerHourOfVisibility": 1.18,
-          "pctPerVisit25s": 0.0082,
+          "pctPerHourOfVisibility": 1.16,
+          "pctPerVisit25s": 0.008,
           "cap": 30
         },
         {
@@ -942,22 +942,22 @@
           "gpu": "Qualcomm Adreno 610",
           "variant": "silhouette",
           "variantLabel": "B «силуэт в глубине»",
-          "gpuUtilPct": 13.5,
+          "gpuUtilPct": 13.3,
           "loadDeltaW": 1.6,
-          "extraW": 0.22,
+          "extraW": 0.21,
           "batteryWh": 19.25,
-          "pctPerHourOfVisibility": 1.12,
-          "pctPerVisit25s": 0.0078,
+          "pctPerHourOfVisibility": 1.11,
+          "pctPerVisit25s": 0.0077,
           "cap": 30
         }
       ]
     }
   },
   "summary": {
-    "shaderGzipBytes": 5890,
+    "shaderGzipBytes": 11459,
     "shaderLimitGzipBytes": 14336,
     "textures": 0,
-    "marginalGzipBytes": 15227,
+    "marginalGzipBytes": 21284,
     "opsPerPx": {
       "depth": [
         374,
@@ -965,9 +965,9 @@
         460
       ],
       "silhouette": [
-        780,
-        821,
-        954
+        762.6,
+        803.7,
+        936.8
       ]
     },
     "opsBudget": {

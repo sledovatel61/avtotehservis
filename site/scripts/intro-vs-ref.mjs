@@ -305,6 +305,98 @@ const addRatio = (name, ours, refVal, lo, hi, unit, note = '') => {
   }
 }
 
+// 9. Зеркало: заполнение bbox. Плоская плита даёт 60 %+, объёмный камень — около 35 %.
+{
+  const fill = (im) => {
+    const xa = Math.round(im.W * 0.21);
+    const xb = Math.round(im.W * 0.31);
+    const ya = Math.round(im.H * 0.14);
+    const yb = Math.round(im.H * 0.34);
+    let x0 = 1e9; let x1 = -1; let y0 = 1e9; let y1 = -1; let cnt = 0;
+    for (let y = ya; y < yb; y++) {
+      for (let x = xa; x < xb; x++) {
+        if (!isCar(im, x, y)) continue;
+        cnt++;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+    if (x1 < 0) return null;
+    return (cnt / ((x1 - x0 + 1) * (y1 - y0 + 1))) * 100;
+  };
+  const fA = fill(A);
+  const fB = fill(B);
+  if (fA && fB) addRatio('зеркало: заполнение', fA, fB, 0.75, 1.35, '%', 'плоская плита вместо объёмного камня');
+}
+
+// 10. Подсветка кромки капота: у эталона капот ловит свет перед лобовым, у нас его нет.
+{
+  const cowl = (im) => {
+    let mx = 0;
+    for (let yp = 30; yp <= 32.5; yp += 0.25) {
+      const y = Math.round((yp / 100) * im.H);
+      for (let x = Math.round(im.W * 0.30); x < im.W * 0.70; x++) mx = Math.max(mx, luma(im, x, y));
+    }
+    return mx;
+  };
+  addRatio('подсветка кромки капота', cowl(A), cowl(B), 0.5, 1.6, 'L', 'у эталона капот ловит свет, у нас плоская панель');
+}
+
+// 11. Релинги над крышей: два выступа у эталона есть, но не вдвое выше и не во всю крышу.
+{
+  const bumps = (im) => {
+    const rows = [];
+    for (let x = Math.round(im.W * 0.2); x < im.W * 0.8; x++) {
+      let t = -1;
+      for (let y = 0; y < im.H * 0.5; y++) if (isCar(im, x, y)) { t = y; break; }
+      rows.push(t);
+    }
+    const sorted = [...rows].sort((a, b) => a - b);
+    const med = sorted[Math.floor(sorted.length / 2)];
+    let best = 0;
+    let run = 0;
+    for (const t of rows) {
+      if (t < med - 3) { run++; best = Math.max(best, run); } else run = 0;
+    }
+    const tallest = Math.max(...rows.map((t) => med - t));
+    return { tallest, width: (best / im.W) * 100 };
+  };
+  const bA = bumps(A);
+  const bB = bumps(B);
+  addRatio('релинги: высота выступа', bA.tallest, bB.tallest, 0.6, 1.6, 'px', 'у эталона релинги выше и тоньше: тонкие столбики, не круглые пипки');
+  add(`релинги: длина выступа`, `${bA.width.toFixed(1)} %W`, `≤ ${(bB.width * 1.3).toFixed(1)} %W`, bA.width <= bB.width * 1.3, 'выступ не должен тянуться вдоль крыши');
+}
+
+// 12. Материал внутри силуэта: свет и фактура, а не залитая фигура.
+// Эта проверка должна была появиться ещё в круге 32: контур был верный, внутри — пусто.
+// Меряем в полосе 10…45 %H, где у эталона капот, стойки, стёкла и кромки.
+{
+  const material = (im) => {
+    const vals = [];
+    for (let yp = 10; yp <= 45; yp += 0.5) {
+      const y = Math.round((yp / 100) * im.H);
+      for (let xp = 22; xp <= 78; xp += 0.5) {
+        const x = Math.round((xp / 100) * im.W);
+        if (isCar(im, x, y)) vals.push(luma(im, x, y));
+      }
+    }
+    if (vals.length < 100) return null;
+    const sorted = [...vals].sort((a, b) => a - b);
+    const mid = sorted.filter((v) => v >= 6 && v <= 40).length / sorted.length * 100;
+    return { med: sorted[Math.floor(sorted.length / 2)], mid };
+  };
+  const mA = material(A);
+  const mB = material(B);
+  if (!mA || !mB) {
+    add('материал внутри силуэта', 'окно пустое', 'медиана ≥ 4 L', false);
+  } else {
+    addRatio('материал: медиана', mA.med, mB.med, 0.8, 2.2, 'L', 'внутри фактура, а не заливка');
+    addRatio('материал: доля 6…40 L', mA.mid, mB.mid, 0.75, 1.6, '%', 'свет на капоте, стойках и стёклах');
+  }
+}
+
 const pad = (s, n) => String(s).padEnd(n);
 console.log(`\nкадр:   ${shot}`);
 console.log(`эталон: ${ref}`);
