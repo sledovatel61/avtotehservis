@@ -1,0 +1,983 @@
+{
+  "generatedAt": "2026-11-11T13:01:45.700Z",
+  "host": {
+    "node": "v22.22.3",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "cores": 2,
+    "gpu": null,
+    "note": "в песочнице нет GPU и браузера: вес/шейдер/стоимость/жизненный цикл измерены, fps и батарея — модель"
+  },
+  "measured": {
+    "weights": {
+      "shaderSource": {
+        "raw": 33790,
+        "gzip": 11459,
+        "brotli": 10001,
+        "limitGzipBytes": 14336,
+        "fitsLimit": true,
+        "headroomPct": 20.1
+      },
+      "clientFiles": {
+        "Bg3dLayer.BuZw-ZRo.css": {
+          "raw": 1342,
+          "gzip": 610,
+          "brotli": 478,
+          "hasShader": false
+        },
+        "Bg3dLayer.astro_astro_type_script_index_0_lang.B0HphQDx.js": {
+          "raw": 166,
+          "gzip": 143,
+          "brotli": 107,
+          "hasShader": false
+        },
+        "bg3d.Cklxkgcd.css": {
+          "raw": 4207,
+          "gzip": 1263,
+          "brotli": 1087,
+          "hasShader": false
+        },
+        "bg3d.DPF_Nlqz.js": {
+          "raw": 54287,
+          "gzip": 19878,
+          "brotli": 17145,
+          "hasShader": true
+        },
+        "bg3d.astro_astro_type_script_index_0_lang.Bsa2f2aw.js": {
+          "raw": 7748,
+          "gzip": 3245,
+          "brotli": 2761,
+          "hasShader": false
+        }
+      },
+      "marginalForServicePage": {
+        "js": {
+          "file": "bg3d.DPF_Nlqz.js",
+          "raw": 54287,
+          "gzip": 19878,
+          "brotli": 17145,
+          "hasShader": true
+        },
+        "entryJs": {
+          "file": "Bg3dLayer.astro_astro_type_script_index_0_lang.B0HphQDx.js",
+          "raw": 166,
+          "gzip": 143,
+          "brotli": 107,
+          "hasShader": false
+        },
+        "css": {
+          "file": "bg3d.Cklxkgcd.css",
+          "raw": 4207,
+          "gzip": 1263,
+          "brotli": 1087,
+          "hasShader": false
+        },
+        "gzipTotal": 21284,
+        "note": "лаборатория (bg3d.astro) собирается только при BG3D_LAB=1 и на прод-страницы не попадает",
+        "labJs": {
+          "file": "bg3d.astro_astro_type_script_index_0_lang.Bsa2f2aw.js",
+          "raw": 7748,
+          "gzip": 3245,
+          "brotli": 2761,
+          "hasShader": false
+        }
+      }
+    },
+    "shader": {
+      "error": "Command failed: /usr/local/bin/node /home/user/avtotehservis/site/scripts/bg3d-shader-check.mjs --json /home/user/avtotehservis/evaluation/round30-bg-3d/shader-report.json | Не найден пакет @moreplease/glslang в /home/user/avtotehservis/site/tools/shader-check/node_modules |   cd site/tools/shader-check && npm ci"
+    },
+    "cpuCost": {
+      "window": "640×360, t=4.0, scroll=0.15, pointer=0.18/-0.08; второй прогон 320×180 для проверки независимости от размера",
+      "perVariantQuality": {
+        "depth": {
+          "0": {
+            "instPerPx": 221.1,
+            "instPerPxMax": 265,
+            "scalarPerPx": 373.9,
+            "scalarPerPxMax": 450,
+            "cpuNsPerPx": 1119,
+            "cpuNsPerPxRun2": 2359
+          },
+          "1": {
+            "instPerPx": 249.9,
+            "instPerPxMax": 319,
+            "scalarPerPx": 415,
+            "scalarPerPxMax": 527,
+            "cpuNsPerPx": 647,
+            "cpuNsPerPxRun2": 654
+          },
+          "2": {
+            "instPerPx": 278.7,
+            "instPerPxMax": 373,
+            "scalarPerPx": 460.3,
+            "scalarPerPxMax": 612,
+            "cpuNsPerPx": 697,
+            "cpuNsPerPxRun2": 699
+          }
+        },
+        "silhouette": {
+          "0": {
+            "instPerPx": 503.5,
+            "instPerPxMax": 771,
+            "scalarPerPx": 762.5,
+            "scalarPerPxMax": 1139,
+            "cpuNsPerPx": 3187,
+            "cpuNsPerPxRun2": 1439
+          },
+          "1": {
+            "instPerPx": 532.3,
+            "instPerPxMax": 825,
+            "scalarPerPx": 803.6,
+            "scalarPerPxMax": 1216,
+            "cpuNsPerPx": 1423,
+            "cpuNsPerPxRun2": 1417
+          },
+          "2": {
+            "instPerPx": 635.3,
+            "instPerPxMax": 880,
+            "scalarPerPx": 936.7,
+            "scalarPerPxMax": 1302,
+            "cpuNsPerPx": 1660,
+            "cpuNsPerPxRun2": 1706
+          }
+        }
+      }
+    },
+    "lifecycle": {
+      "harness": "jsdom 30 + tools/bg3d/mockgl.mjs (WebGL не исполняется: журнал считает create/delete объектов, drawArrays и loseContext); observer'ы — заглушки, считающие disconnect",
+      "cyclesRun": 20,
+      "hostCss": {
+        "width": 1280,
+        "height": 300
+      },
+      "tierObserved": "high",
+      "heapMbBefore": 41.92,
+      "heapMbAfter": 43.1,
+      "heapDeltaMb": 1.18,
+      "heapTrend": {
+        "heapMbCycle1": 42.11,
+        "heapMbCycle10": 42.84,
+        "heapMbCycle20": 43.1,
+        "deltaCycles1to10Kb": 747.5,
+        "deltaCycles10to20Kb": 266.2,
+        "leakPerCycleKbLast10": 26.6,
+        "plateau": true
+      },
+      "controlRunWithoutBg3d": {
+        "note": "20 циклов создания/удаления того же хоста без монтажа фона — базовая линия jsdom/V8",
+        "heapMbStart": 43.1,
+        "heapMbEnd": 43.16,
+        "heapDeltaMb": 0.06,
+        "perCycleKb": 2.9,
+        "rows": [
+          {
+            "cycle": 1,
+            "heapMb": 43.11
+          },
+          {
+            "cycle": 10,
+            "heapMb": 43.13
+          },
+          {
+            "cycle": 20,
+            "heapMb": 43.16
+          }
+        ]
+      },
+      "harnessRetention": {
+        "note": "40 mock-контекстов, созданных подряд и оставленных в журнале харнесса",
+        "heapDeltaMb": 0.2,
+        "kbPerMockContext": 5.1,
+        "mocksPerCycle": 2,
+        "kbPerCycleAttributableToHarness": 10.2
+      },
+      "framesRenderedTotal": 179,
+      "glContexts": {
+        "total": 40,
+        "engine": 20,
+        "gateProbe": 20,
+        "lost": 40
+      },
+      "glObjects": {
+        "created": {
+          "shader": 40,
+          "program": 20,
+          "buffer": 20,
+          "vao": 20,
+          "query": 0
+        },
+        "deleted": {
+          "shader": 40,
+          "program": 20,
+          "buffer": 20,
+          "vao": 20,
+          "query": 0
+        },
+        "asymmetric": [],
+        "draws": 179
+      },
+      "observers": {
+        "ioCreated": 20,
+        "ioDisconnected": 20,
+        "roCreated": 20,
+        "roDisconnected": 20
+      },
+      "listenersAliveAfter": 0,
+      "listenersLeftAlive": [],
+      "liveInstancesAfter": 0,
+      "cycles": [
+        {
+          "cycle": 1,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.11,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 2
+        },
+        {
+          "cycle": 2,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.29,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 4
+        },
+        {
+          "cycle": 3,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.36,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 6
+        },
+        {
+          "cycle": 4,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.47,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 8
+        },
+        {
+          "cycle": 5,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.51,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 10
+        },
+        {
+          "cycle": 6,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.54,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 12
+        },
+        {
+          "cycle": 7,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.59,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 14
+        },
+        {
+          "cycle": 8,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.76,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 16
+        },
+        {
+          "cycle": 9,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.8,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 18
+        },
+        {
+          "cycle": 10,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.84,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 20
+        },
+        {
+          "cycle": 11,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.87,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 22
+        },
+        {
+          "cycle": 12,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.89,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 24
+        },
+        {
+          "cycle": 13,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.91,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 26
+        },
+        {
+          "cycle": 14,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.94,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 28
+        },
+        {
+          "cycle": 15,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.96,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 30
+        },
+        {
+          "cycle": 16,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 42.99,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 32
+        },
+        {
+          "cycle": 17,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 43.01,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 34
+        },
+        {
+          "cycle": 18,
+          "tier": "high",
+          "quality": 2,
+          "frames": 8,
+          "destroyed": false,
+          "heapMb": 43.05,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 36
+        },
+        {
+          "cycle": 19,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 43.07,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 38
+        },
+        {
+          "cycle": 20,
+          "tier": "high",
+          "quality": 2,
+          "frames": 9,
+          "destroyed": false,
+          "heapMb": 43.1,
+          "registry": 0,
+          "listeners": 0,
+          "glContexts": 40
+        }
+      ],
+      "ok": true,
+      "verdict": "утечек нет: все GL-объекты удалены (баланс create/delete сходится), слушатели сняты (осталось 0), observer'ы разорваны, реестр пуст, все 40 контекстов помечены потерянными; куча вышла на плато (747.5 КБ за циклы 1–10 и 266.2 КБ за 10–20)"
+    }
+  },
+  "modeled": {
+    "fps": {
+      "formula": "px = cssW × cssH × (min(DPR, dprCap) × scale)²; нужно оп/с = px × fpsCap × оп/px; доступно = пик FP32 / 2 (FMA) × eff; fps = min(hz, cap, доступно / (px × оп/px))",
+      "uncertainty": "±50 %: eff (доля пика, достижимая процедурным фрагментным шейдером) взята 0.30–0.50 по классам GPU и не измерялась на железе; реальный fps снимает scripts/bg3d-device-metrics.mjs",
+      "profiles": [
+        {
+          "id": "P1",
+          "name": "Десктоп с dGPU (класс GTX 1650)",
+          "gpu": "GeForce GTX 1650",
+          "peakFp32Gflops": 2849,
+          "eff": 0.5,
+          "screen": [
+            1920,
+            1080
+          ],
+          "heroCss": [
+            1920,
+            300
+          ],
+          "hz": 60
+        },
+        {
+          "id": "P2",
+          "name": "Офисный ноутбук (Intel UHD 620)",
+          "gpu": "Intel UHD Graphics 620",
+          "peakFp32Gflops": 384,
+          "eff": 0.45,
+          "screen": [
+            1366,
+            768
+          ],
+          "heroCss": [
+            1366,
+            300
+          ],
+          "hz": 60
+        },
+        {
+          "id": "P3",
+          "name": "Массовый Android (Adreno 610: Redmi Note 8/12 4G, Moto G)",
+          "gpu": "Qualcomm Adreno 610",
+          "peakFp32Gflops": 243,
+          "eff": 0.35,
+          "screen": [
+            393,
+            852
+          ],
+          "heroCss": [
+            393,
+            470
+          ],
+          "hz": 60
+        },
+        {
+          "id": "P4",
+          "name": "Слабый Android (Mali-G57 MC1, 3 ГБ ОЗУ)",
+          "gpu": "ARM Mali-G57 MC1",
+          "peakFp32Gflops": 122,
+          "eff": 0.3,
+          "screen": [
+            360,
+            800
+          ],
+          "heroCss": [
+            360,
+            450
+          ],
+          "hz": 60
+        }
+      ],
+      "rows": [
+        {
+          "profile": "P1",
+          "profileName": "Десктоп с dGPU (класс GTX 1650)",
+          "gpu": "GeForce GTX 1650",
+          "variant": "depth",
+          "variantLabel": "A «глубина»",
+          "peakFp32Gflops": 2849,
+          "eff": 0.5,
+          "tier": "high",
+          "quality": 2,
+          "fpsCap": 60,
+          "dprCap": 2,
+          "renderScale": 1,
+          "canvasCss": [
+            1920,
+            300
+          ],
+          "dprUsed": 1,
+          "drawnPx": 576000,
+          "opsPerPx": 460,
+          "requiredGopsPerS": 15.9,
+          "availableGopsPerS": 712.3,
+          "gpuUtilPct": 2.2,
+          "fpsPredicted": 60,
+          "fpsHeadroomX": 44.8,
+          "gateReasons": [
+            "deviceMemory=16 ГБ",
+            "hardwareConcurrency=8",
+            "WebGL2",
+            "итог: high, качество 2, 60 к/с, масштаб 100%",
+            "бюджет: 460 оп/px × 60 к/с, потолок 60 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+          ]
+        },
+        {
+          "profile": "P2",
+          "profileName": "Офисный ноутбук (Intel UHD 620)",
+          "gpu": "Intel UHD Graphics 620",
+          "variant": "depth",
+          "variantLabel": "A «глубина»",
+          "peakFp32Gflops": 384,
+          "eff": 0.45,
+          "tier": "mid",
+          "quality": 2,
+          "fpsCap": 30,
+          "dprCap": 2,
+          "renderScale": 0.9,
+          "canvasCss": [
+            1366,
+            300
+          ],
+          "dprUsed": 1,
+          "drawnPx": 331938,
+          "opsPerPx": 460,
+          "requiredGopsPerS": 4.58,
+          "availableGopsPerS": 86.4,
+          "gpuUtilPct": 5.3,
+          "fpsPredicted": 30,
+          "fpsHeadroomX": 18.86,
+          "gateReasons": [
+            "deviceMemory=8 ГБ",
+            "hardwareConcurrency=4",
+            "WebGL2",
+            "итог: mid, качество 2, 30 к/с, масштаб 90%",
+            "бюджет: 460 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+          ]
+        },
+        {
+          "profile": "P3",
+          "profileName": "Массовый Android (Adreno 610: Redmi Note 8/12 4G, Moto G)",
+          "gpu": "Qualcomm Adreno 610",
+          "variant": "depth",
+          "variantLabel": "A «глубина»",
+          "peakFp32Gflops": 243,
+          "eff": 0.35,
+          "tier": "mid",
+          "quality": 1,
+          "fpsCap": 30,
+          "dprCap": 1.5,
+          "renderScale": 0.75,
+          "canvasCss": [
+            393,
+            470
+          ],
+          "dprUsed": 1.5,
+          "drawnPx": 233774,
+          "opsPerPx": 415,
+          "requiredGopsPerS": 2.91,
+          "availableGopsPerS": 42.5,
+          "gpuUtilPct": 6.8,
+          "fpsPredicted": 30,
+          "fpsHeadroomX": 14.61,
+          "gateReasons": [
+            "deviceMemory=4 ГБ",
+            "hardwareConcurrency=8",
+            "тач-устройство",
+            "WebGL2",
+            "итог: mid, качество 1, 30 к/с, масштаб 75%",
+            "бюджет: 415 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+          ]
+        },
+        {
+          "profile": "P4",
+          "profileName": "Слабый Android (Mali-G57 MC1, 3 ГБ ОЗУ)",
+          "gpu": "ARM Mali-G57 MC1",
+          "variant": "depth",
+          "variantLabel": "A «глубина»",
+          "peakFp32Gflops": 122,
+          "eff": 0.3,
+          "tier": "off",
+          "quality": 0,
+          "fpsCap": 0,
+          "dprCap": 1,
+          "renderScale": 0,
+          "canvasCss": [
+            360,
+            450
+          ],
+          "dprUsed": 1,
+          "drawnPx": 0,
+          "opsPerPx": 0,
+          "requiredGopsPerS": 0,
+          "availableGopsPerS": 18.3,
+          "gpuUtilPct": 0,
+          "fpsPredicted": 0,
+          "fpsHeadroomX": 0,
+          "gateReasons": [
+            "deviceMemory=3 ГБ",
+            "hardwareConcurrency=4",
+            "тач-устройство",
+            "WebGL2",
+            "ширина 360px < 380px — силуэт не читается"
+          ]
+        },
+        {
+          "profile": "P1",
+          "profileName": "Десктоп с dGPU (класс GTX 1650)",
+          "gpu": "GeForce GTX 1650",
+          "variant": "silhouette",
+          "variantLabel": "B «силуэт в глубине»",
+          "peakFp32Gflops": 2849,
+          "eff": 0.5,
+          "tier": "high",
+          "quality": 2,
+          "fpsCap": 60,
+          "dprCap": 2,
+          "renderScale": 1,
+          "canvasCss": [
+            1920,
+            300
+          ],
+          "dprUsed": 1,
+          "drawnPx": 576000,
+          "opsPerPx": 936.8,
+          "requiredGopsPerS": 32.38,
+          "availableGopsPerS": 712.3,
+          "gpuUtilPct": 4.5,
+          "fpsPredicted": 60,
+          "fpsHeadroomX": 22,
+          "gateReasons": [
+            "deviceMemory=16 ГБ",
+            "hardwareConcurrency=8",
+            "WebGL2",
+            "итог: high, качество 2, 60 к/с, масштаб 100%",
+            "бюджет: 936.8 оп/px × 60 к/с, потолок 60 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+          ]
+        },
+        {
+          "profile": "P2",
+          "profileName": "Офисный ноутбук (Intel UHD 620)",
+          "gpu": "Intel UHD Graphics 620",
+          "variant": "silhouette",
+          "variantLabel": "B «силуэт в глубине»",
+          "peakFp32Gflops": 384,
+          "eff": 0.45,
+          "tier": "mid",
+          "quality": 2,
+          "fpsCap": 30,
+          "dprCap": 2,
+          "renderScale": 0.9,
+          "canvasCss": [
+            1366,
+            300
+          ],
+          "dprUsed": 1,
+          "drawnPx": 331938,
+          "opsPerPx": 936.8,
+          "requiredGopsPerS": 9.33,
+          "availableGopsPerS": 86.4,
+          "gpuUtilPct": 10.8,
+          "fpsPredicted": 30,
+          "fpsHeadroomX": 9.26,
+          "gateReasons": [
+            "deviceMemory=8 ГБ",
+            "hardwareConcurrency=4",
+            "WebGL2",
+            "итог: mid, качество 2, 30 к/с, масштаб 90%",
+            "бюджет: 936.8 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+          ]
+        },
+        {
+          "profile": "P3",
+          "profileName": "Массовый Android (Adreno 610: Redmi Note 8/12 4G, Moto G)",
+          "gpu": "Qualcomm Adreno 610",
+          "variant": "silhouette",
+          "variantLabel": "B «силуэт в глубине»",
+          "peakFp32Gflops": 243,
+          "eff": 0.35,
+          "tier": "mid",
+          "quality": 1,
+          "fpsCap": 30,
+          "dprCap": 1.5,
+          "renderScale": 0.75,
+          "canvasCss": [
+            393,
+            470
+          ],
+          "dprUsed": 1.5,
+          "drawnPx": 233774,
+          "opsPerPx": 803.7,
+          "requiredGopsPerS": 5.64,
+          "availableGopsPerS": 42.5,
+          "gpuUtilPct": 13.3,
+          "fpsPredicted": 30,
+          "fpsHeadroomX": 7.54,
+          "gateReasons": [
+            "deviceMemory=4 ГБ",
+            "hardwareConcurrency=8",
+            "тач-устройство",
+            "WebGL2",
+            "итог: mid, качество 1, 30 к/с, масштаб 75%",
+            "бюджет: 803.7 оп/px × 30 к/с, потолок 25 Гоп/с (итоговый масштаб уточняет движок по размеру канваса)"
+          ]
+        },
+        {
+          "profile": "P4",
+          "profileName": "Слабый Android (Mali-G57 MC1, 3 ГБ ОЗУ)",
+          "gpu": "ARM Mali-G57 MC1",
+          "variant": "silhouette",
+          "variantLabel": "B «силуэт в глубине»",
+          "peakFp32Gflops": 122,
+          "eff": 0.3,
+          "tier": "off",
+          "quality": 0,
+          "fpsCap": 0,
+          "dprCap": 1,
+          "renderScale": 0,
+          "canvasCss": [
+            360,
+            450
+          ],
+          "dprUsed": 1,
+          "drawnPx": 0,
+          "opsPerPx": 0,
+          "requiredGopsPerS": 0,
+          "availableGopsPerS": 18.3,
+          "gpuUtilPct": 0,
+          "fpsPredicted": 0,
+          "fpsHeadroomX": 0,
+          "gateReasons": [
+            "deviceMemory=3 ГБ",
+            "hardwareConcurrency=4",
+            "тач-устройство",
+            "WebGL2",
+            "ширина 360px < 380px — силуэт не читается"
+          ]
+        }
+      ],
+      "unguardedScenario": {
+        "note": "что было бы, если включить фон всем без gate.ts: вариант B, качество 2, 60 к/с, внутренний масштаб 1.0, DPR устройства без потолка",
+        "rows": [
+          {
+            "profile": "P1",
+            "gpu": "GeForce GTX 1650",
+            "variant": "silhouette",
+            "quality": 2,
+            "fpsCap": 60,
+            "renderScale": 1,
+            "dprCap": 1,
+            "canvasCss": [
+              1920,
+              300
+            ],
+            "drawnPx": 576000,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 32.38,
+            "availableGopsPerS": 712.3,
+            "gpuUtilPct": 4.5,
+            "fpsPredicted": 1320,
+            "saturated": false,
+            "extraW": null,
+            "pctPerHourOfVisibility": null,
+            "batteryWh": null
+          },
+          {
+            "profile": "P2",
+            "gpu": "Intel UHD Graphics 620",
+            "variant": "silhouette",
+            "quality": 2,
+            "fpsCap": 60,
+            "renderScale": 1,
+            "dprCap": 1,
+            "canvasCss": [
+              1366,
+              300
+            ],
+            "drawnPx": 409800,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 23.03,
+            "availableGopsPerS": 86.4,
+            "gpuUtilPct": 26.7,
+            "fpsPredicted": 225.1,
+            "saturated": false,
+            "extraW": 1.6,
+            "pctPerHourOfVisibility": 2.86,
+            "batteryWh": 56
+          },
+          {
+            "profile": "P3",
+            "gpu": "Qualcomm Adreno 610",
+            "variant": "silhouette",
+            "quality": 2,
+            "fpsCap": 60,
+            "renderScale": 1,
+            "dprCap": 2.75,
+            "canvasCss": [
+              393,
+              470
+            ],
+            "drawnPx": 1396869,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 78.52,
+            "availableGopsPerS": 42.5,
+            "gpuUtilPct": 184.6,
+            "fpsPredicted": 32.5,
+            "saturated": true,
+            "extraW": 1.6,
+            "pctPerHourOfVisibility": 8.31,
+            "batteryWh": 19.25
+          },
+          {
+            "profile": "P4",
+            "gpu": "ARM Mali-G57 MC1",
+            "variant": "silhouette",
+            "quality": 2,
+            "fpsCap": 60,
+            "renderScale": 1,
+            "dprCap": 2,
+            "canvasCss": [
+              360,
+              450
+            ],
+            "drawnPx": 648000,
+            "opsPerPx": 936.8,
+            "requiredGopsPerS": 36.42,
+            "availableGopsPerS": 18.3,
+            "gpuUtilPct": 199,
+            "fpsPredicted": 30.1,
+            "saturated": true,
+            "extraW": 1,
+            "pctPerHourOfVisibility": 6.49,
+            "batteryWh": 15.4
+          }
+        ]
+      },
+      "softwareRasterizer": {
+        "note": "SwiftShader/llvmpipe-класс: цена измерена CPU-портом на этой машине, не смоделирована",
+        "cpuNsPerPx": 1660,
+        "coresNeededFor1280x720x30": 45.9,
+        "consequence": "поэтому gate.ts гасит фон на программных растеризаторах (BLOCKED_RENDERER)"
+      }
+    },
+    "battery": {
+      "formula": "extraW = min(1, gpuUtil) × loadDeltaW; % батареи = extraW / ёмкость × 100; фон рисует только пока хост в экране и вкладка видима (IntersectionObserver + visibilitychange), поэтому расход ограничен временем видимости",
+      "sources": "дельта под нагрузкой: P3 — замер Notebookcheck по Adreno 610 (idle 1.6 Вт, GFXBench Aztec 3.2 Вт медиана → +1.6 Вт); P2 — типичная дельта пакета iGPU ~6 Вт; P4 — оценка по классу; P1 — TDP платы dGPU 75 Вт, под лёгкой нагрузкой ~45 Вт",
+      "uncertainty": "±50 % и выше: тепловое управление, частота дисплея, яркость экрана и фоновые процессы не моделируются; на устройстве это меряет bg3d-device-metrics.mjs (BatteryManager + powermetrics-класс данных)",
+      "visitSecondsAssumed": 25,
+      "rows": [
+        {
+          "profile": "P2",
+          "gpu": "Intel UHD Graphics 620",
+          "variant": "depth",
+          "variantLabel": "A «глубина»",
+          "gpuUtilPct": 5.3,
+          "loadDeltaW": 6,
+          "extraW": 0.32,
+          "batteryWh": 56,
+          "pctPerHourOfVisibility": 0.57,
+          "pctPerVisit25s": 0.0039,
+          "cap": 30
+        },
+        {
+          "profile": "P3",
+          "gpu": "Qualcomm Adreno 610",
+          "variant": "depth",
+          "variantLabel": "A «глубина»",
+          "gpuUtilPct": 6.8,
+          "loadDeltaW": 1.6,
+          "extraW": 0.11,
+          "batteryWh": 19.25,
+          "pctPerHourOfVisibility": 0.57,
+          "pctPerVisit25s": 0.0039,
+          "cap": 30
+        },
+        {
+          "profile": "P2",
+          "gpu": "Intel UHD Graphics 620",
+          "variant": "silhouette",
+          "variantLabel": "B «силуэт в глубине»",
+          "gpuUtilPct": 10.8,
+          "loadDeltaW": 6,
+          "extraW": 0.65,
+          "batteryWh": 56,
+          "pctPerHourOfVisibility": 1.16,
+          "pctPerVisit25s": 0.008,
+          "cap": 30
+        },
+        {
+          "profile": "P3",
+          "gpu": "Qualcomm Adreno 610",
+          "variant": "silhouette",
+          "variantLabel": "B «силуэт в глубине»",
+          "gpuUtilPct": 13.3,
+          "loadDeltaW": 1.6,
+          "extraW": 0.21,
+          "batteryWh": 19.25,
+          "pctPerHourOfVisibility": 1.11,
+          "pctPerVisit25s": 0.0077,
+          "cap": 30
+        }
+      ]
+    }
+  },
+  "summary": {
+    "shaderGzipBytes": 11459,
+    "shaderLimitGzipBytes": 14336,
+    "textures": 0,
+    "marginalGzipBytes": 21284,
+    "opsPerPx": {
+      "depth": [
+        374,
+        415,
+        460
+      ],
+      "silhouette": [
+        762.6,
+        803.7,
+        936.8
+      ]
+    },
+    "opsBudget": {
+      "high": 60000000000,
+      "mid": 25000000000,
+      "low": 10000000000,
+      "off": 0
+    },
+    "heapDeltaMbAfter20Cycles": 1.18,
+    "leaksFound": false,
+    "fpsModelRows": 8
+  }
+}

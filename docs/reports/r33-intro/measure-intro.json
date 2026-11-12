@@ -1,0 +1,161 @@
+{
+  "generatedAt": "2026-11-11T12:06:28.195Z",
+  "purpose": "«после» по заставке: стоимость кадра сцены A5 v2.1 ПОСЛЕ правки (задание №55, фаза 2). «До» — docs/reports/r31-bg3d/intro-before.json (3297,9 scalar/px, старый рейкастинг)",
+  "source": "/home/user/avtotehservis/site/src/client/voyah-intro.ts",
+  "shader": {
+    "name": "SCENE_FS",
+    "lines": 196,
+    "bytes": 8917,
+    "marchSteps": 0,
+    "loops": 1
+  },
+  "port": {
+    "file": "site/tools/intro/ref.mjs",
+    "method": "CPU-порт строка в строку; inst — гранулярность SPIR-V, scalar — компонентные операции",
+    "staleLiterals": [],
+    "allowStale": false
+  },
+  "frame": {
+    "width": 640,
+    "height": 360,
+    "pixels": 230400
+  },
+  "samples": [
+    {
+      "t": 0.1,
+      "instPerPx": 186,
+      "scalarPerPx": 354,
+      "scalarPerPxMax": 354,
+      "instPerPxMax": 186,
+      "scalarPerPxP50": 354,
+      "scalarPerPxP95": 354,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0,
+      "texPerPx": 3,
+      "texBodyPerPx": 1,
+      "texBgPerPx": 1,
+      "nsPerPx": 1154.5006163194444,
+      "cpuMsPerFrame": 265.996942
+    },
+    {
+      "t": 0.3,
+      "instPerPx": 186,
+      "scalarPerPx": 354,
+      "scalarPerPxMax": 354,
+      "instPerPxMax": 186,
+      "scalarPerPxP50": 354,
+      "scalarPerPxP95": 354,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0,
+      "texPerPx": 3,
+      "texBodyPerPx": 1,
+      "texBgPerPx": 1,
+      "nsPerPx": 1183.4402517361111,
+      "cpuMsPerFrame": 272.664634
+    },
+    {
+      "t": 0.5,
+      "instPerPx": 212,
+      "scalarPerPx": 394,
+      "scalarPerPxMax": 394,
+      "instPerPxMax": 212,
+      "scalarPerPxP50": 394,
+      "scalarPerPxP95": 394,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0,
+      "texPerPx": 8,
+      "texBodyPerPx": 6,
+      "texBgPerPx": 1,
+      "nsPerPx": 1425.7615147569445,
+      "cpuMsPerFrame": 328.495453
+    },
+    {
+      "t": 0.76,
+      "instPerPx": 221.1,
+      "scalarPerPx": 406.325,
+      "scalarPerPxMax": 515,
+      "instPerPxMax": 294,
+      "scalarPerPxP50": 354,
+      "scalarPerPxP95": 515,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0.325,
+      "texPerPx": 3.975,
+      "texBodyPerPx": 1.975,
+      "texBgPerPx": 1,
+      "nsPerPx": 1361.6459201388889,
+      "cpuMsPerFrame": 313.72322
+    },
+    {
+      "t": 0.95,
+      "instPerPx": 221.1,
+      "scalarPerPx": 406.325,
+      "scalarPerPxMax": 515,
+      "instPerPxMax": 294,
+      "scalarPerPxP50": 354,
+      "scalarPerPxP95": 515,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0.325,
+      "texPerPx": 3.975,
+      "texBodyPerPx": 1.975,
+      "texBgPerPx": 1,
+      "nsPerPx": 1361.370173611111,
+      "cpuMsPerFrame": 313.659688
+    }
+  ],
+  "headline": {
+    "worstTime": 0.76,
+    "worstScalarPerPx": 406.3,
+    "worstInstPerPx": 221.1,
+    "meanScalarPerPx": 382.9,
+    "meanInstPerPx": 205.2,
+    "bg3dScalarPerPx": 940.9,
+    "bg3dNote": "раунд 30, вариант B «силуэт», качество 2, те же 640×360",
+    "phase1WorstScalarPerPx": 3297.9,
+    "phase1Note": "точка отсчёта фазы 1: старый рейкастинг заставки (72 шага марша), худший кадр uT=0.95",
+    "markNote": "замер снят без знака (uMarkOn=0): коробка знака на 640×360 ≈ 20×28 px (0,24 % кадра), её вклад в среднее ≤ 0,1 оп/px; выборки текстуры печатаются отдельно как tex/px",
+    "plateNote": "круг 33: цвет кузова и фона — выборки пластин uBody/uBg; в scalar не входят, tex/px печатается отдельно"
+  },
+  "portFunctions": [
+    {
+      "name": "hash12",
+      "inst": 8,
+      "scalar": 15
+    },
+    {
+      "name": "hash21",
+      "inst": 4,
+      "scalar": 6
+    },
+    {
+      "name": "vnoise",
+      "inst": 21,
+      "scalar": 39
+    },
+    {
+      "name": "bodyAt",
+      "inst": 12,
+      "scalar": 19
+    },
+    {
+      "name": "bgAt",
+      "inst": 6,
+      "scalar": 9
+    },
+    {
+      "name": "layers",
+      "inst": 178,
+      "scalar": 320
+    }
+  ],
+  "spirv": null,
+  "verify": null,
+  "caveats": [
+    "scalar/px — модельные единицы (компонентные операции), не миллисекунды; для fps и батареи нужна модель раунда 30",
+    "нс/px — время CPU-порта на Node, не время GPU; пригодно только для сравнения заставки и фона на одной машине",
+    "2487 мс (десктоп) и 1406 мс (мобайл) из задания — время показа сцены целиком, а не стоимость кадра",
+    "замер снят ПОСЛЕ правки A5 (сцена v2.1, фронтальный силуэт): сравнивается с «до» из intro-before.json и phase1.md",
+    "тернарники-гейты (рейлинги, зеркало) исполняются в каждом пикселе: компилятор раскрывает их в OpSelect, поэтому экономия ветвления — не в операциях, а в отбрасывании результата",
+    "отражение в полу (три тапа пластины в цикле) включается с uT ≥ 0,60 и покрывает ~32 % пикселей кадра",
+    "круг 33: арифметика силуэта заменена ВЫБОРКАМИ ПЛАСТИН — они не входят в scalar и печатаются как tex/px (body: 1 + 4 градиент + 1 вынос + 1 фон + 3 отражение)"
+  ]
+}

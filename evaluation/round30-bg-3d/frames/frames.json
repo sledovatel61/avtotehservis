@@ -1,0 +1,103 @@
+{
+  "generatedAt": "2026-11-11T12:01:09.910Z",
+  "method": "CPU-порт tools/bg3d/ref.mjs той же математики, что в src/client/bg3d/shader.ts; PNG собран node:zlib",
+  "cpu": "x64 linux, node v22.22.3",
+  "frames": [
+    {
+      "file": "A-depth-1280x720.png",
+      "note": "Прототип A «глубина», качество 2 (high tier), 1280×720, t=4.0 с",
+      "variant": "depth",
+      "quality": 2,
+      "width": 1280,
+      "height": 720,
+      "pngBytes": 589366,
+      "cpuMs": 455,
+      "cpuNsPerPx": 494,
+      "opsPerPx": {
+        "inst": 281.8,
+        "scalar": 465.3,
+        "scalarMax": 612
+      }
+    },
+    {
+      "file": "A-depth-off-1280x720.png",
+      "note": "То же состояние, но uFade=0 — так страница выглядит с выключенным фоном (ровно градиент .page-head)",
+      "variant": "depth",
+      "quality": 2,
+      "width": 1280,
+      "height": 720,
+      "pngBytes": 240876,
+      "cpuMs": 448.3,
+      "cpuNsPerPx": 486,
+      "opsPerPx": {
+        "inst": 281.8,
+        "scalar": 465.3,
+        "scalarMax": 612
+      }
+    },
+    {
+      "file": "B-silhouette-1280x720.png",
+      "note": "Прототип B «силуэт в глубине», качество 2 (high tier), 1280×720, t=4.0 с",
+      "variant": "silhouette",
+      "quality": 2,
+      "width": 1280,
+      "height": 720,
+      "pngBytes": 445891,
+      "cpuMs": 1664.8,
+      "cpuNsPerPx": 1806,
+      "opsPerPx": {
+        "inst": 643.2,
+        "scalar": 947.4,
+        "scalarMax": 1302
+      }
+    },
+    {
+      "file": "B-silhouette-q0-low-1280x720.png",
+      "note": "Прототип B на низком качестве (low tier): нет второго слоя шума, мокрых полос и отражения",
+      "variant": "silhouette",
+      "quality": 0,
+      "width": 1280,
+      "height": 720,
+      "pngBytes": 436401,
+      "cpuMs": 751.1,
+      "cpuNsPerPx": 815,
+      "opsPerPx": {
+        "inst": 505,
+        "scalar": 765.1,
+        "scalarMax": 1139
+      }
+    },
+    {
+      "file": "B-silhouette-mobile-390x470.png",
+      "note": "Прототип B в мобильном hero 390×470, качество 1 (mid tier на телефоне)",
+      "variant": "silhouette",
+      "quality": 1,
+      "width": 390,
+      "height": 470,
+      "pngBytes": 95766,
+      "cpuMs": 201.8,
+      "cpuNsPerPx": 1101,
+      "opsPerPx": {
+        "inst": 544.3,
+        "scalar": 820.7,
+        "scalarMax": 1216
+      }
+    },
+    {
+      "file": "B-silhouette-scroll-1280x720.png",
+      "note": "Прототип B при скролле 0.55 и указателе слева: горизонт уехал вверх, силуэт сместился — это параллакс глубины",
+      "variant": "silhouette",
+      "quality": 2,
+      "width": 1280,
+      "height": 720,
+      "pngBytes": 443535,
+      "cpuMs": 904.7,
+      "cpuNsPerPx": 982,
+      "opsPerPx": {
+        "inst": 616,
+        "scalar": 910.3,
+        "scalarMax": 1302
+      }
+    }
+  ]
+}

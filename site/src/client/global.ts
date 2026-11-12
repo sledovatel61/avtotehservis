@@ -142,6 +142,15 @@ export function initCarousel(root: HTMLElement | null): CarouselInst | null {
     return Math.max(1, Math.round((ww + gap) / (cw + gap)));
   };
   const maxIdx = (): number => Math.max(0, cards().length - perView());
+  let live = $<HTMLElement>('[data-carousel-live]', root);
+  if (!live) {
+    live = document.createElement('span');
+    live.className = 'sr-only'; live.setAttribute('data-carousel-live', '');
+    live.setAttribute('aria-live', 'polite');
+    root.appendChild(live);
+  }
+  const word = root.dataset.liveWord ?? 'Экран';
+  const say = (): void => { if (live) live.textContent = `${word} ${idx + 1} из ${cards().length}`; };
   function render(animate?: boolean): void {
     const c = cards()[0];
     if (!c) return;
@@ -154,6 +163,7 @@ export function initCarousel(root: HTMLElement | null): CarouselInst | null {
     const next = $<HTMLButtonElement>('[data-car="next"]', navScope);
     if (prev) prev.disabled = idx <= 0;
     if (next) next.disabled = idx >= maxIdx();
+    say();
   }
   const go = (n: number): void => { idx = Math.min(Math.max(0, n), maxIdx()); render(true); };
   const p = $<HTMLButtonElement>('[data-car="prev"]', navScope);
@@ -182,6 +192,14 @@ export function initCarousel(root: HTMLElement | null): CarouselInst | null {
   });
   win.addEventListener('pointercancel', () => { dragging = false; });
   window.addEventListener('resize', () => { idx = Math.min(idx, maxIdx()); render(false); });
+  /* раунд 21: клавиатура Home/End/стрелки и aria-live счётчик («Услуга 1 из 6») */
+  root.addEventListener('keydown', (e) => {
+    const k = e as KeyboardEvent;
+    if (k.key === 'Home') { k.preventDefault(); go(0); }
+    else if (k.key === 'End') { k.preventDefault(); go(maxIdx()); }
+    else if (k.key === 'ArrowLeft') { go(idx - 1); }
+    else if (k.key === 'ArrowRight') { go(idx + 1); }
+  });
   render(false);
   return { go, render };
 }
