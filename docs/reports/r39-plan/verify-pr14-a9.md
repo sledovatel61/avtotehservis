@@ -198,3 +198,19 @@
 **PR #14 не мержу сам** — по вашему правилу решение о мерже в `preview/github-pages` за
 вами. После мержа #14 можно возвращать A8 к доработке: ссылки на статьи A9 станут
 валидными, и `check-pages` в PR #15 не упадёт.
+
+
+---
+
+# Мерж
+
+12.11.2026 PR #14 смержен в `preview/github-pages` (`gh pr merge 14 --merge`), merge-коммит
+**`b8ce54d`**. В базе: три статьи в `content/r69/a9/`, слагы `to-voyah-free-reglament`,
+`maslo-voyah-free`, `voyah-free-bolezni` в сиде, отчёт `docs/reports/r69-voyah-articles/`.
+
+После мержа база проверена: `git ls-tree` показывает все три файла, `seed-data.ts` содержит
+все три слага — значит, ссылки из A8 на эти статьи будут валидными, и `check-pages.mjs`
+в PR #15 по ним не упадёт.
+
+A8 отправлено сообщение на доработку: `docs/reports/r39-plan/task-70-a8-followup.md`
+и тем же текстом комментарий в PR #15.
