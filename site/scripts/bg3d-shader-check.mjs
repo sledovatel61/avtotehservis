@@ -81,6 +81,9 @@ function toEssl310(source, stage) {
     out = out.replace(/\bvarying\b/g, 'out');
   } else {
     out = out.replace(/\bvarying\b/g, 'in').replace(/\bgl_FragColor\b/g, 'bg3d_outColor');
+    /* Круг 35 (задание №62): в ESSL 3.10 функция выборки называется texture(), а
+       texture2D() удалена. Замена механическая, аргументы те же. */
+    out = out.replace(/\btexture2D\b/g, 'texture');
     out = out.replace('precision highp float;', 'precision highp float;\nlayout(location = 0) out vec4 bg3d_outColor;');
   }
   return `#version 310 es\n${out}`;
@@ -212,10 +215,18 @@ if (fragSpv.error) { console.error('FAIL  SPIR-V фрагментного шей
 const frag = parse(fragSpv.words);
 const vert = vertSpv.error ? null : parse(vertSpv.words);
 
-const okTex = frag.texture === 0;
+/* Круг 35 (задание №62): запрет текстур снят осознанно. Силуэт теперь — фото-пластина
+   (одна текстура, картинка машины), а не процедурная формула: выборок ровно столько,
+   сколько мест вызова texture2D в исходнике (основной кадр + отражение в асфальте).
+   Гейт остаётся гейтом: он падает, если выборок БОЛЬШЕ, чем мест вызова, т.е. если
+   в шейдер пролезла выборка, которой никто не планировал. */
+const FRAG_SAMPLE_SITES = (FRAG.match(/\btexture2D\s*\(/g) ?? []).length;
+const TEX_SAMPLES_MAX = 2;
+const okTex = frag.texture === FRAG_SAMPLE_SITES && frag.texture <= TEX_SAMPLES_MAX;
 console.log(`${okTex ? 'ok  ' : 'FAIL'}  SPIR-V фрагментного: ${frag.executable} исполняемых инструкций — `
   + `арифметика ${frag.arithmetic} (трансцендентных ${frag.transcendental}), память ${frag.memory}, `
-  + `композитные ${frag.composite}, ветвлений ${frag.branch}; выборок текстур — ${frag.texture}`);
+  + `композитные ${frag.composite}, ветвлений ${frag.branch}; выборок текстур — ${frag.texture} `
+  + `(мест вызова ${FRAG_SAMPLE_SITES}, предел ${TEX_SAMPLES_MAX} — фото-пластина)`);
 console.log(`ok    SPIR-V вершинного: ${vert ? `${vert.executable} исполняемых, арифметика ${vert.arithmetic}` : 'не получен'}`);
 if (frag.unknownOpcodes.length) console.log(`      неизвестные коды: ${[...new Set(frag.unknownOpcodes)].join(', ')}`);
 

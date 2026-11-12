@@ -15,13 +15,13 @@
  */
 export function createMockGl(canvas, opts = {}) {
   const journal = {
-    created: { shader: 0, program: 0, buffer: 0, vao: 0, query: 0 },
-    deleted: { shader: 0, program: 0, buffer: 0, vao: 0, query: 0 },
+    created: { shader: 0, program: 0, buffer: 0, vao: 0, query: 0, texture: 0 },
+    deleted: { shader: 0, program: 0, buffer: 0, vao: 0, query: 0, texture: 0 },
     draws: 0,
     lost: 0,
     calls: {},
   };
-  const live = { shader: new Set(), program: new Set(), buffer: new Set(), vao: new Set() };
+  const live = { shader: new Set(), program: new Set(), buffer: new Set(), vao: new Set(), texture: new Set() };
   let id = 1;
   const next = (kind) => {
     const o = { __kind: kind, __id: id++ };
@@ -73,6 +73,20 @@ export function createMockGl(canvas, opts = {}) {
     getAttribLocation: () => 0,
     getUniformLocation: (p, n) => ({ __uniform: n }),
     uniform1f: note.bind(null, 'uniform1f'),
+    uniform1i: note.bind(null, 'uniform1i'),
+    /* Текстура фото-пластины (круг 35, задание №62): считаем созданной и удалённой,
+       иначе утечка текстуры при переходах по страницам осталась бы незамеченной. */
+    TEXTURE_2D: 0x0DE1, TEXTURE0: 0x84C0, RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+    CLAMP_TO_EDGE: 0x812F, LINEAR: 0x2601, LINEAR_MIPMAP_LINEAR: 0x2703,
+    UNPACK_FLIP_Y_WEBGL: 0x9240, UNPACK_PREMULTIPLY_ALPHA_WEBGL: 0x9241,
+    createTexture: () => next('texture'),
+    deleteTexture: (o) => drop('texture', o),
+    bindTexture: note.bind(null, 'bindTexture'),
+    activeTexture: note.bind(null, 'activeTexture'),
+    pixelStorei: note.bind(null, 'pixelStorei'),
+    texImage2D: note.bind(null, 'texImage2D'),
+    texParameteri: note.bind(null, 'texParameteri'),
+    generateMipmap: note.bind(null, 'generateMipmap'),
     uniform2f: note.bind(null, 'uniform2f'),
     uniform3fv: note.bind(null, 'uniform3fv'),
     viewport: note.bind(null, 'viewport'),

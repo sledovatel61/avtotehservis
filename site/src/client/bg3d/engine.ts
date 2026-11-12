@@ -30,6 +30,7 @@
  */
 import { fitScale } from './gate.ts';
 import { FRAG, PALETTE, VERT } from './shader.ts';
+import { PLATE_SRC, PLATE_SRCSET } from './plate-asset.ts';
 
 export type Variant = 'depth' | 'silhouette';
 
@@ -47,6 +48,12 @@ export interface Bg3dStats {
   renderScale: number;
   /** масштаб, который подобрал пиксельный бюджет (1 = бюджет не связал) */
   budgetScale: number;
+  /** сколько раз бюджет срезал разрешение на текущем размере (0 = рисуем 1:1) */
+  budgetCuts: number;
+  /** масштаб от watchdog: снижается ТОЛЬКО по факту падения fps */
+  fpsScale: number;
+  /** фактическая частота в момент снижения fps-масштаба (для отчёта) */
+  fpsAtDegrade: number;
   dpr: number;
   /** сколько кадров нарисовано */
   frames: number;
@@ -185,6 +192,19 @@ export class Bg3d {
   private glVersion = '';
   private resizeQueued = false;
   private budgetScale = 1;
+  private budgetCuts = 0;
+  /** масштаб от watchdog. Круг 36 (дефект 1): разрешение НЕ срезается заранее по
+   *  бюджету. Сцена рисуется 1:1 (cssW×dpr × cssH×dpr), а понижение включается
+   *  только по факту: watchdog видит fps ниже порога и режет этот множитель.
+   *  Так «адаптивное понижение» — это реакция на измерение, а не догадка по паспорту GPU. */
+  private fpsScale = 1;
+  private fpsAtDegrade = 0;
+  /** порог деградации: доля от целевого fps, ниже которой начинается понижение.
+   *  Допуск задания — 0,5…1,0; берём 0,75: при 60 к/с это 45 к/с, то есть понижаем
+   *  тогда, когда кадр уже заметно не тот, но ещё не «слайд-шоу». */
+  private readonly degradeBelow = 0.75;
+  private plateTex: WebGLTexture | null = null;
+  private isWebGL2 = false;
 
   constructor(cfg: Bg3dConfig) {
     this.cfg = {
@@ -207,6 +227,7 @@ export class Bg3d {
       ?? this.canvas.getContext('experimental-webgl', GL_ATTRS)) as WebGLRenderingContext | WebGL2RenderingContext | null;
     if (!gl) return false;
     this.gl = gl;
+    this.isWebGL2 = typeof (gl as WebGL2RenderingContext).createVertexArray === 'function';
 
     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
     this.renderer = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : '';
@@ -243,7 +264,7 @@ export class Bg3d {
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
     if (vao) (gl as WebGL2RenderingContext).bindVertexArray(null);
 
-    for (const n of ['uRes', 'uTime', 'uScroll', 'uPointer', 'uMode', 'uQuality', 'uFade', 'uNight', 'uDeep', 'uBrass', 'uCopper', 'uMist', 'uDanger']) {
+    for (const n of ['uRes', 'uTime', 'uScroll', 'uPointer', 'uMode', 'uQuality', 'uFade', 'uNight', 'uDeep', 'uBrass', 'uCopper', 'uMist', 'uDanger', 'uPlate', 'uHasPlate']) {
       this.u[n] = gl.getUniformLocation(prog, n);
     }
     gl.uniform1f(this.u.uMode, this.cfg.variant === 'silhouette' ? 1 : 0);
@@ -254,6 +275,12 @@ export class Bg3d {
     gl.uniform3fv(this.u.uCopper, PALETTE.copper);
     gl.uniform3fv(this.u.uMist, PALETTE.mist);
     gl.uniform3fv(this.u.uDanger, PALETTE.danger);
+    gl.uniform1i(this.u.uPlate, 0);
+    gl.uniform1f(this.u.uHasPlate, 0);
+    /* Пластина грузится асинхронно: до её прихода кадр рисуется без машины (uHasPlate 0),
+       а не с процедурным суррогатом. Так в кадре никогда не бывает «двух машин», а
+       страница не ждёт картинку перед первым кадром. */
+    void this.loadPlate();
 
     /* Замер реального времени GPU: расширение есть в Chrome (desktop и Android).
        Без него gpuMs остаётся null, и в отчёте честно пишется «не измерялось». */
@@ -268,6 +295,66 @@ export class Bg3d {
     this.t0 = performance.now();
     this.fpsWindowStart = this.t0;
     return true;
+  }
+
+  /** Текстура пластины: 0 — ещё не загружена, 1 — загружена. */
+  private plateReady = 0;
+  private plateLoading = false;
+
+  /**
+   * Загрузка фото-пластины машины (круг 35, задание №62).
+   *
+   * Почему так, а не `new Image()` + `texImage2D` сразу. Пластина — обычный webp с
+   * альфой; его надо декодировать и залить в текстуру. Мипмапы строит GPU
+   * (`generateMipmap`), поэтому в браузере нет ни второй копии картинки, ни ручной
+   * пирамиды: на уменьшении кадра выборка идёт из мипмапа и кромка не «звенит».
+   * Разрешение текстуры берём ближайшее к 1600 (или 800 на узком экране): аспект
+   * пластины не меняется, файлы отличаются только шириной.
+   *
+   * Пока картинка не пришла, кадр рисуется без машины: лучше пустая сцена, чем
+   * процедурный суррогат рядом с фотопластиной.
+   */
+  private async loadPlate(): Promise<void> {
+    const gl = this.gl;
+    if (!gl || this.plateLoading || this.plateReady) return;
+    /* В jsdom и в среде без DOM картинок нет вовсе: тогда пластина просто не грузится,
+       а кадр рисуется без машины (uHasPlate 0). Без этой проверки замер жизненного
+       цикла падал на `new Image()` вместо того, чтобы мерить уборку. */
+    if (typeof Image === 'undefined') return;
+    this.plateLoading = true;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = window.innerWidth <= 640 ? PLATE_SRCSET[0] : PLATE_SRC;
+    try {
+      if (typeof img.decode === 'function') await img.decode();
+      else await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error('plate')); });
+    } catch { this.plateLoading = false; return; }
+    if (this.destroyed || !this.gl) { this.plateLoading = false; return; }
+    const tex = gl.createTexture();
+    if (!tex) { this.plateLoading = false; return; }
+    this.plateTex = tex;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    /* UNPACK_FLIP_Y: vUv растёт снизу вверх, а картинка — сверху вниз */
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    /* NPOT: в WebGL1 мипмапы для не-степени-двух запрещены, поэтому REPEAT/мипмап
+       включаем только там, где это законно (WebGL2 или POT-размер). */
+    const pot = (v: number) => (v & (v - 1)) === 0;
+    const canMip = this.isWebGL2 || (pot(img.naturalWidth) && pot(img.naturalHeight));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    if (canMip) {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    } else {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.drawFrame();
+    this.plateLoading = false;
+    this.plateReady = 1;
   }
 
   private compile(type: number, src: string): WebGLShader | null {
@@ -433,10 +520,15 @@ export class Bg3d {
     if (this.cfg.motion === 'static') return;
     if (now - this.t0 < 1500) return;                       /* прогрев: первые кадры дорогие */
     const target = this.cfg.fpsCap > 0 ? this.cfg.fpsCap : 60;
-    if (this.fps >= target * 0.7) return;                  /* всё хорошо */
-    const next = this.cfg.renderScale * 0.75;
+    if (this.fps >= target * this.degradeBelow) return;    /* всё хорошо */
+    /* Круг 36 (дефект 1): понижаем НЕ «renderScale из gate», а собственный fps-масштаб,
+       который стартует с 1.0. Причина: резать заранее по паспортному бюджету нельзя —
+       на живом кадре 1440×900 dpr2 выходило 1810×974 вместо 2850×1534, то есть сцена
+       была мутной на устройстве, которое тянет полное разрешение. */
+    const next = this.fpsScale * 0.75;
     if (next >= 0.5) {
-      this.cfg.renderScale = Math.max(0.5, next);
+      this.fpsScale = Math.max(0.5, next);
+      this.fpsAtDegrade = this.fps;
       this.degradations++;
       this.ring.reset();
       this.resize();
@@ -457,16 +549,29 @@ export class Bg3d {
     const dpr = Math.min(window.devicePixelRatio || 1, this.cfg.dprCap);
     const cssW = Math.max(1, Math.round(r.width || this.cfg.host.clientWidth || 1));
     const cssH = Math.max(1, Math.round(r.height || this.cfg.host.clientHeight || 1));
-    /* Пиксельный бюджет: сколько пикселей тянет выбранный GPU-класс при нашей
-       измеренной стоимости кадра. Движок знает реальные размеры канваса, gate — нет,
-       поэтому бюджет применяется здесь, на каждом resize. */
+    /* Круг 36 (дефект 1, задание №63): канвас рисуется 1:1 по умолчанию —
+       canvas = round(cssW×dpr) × round(cssH×dpr), dpr ≤ 2. Заранее разрешение не
+       режется НИЧЕМ: ни gate (он больше не отдаёт renderScale меньше 1), ни паспортным
+       бюджетом операций. Единственное, что его понижает, — watchdog по факту падения
+       fps (см. fpsScale): тогда бюджет пересчитывается уже от фактического размера и
+       включается только как страховка, чтобы после снижения не оказаться ниже пола.
+       Причина в замере: на живом кадре 1440×900 dpr1 канвас был 855×460 при CSS
+       1425×767, а dpr2 — 1069×575 вместо 2850×1534: сцена была мутной там, где железо
+       тянет полное разрешение. */
     const budget = this.cfg.opsBudget ?? 0;
     const ops = this.cfg.opsPerPx ?? 0;
     const cap = this.cfg.fpsCap > 0 ? this.cfg.fpsCap : 60;
-    this.budgetScale = budget > 0 && ops > 0
-      ? fitScale({ cssWidth: cssW, cssHeight: cssH, dpr, fpsCap: cap, opsPerPx: ops, budget, min: 0.5, max: this.cfg.renderScale })
-      : this.cfg.renderScale;
-    const scale = Math.min(this.cfg.renderScale, this.budgetScale) * this.cfg.stress;
+    const full = this.fpsScale * this.cfg.stress;
+    /* бюджет имеет право вмешаться только ПОСЛЕ того, как watchdog уже снизил масштаб:
+       до первого понижения он не режет 1:1, иначе «адаптивность по факту» снова станет
+       «по паспорту» — ровно тот дефект, что мерился в начале круга */
+    this.budgetScale = 1;
+    this.budgetCuts = 0;
+    if (this.fpsScale < 1 && budget > 0 && ops > 0) {
+      this.budgetScale = fitScale({ cssWidth: cssW, cssHeight: cssH, dpr: dpr * full, fpsCap: cap, opsPerPx: ops, budget, min: 0.5, max: 1 });
+      if (this.budgetScale < 1) this.budgetCuts = this.degradations;
+    }
+    const scale = full * (this.budgetScale < 1 ? this.budgetScale : 1);
     const w = Math.max(1, Math.round(cssW * dpr * scale));
     const h = Math.max(1, Math.round(cssH * dpr * scale));
     if (this.canvas.width !== w || this.canvas.height !== h) {
@@ -525,6 +630,16 @@ export class Bg3d {
     gl.uniform1f(this.u.uScroll, this.scroll);
     gl.uniform2f(this.u.uPointer, this.pointer.x, this.pointer.y);
     gl.uniform1f(this.u.uFade, this.fade);
+    /* Текстура пластины: юнит 0, только если она реально загружена. Без этого
+       шейдер умножал бы кадр на неполную текстуру и машина «мерцала» бы белым. */
+    if (this.plateTex && this.plateReady) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.plateTex);
+      gl.uniform1i(this.u.uPlate, 0);
+      gl.uniform1f(this.u.uHasPlate, 1);
+    } else {
+      gl.uniform1f(this.u.uHasPlate, 0);
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     if (this.vao) (gl as WebGL2RenderingContext).bindVertexArray(null);
   }
@@ -550,8 +665,11 @@ export class Bg3d {
       cssHeight: Math.round(r.height || 0),
       drawWidth: this.canvas.width,
       drawHeight: this.canvas.height,
-      renderScale: Math.min(this.cfg.renderScale, this.budgetScale),
+      renderScale: this.fpsScale * (this.budgetScale < 1 ? this.budgetScale : 1),
       budgetScale: this.budgetScale,
+      budgetCuts: this.budgetCuts,
+      fpsScale: this.fpsScale,
+      fpsAtDegrade: this.fpsAtDegrade,
       dpr: Math.min(window.devicePixelRatio || 1, this.cfg.dprCap),
       frames: this.frames,
       skipped: this.skipped,
@@ -593,6 +711,7 @@ export class Bg3d {
     if (gl) {
       if (this.vao) (gl as WebGL2RenderingContext).deleteVertexArray?.(this.vao);
       if (this.vbo) gl.deleteBuffer(this.vbo);
+      if (this.plateTex) gl.deleteTexture(this.plateTex);
       if (this.prog) gl.deleteProgram(this.prog);
       /* 셰деры уже удалены в init() после линковки — проверяем, что не осталось ничего. */
       if (this.timerQuery) {
@@ -609,6 +728,7 @@ export class Bg3d {
     this.timerQuery = null;
     this.timerExt = null;
     this.prog = null; this.vbo = null; this.vao = null; this.gl = null; this.u = {};
+    this.plateTex = null; this.plateReady = 0;
     this.ring.reset();
     if (this.ownCanvas && this.canvas.parentNode) this.canvas.parentNode.removeChild(this.canvas);
     this.cfg.onDestroyed?.();

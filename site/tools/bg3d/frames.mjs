@@ -13,7 +13,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateSync } from 'node:zlib';
-import { renderFrame, resetTally, T } from './ref.mjs';
+import { renderFrame, resetTally, T, loadPlate } from './ref.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const outArg = (() => { const i = process.argv.indexOf('--out'); return i > 0 ? process.argv[i + 1] : null; })();
@@ -79,6 +79,12 @@ const SHOTS = [
   { file: 'B-silhouette-scroll-1280x720.png', variant: 'silhouette', quality: 2, width: 1280, height: 720, time: 6.5, scroll: 0.55, pointer: [-0.3, 0.1],
     note: 'Прототип B при скролле 0.55 и указателе слева: горизонт уехал вверх, силуэт сместился — это параллакс глубины' },
 ];
+
+/* Без этого кадры рисуются без пластины: контур машины лежит в файле, а CPU-порт
+   грузит его отдельным вызовом. Ошибка тихая — кадр получается «пустая сцена», и
+   side-iou честно падает (0,47 вместо 0,88). Грузим ровно тот файл, что отдаёт
+   страница. */
+await loadPlate(resolve(HERE, '../../public/img/bg3d/car-1600.webp'));
 
 mkdirSync(OUT, { recursive: true });
 const report = [];

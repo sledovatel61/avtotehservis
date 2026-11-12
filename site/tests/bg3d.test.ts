@@ -58,11 +58,32 @@ function env(over: Partial<Bg3dEnv> = {}): Bg3dEnv {
 
 /* ============================ 1. ШЕЙДЕР ============================ */
 
-test('шейдер: ноль текстур — ни sampler, ни выборок', () => {
-  const src = VERT + FRAG;
-  assert.equal(/sampler\s*(2D|Cube|3D|External)/i.test(src), false, 'в шейдере появился sampler');
-  assert.equal(/texture\s*(2D|Cube|Proj)?\s*\(/i.test(src), false, 'в шейдере появилась выборка текстуры');
-  assert.equal(/uniform\s+sampler/i.test(src), false, 'в шейдере появился uniform-сampler');
+const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
+const LINE_COMMENT = /\/\/[^\n]*/g;
+
+test('шейдер: одна текстура — фото-пластина, не больше двух выборок на пиксель', () => {
+  /* Круг 35 (задание №62) сознательно отменяет правило «0 текстур» из раунда 30.
+     Причина и числа — docs/reports/r35-bg-car/report.md: процедурный силуэт стоил
+     936,8 оп/px и давал плоскую заливку внутри кузова (σ 10,7 L) при кромке-ступеньке.
+     Новое правило проверяется так же строго, как старое:
+       · текстура РОВНО одна и это пластина машины (uPlate);
+       · выборок на пиксель не больше двух: основная всегда, отражение — только high;
+       · вес шейдера остаётся под лимитом 14 КБ gzip (тест ниже). */
+  const samplers = FRAG.match(/uniform\s+sampler2D\s+(\w+)\s*;/g) ?? [];
+  assert.equal(samplers.length, 1, `sampler должен быть ровно один, найдено ${samplers.length}`);
+  assert.match(FRAG, /uniform\s+sampler2D\s+uPlate\s*;/, 'единственный sampler — не uPlate');
+  const samples = FRAG.match(/texture2D\s*\(/g) ?? [];
+  assert.ok(samples.length <= 2, `выборок текстуры ${samples.length}, допускается 2 (основная + отражение)`);
+  assert.equal(/uPlate/.test(VERT), false, 'в вершинном шейдере текстура не нужна');
+  /* Ключевое требование задания: контуры кузова кодом не рисуются. */
+  /* Проверяем КОД, а не комментарии: перед проверкой вырезаем блочные и строчные
+     комментарии GLSL — иначе упоминание снятых функций в пояснении считалось бы кодом. */
+  const code = FRAG.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '');
+  for (const dead of ['carProfile(', 'carSdf(', 'sdRoundBox(', 'pFender(', 'carTrim(']) {
+    assert.equal(code.includes(dead), false, `в шейдере остался процедурный силуэт: ${dead}`);
+  }
+  /* Альфа за пределами квада обязана быть нулевой — иначе пластина «течёт» за кромку. */
+  assert.match(FRAG, /inQ/, 'нет маски квада inQ: альфа за пределами квада не гасится');
 });
 
 test('шейдер: вес вписывается в лимит 14 КБ gzip', () => {
@@ -179,13 +200,18 @@ test('ворота: слабое устройство (2 ГБ, 2 потока, �
   assert.ok(d.reasons.some((r) => r.includes('слабое устройство')), 'причина должна назвать слабое устройство');
 });
 
-test('ворота: средний Android (4 ГБ, тач, WebGL2) — mid с резаным разрешением, не off', () => {
+test('ворота: средний Android (4 ГБ, тач, WebGL2) — mid, разрешение 1:1, не off', () => {
+  /* Круг 36 (задание №63, дефект 1): разрешение больше не режется ни в gate, ни по
+     паспортному бюджету. Требование: canvas = round(cssW×dpr) × round(cssH×dpr), dpr ≤ 2,
+     а понижение — только по факту падения fps (watchdog движка). Поэтому здесь
+     проверяем ровно то, что gate обязан отдать: tier/quality/fpsCap и renderScale 1. */
   const d = decideTier(env({ deviceMemory: 4, hardwareConcurrency: 8, coarsePointer: true, width: 393, height: 852, devicePixelRatio: 2.75 }), 'silhouette');
   assert.equal(d.tier, 'mid');
   assert.equal(d.quality, 1);
   assert.equal(d.fpsCap, 30);
-  assert.equal(d.renderScale, 0.75);
-  assert.equal(d.dprCap, 1.5);
+  assert.equal(d.renderScale, 1, 'gate не имеет права резать разрешение заранее');
+  assert.equal(d.dprCap, 2, 'потолок DPR по требованию — 2');
+  assert.ok(d.reasons.some((r) => r.includes('1:1')), 'причина должна сказать про 1:1 и понижение по факту');
 });
 
 test('ворота: низкая батарея без зарядки — off, на зарядке — не блокирует', () => {
@@ -199,10 +225,15 @@ test('ворота: узкий экран (< 380px) — off, силуэт не �
   assert.notEqual(decideTier(env({ width: 393, height: 852, coarsePointer: true })).tier, 'off');
 });
 
-test('ворота: 4K-экран с высоким DPR режет площадь кадра', () => {
+test('ворота: 4K-экран с высоким DPR тоже идёт 1:1 — режет только watchdog по факту', () => {
+  /* Было: gate сам урезал площадь кадра до 1/1,35 от 1920×1080 «по паспорту» — и на
+     живом 1440×900 dpr2 канвас выходил 1810×974 вместо 2850×1534, то есть сцена была
+     мутной на железе, которое тянет полное разрешение. Теперь решение принимает
+     измерение fps (engine.watchdog), а gate разрешение не трогает. */
   const d = decideTier(env({ width: 3840, height: 2160, devicePixelRatio: 2 }));
-  assert.ok(d.renderScale < 1, `масштаб ${d.renderScale} должен быть урезан`);
-  assert.ok(d.reasons.some((r) => r.includes('площадь кадра ограничена')), 'причина должна объяснить резку');
+  assert.equal(d.renderScale, 1, `разрешение должно быть 1:1, а не ${d.renderScale}`);
+  assert.equal(d.dprCap, 2, 'потолок DPR — 2');
+  assert.ok(d.reasons.some((r) => r.includes('понижение — только по факту')), 'причина должна объяснить, кто понижает');
 });
 
 /* ============================ 4. СЕРВЕРНЫЙ КОНФИГ ============================ */
@@ -256,6 +287,10 @@ async function harness(): Promise<Harness> {
   g.requestAnimationFrame = win.requestAnimationFrame.bind(win);
   g.cancelAnimationFrame = win.cancelAnimationFrame.bind(win);
   g.HTMLElement = win.HTMLElement;
+  /* Пластина грузится через `new Image()` (круг 35). В jsdom картинки не декодируются,
+     поэтому промис загрузки просто не завершается — это нормально: тесты проверяют
+     уборку и жизненный цикл, а не пиксели текстуры. */
+  g.Image = win.Image;
 
   const obs = { ioCreated: 0, ioDisconnected: 0, roCreated: 0, roDisconnected: 0 };
   g.IntersectionObserver = class {
@@ -428,6 +463,52 @@ test('выключено пользователем: фон не стартуе�
   } finally { h.close(); }
 });
 
+test('разрешение: канвас 1:1 с CSS-размером хоста при dpr ≤ 2 (круг 36, дефект 1)', async () => {
+  const h = await harness();
+  try {
+    /* 1425×767 при dpr 1 → ровно 1425×767; при dpr 2 → 2850×1534 (потолок DPR = 2).
+       Требование задания №63: canvas = round(cssW×dpr) × round(cssH×dpr); до круга 36
+       здесь было 855×460 — паспортный бюджет резал сцену заранее. */
+    for (const [dpr, want] of [[1, [1425, 767]], [2, [2850, 1534]]] as const) {
+      Object.defineProperty(h.win, 'devicePixelRatio', { value: dpr, configurable: true });
+      const host = h.makeHost({ rect: { width: 1425, height: 767 } });
+      const mounted = h.mountAll(true) as Array<{ stats: () => { drawWidth: number; drawHeight: number; budgetScale: number; fpsScale: number; renderScale: number } | null }>;
+      await sleep(120);
+      const st = mounted[0]?.stats();
+      assert.ok(st, 'экземпляр должен отдавать статистику');
+      assert.deepEqual([st.drawWidth, st.drawHeight], [want[0], want[1]],
+        `dpr ${dpr}: канвас ${st.drawWidth}×${st.drawHeight} вместо ${want[0]}×${want[1]}`);
+      assert.equal(st.fpsScale, 1, 'без падения fps масштаб обязан оставаться 1');
+      assert.equal(st.budgetScale, 1, 'бюджет не имеет права резать 1:1 до первого понижения');
+      assert.equal(st.renderScale, 1);
+      h.unmountAll();
+      host.remove();
+      await sleep(10);
+    }
+  } finally { h.close(); }
+});
+
+test('понижение разрешения — только по факту: поля деградации в статистике', async () => {
+  const h = await harness();
+  try {
+    const host = h.makeHost({ rect: { width: 800, height: 400 } });
+    const mounted = h.mountAll(true) as Array<{ stats: () => Record<string, unknown> | null }>;
+    await sleep(80);
+    const st = mounted[0]?.stats();
+    assert.ok(st, 'экземпляр должен отдавать статистику');
+    /* Факт понижения обязан быть виден в замере: именно эти поля читает
+       scripts/bg3d-live-shot.mjs и отчёт, иначе «адаптивность» недоказуема. */
+    for (const k of ['fpsScale', 'fpsAtDegrade', 'budgetScale', 'budgetCuts', 'degradations']) {
+      assert.ok(k in st, `в статистике нет поля «${k}»: факт понижения не попадёт в замер`);
+    }
+    assert.equal(st.fpsScale, 1, 'на старте понижения нет');
+    assert.equal(st.fpsAtDegrade, 0, 'на старте частота снижения не записана');
+    h.unmountAll();
+    host.remove();
+    await sleep(10);
+  } finally { h.close(); }
+});
+
 test('reduced-motion в браузере: решение — статичный кадр', async () => {
   const h = await harness();
   try {
@@ -573,12 +654,19 @@ test('линейка: форма силуэта против фото в одн�
   /* Задание №60, шаг 1: гейт не должен быть «скриптом для отчёта» — он в тестах.
      Сравниваем в безразмерных долях (X — доля длины, Y — доля собственной
      высоты): фото перспективное, и абсолютные высоты в нём завышены на ~5 %. */
-  const { renderFrame } = await import('../tools/bg3d/ref.mjs');
+  const { renderFrame, loadPlate } = await import('../tools/bg3d/ref.mjs');
+  /* Круг 35 (задание №62): силуэт теперь живёт в фото-пластине, поэтому порт обязан
+     её загрузить — иначе «кадр с машиной» и «кадр без машины» совпадут, и маска будет
+     пустой. Файл — тот же, что уходит в браузер. */
+  await loadPlate(new URL('../public/img/bg3d/car-1600.webp', import.meta.url).pathname);
   const W = 640;
   const H = 360;
   const base = { width: W, height: H, variant: 'silhouette', quality: 2, time: 4, scroll: 0, pointer: [0.18, -0.08] };
-  const withCar = renderFrame({ ...base, car: true });
-  const withoutCar = renderFrame({ ...base, car: false });
+  /* Отражение в мокром асфальте выключено в обоих кадрах: маска должна мерить САМУ
+     машину. С отражением она читает «машина + отражение» и даёт h/L 0,377 при
+     паспортных 0,335 — та же ошибка, что в круге 33 дала три разных числа. */
+  const withCar = renderFrame({ ...base, car: true, reflection: false });
+  const withoutCar = renderFrame({ ...base, car: false, reflection: false });
   const mask = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) {
     const j = i * 3;
@@ -620,26 +708,40 @@ test('линейка: форма силуэта против фото в одн�
     `h/L по CPU-кадру ${hOverL.toFixed(3)} должен быть 0,335 ± 0,010 (задание №60, шаг 1)`);
   /* верхняя кромка — в тех же координатах, что и в линейке */
   const profile: number[] = [];
-  for (let i = 0; i <= 10; i++) {
-    const x = Math.min(x1, x0 + Math.round((i / 10) * (L - 1)));
+  for (let i = 0; i <= 20; i++) {
+    const x = Math.min(x1, x0 + Math.round((i / 20) * (L - 1)));
     let top = -1;
     for (let y = y0; y <= y1; y++) if (mask[y * W + x]) { top = y; break; }
     profile.push(top < 0 ? NaN : ((y1 - top) / Hh) * 100);
   }
   /* Крыша выше обоих концов. Кадр сцены развёрнут носом ВПРАВО, поэтому
      слева корма, справа нос: сравнивать «середину с капотом» по индексам
-     нельзя, не зная ориентации. Проверяем то, что не зависит от неё. */
-  const mid = profile[5];
-  const ends = [profile[1], profile[9]];
-  for (const e of ends) {
-    assert.ok(mid > e + 5, `середина (${mid.toFixed(0)} %H) должна быть выше конца (${e.toFixed(0)} %H): крыша-арка, а не клин`);
-  }
+     нельзя, не зная ориентации. Проверяем то, что не зависит от неё.
+     Берём ГРЕБЕНЬ по средней трети (30…70 %L), а не одну точку 50 %L: у этой
+     машины заднее стекло срывается как раз у середины, и единственная выборка
+     там садится на скат, а не на крышу. Гребень же — именно «арка»: он обязан
+     быть выше ОБОИХ концов. */
+  const crest = Math.max(...profile.slice(6, 15));
+  const [endA, endB] = [profile[2], profile[18]];
+  const highEnd = Math.max(endA, endB);
+  const lowEnd = Math.min(endA, endB);
+  /* Гребень выше ОБОИХ концов. Запас к высокому концу скромный (5 %H) намеренно:
+     у этого кузова крыша тянется почти до кормы, и на 10 %L от хвоста кромка уже
+     на 91 %H — «выше на 5» здесь как раз и означает «плато с уклоном к корме», а не
+     клин. Низкий конец (нос) обязан отстоять far больше — 20 %H: если силуэт стал
+     клином, именно там разница и схлопывается. */
+  assert.ok(crest > highEnd + 5,
+    `гребень крыши (${crest.toFixed(0)} %H) должен быть выше высокого конца (${highEnd.toFixed(0)} %H): крыша-арка, а не клин`);
+  assert.ok(crest > lowEnd + 20,
+    `гребень крыши (${crest.toFixed(0)} %H) должен быть на 20 %H выше низкого конца (${lowEnd.toFixed(0)} %H): силуэт схлопнулся в клин`);
   /* Ступеньки — только на участке 10…90 %L: на самих торцах силуэт падает
-     отвесно (бампер), и это не дефект формы, а край. Порог 20 %H на 10 %L
-     ловит клин из двух прямых, но пропускает скат лобового. */
-  for (let i = 2; i < profile.length - 1; i++) {
+     отвесно (бампер), и это не дефект формы, а край. Шаг сетки — 5 %L, а не 10:
+     на грубой сетке настоящий скат лобового (95 → 61 %H на 60…70 %L) читается как
+     «ступенька» в 23 %H и рушит проверку формы там, где форма верна. Порог 18 %H
+     на 5 %L ловит излом в две прямые, но пропускает покатый скат. */
+  for (let i = 3; i < profile.length - 3; i++) {
     const d = Math.abs(profile[i] - profile[i - 1]);
-    assert.ok(d < 20, `ступенька ${d.toFixed(0)} %H между ${(i - 1) * 10} и ${i * 10} %L — силуэт ломается`);
+    assert.ok(d < 18, `ступенька ${d.toFixed(0)} %H между ${(i - 1) * 5} и ${i * 5} %L — силуэт ломается`);
   }
   /* Клиренс: низ силуэта над землёй 3,7 %L = 11 %H (0,185 м при высоте 1,645). */
   let bottom = -1;
