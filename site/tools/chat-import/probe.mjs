@@ -10,6 +10,7 @@
      node site/tools/chat-import/probe.mjs --corpus ... --pattern "редуктор" --limit 20
      node site/tools/chat-import/probe.mjs --corpus ... --pattern "вязкост|5W-30|0W-20" --from 01.03.2025 --limit 30
      node site/tools/chat-import/probe.mjs --corpus ... --msg 612345
+     node site/tools/chat-import/probe.mjs --corpus ... --msg 612345 --around 3
      node site/tools/chat-import/probe.mjs --self-test
 
    Вывод ограничен: --limit (по умолчанию 20) и --width (по умолчанию 220).
@@ -51,9 +52,21 @@ async function run(opts) {
   const msgs = raw.split('\n').map(parseLine).filter(Boolean).map((m) => ({ ...m, dateOnly: m.date.split(' ')[0] }));
 
   if (opts.msg) {
-    const one = msgs.find((m) => m.id === opts.msg);
-    if (!one) { console.log(`сообщение ${opts.msg} не найдено`); process.exit(1); }
-    console.log(`[#${one.id} ${one.date} ${one.author}]\n${one.text}`);
+    const i = msgs.findIndex((m) => m.id === opts.msg);
+    if (i < 0) { console.log(`сообщение ${opts.msg} не найдено`); process.exit(1); }
+    /* --around N: показать N сообщений до и после. Нужно, когда реплика вне
+       контекста («это я про то же») и надо понять, о чём был разговор. */
+    if (opts.around > 0) {
+      const from = Math.max(0, i - opts.around);
+      const to = Math.min(msgs.length, i + opts.around + 1);
+      for (let k = from; k < to; k++) {
+        const m = msgs[k];
+        const mark = k === i ? '>>' : '  ';
+        console.log(`${mark} [#${m.id} ${m.date} ${m.author}] ${fmt(m.text, opts.width)}`);
+      }
+      return;
+    }
+    console.log(`[#${msgs[i].id} ${msgs[i].date} ${msgs[i].author}]\n${msgs[i].text}`);
     return;
   }
 
@@ -106,6 +119,7 @@ else {
     from: get('--from', null),
     to: get('--to', null),
     msg: get('--msg', null),
+    around: Number(get('--around', 0)),
     topics: args.includes('--topics'),
     limit: Number(get('--limit', 20)),
     width: Number(get('--width', 220)),

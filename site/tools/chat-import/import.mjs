@@ -132,18 +132,35 @@ export function parseJsonExport(name, raw) {
   const data = JSON.parse(raw);
   const list = Array.isArray(data.messages) ? data.messages : [];
   const out = [];
+  /* Владелец собирал экспорт по частям, и один и тот же id встречается до 5 раз
+     с идентичным текстом (14 261 id из 74 705). Дедупликация по id обязательна,
+     иначе счётчики тем завышены на ~19 %, а факты «повторилось у 3+ владельцев»
+     считаются по одной и той же реплике. Если тексты при одном id разные —
+     это не дубль, а склейка; такие случаи считаем и пишем в stats.json. */
+  const seen = new Map();
+  let dupSame = 0;
+  let dupDiff = 0;
   for (const m of list) {
     if (m.type !== 'message') continue;
     const text = flattenText(m.text).trim();
     if (!text) continue;
-    out.push({
+    const id = String(m.id);
+    const prev = seen.get(id);
+    if (prev) {
+      if (prev.text === text) { dupSame++; continue; }
+      dupDiff++;
+    }
+    const item = {
       file: name,
-      id: String(m.id),
+      id,
       date: isoToRu(m.date),
       author: typeof m.from === 'string' ? m.from.trim() : '',
       text,
-    });
+    };
+    seen.set(id, item);
+    out.push(item);
   }
+  parseJsonExport.lastDup = { dupSame, dupDiff };
   return out;
 }
 
@@ -195,7 +212,10 @@ async function run(inPath, outDir) {
   await writeFile(join(outDir, 'corpus.txt'), lines.join('\n') + '\n', 'utf8');
   await writeFile(join(outDir, 'corpus.jsonl'), jsonl.join('\n') + '\n', 'utf8');
   const dates = lines.map((l) => /\s(\d{2}\.\d{2}\.\d{4}) /.exec(l)?.[1]).filter(Boolean);
+  const dup = parseJsonExport.lastDup ?? { dupSame: 0, dupDiff: 0 };
   const stats = {
+    dup_same_id_dropped: dup.dupSame,
+    dup_same_id_conflicting: dup.dupDiff,
     files: files.length,
     raw_bytes: bytes,
     messages: lines.length,
@@ -225,6 +245,8 @@ function selfTest() {
       { id: 538565, type: 'service', date: '2024-06-17T09:00:00', actor: 'Илья',
         action: 'topic_created', text: '' },
       { id: 538566, type: 'message', date: '2024-06-17T09:01:00', from: 'Пётр', text: '' },
+      { id: 538563, type: 'message', date: '2024-06-16T12:05:00', from: 'Дмитрий',
+        text: 'Масло в редукторе 0,9 л' },
     ],
   });
   const jm = parseJsonExport('result.json', json).map(toCorpusLine);
