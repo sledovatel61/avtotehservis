@@ -36,7 +36,10 @@ const TOPICS = [
 const fmt = (s, w) => (s.length > w ? s.slice(0, w) + '…' : s);
 
 function parseLine(line) {
-  const m = /^\[#(-?\d+) (\S+ \S+) ([^\]]*)\] (.*)$/.exec(line);
+  /* Автор бывает с квадратной скобкой в нике («saksonov 👀 [btw, I use Arch]»),
+     поэтому автора берём жадно — до последнего «] », а не до первого.
+     Из-за первого «[^\]]*» probe терял 33 сообщения из 53 662 (нашёл A13). */
+  const m = /^\[#(-?\d+) (\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}) (.*)\] (.*)$/.exec(line);
   if (!m) return null;
   return { id: m[1], date: m[2], author: m[3].trim(), text: m[4] };
 }
