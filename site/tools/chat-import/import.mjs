@@ -102,6 +102,51 @@ export function parseFile(name, html) {
   return messages;
 }
 
+/* ---------- разбор JSON-экспорта Telegram (result.json) ----------
+
+   {"name":"…","type":"private_supergroup","messages":[
+     {"id":538563,"type":"message","date":"2024-06-16T12:05:00","date_unixtime":"…",
+      "from":"Дмитрий","from_id":"user…","text":"строка"} |
+     {"…","text":[ "часть", {"type":"bold","text":"жирный"},
+                   {"type":"link","text":"ссылка"}, {"type":"mention","text":"@x"} ]},
+     {"id":8990,"type":"service","date":"…","actor":"Ilya","action":"topic_created","text":""}
+   ]}
+
+   text бывает строкой, массивом строк и объектов, а поле text у объекта — снова
+   строкой или массивом. Разворачиваем рекурсивно, теряя только форматирование. */
+
+function flattenText(t) {
+  if (t == null) return '';
+  if (typeof t === 'string') return t;
+  if (Array.isArray(t)) return t.map(flattenText).join('');
+  if (typeof t === 'object') return flattenText(t.text);
+  return String(t);
+}
+
+function isoToRu(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso ?? '');
+  return m ? `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}` : '';
+}
+
+export function parseJsonExport(name, raw) {
+  const data = JSON.parse(raw);
+  const list = Array.isArray(data.messages) ? data.messages : [];
+  const out = [];
+  for (const m of list) {
+    if (m.type !== 'message') continue;
+    const text = flattenText(m.text).trim();
+    if (!text) continue;
+    out.push({
+      file: name,
+      id: String(m.id),
+      date: isoToRu(m.date),
+      author: typeof m.from === 'string' ? m.from.trim() : '',
+      text,
+    });
+  }
+  return out;
+}
+
 function naturalKey(f) {
   const n = /messages(\d*)\.html$/.exec(f);
   return n ? (n[1] === '' ? 1 : Number(n[1]) + 1) : 1e9;
@@ -115,11 +160,18 @@ export function toCorpusLine(m) {
 
 /* ---------- прогон ---------- */
 
-async function run(inDir, outDir) {
-  const files = (await readdir(inDir)).filter((f) => /^messages\d*\.html$/.test(f)).sort((a, b) => naturalKey(a) - naturalKey(b));
-  if (!files.length) {
-    console.error(`Нет файлов messages*.html в ${inDir}`);
-    process.exit(2);
+async function run(inPath, outDir) {
+  /* Вход — либо каталог с messages*.html, либо один файл: result.json или messages.html */
+  const st = await stat(inPath).catch(() => null);
+  if (!st) { console.error(`Нет такого пути: ${inPath}`); process.exit(2); }
+  let files;
+  let single = null;
+  if (st.isFile()) {
+    single = basename(inPath);
+    files = [single];
+  } else {
+    files = (await readdir(inPath)).filter((f) => /^messages\d*\.html$/.test(f)).sort((a, b) => naturalKey(a) - naturalKey(b));
+    if (!files.length) { console.error(`Нет файлов messages*.html в ${inPath}`); process.exit(2); }
   }
   await mkdir(outDir, { recursive: true });
   const lines = [];
@@ -127,9 +179,11 @@ async function run(inDir, outDir) {
   let bytes = 0;
   const perFile = [];
   for (const f of files) {
-    const raw = await readFile(join(inDir, f), 'utf8');
+    const full = single ? inPath : join(inPath, f);
+    const raw = await readFile(full, 'utf8');
     bytes += raw.length;
-    const msgs = parseFile(f, raw);
+    const isJson = /\.json$/i.test(f);
+    const msgs = isJson ? parseJsonExport(f, raw) : parseFile(f, raw);
     const real = msgs.filter((m) => m.text);
     perFile.push({ file: f, messages: real.length });
     for (const m of real) {
@@ -159,6 +213,29 @@ async function run(inDir, outDir) {
 /* ---------- self-test: синтетический кусок в формате экспорта ---------- */
 
 function selfTest() {
+  /* --- JSON-экспорт: строка, массив частей, объект с вложенным массивом, service --- */
+  const json = JSON.stringify({
+    name: 'Обслуживание и ремонт', type: 'private_supergroup',
+    messages: [
+      { id: 538563, type: 'message', date: '2024-06-16T12:05:00', from: 'Дмитрий',
+        text: 'Масло в редукторе 0,9 л' },
+      { id: 538564, type: 'message', date: '2024-06-16T12:07:00', from: 'Илья',
+        text: ['менять раз в ', { type: 'bold', text: ['30', ' тыс.'] },
+               { type: 'link', text: 'ссылка' }] },
+      { id: 538565, type: 'service', date: '2024-06-17T09:00:00', actor: 'Илья',
+        action: 'topic_created', text: '' },
+      { id: 538566, type: 'message', date: '2024-06-17T09:01:00', from: 'Пётр', text: '' },
+    ],
+  });
+  const jm = parseJsonExport('result.json', json).map(toCorpusLine);
+  const jwant = [
+    '[#538563 16.06.2024 12:05 Дмитрий] Масло в редукторе 0,9 л',
+    '[#538564 16.06.2024 12:07 Илья] менять раз в 30 тыс.ссылка',
+  ];
+  let jok = jm.length === jwant.length;
+  jm.forEach((l, i) => { if (l !== jwant[i]) { jok = false; console.error(`FAIL json ${i}\n  получил: ${l}\n  ждал:    ${jwant[i]}`); } });
+  console.log(jok ? 'self-test json: PASS' : 'self-test json: FAIL');
+
   const html = `
    <div class="message default clearfix" id="message538563">
     <div class="body">
@@ -187,8 +264,8 @@ function selfTest() {
   let ok = lines.length === want.length;
   lines.forEach((l, i) => { if (l !== want[i]) { ok = false; console.error(`FAIL ${i}\n  получил: ${l}\n  ждал:    ${want[i]}`); } });
   if (msgs.some((m) => m.service === 'date' && m.text)) { ok = false; console.error('FAIL: служебная дата попала в текст'); }
-  console.log(ok ? 'self-test: PASS' : 'self-test: FAIL');
-  process.exit(ok ? 0 : 1);
+  console.log(ok ? 'self-test html: PASS' : 'self-test html: FAIL');
+  process.exit(ok && jok ? 0 : 1);
 }
 
 const args = process.argv.slice(2);
