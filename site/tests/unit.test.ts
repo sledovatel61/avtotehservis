@@ -158,6 +158,22 @@ test('markdown: экранирует HTML, ссылки только безоп�
   assert.ok(!html.includes('javascript:alert'));
 });
 
+test('markdown: перенос строки внутри пункта списка остаётся в том же <li>', () => {
+  const html = mdToHtml('- первый пункт, первая строка\n  продолжение пункта\n- второй');
+  assert.equal((html.match(/<li>/g) || []).length, 2);
+  assert.ok(html.includes('<li>первый пункт, первая строка продолжение пункта</li>'));
+});
+
+test('markdown: таблица рендерится в <table>, HTML в ячейках экранируется', () => {
+  const html = mdToHtml('| Что | Объём |\n|---|---|\n| Масло | **4 л** |\n| Фильтр | <b>нет</b> |');
+  assert.ok(html.includes('<table class="post-table">'));
+  assert.ok(html.includes('<th>Что</th>') && html.includes('<th>Объём</th>'));
+  assert.ok(html.includes('<td><strong>4 л</strong></td>'));
+  assert.ok(html.includes('&lt;b&gt;нет&lt;/b&gt;'));
+  assert.ok(!html.includes('<b>'));
+  assert.ok(html.includes('post-table-wrap'));
+});
+
 test('маскировка телефона в логах', () => {
   const m = maskPhone('ошибка при доставке для +79289065700 и +7 (928) 906-57-00');
   assert.ok(!m.includes('9065700'));
