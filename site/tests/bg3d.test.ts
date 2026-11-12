@@ -200,13 +200,18 @@ test('ворота: слабое устройство (2 ГБ, 2 потока, �
   assert.ok(d.reasons.some((r) => r.includes('слабое устройство')), 'причина должна назвать слабое устройство');
 });
 
-test('ворота: средний Android (4 ГБ, тач, WebGL2) — mid с резаным разрешением, не off', () => {
+test('ворота: средний Android (4 ГБ, тач, WebGL2) — mid, разрешение 1:1, не off', () => {
+  /* Круг 36 (задание №63, дефект 1): разрешение больше не режется ни в gate, ни по
+     паспортному бюджету. Требование: canvas = round(cssW×dpr) × round(cssH×dpr), dpr ≤ 2,
+     а понижение — только по факту падения fps (watchdog движка). Поэтому здесь
+     проверяем ровно то, что gate обязан отдать: tier/quality/fpsCap и renderScale 1. */
   const d = decideTier(env({ deviceMemory: 4, hardwareConcurrency: 8, coarsePointer: true, width: 393, height: 852, devicePixelRatio: 2.75 }), 'silhouette');
   assert.equal(d.tier, 'mid');
   assert.equal(d.quality, 1);
   assert.equal(d.fpsCap, 30);
-  assert.equal(d.renderScale, 0.75);
-  assert.equal(d.dprCap, 1.5);
+  assert.equal(d.renderScale, 1, 'gate не имеет права резать разрешение заранее');
+  assert.equal(d.dprCap, 2, 'потолок DPR по требованию — 2');
+  assert.ok(d.reasons.some((r) => r.includes('1:1')), 'причина должна сказать про 1:1 и понижение по факту');
 });
 
 test('ворота: низкая батарея без зарядки — off, на зарядке — не блокирует', () => {
@@ -220,10 +225,15 @@ test('ворота: узкий экран (< 380px) — off, силуэт не �
   assert.notEqual(decideTier(env({ width: 393, height: 852, coarsePointer: true })).tier, 'off');
 });
 
-test('ворота: 4K-экран с высоким DPR режет площадь кадра', () => {
+test('ворота: 4K-экран с высоким DPR тоже идёт 1:1 — режет только watchdog по факту', () => {
+  /* Было: gate сам урезал площадь кадра до 1/1,35 от 1920×1080 «по паспорту» — и на
+     живом 1440×900 dpr2 канвас выходил 1810×974 вместо 2850×1534, то есть сцена была
+     мутной на железе, которое тянет полное разрешение. Теперь решение принимает
+     измерение fps (engine.watchdog), а gate разрешение не трогает. */
   const d = decideTier(env({ width: 3840, height: 2160, devicePixelRatio: 2 }));
-  assert.ok(d.renderScale < 1, `масштаб ${d.renderScale} должен быть урезан`);
-  assert.ok(d.reasons.some((r) => r.includes('площадь кадра ограничена')), 'причина должна объяснить резку');
+  assert.equal(d.renderScale, 1, `разрешение должно быть 1:1, а не ${d.renderScale}`);
+  assert.equal(d.dprCap, 2, 'потолок DPR — 2');
+  assert.ok(d.reasons.some((r) => r.includes('понижение — только по факту')), 'причина должна объяснить, кто понижает');
 });
 
 /* ============================ 4. СЕРВЕРНЫЙ КОНФИГ ============================ */
@@ -450,6 +460,52 @@ test('выключено пользователем: фон не стартуе�
     host.remove();
     await sleep(20);
     assert.equal(h.listeners(), 0);
+  } finally { h.close(); }
+});
+
+test('разрешение: канвас 1:1 с CSS-размером хоста при dpr ≤ 2 (круг 36, дефект 1)', async () => {
+  const h = await harness();
+  try {
+    /* 1425×767 при dpr 1 → ровно 1425×767; при dpr 2 → 2850×1534 (потолок DPR = 2).
+       Требование задания №63: canvas = round(cssW×dpr) × round(cssH×dpr); до круга 36
+       здесь было 855×460 — паспортный бюджет резал сцену заранее. */
+    for (const [dpr, want] of [[1, [1425, 767]], [2, [2850, 1534]]] as const) {
+      Object.defineProperty(h.win, 'devicePixelRatio', { value: dpr, configurable: true });
+      const host = h.makeHost({ rect: { width: 1425, height: 767 } });
+      const mounted = h.mountAll(true) as Array<{ stats: () => { drawWidth: number; drawHeight: number; budgetScale: number; fpsScale: number; renderScale: number } | null }>;
+      await sleep(120);
+      const st = mounted[0]?.stats();
+      assert.ok(st, 'экземпляр должен отдавать статистику');
+      assert.deepEqual([st.drawWidth, st.drawHeight], [want[0], want[1]],
+        `dpr ${dpr}: канвас ${st.drawWidth}×${st.drawHeight} вместо ${want[0]}×${want[1]}`);
+      assert.equal(st.fpsScale, 1, 'без падения fps масштаб обязан оставаться 1');
+      assert.equal(st.budgetScale, 1, 'бюджет не имеет права резать 1:1 до первого понижения');
+      assert.equal(st.renderScale, 1);
+      h.unmountAll();
+      host.remove();
+      await sleep(10);
+    }
+  } finally { h.close(); }
+});
+
+test('понижение разрешения — только по факту: поля деградации в статистике', async () => {
+  const h = await harness();
+  try {
+    const host = h.makeHost({ rect: { width: 800, height: 400 } });
+    const mounted = h.mountAll(true) as Array<{ stats: () => Record<string, unknown> | null }>;
+    await sleep(80);
+    const st = mounted[0]?.stats();
+    assert.ok(st, 'экземпляр должен отдавать статистику');
+    /* Факт понижения обязан быть виден в замере: именно эти поля читает
+       scripts/bg3d-live-shot.mjs и отчёт, иначе «адаптивность» недоказуема. */
+    for (const k of ['fpsScale', 'fpsAtDegrade', 'budgetScale', 'budgetCuts', 'degradations']) {
+      assert.ok(k in st, `в статистике нет поля «${k}»: факт понижения не попадёт в замер`);
+    }
+    assert.equal(st.fpsScale, 1, 'на старте понижения нет');
+    assert.equal(st.fpsAtDegrade, 0, 'на старте частота снижения не записана');
+    h.unmountAll();
+    host.remove();
+    await sleep(10);
   } finally { h.close(); }
 });
 

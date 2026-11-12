@@ -223,33 +223,28 @@ export function decideTier(env: Bg3dEnv, variant: VariantLike = 'silhouette'): B
   if (!env.demo && score <= -3) return off(`слабое устройство (оценка ${score})`);
   if (env.width < NARROW_OFF) return off(`ширина ${env.width}px < ${NARROW_OFF}px — силуэт не читается`);
 
-  /* 5. Бюджет качества. Пикселей на кадр — главный множитель стоимости, поэтому
-        мобильные и слабые профили режут внутреннее разрешение, а не частоту:
-        фон мягкий, растянутая канвас-текстура на глаз не отличается. */
-  const px = env.width * env.height * Math.min(env.devicePixelRatio, 3) ** 2;
+  /* 5. Бюджет качества: тир, качество шейдера и частота кадра. Разрешение здесь
+        больше не трогаем — см. блок ниже про 1:1. */
   let tier: Tier;
   let quality: 0 | 1 | 2;
   let fpsCap: number;
-  let renderScale: number;
   let dprCap: number;
 
   if (score >= 3 && !env.coarsePointer) {
-    tier = 'high'; quality = 2; fpsCap = 60; renderScale = 1.0; dprCap = 2;
+    tier = 'high'; quality = 2; fpsCap = 60; dprCap = 2;
   } else if (score >= 1) {
-    tier = 'mid'; quality = env.coarsePointer ? 1 : 2; fpsCap = 30; renderScale = env.coarsePointer ? 0.75 : 0.9; dprCap = env.coarsePointer ? 1.5 : 2;
+    tier = 'mid'; quality = env.coarsePointer ? 1 : 2; fpsCap = 30; dprCap = 2;
   } else {
-    tier = 'low'; quality = env.isAppleMobile ? 0 : 1; fpsCap = 24; renderScale = 0.6; dprCap = 1.25;
+    tier = 'low'; quality = env.isAppleMobile ? 0 : 1; fpsCap = 24; dprCap = 2;
   }
-
-  /* Огромный экран × высокий DPR: даже на сильном GPU площадь кадра зашкаливает,
-     поэтому дополнительно режем масштаб. 4K-монитор не должен греть видеокарту фоном. */
-  const budgetPx = 1920 * 1080;
-  const drawnPx = px * renderScale * renderScale;
-  if (drawnPx > budgetPx * 1.35) {
-    const fit = Math.sqrt((budgetPx * 1.35) / px);
-    renderScale = Math.max(0.5, Math.min(renderScale, fit));
-    reasons.push(`площадь кадра ограничена до ${Math.round(renderScale * 100)}% (экран ${env.width}×${env.height}@${env.devicePixelRatio})`);
-  }
+  /* Круг 36 (задание №63, дефект 1): масштаб разрешения здесь больше НЕ режется.
+     Требование заказчика: canvas = round(cssW×dpr) × round(cssH×dpr), dpr ≤ 2;
+     «адаптивное понижение только по факту падения fps, порог 0,5…1,0». gate решает,
+     ВКЛЮЧАТЬ ли фон и на каком качестве/частоте, но не гадает площадь кадра по
+     паспорту GPU: на живом кадре 1440×900 dpr2 такая догадка дала 1810×974 вместо
+     2850×1534. Разрешение понижает только watchdog движка — по измеренному fps. */
+  const renderScale = 1.0;
+  reasons.push('разрешение 1:1 (css×dpr, dpr ≤ 2); понижение — только по факту падения fps');
 
   if (motion === 'static') { fpsCap = 0; }
 

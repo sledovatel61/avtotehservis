@@ -42,6 +42,7 @@ const SITE = resolve(HERE, '..');
 const REPO = resolve(SITE, '..');
 const OUT = join(REPO, 'evaluation', 'round30-bg-3d');
 const require_ = createRequire(join(SITE, 'package.json'));
+const sharp = require_('sharp');
 
 /* перезапуск под --expose-gc, если позвали без него: кучу иначе не померить честно */
 if (!global.gc) {
@@ -121,6 +122,166 @@ const plateMain = plateFiles['car-1600.webp'] ?? null;
 const plateWide = Object.values(plateFiles).sort((a, b) => b.bytes - a.bytes)[0] ?? null;
 console.log(`  пластина машины: ${Object.entries(plateFiles).map(([f, v]) => `${f} ${v.kb} КБ`).join(' · ') || '—'}`);
 
+/* ============ 1b. ГЕЙТ ШВОВ И АЛЬФА ПЛАСТИНЫ (измерено, круг 36 / задание №63) ============
+   Класс ошибки A12: у car-1600.webp непрозрачных 70 % — если поставить пластину на
+   непрозрачную подложку, в заставке становится виден прямоугольник. Здесь два
+   независимых гейта, и оба СЧИТАЮТСЯ, а не объявляются:
+
+     шов   — длиннейший шов кадра, где подряд идут пиксели с перепадом ≥ 2,5 L к
+             соседней строке (или столбцу); порог — ни одного шва ≥ 200 px;
+     альфа — доля промежуточной альфы (0 < a < 255) у кромки пластины: жёсткая
+             ступенька = видимый прямоугольник, поэтому требуем ≥ 10 % кромки
+             и прозрачные углы файла.
+
+   Кадры — те, на которых гейт работает в проде после круга 36 (1:1 при dpr ≤ 2):
+   1425×767 и 375×565 при dpr 1, 2850×1534 и 750×1130 при dpr 2. Старое разрешение
+   (855×460) в гейте бессмысленно: дефект на нём и не ловился. */
+/* CPU-порт нужен уже здесь, чтобы швы считались по настоящему кадру, а не по макету */
+const ref = await import(join(SITE, 'tools', 'bg3d', 'ref.mjs'));
+const SEAM = { minDeltaL: 2.5, maxLenPx: 200 };
+
+/**
+ * Длиннейший шов кадра.
+ *
+ * Шов — это ЛИНИЯ, а не отдельная ступенька: горизонтальный шов в строке y — те
+ * подряд идущие x, где перепад к соседней строке (y−1) не меньше порога; вертикальный
+ * — те подряд идущие y в столбце x, где перепад к соседнему столбцу (x−1) не меньше
+ * порога. Длина шва — длина такой цепочки в пикселях.
+ *
+ * Именно так выглядит класс ошибки A12: непрозрачная подложка пластины даёт ровную
+ * кромку в сотни пикселей. Контур самой машины под это не попадает: кромка крыши
+ * кривая, поэтому подряд идущих одинаковых перепадов набираются десятки пикселей.
+ */
+function longestSeam(lum, w, h, minDelta) {
+  let best = { len: 0, maxDL: 0, at: null, dir: 'h' };
+  for (let y = 1; y < h; y++) {
+    let run = 0, maxDL = 0, start = 0;
+    for (let x = 0; x < w; x++) {
+      const dl = Math.abs(lum[y * w + x] - lum[(y - 1) * w + x]);
+      if (dl >= minDelta) { if (!run) start = x; run++; if (dl > maxDL) maxDL = dl; }
+      else {
+        if (run > best.len) best = { len: run, maxDL, at: [start, y], dir: 'h' };
+        run = 0; maxDL = 0;
+      }
+    }
+    if (run > best.len) best = { len: run, maxDL, at: [start, y], dir: 'h' };
+  }
+  for (let x = 1; x < w; x++) {
+    let run = 0, maxDL = 0, start = 0;
+    for (let y = 0; y < h; y++) {
+      const dl = Math.abs(lum[y * w + x] - lum[y * w + x - 1]);
+      if (dl >= minDelta) { if (!run) start = y; run++; if (dl > maxDL) maxDL = dl; }
+      else {
+        if (run > best.len) best = { len: run, maxDL, at: [x, start], dir: 'v' };
+        run = 0; maxDL = 0;
+      }
+    }
+    if (run > best.len) best = { len: run, maxDL, at: [x, start], dir: 'v' };
+  }
+  return best;
+}
+
+const lumOf = (r, g, b) => {
+  const f = (v) => { const x = v / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+  return 116 * Math.cbrt(0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)) - 16;
+};
+console.log('\n== 1b. Гейт швов и альфа пластины (измерено) ==');
+const FRAME_SIZES = [
+  { id: 'desk-dpr1', w: 1425, h: 767 },
+  { id: 'desk-dpr2', w: 2850, h: 1534 },
+  { id: 'mob-dpr1', w: 375, h: 565 },
+  { id: 'mob-dpr2', w: 750, h: 1130 },
+];
+const seamRows = [];
+for (const f of FRAME_SIZES) {
+  const frame = ref.renderFrame({ width: f.w, height: f.h, variant: 'silhouette', quality: 2, time: 4, scroll: 0, pointer: [0, 0] });
+  const d = frame.data, w = frame.width, h = frame.height, ch = d.length / (w * h);
+  const lum = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) lum[i] = lumOf(d[i * ch], d[i * ch + 1], d[i * ch + 2]);
+  const best = longestSeam(lum, w, h, SEAM.minDeltaL);
+  const row = { id: f.id, canvas: [w, h], longestSeamPx: best.len, seamDropL: num(best.maxDL, 2), seamAt: best.at, seamDir: best.dir, seamOk: best.len < SEAM.maxLenPx };
+  seamRows.push(row);
+  console.log(`  ${row.id}: канвас ${w}×${h} · длиннейший шов ${row.longestSeamPx} px (перепад ${row.seamDropL} L, ${row.dir === 'v' ? 'по столбцу' : 'по строке'}) → ${row.seamOk ? 'ok' : `FAIL (порог ${SEAM.maxLenPx} px)`}`);
+}
+const seamPass = seamRows.every((r) => r.seamOk);
+
+/* Альфа пластины: жёсткая ступенька = видимый прямоугольник в заставке (класс A12). */
+const alphaRows = [];
+for (const [name, meta] of Object.entries(plateFiles)) {
+  const buf = readFileSync(join(plateDir, name));
+  const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const w = info.width, h = info.height, n = w * h;
+  const A = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? 0 : data[(y * w + x) * 4 + 3];
+  let opaque = 0, mid = 0, edge = 0, midAtEdge = 0, opaqueCorners = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const a = A(x, y);
+    if (a === 255) {
+      opaque++;
+      if (A(x - 1, y) < 255 || A(x + 1, y) < 255 || A(x, y - 1) < 255 || A(x, y + 1) < 255) edge++;
+    } else if (a > 0) {
+      mid++;
+      let near = false;
+      for (let dy = -2; dy <= 2 && !near; dy++) for (let dx = -2; dx <= 2; dx++) if (A(x + dx, y + dy) === 0) { near = true; break; }
+      if (near) midAtEdge++;
+    }
+  }
+  for (const [x, y] of [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]) if (A(x, y) > 0) opaqueCorners++;
+  const share = edge ? midAtEdge / edge : 0;
+  const row = {
+    file: name, size: [w, h], bytes: meta?.bytes ?? buf.byteLength,
+    opaquePct: num((opaque / n) * 100, 2), midAlphaPct: num((mid / n) * 100, 2), midAlphaPx: mid,
+    edgePx: edge, midAtEdgePx: midAtEdge, midShareOfEdgePct: num(share * 100), opaqueCorners,
+    softEdge: share >= 0.10, cornersClear: opaqueCorners === 0,
+  };
+  row.ok = row.softEdge && row.cornersClear;
+  alphaRows.push(row);
+  console.log(`  ${name}: ${w}×${h} · непрозрачных ${row.opaquePct} % · промежуточная альфа ${row.midAlphaPct} % (${mid} px) · у кромки ${row.midAtEdgePx} px = ${row.midShareOfEdgePct} % кромки → ${row.ok ? 'ok' : 'FAIL'}`);
+}
+const alphaPass = alphaRows.every((r) => r.ok);
+
+/* Самопроверка гейта: детектор обязан НАЙТИ шов там, где он есть, иначе «ни одного
+   шва» значит всего лишь «детектор ничего не умеет». Мутанты — тот же кадр, в который
+   вписан дефект:
+     блок-подложка 300×120 (тот самый прямоугольник A12) — обязан быть поймана;
+     крупное мягкое поле 8 L с периодом 180 px — обязан пройти (это свет, а не шов). */
+const seamMutants = [];
+{
+  const W = 375, H = 565;
+  const base = ref.renderFrame({ width: W, height: H, variant: 'silhouette', quality: 2, time: 4, scroll: 0, pointer: [0, 0] });
+  const mk = (fn, label) => {
+    const d = Uint8ClampedArray.from(base.data);
+    fn(d, W, H);
+    const lum2 = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) lum2[i] = lumOf(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]);
+    const bestLen = longestSeam(lum2, W, H, SEAM.minDeltaL).len;
+    seamMutants.push({ label, longestSeamPx: bestLen, caught: bestLen >= SEAM.maxLenPx });
+    console.log(`  мутант «${label}»: длиннейший шов ${bestLen} px → ${bestLen >= SEAM.maxLenPx ? 'поймана' : 'пропущена'}`);
+  };
+  mk((d, w) => {
+    for (let y = 180; y < 300; y++) for (let x = 40; x < 340; x++) {
+      const i = (y * w + x) * 4;
+      for (let c = 0; c < 3; c++) d[i + c] = Math.min(255, d[i + c] + 55);
+    }
+  }, 'блок-подложка 300×120');
+  mk((d, w, h) => {
+    for (let y = 120; y < 420; y++) for (let x = 20; x < 360; x++) {
+      const i = (y * w + x) * 4;
+      const add = 8 * Math.sin((x / 180) * Math.PI * 2) * Math.sin((y / 180) * Math.PI * 2);
+      for (let c = 0; c < 3; c++) d[i + c] = Math.max(0, Math.min(255, d[i + c] + add));
+    }
+  }, 'мягкое поле 8 L / период 180 px');
+}
+const seamSelfTestOk = seamMutants[0].caught && !seamMutants[1].caught;
+console.log(`  самопроверка детектора: ${seamSelfTestOk ? 'ok' : 'ПРОВАЛЕНА'}`);
+report.measured.seams = {
+  rule: { minDeltaL: SEAM.minDeltaL, maxLenPx: SEAM.maxLenPx },
+  columns: ['id', 'canvas', 'longestSeamPx', 'seamDropL', 'seamOk'],
+  rows: seamRows, pass: seamPass, selfTest: { mutants: seamMutants, ok: seamSelfTestOk },
+};
+report.measured.plateAlpha = { rows: alphaRows, pass: alphaPass };
+if (!seamSelfTestOk) console.log('  ГЕЙТ: самопроверка детектора швов не пройдена — «ни одного шва» ничего не значит');
+if (!seamPass || !alphaPass) console.log(`  ГЕЙТ: ${seamPass ? '' : 'шов не пройден '}${alphaPass ? '' : 'альфа не пройдена'} — см. evaluation/round30-bg-3d/measurements.json`);
+
 /* ============ 2. ШЕЙДЕР: компиляция, SPIR-V, текстуры ============ */
 console.log('\n== 2. Шейдер: glslang + SPIR-V (измерено) ==');
 mkdirSync(OUT, { recursive: true });
@@ -140,7 +301,6 @@ try {
 
 /* ============ 3. СТОИМОСТЬ КАДРА: CPU-порт ============ */
 console.log('\n== 3. Стоимость кадра: CPU-порт tools/bg3d/ref.mjs (измерено) ==');
-const ref = await import(join(SITE, 'tools', 'bg3d', 'ref.mjs'));
 /* прогрев JIT: без него нс/px немонотонны и сравнение бессмысленно */
 for (const v of ['depth', 'silhouette']) for (const q of [0, 1, 2]) {
   ref.renderFrame({ width: 48, height: 27, variant: v, quality: q, time: 1 });
@@ -589,5 +749,6 @@ report.summary = {
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, 'measurements.json'), JSON.stringify(report, null, 2));
 console.log(`\nотчёт: ${join(OUT, 'measurements.json')}`);
+console.log(`швы: ${seamPass ? 'ни одного ≥ 200 px' : 'ЕСТЬ ≥ 200 px'} · альфа пластины: ${alphaPass ? 'мягкая кромка, углы прозрачны' : 'ЕСТЬ НЕПРОЗРАЧНЫЕ УГЛЫ'}`);
 console.log(`итог: шейдер ${shaderSize.gzip} Б gzip из ${14 * 1024} · пластина ${plateMain ? `${plateMain.kb} КБ` : '—'} · маргинальный вес ${kb(marginal)} gzip · утечек ${report.measured.lifecycle.ok ? 'нет' : 'ЕСТЬ'} · fps/батарея — модель`);
 process.exit(report.measured.shader?.ok === false || !report.measured.lifecycle.ok ? 1 : 0);

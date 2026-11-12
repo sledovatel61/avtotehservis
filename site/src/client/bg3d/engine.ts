@@ -48,6 +48,12 @@ export interface Bg3dStats {
   renderScale: number;
   /** масштаб, который подобрал пиксельный бюджет (1 = бюджет не связал) */
   budgetScale: number;
+  /** сколько раз бюджет срезал разрешение на текущем размере (0 = рисуем 1:1) */
+  budgetCuts: number;
+  /** масштаб от watchdog: снижается ТОЛЬКО по факту падения fps */
+  fpsScale: number;
+  /** фактическая частота в момент снижения fps-масштаба (для отчёта) */
+  fpsAtDegrade: number;
   dpr: number;
   /** сколько кадров нарисовано */
   frames: number;
@@ -186,6 +192,17 @@ export class Bg3d {
   private glVersion = '';
   private resizeQueued = false;
   private budgetScale = 1;
+  private budgetCuts = 0;
+  /** масштаб от watchdog. Круг 36 (дефект 1): разрешение НЕ срезается заранее по
+   *  бюджету. Сцена рисуется 1:1 (cssW×dpr × cssH×dpr), а понижение включается
+   *  только по факту: watchdog видит fps ниже порога и режет этот множитель.
+   *  Так «адаптивное понижение» — это реакция на измерение, а не догадка по паспорту GPU. */
+  private fpsScale = 1;
+  private fpsAtDegrade = 0;
+  /** порог деградации: доля от целевого fps, ниже которой начинается понижение.
+   *  Допуск задания — 0,5…1,0; берём 0,75: при 60 к/с это 45 к/с, то есть понижаем
+   *  тогда, когда кадр уже заметно не тот, но ещё не «слайд-шоу». */
+  private readonly degradeBelow = 0.75;
   private plateTex: WebGLTexture | null = null;
   private isWebGL2 = false;
 
@@ -503,10 +520,15 @@ export class Bg3d {
     if (this.cfg.motion === 'static') return;
     if (now - this.t0 < 1500) return;                       /* прогрев: первые кадры дорогие */
     const target = this.cfg.fpsCap > 0 ? this.cfg.fpsCap : 60;
-    if (this.fps >= target * 0.7) return;                  /* всё хорошо */
-    const next = this.cfg.renderScale * 0.75;
+    if (this.fps >= target * this.degradeBelow) return;    /* всё хорошо */
+    /* Круг 36 (дефект 1): понижаем НЕ «renderScale из gate», а собственный fps-масштаб,
+       который стартует с 1.0. Причина: резать заранее по паспортному бюджету нельзя —
+       на живом кадре 1440×900 dpr2 выходило 1810×974 вместо 2850×1534, то есть сцена
+       была мутной на устройстве, которое тянет полное разрешение. */
+    const next = this.fpsScale * 0.75;
     if (next >= 0.5) {
-      this.cfg.renderScale = Math.max(0.5, next);
+      this.fpsScale = Math.max(0.5, next);
+      this.fpsAtDegrade = this.fps;
       this.degradations++;
       this.ring.reset();
       this.resize();
@@ -527,16 +549,29 @@ export class Bg3d {
     const dpr = Math.min(window.devicePixelRatio || 1, this.cfg.dprCap);
     const cssW = Math.max(1, Math.round(r.width || this.cfg.host.clientWidth || 1));
     const cssH = Math.max(1, Math.round(r.height || this.cfg.host.clientHeight || 1));
-    /* Пиксельный бюджет: сколько пикселей тянет выбранный GPU-класс при нашей
-       измеренной стоимости кадра. Движок знает реальные размеры канваса, gate — нет,
-       поэтому бюджет применяется здесь, на каждом resize. */
+    /* Круг 36 (дефект 1, задание №63): канвас рисуется 1:1 по умолчанию —
+       canvas = round(cssW×dpr) × round(cssH×dpr), dpr ≤ 2. Заранее разрешение не
+       режется НИЧЕМ: ни gate (он больше не отдаёт renderScale меньше 1), ни паспортным
+       бюджетом операций. Единственное, что его понижает, — watchdog по факту падения
+       fps (см. fpsScale): тогда бюджет пересчитывается уже от фактического размера и
+       включается только как страховка, чтобы после снижения не оказаться ниже пола.
+       Причина в замере: на живом кадре 1440×900 dpr1 канвас был 855×460 при CSS
+       1425×767, а dpr2 — 1069×575 вместо 2850×1534: сцена была мутной там, где железо
+       тянет полное разрешение. */
     const budget = this.cfg.opsBudget ?? 0;
     const ops = this.cfg.opsPerPx ?? 0;
     const cap = this.cfg.fpsCap > 0 ? this.cfg.fpsCap : 60;
-    this.budgetScale = budget > 0 && ops > 0
-      ? fitScale({ cssWidth: cssW, cssHeight: cssH, dpr, fpsCap: cap, opsPerPx: ops, budget, min: 0.5, max: this.cfg.renderScale })
-      : this.cfg.renderScale;
-    const scale = Math.min(this.cfg.renderScale, this.budgetScale) * this.cfg.stress;
+    const full = this.fpsScale * this.cfg.stress;
+    /* бюджет имеет право вмешаться только ПОСЛЕ того, как watchdog уже снизил масштаб:
+       до первого понижения он не режет 1:1, иначе «адаптивность по факту» снова станет
+       «по паспорту» — ровно тот дефект, что мерился в начале круга */
+    this.budgetScale = 1;
+    this.budgetCuts = 0;
+    if (this.fpsScale < 1 && budget > 0 && ops > 0) {
+      this.budgetScale = fitScale({ cssWidth: cssW, cssHeight: cssH, dpr: dpr * full, fpsCap: cap, opsPerPx: ops, budget, min: 0.5, max: 1 });
+      if (this.budgetScale < 1) this.budgetCuts = this.degradations;
+    }
+    const scale = full * (this.budgetScale < 1 ? this.budgetScale : 1);
     const w = Math.max(1, Math.round(cssW * dpr * scale));
     const h = Math.max(1, Math.round(cssH * dpr * scale));
     if (this.canvas.width !== w || this.canvas.height !== h) {
@@ -630,8 +665,11 @@ export class Bg3d {
       cssHeight: Math.round(r.height || 0),
       drawWidth: this.canvas.width,
       drawHeight: this.canvas.height,
-      renderScale: Math.min(this.cfg.renderScale, this.budgetScale),
+      renderScale: this.fpsScale * (this.budgetScale < 1 ? this.budgetScale : 1),
       budgetScale: this.budgetScale,
+      budgetCuts: this.budgetCuts,
+      fpsScale: this.fpsScale,
+      fpsAtDegrade: this.fpsAtDegrade,
       dpr: Math.min(window.devicePixelRatio || 1, this.cfg.dprCap),
       frames: this.frames,
       skipped: this.skipped,
