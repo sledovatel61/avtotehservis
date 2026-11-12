@@ -101,6 +101,17 @@
 .post-text ul li{padding-left:22px;position:relative;color:var(--mist)}
 .post-text ul li::before{content:"";position:absolute;left:2px;top:10px;width:8px;height:8px;border-radius:2px;background:var(--copper)}
 .post-text b,.post-text strong{color:var(--ivory)}
+/* Круг 69: таблица в статье — GFM-таблица из markdown.ts. Скроллится внутри обёртки,
+   страница на мобильном не растягивается. */
+.post-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 0 1.4em;border:1px solid var(--line);border-radius:12px;background:rgba(16,32,26,.55)}
+.post-table{width:100%;border-collapse:collapse;min-width:560px}
+.post-table th,.post-table td{padding:10px 14px;font-size:14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.post-table thead th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);background:rgba(11,20,16,.6)}
+.post-table tbody tr:last-child td{border-bottom:0}
+.post-table td:first-child{color:var(--ivory);font-weight:600}
+/* Колонка статьи в grid не должна растягиваться шире контейнера: иначе таблица
+   тянет за собой всю страницу и на 390px появляется горизонтальный скролл. */
+.post-main{min-width:0}
 .post-cta{margin-top:34px;border:1px solid rgba(224,169,109,.4);border-radius:var(--r);padding:26px 28px;background:linear-gradient(150deg,rgba(200,127,69,.1),var(--deep));display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .post-cta p{margin:0;color:var(--mist);font-size:15px;max-width:44ch}
 .post-cta b{color:var(--ivory);display:block;font-size:17px;margin-bottom:3px}

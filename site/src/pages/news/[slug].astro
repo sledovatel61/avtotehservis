@@ -57,7 +57,9 @@ const jsonLd = post ? [
           {(() => { const cov = coverInfo(post, '/img/news-1.svg', post.title); return (
             <img src={cov.src} srcset={cov.srcset ?? undefined} sizes="min(760px, 92vw)" alt={cov.alt} width="800" height="450">
           ); })()}
-          {!post.cover_media_id && <figcaption>Фото к статье появится после съёмки</figcaption>}
+          {/* подпись «появится после съёмки» — только у статичной заглушки .svg;
+              у реальных обложек (webp из /img) она бы противоречила картинке */}
+          {!post.cover_media_id && (post.cover_static ?? '').endsWith('.svg') && <figcaption>Фото к статье появится после съёмки</figcaption>}
         </figure>
         <div class="post-text" id="post-text" set:html={mdToHtml(post.body_md)} />
         <div class="post-cta">
