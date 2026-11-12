@@ -413,7 +413,6 @@ body[data-preview="true"]{--demo-h:40px}
   .v-tbl td{padding:0;border:0;text-align:left !important}
   .v-tbl td:first-child{font-weight:500;font-size:var(--v-fs-3)}
   .v-tbl td:last-child{margin-top:6px}
-  .v-sec--parts .v-tbl td:last-child{white-space:normal}
   .v-tbl td b{font-size:22px}
   .v-tbl .sub{display:block;font-size:12.5px;margin-top:2px}
 }
