@@ -16,8 +16,8 @@ const jsonLd = {
 ---
 <Base
   page="contacts"
-  title="Контакты — АвтоТехСервис, Ростов-на-Дону, ул. Портовая, 439"
-  description="Как доехать: Ростов-на-Дону, ул. Портовая, 439, ост. «3-й Поселковый» ~330 м, база «Бум». Ежедневно 9:00–19:00. Телефоны, Telegram, e-mail, схема проезда."
+  title="Контакты — Портовая, 439, Ростов-на-Дону"
+  description="Как доехать: Портовая, 439, ост. «3-й Поселковый» ~330 м, рядом база «Бум». Ежедневно 9:00–19:00, три телефона, Telegram."
   jsonLd={jsonLd}
 >
 
@@ -45,7 +45,7 @@ const jsonLd = {
       <div class="c-list u-mt26">
         <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><div><h3>Адрес</h3><span class="v">{S.address_full}</span><small>Железнодорожный район, Западный жилой массив. Остановка «3-й Поселковый» ~330 м, рядом база «Бум».</small></div></div>
         <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><div><h3>Часы работы</h3><span class="v">{S.hours}</span><small>График подтверждён владельцем 21.10.2026.</small></div></div>
-        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg></span><div><h3>Телефон</h3><span class="v"><a href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a></span>{E0?.tel && <span class="v">{E0.title ? `${E0.title}: ` : ''}<a href={`tel:${E0.tel}`} data-track="call_click">{E0.display || E0.tel}</a></span>}{E1?.tel && <span class="v">{E1.title ? `${E1.title}: ` : ''}<a href={`tel:${E1.tel}`} data-track="call_click">{E1.display || E1.tel}</a></span>}<small>Основной номер для записи и вопросов.</small></div></div>
+        <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg></span><div><h3>Телефон</h3><span class="v"><a href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a></span>{E0?.tel && <span class="v">{E0.title ? `${E0.title}: ` : ''}<a href={`tel:${E0.tel}`} data-track="call_click">{E0.display || E0.tel}</a></span>}{E1?.tel && <span class="v">{E1.title ? `${E1.title}: ` : ''}<a href={`tel:${E1.tel}`} data-track="call_click">{E1.display || E1.tel}</a></span>}<span class="v"><a href="tel:+78632291950" data-track="call_click">+7 (863) 229-19-50</a> · <a href="tel:+79518265847" data-track="call_click">+7 (951) 826-58-47</a></span><small>Основной номер для записи и вопросов; ежедневно 9:00–19:00.</small></div></div>
         <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 4.5 2.8 11.3c-.9.3-.9 1.6.1 1.8l4.6 1.2 1.8 5.4c.3.8 1.3 1 1.8.3l2.5-3 4.6 3.4c.7.5 1.7.1 1.9-.7l3.2-14c.2-1-.7-1.8-1.8-1.2z"/><path d="m7.5 14.3 11-7.8-8.4 9.4"/></svg></span><div><h3>Telegram</h3><span class="v"><a href={`${S.telegram_url}`} data-track="telegram_click">{S.telegram_phone}</a></span><small>Удобно прислать фото повреждения до визита.</small></div></div>
         <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span><div><h3>E-mail</h3><span class="v"><a href={`mailto:${S.email}`}>{S.email}</a></span><small>Для заявок, документов и вопросов по паркам.</small></div></div>
         <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><div><h3>Реквизиты</h3><span class="v">{S.legal.name}</span><small>ИНН {S.legal.inn} · ОГРНИП {S.legal.ogrnip}</small></div></div>
@@ -63,14 +63,14 @@ const jsonLd = {
               <span class="err" role="alert"></span>
             </div>
             <div class="field">
-              <label for="c-phone">Телефон <span class="req" aria-hidden="true">*</span></label>
+              <label for="c-phone">Ваш телефон <span class="req" aria-hidden="true">*</span></label>
               <input class="input" type="tel" id="c-phone" data-mask inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__">
               <span class="hint">Формат +7 (999) 999-99-99</span>
               <span class="err" role="alert"></span>
             </div>
             <div class="field">
-              <label for="c-msg">Сообщение <span class="opt">необязательно</span></label>
-              <textarea id="c-msg" placeholder="Коротко: что с машиной или какой вопрос"></textarea>
+              <label for="c-msg">Что случилось с автомобилем? <span class="opt">необязательно</span></label>
+              <textarea id="c-msg" placeholder="Опишите симптомы или нужные работы"></textarea>
             </div>
             <div class="field">
               <div class="field u-sr" aria-hidden="true">

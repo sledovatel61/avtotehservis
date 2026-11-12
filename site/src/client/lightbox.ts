@@ -17,7 +17,7 @@ function lbRender(): void {
   const it = items[lbIdx];
   if (!it || !lb) return;
   const img = $('#lb-img', lb);
-  if (img) img.innerHTML = `<img src="${it.img}" alt="${it.title} — фото появится после съёмки">`;
+  if (img) img.innerHTML = `<img src="${it.img}" alt="${it.title}">`;
   const t = $('#lb-title', lb); if (t) t.textContent = it.title;
   const s = $('#lb-sub', lb); if (s) s.textContent = it.sub;
   const c = $('#lb-count', lb); if (c) c.textContent = `${lbIdx + 1} / ${items.length}`;
@@ -46,8 +46,10 @@ function lbGo(d: number): void {
 }
 
 if (lb && items.length) {
-  $$('[data-gal]').forEach((b) => {
-    b.addEventListener('click', () => lbOpen(parseInt(b.getAttribute('data-gal') ?? '0', 10) || 0));
+  /* круг 27: индекс берём из порядка кнопок в DOM (`idx`), а не из data-gal — иначе четыре
+     кнопки сертификатов выше блока кейсов сбивают открытие шести кейсов ниже */
+  $$('[data-gal]').forEach((b, idx) => {
+    b.addEventListener('click', () => lbOpen(idx));
   });
   $('#lb-close', lb)?.addEventListener('click', lbClose);
   $('#lb-prev', lb)?.addEventListener('click', () => lbGo(-1));

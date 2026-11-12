@@ -1,0 +1,53 @@
+{
+  "source": {
+    "profile": "site/src/client/car-profile.ts",
+    "spec": "задание №54 §3.1 (паспорт)",
+    "form": [
+      "docs/brand/voyah/refs/r31/side-white-1456.jpg",
+      "docs/brand/voyah/refs/r31/side-black.webp"
+    ]
+  },
+  "numbers": {
+    "length": 4.901999999999964,
+    "height": 1.6409999999999776,
+    "lengthToHeight": 2.9872029250457226,
+    "wheelbaseToLength": 0.6038351693186499,
+    "wheelToHeight": 0.4494210847044547,
+    "clearance": 0.18,
+    "archGap": 0.035,
+    "minX": -2.451499999999998,
+    "maxX": 2.4504999999999657,
+    "spec": {
+      "length": 4.905,
+      "height": 1.645,
+      "wheelbase": 2.96,
+      "tyre": 0.7375
+    },
+    "delta": {
+      "lengthPct": -0.061162079511448086,
+      "heightPct": -0.2431610942262875,
+      "lengthToHeightSpec": 2.9817629179331306,
+      "wheelbaseToLengthSpec": 0.6034658511722731,
+      "wheelToHeightSpec": 0.44832826747720367
+    },
+    "scene": {
+      "scale": 0.364741641337386,
+      "ground": -0.44,
+      "axleFront": -0.5398176291793313,
+      "axleRear": 0.5398176291793313,
+      "tyreRadius": 0.1344984802431611,
+      "bodyHeightUnits": 0.6
+    },
+    "segments": 99
+  },
+  "glslVsJs": {
+    "iou": 1,
+    "mask": "400×160",
+    "gl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+  },
+  "artifacts": {
+    "ortho": "/home/user/avtotehservis/docs/reports/r31-car-profile/ortho.png",
+    "mask": "/home/user/avtotehservis/docs/reports/r31-car-profile/ortho-mask.png",
+    "overlay": "/home/user/avtotehservis/docs/reports/r31-car-profile/overlay-side.jpg"
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "source": {
+    "file": "docs/brand/voyah/source/logo-black-on-white.png",
+    "size": [
+      1536,
+      864
+    ]
+  },
+  "limits": {
+    "meanPx": 1.5,
+    "maxPx": 3,
+    "gzipBytes": 4096,
+    "bboxPx": 2,
+    "areaError": 0.015,
+    "iou": 0.96,
+    "tolerancePx": 1,
+    "contrast": 3,
+    "ghostOpacity": 0.5,
+    "jsonDeviationPx": 0.1
+  },
+  "frames": {
+    "mark": {
+      "origin_px": [
+        546.842,
+        50.239
+      ],
+      "size_px": [
+        441.645,
+        620.106
+      ],
+      "viewBox": "0 0 441.6 620.1",
+      "aspect": 0.712209
+    },
+    "label": {
+      "origin_px": [
+        366.287,
+        727.565
+      ],
+      "size_px": [
+        803.744,
+        87.871
+      ],
+      "viewBox": "0 0 803.7 87.9",
+      "aspect": 9.146864
+    },
+    "lockup": {
+      "origin_px": [
+        366.287,
+        50.239
+      ],
+      "size_px": [
+        803.744,
+        765.197
+      ],
+      "viewBox": "0 0 803.7 765.2",
+      "aspect": 1.050375
+    }
+  },
+  "geometry": {
+    "lockup": {
+      "iou": 0.9927043974596028,
+      "areaRef": 99215,
+      "areaVec": 99083,
+      "contour": {
+        "n": 31489,
+        "mean": 0.31848246701269717,
+        "median": 0.3332496021378261,
+        "p95": 0.5968920367605066,
+        "max": 1.3343953798386738
+      },
+      "refToVec": {
+        "n": 7034,
+        "mean": 0.2210070719635925,
+        "median": 0.19592936472154804,
+        "p95": 0.5094949655084652,
+        "max": 1.0939214533001074
+      },
+      "vecToRef": {
+        "n": 24455,
+        "mean": 0.34651934817300545,
+        "median": 0.3550592069744844,
+        "p95": 0.6110001164199796,
+        "max": 1.3343953798386738
+      }
+    },
+    "mark": {
+      "bboxRef": [
+        548,
+        51,
+        987,
+        670
+      ],
+      "bboxVec": [
+        548,
+        51,
+        987,
+        669
+      ]
+    }
+  },
+  "variants": {
+    "vy-mark.svg": {
+      "bytes": 1494,
+      "gzipBytes": 791,
+      "viewBox": "0 0 441.6 620.1",
+      "paths": 1
+    },
+    "vy-mark-light.svg": {
+      "bytes": 1489,
+      "gzipBytes": 784,
+      "viewBox": "0 0 441.6 620.1",
+      "paths": 1
+    },
+    "vy-mark-dark.svg": {
+      "bytes": 1489,
+      "gzipBytes": 786,
+      "viewBox": "0 0 441.6 620.1",
+      "paths": 1
+    },
+    "vy-mark-ghost.svg": {
+      "bytes": 1509,
+      "gzipBytes": 799,
+      "viewBox": "0 0 441.6 620.1",
+      "paths": 1
+    },
+    "vy-label.svg": {
+      "bytes": 2075,
+      "gzipBytes": 1014,
+      "viewBox": "0 0 803.7 87.9",
+      "paths": 1
+    },
+    "vy-label-light.svg": {
+      "bytes": 2070,
+      "gzipBytes": 1009,
+      "viewBox": "0 0 803.7 87.9",
+      "paths": 1
+    },
+    "vy-label-dark.svg": {
+      "bytes": 2070,
+      "gzipBytes": 1010,
+      "viewBox": "0 0 803.7 87.9",
+      "paths": 1
+    },
+    "vy-label-ghost.svg": {
+      "bytes": 2090,
+      "gzipBytes": 1025,
+      "viewBox": "0 0 803.7 87.9",
+      "paths": 1
+    },
+    "vy-lockup.svg": {
+      "bytes": 3689,
+      "gzipBytes": 1703,
+      "viewBox": "0 0 803.7 765.2",
+      "paths": 1
+    },
+    "vy-lockup-light.svg": {
+      "bytes": 3684,
+      "gzipBytes": 1693,
+      "viewBox": "0 0 803.7 765.2",
+      "paths": 1
+    },
+    "vy-lockup-dark.svg": {
+      "bytes": 3684,
+      "gzipBytes": 1696,
+      "viewBox": "0 0 803.7 765.2",
+      "paths": 1
+    },
+    "vy-lockup-ghost.svg": {
+      "bytes": 3704,
+      "gzipBytes": 1712,
+      "viewBox": "0 0 803.7 765.2",
+      "paths": 1
+    }
+  },
+  "contrast": [
+    {
+      "fg": "#FFFFFF",
+      "bg": "#070B12",
+      "ratio": 19.71
+    },
+    {
+      "fg": "#C9D3DE",
+      "bg": "#070B12",
+      "ratio": 13
+    },
+    {
+      "fg": "#FFFFFF",
+      "bg": "#0E1622",
+      "ratio": 18.16
+    },
+    {
+      "fg": "#1B1F3C",
+      "bg": "#070B12",
+      "ratio": 1.23
+    },
+    {
+      "fg": "#1B1F3C",
+      "bg": "#FFFFFF",
+      "ratio": 16.06
+    }
+  ]
+}

@@ -31,7 +31,9 @@ export interface Props {
 const { page, title, description, jsonLd, noindex = false, ogType = 'website', publishedTime } = Astro.props;
 const S = getSettings();
 const siteOrigin = Astro.site?.origin ?? Astro.url.origin;
-const canonical = new URL(Astro.url.pathname + Astro.url.search, siteOrigin).href;
+/* круг 26 (a9/03-structure §5.1): canonical без query-строки — фильтры /news?cat=… и пагинация
+   не должны объявлять себя отдельными страницами */
+const canonical = new URL(Astro.url.pathname, siteOrigin).href;
 const ogImage = new URL('/img/og.png', siteOrigin).href;
 const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---
@@ -71,6 +73,15 @@ const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
   <Footer />
   <Dock />
   <Modals />
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title">
+    <button class="lb-close" id="lb-close" type="button" aria-label="Закрыть">✕</button>
+    <div class="lb-box">
+      <div class="lb-img" id="lb-img"></div>
+      <div class="lb-cap"><b id="lb-title"></b><span id="lb-sub"></span><span id="lb-count"></span></div>
+    </div>
+    <button class="lb-arrow lb-prev" id="lb-prev" type="button" aria-label="Предыдущий">←</button>
+    <button class="lb-arrow lb-next" id="lb-next" type="button" aria-label="Следующий">→</button>
+  </div>
   <script>import '../client/global.ts';</script>
 </body>
 </html>

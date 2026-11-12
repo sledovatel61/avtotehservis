@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-11-11T18:47:40.770Z",
+  "purpose": "задание №62: земля, кромка и тень под фото-пластиной (геометрии кузова в шейдере больше нет)",
+  "plate": {
+    "file": "public/img/bg3d/car-1600.webp",
+    "bytes": 110418,
+    "size": [
+      1600,
+      578
+    ],
+    "opaqueBox": {
+      "x0": 12,
+      "x1": 1588,
+      "y0": 12,
+      "y1": 566,
+      "w": 1577,
+      "h": 555
+    },
+    "hOverL": 0.3519340519974635,
+    "featherPx": [
+      1,
+      1,
+      1
+    ],
+    "groundFracActual": 0.9792387543252595,
+    "groundMismatchPx": 1.0000819999999797,
+    "axleBottoms": [
+      563,
+      566
+    ],
+    "clearancePx": 22
+  },
+  "placement": {
+    "frame": [
+      640,
+      360
+    ],
+    "aspect": 1.7777777777777777,
+    "sc": 0.6028,
+    "halfSize": {
+      "hx": 0.5389032,
+      "hy": 0.19464559830501496
+    },
+    "groundY": 0.6549630024576705,
+    "gapY": 0.6329630024576705,
+    "pxPerUnitY": 180
+  },
+  "clearance": {
+    "platePx": 22,
+    "platePxInFrame": 2.67,
+    "passportPctOfHeight": 10.9
+  },
+  "edge": {
+    "featherMaxPx": 1,
+    "limitPx": 2
+  },
+  "shadow": {
+    "shadowHalfOfLen": 0.55,
+    "shadowLenUnits": 1.7890577507598784,
+    "shadowHalfNorm": 1.1006507415189408,
+    "shadowGx": 0.5721717349396335,
+    "shadowGxGlsl": 0.5722,
+    "shadowY": 90,
+    "mul": 0.16,
+    "occlMul": 0.62,
+    "gap": 0.022,
+    "groundFrac": 0.980969,
+    "halfWidthP": 0.5933324231999646,
+    "tenthWidthP": 1.0813092707999123,
+    "halfHeightP": 0.047500000000000035
+  },
+  "ok": true,
+  "problems": []
+}
