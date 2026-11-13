@@ -30,16 +30,20 @@ jobs:
       - uses: actions/configure-pages@v5
       - run: npm ci
         working-directory: site
-      # Превью-ветка, не прод: 3D-фон включается здесь принудительно, чтобы владелец
-      # увидел сцену в живом браузере. BG3D_DEMO=1 нужен потому, что у части машин
-      # нет GPU (программный растеризатор), и гейт иначе погасит фон. На боевой
-      # публикации эти переменные не выставляются — там фон по умолчанию off.
+      # Круг 74 (13.11.2026): 3D-фон и заставка на превью ВЫКЛЮЧЕНЫ.
+      # Владелец показывает страницу заказчику, и в текущем виде 3D показывать
+      # нельзя. Поэтому BG3D здесь больше не выставляется: `bg3d-config.ts`
+      # по умолчанию отдаёт «off», страница рисует обычный кадр и не создаёт
+      # ни canvas, ни кнопку «Выключить 3D-фон». Заставка выключена на уровне
+      # кода (`voyah-intro.ts`, флаг PUBLIC_VY_INTRO). Вернуть оба — отдельным
+      # решением владельца: BG3D=voyah-free BG3D_DEMO=1 и PUBLIC_VY_INTRO=1.
       - run: npm run build:pages
         working-directory: site
-        env:
-          BG3D: voyah-free
-          BG3D_DEMO: '1'
       - run: node scripts/check-pages.mjs
+        working-directory: site
+      # Заставка и 3D выключены (круг 74): проверяем по собранному артефакту,
+      # что ни оверлея, ни canvas, ни шейдеров заставки в бандле нет.
+      - run: node scripts/check-intro-3d-off.mjs
         working-directory: site
       - uses: actions/upload-pages-artifact@v3
         with:

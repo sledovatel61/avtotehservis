@@ -13,6 +13,9 @@
        на 800 мс, чтобы вход не выглядел «сломанным»;
      • играем КАЖДЫЙ заход (круг 30, требование владельца: sessionStorage гасил
        заставку до конца сессии — «срабатывает 1 раз и больше не загружается»);
+     • ВЫКЛЮЧЕНА ПО УМОЛЧАНИЮ (круг 74, 13.11.2026): владелец показывает страницу
+       заказчику, и заставка в текущем виде не годится. Код и тайминги остаются,
+       включается обратно сборкой с PUBLIC_VY_INTRO=1 — см. boot ниже;
      • ?intro=0 — выключить; при reduced-motion / save-data не показываем совсем;
      • прерывается кликом, Esc, колесом и touchmove — оверлей уходит за ≤300 мс;
      • после снятия не остаётся ни canvas, ни слушателей, ни таймеров.
@@ -308,13 +311,26 @@ void main(){
 /* Шейдеры выше экспортируются: гейт компиляции A10 импортирует VERT / SCENE_FS /
    BRIGHT_FS / COMP_FS и собирает программы в настоящем WebGL2. Поэтому запуск
    заставки заперт в проверке DOM: импорт в node (гейт) ничего не рисует и не падает. */
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+/* Круг 74 (13.11.2026): заставка по умолчанию выключена — владелец показывает
+   страницу заказчику, и в текущем виде заставку показывать нельзя. Флаг сборки,
+   а не параметр адреса: посетитель не должен уметь вернуть её себе (раньше
+   `?intro=0` её, наоборот, гасил). Вернуть — собрать с PUBLIC_VY_INTRO=1.
+
+   Проверка стоит ПЕРВОЙ и на верхнем уровне намеренно: при выключенном флаге
+   Vite подставляет false, бандлер выкидывает boot() вместе с шейдерами, и в
+   страницу не уезжает ни одного байта WebGL-кода — только пустой модуль. */
+const INTRO_ON = import.meta.env.PUBLIC_VY_INTRO === '1';
+
+if (INTRO_ON && typeof window !== 'undefined' && typeof document !== 'undefined') {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const saveData =
     (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
   const params = new URLSearchParams(location.search);
 
   if (!reduced && !saveData && params.get('intro') !== '0') boot();
+} else if (!INTRO_ON && typeof window !== 'undefined') {
+  /* след для приёмки и для гейта компоновки: заставка выключена сборкой */
+  (window as Window & { __vyIntro?: string }).__vyIntro = 'off';
 }
 
 function readMs(css: CSSStyleDeclaration, name: string, fallback: number): number {
