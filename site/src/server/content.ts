@@ -60,6 +60,13 @@ export function otherNews(slug: string, limit = 3): NewsRow[] {
 }
 /** Обложка целиком: src, крупный вариант, srcset и alt (из media.alt, если владелец заполнил). */
 export interface CoverInfo { src: string; lg: string; srcset: string | null; alt: string }
+/** Alt статичных обложек статей: описывает кадр по факту, без марки и модели (круг 72).
+ *  Ключ — путь из cover_static; для остальных картинок alt остаётся заголовком статьи. */
+export const STATIC_COVER_ALT: Record<string, string> = {
+  '/img/vy-art-to-1600.webp': 'Белый кроссовер на двухстоечном подъёмнике в боксе автосервиса',
+  '/img/vy-art-maslo-1600.webp': 'Подкапотное пространство гибридного кроссовера во время замены масла',
+  '/img/vy-art-bolezni-1600.webp': 'Передний тормозной диск и суппорт крупным планом',
+};
 export function coverInfo(row: { cover_media_id: string | null; cover_static: string | null }, fallbackSrc: string, title: string, staticAlt?: string): CoverInfo {
   if (row.cover_media_id) {
     const m = db().prepare('SELECT kind, id, poster_path, alt FROM media WHERE id=?').get(row.cover_media_id) as
@@ -80,6 +87,6 @@ export function coverInfo(row: { cover_media_id: string | null; cover_static: st
     }
   }
   const src = row.cover_static ?? fallbackSrc;
-  return { src, lg: src, srcset: null, alt: staticAlt ?? title };
+  return { src, lg: src, srcset: null, alt: staticAlt ?? STATIC_COVER_ALT[src] ?? title };
 }
 
