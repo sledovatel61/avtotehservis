@@ -3,7 +3,7 @@ import { db } from './db.ts';
 export interface Service {
   slug: string; title: string; short: string | null; description: string | null;
   icon: string | null; grp: string | null; tag: string | null; sort: number; hidden: number; chip: number;
-  seo_title: string | null; seo_description: string | null;
+  seo_title: string | null; seo_description: string | null; price_from: string | null;
 }
 
 export function listCatalogServices(): Service[] {
@@ -11,6 +11,14 @@ export function listCatalogServices(): Service[] {
 }
 export function getService(slug: string): Service | undefined {
   return db().prepare('SELECT * FROM services WHERE slug=? AND hidden=0').get(slug) as Service | undefined;
+}
+/** Главный экран: первыми — представители групп «Колёса», «Ремонт и ТО»,
+    «Диагностика», чтобы бейджи трёх карточек не дублировались (круг 12, п.8.1). */
+export function listHomeServices(): Service[] {
+  const all = db().prepare('SELECT * FROM services WHERE hidden=0 ORDER BY sort').all() as Service[];
+  const reps = ['shinomontazh', 'to-maslo', 'diagnostika'];
+  const head = reps.map((slug) => all.find((s) => s.slug === slug)).filter((s): s is Service => !!s);
+  return [...head, ...all.filter((s) => !reps.includes(s.slug))];
 }
 export function listChipServices(): Service[] {
   return db().prepare('SELECT * FROM services WHERE chip=1 ORDER BY grp, sort').all() as Service[];

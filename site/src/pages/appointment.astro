@@ -53,9 +53,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <p class="step-desc">Марка — обязательна: по ней подберём расходники и проверим, есть ли у нас нужный размер. Год, VIN и пробег — по желанию: они помогают точнее оценить работы, но не спрашиваются «для галочки».</p>
               <div class="fields">
                 <div class="field">
-                  <label for="f-brand">Марка <span class="req" aria-hidden="true">*</span></label>
+                  <label for="f-brand">Марка автомобиля <span class="req" aria-hidden="true">*</span></label>
                   <div class="combo">
-                    <input class="input" type="text" id="f-brand" name="brand" autocomplete="off" placeholder="Начните вводить: Лада, Toyota…" role="combobox" aria-expanded="false" aria-controls="brand-sugg" aria-describedby="brand-hint">
+                    <input class="input" type="text" id="f-brand" name="brand" autocomplete="off" placeholder="Например, Kia" role="combobox" aria-expanded="false" aria-controls="brand-sugg" aria-describedby="brand-hint">
                     <div class="sugg" id="brand-sugg" role="listbox" aria-label="Варианты марок"></div>
                   </div>
                   <span class="hint" id="brand-hint">В списке 20 популярных марок. Вашей нет? Впишите прямо в поле — обслуживаем любые автомобили.</span>
@@ -73,7 +73,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                   <button type="button" class="skip-chip" id="skip-year" aria-pressed="false">Не помню год</button>
                 </div>
                 <div class="field">
-                  <label for="f-vin">VIN <span class="opt">необязательно</span></label>
+                  <label for="f-vin">VIN (если знаете) <span class="opt">необязательно</span></label>
                   <input class="input" type="text" id="f-vin" name="vin" data-vin maxlength="17" placeholder="17 символов" autocomplete="off" aria-describedby="vin-hint">
                   <span class="hint" id="vin-hint">17 символов · буквы I, O, Q в VIN не используются</span>
                   <span class="err" role="alert"></span>
@@ -127,7 +127,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                 <div class="cal" id="cal" role="group" aria-label="Выбор даты: ближайшие 14 дней"></div>
               </div>
               <div class="field u-mt16">
-                <span class="f-label" id="slot-title">Время визита</span>
+                <span class="f-label" id="slot-title">Когда вам удобно приехать?</span>
                 <div class="slots" id="slots" role="group" aria-label="Выбор времени"></div>
                 <div class="slot-legend">
                   <span><i class="u-bar-mist2"></i>свободно</span>
@@ -152,9 +152,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                   <span class="err" role="alert"></span>
                 </div>
                 <div class="field">
-                  <label for="f-phone">Телефон <span class="req" aria-hidden="true">*</span></label>
+                  <label for="f-phone">Ваш телефон <span class="req" aria-hidden="true">*</span></label>
                   <input class="input" type="tel" id="f-phone" name="phone" data-mask inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-hint">
-                  <span class="hint" id="phone-hint">Формат +7 (999) 999-99-99 · вставка из буфера работает</span>
+                  <span class="hint" id="phone-hint">Номер для связи · формат +7 (999) 999-99-99</span>
                   <span class="err" role="alert"></span>
                 </div>
                 <div class="field field--full">
@@ -173,7 +173,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <div class="consent-row" id="consent-row">
                     <input type="checkbox" id="f-consent" aria-describedby="consent-hint">
                     <div class="u-flex1">
-                      <label for="f-consent">Согласен(на) на обработку персональных данных <span class="req" aria-hidden="true">*</span></label>
+                      <label for="f-consent">Нажимая кнопку, вы соглашаетесь на обработку персональных данных. <span class="req" aria-hidden="true">*</span></label>
                       <span class="hint u-blk-mt4" id="consent-hint">
                         <button type="button" class="linklike" data-modal="consent">Текст согласия</button> ·
                         <button type="button" class="linklike" data-modal="policy">Политика конфиденциальности</button> ·
@@ -215,8 +215,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
 
         <div class="wiz-state" id="state-ok" role="status" aria-live="polite">
           <div class="ticket">
-            <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg><b>Заявка принята</b></div>
+            <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg><b>Заявка отправлена</b></div>
             <div class="no"><small>Номер заявки — назовите его при звонке</small><span id="ok-no">—</span></div>
+            <p class="hint">Спасибо! Мы получили ваши данные и свяжемся с вами по указанному телефону в рабочее время. Если вопрос срочный, позвоните: {S.phone_main}.</p>
             <p class="hint" id="ok-dup" hidden>Повторная отправка: эта заявка уже принята — дубль не создан (идемпотентность по ключу).</p>
             <dl id="ok-dl"></dl>
           </div>
@@ -237,7 +238,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
           <p class="u-actions-center">
             <button class="btn btn--ghost" type="button" id="ok-ics">Добавить в календарь (.ics)</button>
             <button class="btn btn--copper" type="button" id="ok-again">Создать новую заявку</button>
-            <a class="btn btn--ghost" href="/" id="ok-home">На главную</a>
+            <a class="btn btn--ghost" href="/" id="ok-home">Вернуться на главную</a>
           </p>
           <p class="hint u-mt16">Заявка записана в базу сервиса и сразу передана в доставку: владельцу в Telegram и письмом на почту. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.</p>
         </div>
@@ -245,7 +246,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
         <div class="wiz-state" id="state-err" role="alert" aria-live="assertive">
           <div class="err-box">
             <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg><b>Не удалось отправить заявку</b></div>
-            <p id="err-text">Сервер не ответил или отклонил заявку. Введённые данные сохранены — заново ничего вводить не нужно. Повторите отправку или позвоните нам: {S.phone_main}.</p>
+            <p id="err-text">Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам: {S.phone_main}.</p>
             <p class="u-flex-mt18">
               <button class="btn btn--copper" type="button" id="err-retry">Повторить отправку</button>
               <a class="btn btn--ghost" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: {S.phone_main}</a>

@@ -346,7 +346,7 @@ if (wizEl) {
       if (!firstBad && el) firstBad = el;
     };
     if (n === 1) {
-      if (fBrand && fBrand.value.trim().length < 2) bad(fBrand, 'Укажите марку — начните вводить или выберите из списка');
+      if (fBrand && fBrand.value.trim().length < 2) bad(fBrand, 'Заполните это поле.');
       const yearSkip = $<HTMLInputElement>('#skip-year')?.checked;
       if (fYear && !yearSkip && fYear.value) {
         const y = Number(fYear.value);
@@ -377,10 +377,10 @@ if (wizEl) {
       }
     }
     if (n === 4) {
-      if (fName && fName.value.trim().length < 2) bad(fName, 'Укажите имя');
+      if (fName && fName.value.trim().length < 2) bad(fName, 'Заполните это поле.');
       const digits = (fPhone?.value ?? '').replace(/\D/g, '');
-      if (digits.length !== 11) bad(fPhone, 'Телефон: +7 (999) 999-99-99');
-      if (fConsent && !fConsent.checked) bad(fConsent, 'Без согласия на обработку данных отправить нельзя');
+      if (digits.length !== 11) bad(fPhone, 'Проверьте номер телефона — по нему мы свяжемся с вами.');
+      if (fConsent && !fConsent.checked) bad(fConsent, 'Чтобы отправить заявку, подтвердите согласие на обработку персональных данных.');
     }
     if (!firstBad) { if (n === 2) setErrAt('svc-err-anchor', ''); if (n === 3) setErrAt('when-err-anchor', ''); }
     return firstBad;
@@ -537,6 +537,9 @@ if (wizEl) {
       track('submit_error', { code: 'http_' + r.status });
     } catch {
       showState('err');
+      /* круг 26 (a8/05-micro): отдельное сообщение, когда нет соединения */
+      const pe = $('#err-text');
+      if (pe) pe.textContent = !navigator.onLine ? 'Похоже, нет соединения. Проверьте интернет и повторите отправку.' : 'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.';
       track('submit_error', { code: 'network' });
     }
   }

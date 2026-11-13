@@ -1,0 +1,581 @@
+---
+/* Страница раздела «Voyah Free» (круг 28).
+   Разметка и стили — из принятого мокапа A6 (mockups/r28/voyah, PR #6).
+   Тексты — из утверждённого контента content/merged-r28/a8/voyah-free.md (PR #7).
+   Источник кадров — mockups/r28/voyah/img → site/scripts/build-voyah-images.mjs. */
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import '../styles/voyah.css';
+import VoyahMark from '../components/VoyahMark.astro';
+import Bg3dLayer from '../components/Bg3dLayer.astro';
+import { bg3dFor, bg3dDemo } from '../server/bg3d-config.ts';
+
+const S = getSettings();
+/* 3D-фон (задание №44). По умолчанию off — страница не меняется ни на байт.
+   Включается ТОЛЬКО переменной окружения сервера: BG3D=voyah-free или BG3D=*.
+   Раньше слой был подключён лишь к шаблону /services/<slug>, а страница Voyah Free
+   живёт отдельным файлом — то есть на ней фон было не включить вообще. */
+const bg3d = bg3dFor('voyah-free');
+const demo3d = bg3dDemo();
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+
+const TITLE = "Voyah Free: регламент масел и цены на ТО";
+const DESCRIPTION =
+  "ТО Voyah Free в Ростове-на-Дону: подбор материалов по VIN, диагностика ходовой и цены работ без запчастей. АвтоТехСервис, Портовая, 439; ежедневно 9:00–19:00.";
+
+const H1 = 'ТО Voyah Free в Ростове-на-Дону на Портовой, 439';
+/* жёсткие переносы: «ТО Voyah Free / в Ростове-на-Дону / на Портовой, 439» */
+const H1_LINES = ['ТО Voyah Free', 'в Ростове-на-Дону', 'на Портовой, 439'];
+const LEAD =
+  "Более трёх лет обслуживаем Voyah Free в Ростове-на-Дону. Исполнение и материалы сверим по VIN. Масло и фильтры — 2000 ₽ за работу, без запчастей; остальные цены — в прайсе. Ежедневно 9:00–19:00, Портовая, 439.";
+
+const HERO_META = [
+  { t: 'Адрес', d: 'Ростов-на-Дону, ул. Портовая, 439' },
+  { t: 'Часы', d: 'ежедневно, 9:00–19:00' },
+  { t: 'Опыт', d: 'более трёх лет с Voyah Free' },
+  { t: 'Цена', d: 'за работу, без запчастей' },
+];
+
+const WHY = [
+  {
+    h: 'Двигатель и генераторная установка',
+    d: 'На исполнениях с ДВС работы с двигателем и генераторной установкой — разные позиции. Для версии 88 кВт·ч без ДВС эти операции и свечи не применяются.',
+    ic: 'engine',
+  },
+  {
+    h: 'Два редуктора — две отдельные работы',
+    d: 'Передний и задний редукторы — отдельные позиции; количество и тип масла зависят от исполнения, поэтому до работ сверяем VIN.',
+    ic: 'gears',
+  },
+  {
+    h: 'Тормоза — по осям',
+    d: 'Колодки и диски проверяем по осям, включая внутреннюю и наружную колодки; стоимость работ называем до начала.',
+    ic: 'brake',
+  },
+  {
+    h: 'Смета до работ',
+    d: 'Сначала осмотр и дефектовка, потом перечень работ с суммой. Без согласования к работам не приступаем — это правило сервиса.',
+    ic: 'list',
+  },
+];
+
+const GROUPS = [
+  { h: "ТО и жидкости", d: "ДВС, генератор и редукторы — отдельные работы; материалы подберём по VIN." },
+  { h: "Тормоза", d: "Осматриваем колодки и диски по осям; смету согласуем." },
+  { h: "Двигатель", d: "Прайс включает свечи и прокладку клапанной крышки." },
+  { h: "Подвеска и рулевое", d: "Проверяем ходовую; замену согласуем." },
+  { h: "Диагностика", d: "Поясним результат и цену диагностики до работ." },
+];
+
+/* 15 позиций прайса — за работу, без запчастей */
+const PRICE: Array<[string, string, string]> = [
+  ['Масло в двигателе + все фильтры', 'масляный, воздушный, салонный', '2000 ₽'],
+  ['Масло переднего редуктора', '', '2500 ₽'],
+  ['Масло заднего редуктора', '', '2500 ₽'],
+  ['Масло генераторной установки', '', '2500 ₽'],
+  ['Тормозная жидкость', 'с прокачкой контуров', '2000 ₽'],
+  ['Колодки, передняя ось', '', '2000 ₽'],
+  ['Колодки, задняя ось', '', '2500 ₽'],
+  ['Передние диски + колодки', '', '3000 ₽'],
+  ['Задние диски + колодки', '', '4000 ₽'],
+  ['Свечи зажигания', '', '1500 ₽'],
+  ['Прокладка клапанной крышки', '', '2500 ₽'],
+  ['Рулевой наконечник', '', '1200 ₽'],
+  ['Рулевая тяга', '', '2500 ₽'],
+  ['Рычаги передней подвески', '', 'от 2500 ₽'],
+  ['Диагностика ходовой', 'на подъёмнике', '1500 ₽'],
+];
+
+const CHECKS = [
+  { h: "Не заводится, сел 12-вольтовый аккумулятор", d: "При таком обращении проверяем аккумулятор, соединения и утечку тока. Известны случаи глубокого разряда; после замены у одного автомобиля ошибка сохранилась." },
+  { h: "Загорелся Check Engine после заправки", d: "Встречается ошибка сразу после заправки и примерно через 100 км; причина не установлена. Смена топлива помогла в одном случае, но связь не доказана. Считываем коды и уточняем условия появления." },
+  { h: "Внутренняя передняя колодка изнашивается быстрее", d: "Проверяем обе стороны автомобиля: встречается как ускоренный, так и равномерный износ. Реагенты и рекуперация — версии, не подтверждённая причина. Сравниваем колодки, диски и направляющие." },
+  { h: "Хруст или щелчки при повороте руля", d: "При хрусте или щелчках проверяем рейку, вал, усилитель, сайлентблоки и тяги: единой причины нет. Осматриваем крепёж и люфты, рейку заранее не приговариваем." },
+  { h: "Стук сзади на неровностях", d: "Стук сзади не всегда связан с амортизаторами: их замена в отдельных случаях не устраняла шум. Осматриваем стойки, крепления и соседние элементы, затем проверяем на ходу." },
+  { h: "Гул колеса или редуктора", d: "При гуле проверяем ступицы, редуктор и подшипник электромотора: отдельные случаи замены ступиц приходились на 9–21 тыс. км, гул редуктора/подшипника электромотора отмечался на 61–80 тыс. км. Это не норма отказа; локализуем источник до замены." },
+];
+
+const INSPECTIONS = [
+  { h: "Ремни и патрубки", d: "Проверяем трещины, потёртости и ослабленные хомуты; находки обсуждаем до работ." },
+  { h: "Подтёки и соединения", d: "Проверяем следы жидкости на редукторах, сальниках и соединениях приводов." },
+  { h: "Шины и давление", d: "Проверяем давление, протектор и износ; сверяем с табличкой автомобиля." },
+  { h: "Тормоза по осям", d: "Сравниваем износ колодок и дисков по осям." },
+];
+
+const PARTS_BY_VERSION = [
+  [
+    "Дорест 33",
+    "ДВС: 5W-30; 4/4,4 л сервис/полная; фильтр 101202001; свеча 370701001",
+    "Генератор: Dexron VI, 1,1 л",
+    "Редукторы: ETF-EMC, около 3 л каждый",
+    "Тормозная: DOT4/HZY4, 0,75 л",
+    "ОЖ: ДВС 6±0,5; ВВБ 12,5 л; H41901000/007"
+  ],
+  [
+    "Дорест 39",
+    "ДВС: 5W-30; 4/4,4 л; фильтр 101202001; свеча 370701001",
+    "Генератор: Dexron VI, 1,1 л",
+    "Редукторы: около 0,85 л каждый",
+    "Тормозная: DOT4/HZY4, 0,75 л",
+    "ОЖ: ДВС 6±0,5; ВВБ 12,5 л; H41901000/007"
+  ],
+  [
+    "Рест",
+    "ДВС: 0W-20; 4/4,5 л; фильтр 101202004; свеча 370701003",
+    "Генератор: EHSF-2LV, 1,4±0,05 л; H41203001",
+    "Редукторы: около 0,85 л каждый",
+    "Тормозная: DOT4/HZY4, 0,7 л",
+    "ОЖ: ДВС 6±0,5; ВВБ 16,5±0,5 л; H41901000/007"
+  ],
+  [
+    "318 / Sport+",
+    "ДВС: 0W-20; 4/4,4 л; фильтр 101202005; свеча 370701003",
+    "Генератор: EHSF-2LV, 1,4±0,05 л; H41203001",
+    "Редукторы: передний 0,85; задний 2,35–2,7 или 0,85±0,05 л, уточняем по VIN",
+    "Тормозная: DOT4/HZY4, 0,7 л",
+    "ОЖ: ДВС 6±0,5; ВВБ 16,5±0,5 л; H41901000/007"
+  ],
+  [
+    "Электрическая 88 кВт·ч",
+    "ДВС/генератор/свечи: не применяются",
+    "Не применяется",
+    "Редукторы: тип и объём уточняем по VIN",
+    "Тормозная: уточняем по VIN",
+    "ОЖ: данные уточняем по VIN"
+  ]
+];
+
+const PARTS = [
+  {
+    h: 'Что уточним при записи',
+    d: 'VIN, пробег и что менялось в прошлый раз. По VIN подбираются масло и фильтры: у Voyah Free в линейке несколько исполнений, и «по модели» здесь можно ошибиться с допуском.',
+  },
+  {
+    h: 'Граница ответственности',
+    d: 'За деталь клиента отвечает клиент: если привезённый фильтр не подошёл или масло не соответствует допуску, работу мы не начнём, а скажем об этом до разборки. За наши материалы и работу отвечаем мы — это фиксируется в заказ-наряде.',
+  },
+  {
+    h: 'Можно приехать со своим',
+    d: 'Рабочий вариант, особенно если расходники уже куплены. Сверим их с требованиями до начала работ: состав согласуем при записи, чтобы не выяснять это на подъёмнике.',
+  },
+];
+
+const STEPS = [
+  { h: 'Заявка', d: 'Позвоните или оставьте заявку. Уточним задачу и подскажем время визита.' },
+  { h: 'Осмотр и диагностика', d: 'Осматриваем автомобиль, при необходимости проверяем ходовую. Диагностика ходовой — 1500 ₽ за работу.' },
+  { h: 'Смета и согласование', d: 'Объясним результаты и назовём цены. Начинаем только после вашего согласия.' },
+  { h: 'Работы и выдача', d: 'Выполним согласованный объём, объясним результат и оформим заказ-наряд. Дополнительные работы согласуем отдельно.' },
+];
+
+const FAQ = [
+  {
+    "q": "Чем отличаются исполнения Voyah Free при подборе расходников?",
+    "a": "По справочнику сообщества, у дорест 33/39, реста и 318/Sport+ различаются расходники и объёмы. Это не заводская спецификация; сверим VIN и документы автомобиля. Подбор по VIN до заказа."
+  },
+  {
+    "q": "Какое масло нужно двигателю?",
+    "a": "Справочник указывает 5W-30 для дореста и 0W-20 для реста/318, но данные по ресту и допускам расходятся. Сверим VIN и документы: это не заводская инструкция. В смете укажем выбранное масло."
+  },
+  {
+    "q": "Сколько масла входит в двигатель?",
+    "a": "Справочник указывает 4 л при сервисной замене и 4,4/4,5 л при полной, в зависимости от версии; встречаются и другие значения. Сверим VIN, уровень проверим по подходящей процедуре для машины."
+  },
+  {
+    "q": "Какое масло и сколько нужно генераторной установке?",
+    "a": "Справочник указывает доресту Dexron VI, около 1,1 л, ресту/318 — EHSF-2LV, около 1,4 л. Тип и интервал спорны; Dexron VI для реста не подтверждён. Подбираем по VIN конкретной машины."
+  },
+  {
+    "q": "Сколько масла нужно в редукторы?",
+    "a": "Справочник даёт около 3 л на редуктор дореста 33 и 0,85 л для других версий. Для заднего 318 встречаются 2,35–2,7 л или 0,85±0,05 л; уточним по VIN до работ. Масло до сверки не заливаем."
+  },
+  {
+    "q": "Какой интервал замены масел считать правильным?",
+    "a": "Справочник для ДВС указывает 10 тыс. км по пробегу ДВС или год; основание отсчёта различается. Редукторы — 30/40/60/80 тыс. км; интервал генератора тоже спорный. Сверим документы автомобиля."
+  },
+  {
+    "q": "Как подобрать охлаждающую жидкость?",
+    "a": "Справочник приводит LEC-II и альтернативы, совместимость спорна. Не выбираем по цвету: проверим VIN, контур и документы; неизвестное уточним по VIN. Подбор согласуем до покупки материалов."
+  },
+  {
+    "q": "Когда менять тормозную жидкость?",
+    "a": "Справочник указывает 20 тыс. км или два года; также встречается интервал 30 тыс. км или оценка состояния. Это не заводской интервал. Проверим жидкость и документы; цену назовём до начала."
+  },
+  {
+    "q": "Какие свечи подходят?",
+    "a": "Справочник указывает разные свечи для дореста и рест/318; единый аналог не подтверждён. Сверим VIN и двигатель. Для аналогов выставляем зазор 0,8 мм и момент затяжки 25 Н·м — рабочие значения сервиса, не заводские."
+  },
+  {
+    "q": "Что проверяют, если быстрее стирается внутренняя колодка?",
+    "a": "Встречается ускоренный износ внутренней колодки и равномерный. Сравним обе стороны, проверим диски и направляющие до согласования работ. Через колесо внутреннюю колодку не видно при беглом осмотре — проверим её изнутри."
+  },
+  {
+    "q": "Что проверять при хрусте или щелчках при повороте руля?",
+    "a": "Возможные источники щелчков — крепёж рейки, вал, усилитель, тяги и сайлентблоки; единой причины нет. Проверим люфты и соединения, объясним результат. Рейку по одному звуку не меняем."
+  },
+  {
+    "q": "Как понять, что гудит ступичный подшипник?",
+    "a": "Похожий гул может исходить от ступицы, редуктора или электромотора. Уточним условия, проверим люфт и локализуем источник, не ставя диагноз по одному звуку. Диагностика ходовой — 1500 ₽ за работу."
+  },
+  {
+    "q": "Откуда может идти стук сзади?",
+    "a": "Стук сзади может быть связан с амортизаторами, но их замена не всегда устраняет шум. Осмотрим стойки и крепления; уточним, на каких неровностях слышно. Смету и работы согласуем заранее, до ремонта."
+  },
+  {
+    "q": "Подходит ли этот прайс чистой электрической версии 88 кВт·ч?",
+    "a": "Масло ДВС, генератор и свечи к версии без ДВС не относятся. Тип и объём редукторов 88 кВт·ч не установлены в источниках сообщества. Уточним VIN и задачу; тяговую систему не обслуживаем."
+  },
+  {
+    "q": "Сколько времени занимает ТО?",
+    "a": "Срок зависит от объёма и состояния; назовём его после осмотра. Мы не официальный дилер и не обещаем сохранение заводской гарантии — условия уточняйте у продавца. Работы согласуем до начала."
+  }
+];
+
+/* микроиконки «почему» — SVG-контуры, без сторонних библиотек */
+const ICONS: Record<string, string> = {
+  engine: 'M4 16h16M6 16V9l3-3h6l3 3v7M9 6V4h6v2',
+  gears: 'M12 3v18M5 8h14M5 16h14M12 5.6A2.4 2.4 0 1 1 12 10a2.4 2.4 0 0 1 0-4.4zM12 14a2.4 2.4 0 1 1 0 4.8A2.4 2.4 0 0 1 12 14z',
+  brake: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
+  list: 'M4 7h16M4 12h10M4 17h13M17.5 15.5 20 18l-2.5 2.5',
+};
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Voyah Free', item: siteUrl + '/voyah-free' },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'ТО и ремонт Voyah Free',
+    serviceType: 'Техническое обслуживание Voyah Free',
+    areaServed: 'Ростов-на-Дону',
+    provider: {
+      '@type': 'AutoRepair',
+      name: S.site_name,
+      telephone: S.phone_main_tel,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Ростов-на-Дону',
+        streetAddress: 'ул. Портовая, 439',
+        addressCountry: 'RU',
+      },
+    },
+    /* круг 29 (M2): «от 2500 ₽» отдавалось как фиксированные 2500 — для других
+       креплений цена выше. Цены «от» идут через priceSpecification.minPrice. */
+    offers: PRICE.map(([name, sub, sum]) => {
+      const digits = sum.replace(/[^\d]/g, '');
+      const base = { '@type': 'Offer', name: sub ? `${name} (${sub})` : name, priceCurrency: 'RUB' };
+      return /^от\s/.test(sum)
+        ? { ...base, priceSpecification: { '@type': 'PriceSpecification', minPrice: digits, priceCurrency: 'RUB' } }
+        : { ...base, price: digits };
+    }),
+  },
+];
+---
+
+<Base page="voyah" title={TITLE} description={DESCRIPTION} jsonLd={jsonLd}>
+  <nav class="crumbs container" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">Voyah Free</span>
+  </nav>
+
+  <!-- 1. Первый экран -->
+  <section class={`v-hero${bg3d.enabled ? ' v-hero--bg3d' : ''}`} aria-labelledby="v-h1">
+    <div class="v-hero-bg" aria-hidden={bg3d.enabled ? undefined : 'true'}>
+      {bg3d.enabled && <Bg3dLayer variant={bg3d.variant} demo={demo3d} />}
+      <picture>
+        <source media="(max-width:767px)" type="image/avif" srcset="/img/vy-art-to-480.avif 480w" sizes="100vw">
+        <source media="(max-width:767px)" type="image/webp" srcset="/img/vy-art-to-480.webp 480w" sizes="100vw">
+        <source type="image/avif" srcset="/img/vy-art-to-480.avif 480w, /img/vy-art-to-960.avif 960w, /img/vy-art-to-1600.avif 1600w" sizes="100vw">
+        <source type="image/webp" srcset="/img/vy-art-to-480.webp 480w, /img/vy-art-to-960.webp 960w, /img/vy-art-to-1600.webp 1600w" sizes="100vw">
+        <img src="/img/vy-art-to-1600.webp" width="1672" height="941" alt="Белый автомобиль на двухстоечном подъёмнике в сервисном боксе" fetchpriority="high" decoding="async">
+      </picture>
+    </div>
+    <div class="vy-wrap">
+      <p class="v-eyebrow v-eyebrow--brand">
+        <VoyahMark class="v-mark" height={26} />
+        Voyah Free · Портовая, 439
+      </p>
+      <h1 class="v-hero-h" id="v-h1">
+        {H1_LINES.map((line, i) => <span class="v-h1-l">{line}{i < H1_LINES.length - 1 ? ' ' : ''}</span>)}
+      </h1>
+      <p class="v-lead">{LEAD}</p>
+      <div class="v-btnrow">
+        <a class="v-btn v-btn--brass" href="/appointment?s=to-maslo" data-track="cta_voyah_hero">Записаться на ТО</a>
+        <a class="v-btn v-btn--light" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: {S.phone_main}</a>
+      </div>
+      <div class="v-hero-meta">
+        {HERO_META.map((m) => <div><b>{m.t}</b>{m.d}</div>)}
+      </div>
+    </div>
+  </section>
+
+  <hr class="v-rule">
+
+  <!-- 2. Почему это не обычное ТО -->
+  <section class="v-sec v-sec--why v-sec--noise" aria-labelledby="v-why-h">
+    <div class="vy-wrap">
+      <div class="reveal">
+        <p class="v-eyebrow">Как устроена машина</p>
+        <h2 id="v-why-h">Почему Voyah Free — это не обычное ТО</h2>
+        <p class="v-lead">Исполнения отличаются по жидкостям, объёмам и деталям. Справочник сообщества — не заводская инструкция; сверяем VIN и историю. На 88 кВт·ч без ДВС масло двигателя, генератор и свечи не нужны; тяговую систему не обслуживаем.</p>
+      </div>
+      <div class="v-why">
+        {WHY.map((w, i) => (
+          <article class="v-why-card reveal" data-d={String((i % 3) + 1)}>
+            <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d={ICONS[w.ic]} /></svg></span>
+            <h3>{w.h}</h3>
+            <p>{w.d}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Что входит: пять групп работ -->
+  <section class="v-sec v-sec--panel v-sec--incl" aria-labelledby="v-incl-h">
+    <div class="vy-wrap">
+      <div class="reveal">
+        <p class="v-eyebrow">Пять групп работ</p>
+        <h2 id="v-incl-h">Что входит в обслуживание</h2>
+        <p class="v-lead">Состав зависит от жалобы и осмотра; каждую позицию можно согласовать отдельно.</p>
+      </div>
+      <div class="v-incl">
+        {GROUPS.map((g) => (
+          <article class="v-incl-item reveal"><h3>{g.h}</h3><p>{g.d}</p></article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Кадр «узел крупно» -->
+  <section class="v-sec v-sec--node" aria-labelledby="v-node-h">
+    <div class="vy-wrap v-split">
+      <figure class="v-frame reveal">
+        <picture>
+          <source media="(max-width:767px)" type="image/avif" srcset="/img/vy-art-maslo-480.avif 480w" sizes="92vw">
+          <source media="(max-width:767px)" type="image/webp" srcset="/img/vy-art-maslo-480.webp 480w" sizes="92vw">
+          <source type="image/avif" srcset="/img/vy-art-maslo-480.avif 480w, /img/vy-art-maslo-960.avif 960w, /img/vy-art-maslo-1600.avif 1600w" sizes="(max-width:900px) 92vw, 54vw">
+          <source type="image/webp" srcset="/img/vy-art-maslo-480.webp 480w, /img/vy-art-maslo-960.webp 960w, /img/vy-art-maslo-1600.webp 1600w" sizes="(max-width:900px) 92vw, 54vw">
+          <img src="/img/vy-art-maslo-960.webp" width="1672" height="941" alt="Тёмно-синий автомобиль с открытым капотом, рядом канистра и воронка" loading="lazy" decoding="async">
+        </picture>
+        <figcaption><b>Узел крупно</b> <span>редукторы, генератор и охлаждение по VIN</span></figcaption>
+      </figure>
+      <div class="reveal" data-d="1">
+        <p class="v-eyebrow">Что смотрим под машиной</p>
+        <h2 id="v-node-h">Смотрим не только масло</h2>
+        <p class="v-lead">Данные справочника сообщества: генератор — Dexron VI, 1,1 л дорест; EHSF-2LV, 1,4±0,05 л рест/318 (H41203001). ОЖ: ДВС — 6±0,5 л; ВВБ — 12,5 л дорест и 16,5±0,5 л рест/318 (H41901000/007). Не заводской регламент; тяговую систему не обслуживаем.</p>
+        <div class="v-btnrow"><a class="v-btn v-btn--light" href="#price">Смотреть прайс</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Прайс: 15 строк -->
+  <section class="v-sec v-sec--panel v-sec--price v-sec--noise" id="price" aria-labelledby="v-price-h">
+    <div class="vy-wrap">
+      <div class="v-price-head reveal">
+        <div>
+          <p class="v-eyebrow">Прайс · 15 позиций</p>
+          <h2 id="v-price-h">Цены на работы</h2>
+        </div>
+        <p class="v-note">Суммы — за работу, без запчастей и расходников.</p>
+      </div>
+      <div class="v-price">
+        <div class="reveal">
+          <table class="v-tbl">
+            <caption>Voyah Free · работы, без запчастей</caption>
+            <thead><tr><th scope="col">Работа</th><th scope="col">Стоимость</th></tr></thead>
+            <tbody>
+              {PRICE.map(([name, sub, sum]) => (
+                <tr><td>{name}{sub && <span class="sub">{sub}</span>}</td><td><b>{sum}</b></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <aside class="v-price-aside reveal" data-d="1" aria-label="Условия по цене">
+          <div class="v-glass">
+            <VoyahMark class="v-aside-mark" height={42} />
+            <span class="sum">от 2000 ₽</span>
+            <p class="v-note" style="margin-top:6px">полное ТО с маслом и фильтрами — цена за работу</p>
+            <ul>
+              <li>Точную сумму называем после осмотра и до начала работ.</li>
+              <li>Запчасти и расходники — отдельно, по согласованию.</li>
+              <li>Можно приехать со своими расходниками.</li>
+              <li>Диагностика ходовой — 1500 ₽, оплачивается отдельно.</li>
+            </ul>
+            <a class="v-btn v-btn--brass" href="/appointment?s=to-maslo" style="width:100%">Записаться на ТО</a>
+          </div>
+        </aside>
+      </div>
+      <p class="v-note" style="margin-top:22px">Стоимость работ подтвердим до начала. Исполнение и применимость материалов уточняем по VIN. <a class="u-brass" href="/prices">Полный прайс сервиса →</a></p>
+    </div>
+  </section>
+
+  <!-- 6. Что чаще всего беспокоит владельцев -->
+  <section class="v-sec v-sec--check v-sec--grid" aria-labelledby="v-check-h">
+    <div class="vy-wrap">
+      <div class="reveal">
+        <p class="v-eyebrow">Частые обращения</p>
+        <h2 id="v-check-h">Что чаще всего беспокоит владельцев</h2>
+        <p class="v-lead">Это не статистика неисправностей: жалоба — не диагноз, проверяем машину.</p>
+      </div>
+      <div class="v-check">
+        {CHECKS.map((c) => (
+          <div class="v-check-i reveal"><h3>{c.h}</h3><p>{c.d}</p></div>
+        ))}
+        <div class="v-check-i v-check-i--sum reveal">
+          <h3>Что делаем</h3>
+          <p>Сначала проверка, затем объяснение результата и смета. Работы — после согласования.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Кадр к разделу частых обращений -->
+  <section class="v-sec v-sec--flush v-sec--evening" aria-labelledby="v-complaints-image-h">
+    <div class="vy-wrap">
+      <div class="v-media-full reveal">
+        <picture>
+          <source media="(max-width:767px)" type="image/avif" srcset="/img/vy-art-bolezni-480.avif 480w" sizes="100vw">
+          <source media="(max-width:767px)" type="image/webp" srcset="/img/vy-art-bolezni-480.webp 480w" sizes="100vw">
+          <source type="image/avif" srcset="/img/vy-art-bolezni-480.avif 480w, /img/vy-art-bolezni-960.avif 960w, /img/vy-art-bolezni-1600.avif 1600w" sizes="100vw">
+          <source type="image/webp" srcset="/img/vy-art-bolezni-480.webp 480w, /img/vy-art-bolezni-960.webp 960w, /img/vy-art-bolezni-1600.webp 1600w" sizes="100vw">
+          <img src="/img/vy-art-bolezni-1600.webp" width="1672" height="941" alt="Графитовый автомобиль, крупный план переднего тормозного диска и суппорта" loading="lazy" decoding="async">
+        </picture>
+        <div class="cap">
+          <div>
+            <b id="v-complaints-image-h">Тормоза осматриваем по осям</b>
+            Оцениваем диски и колодки до согласования работ; стоимость назовём заранее.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 7. Что проверим на осмотре -->
+  <section class="v-sec v-sec--check v-sec--grid" aria-labelledby="v-inspection-h">
+    <div class="vy-wrap">
+      <div class="reveal">
+        <p class="v-eyebrow">Осмотр автомобиля</p>
+        <h2 id="v-inspection-h">Что проверим на осмотре</h2>
+        <p class="v-lead">При осмотре по согласованному объёму проверяем:</p>
+      </div>
+      <div class="v-check">
+        {INSPECTIONS.map((item) => (
+          <div class="v-check-i reveal"><h3>{item.h}</h3><p>{item.d}</p></div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Расходники и подбор по VIN -->
+  <section class="v-sec v-sec--panel v-sec--parts" aria-labelledby="v-parts-h">
+    <div class="vy-wrap">
+      <div class="reveal">
+        <p class="v-eyebrow">Материалы</p>
+        <h2 id="v-parts-h">Расходники и подбор по VIN</h2>
+        <p class="v-lead">Прайс указывает только работу. Масло, фильтры, свечи, прокладки и колодки считаются отдельно, поэтому в смете всегда видно, за что именно вы платите: за работу мастера и за материалы.</p>
+      </div>
+      <div class="v-parts">
+        {PARTS.map((p, i) => (
+          <div class="v-part reveal" data-d={String(i + 1)}><h3>{p.h}</h3><p>{p.d}</p></div>
+        ))}
+      </div>
+      <p class="v-note" style="margin-top:22px">Справочник сообщества — не заводской регламент. Применимость материалов подтверждаем по VIN; неизвестное обозначаем «уточняем по VIN».</p>
+      <div class="reveal" style="overflow-x:auto">
+        <table class="v-tbl" aria-label="Расходники по исполнениям Voyah Free">
+          <caption>Сообщество · данные для сверки по VIN</caption>
+          <thead><tr><th>Исполнение</th><th>ДВС (сервис/полная), фильтр, свечи</th><th>Генератор</th><th>Редукторы</th><th>Тормоза</th><th>Охлаждение</th></tr></thead>
+          <tbody>{PARTS_BY_VERSION.map(([variant, engine, generator, reducers, brakes, cooling]) => <tr><td><strong>{variant}</strong></td><td>{engine}</td><td>{generator}</td><td>{reducers}</td><td>{brakes}</td><td>{cooling}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <p class="v-note" style="margin-top:18px">Интервалы сообщества расходятся: ДВС — 10 тыс. км по пробегу ДВС или год, либо общий; редукторы — 30/40/60/80 тыс. км. Задний 318: 2,35–2,7 л либо 0,85±0,05 л, уточняем по VIN.</p>
+      <p class="v-note" style="margin-top:18px">Полезно почитать: <a class="u-brass" href="/news/to-voyah-free-reglament">регламент ТО</a>, <a class="u-brass" href="/news/maslo-voyah-free">масла</a> и <a class="u-brass" href="/news/voyah-free-bolezni">частые жалобы владельцев</a>.</p>
+
+    </div>
+  </section>
+
+  <!-- 8. Как проходит визит -->
+  <section class="v-sec v-sec--steps" aria-labelledby="v-steps-h">
+    <div class="vy-wrap">
+      <div class="reveal">
+        <p class="v-eyebrow">Порядок</p>
+        <h2 id="v-steps-h">Как проходит визит</h2>
+      </div>
+      <div class="v-steps">
+        {STEPS.map((s) => <div class="v-step reveal"><h3>{s.h}</h3><p>{s.d}</p></div>)}
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. FAQ -->
+  <section class="v-sec v-sec--faq" aria-labelledby="v-faq-h">
+    <div class="vy-wrap">
+      <div class="reveal">
+        <p class="v-eyebrow">Вопросы</p>
+        <h2 id="v-faq-h">Частые вопросы</h2>
+      </div>
+      <div class="v-faq">
+        {FAQ.map((f) => (
+          <details>
+            <summary>{f.q}</summary>
+            <div class="ans">{f.a}</div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. Финальный CTA -->
+  <section class="v-sec v-sec--flush">
+    <div class="vy-wrap">
+      <div class="v-cta reveal">
+        <div class="v-cta-grid">
+          <div>
+            <p class="v-eyebrow v-eyebrow--brand">
+              <VoyahMark class="v-mark" height={26} />
+              Voyah Free · запись
+            </p>
+            <h2>Запишите Voyah Free на ТО</h2>
+            <p class="v-lead">Скажите пробег и что беспокоит — подберём время и заранее уточним, какие позиции понадобятся. Цены за работу указаны выше; сумму подтвердим после осмотра.</p>
+          </div>
+          <div class="v-btnrow">
+            <a class="v-btn v-btn--brass" href="/appointment?s=to-maslo">Записаться на ТО</a>
+            <a class="v-btn v-btn--light" href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a>
+            <a class="v-btn v-btn--light" href={S.telegram_url} rel="noopener">Telegram</a>
+          </div>
+        </div>
+      </div>
+      <p class="v-note" style="margin-top:18px">Кадры на странице — постановочные изображения для оформления раздела, не фотографии конкретных машин. «Voyah Free» — товарный знак правообладателя; АвтоТехСервис не является официальным дилером марки и выполняет работы по своему прайсу.</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .v-sec--parts .v-tbl th:not(:last-child),
+  .v-sec--parts .v-tbl td:not(:last-child) { padding-right: 20px; }
+  .v-sec--parts .v-tbl th:last-child,
+  .v-sec--parts .v-tbl td:last-child { padding-right: 0; }
+  @media (max-width: 700px) {
+    .v-sec--parts .v-tbl th,
+    .v-sec--parts .v-tbl td { padding-right: 0; }
+    .v-sec--parts .v-tbl td:last-child { white-space: normal; }
+  }
+</style>
+
+<script>
+  import '../client/voyah-intro.ts';
+</script>

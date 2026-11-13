@@ -1,0 +1,195 @@
+{
+  "generatedAt": "2026-11-11T18:47:51.459Z",
+  "toolchain": {
+    "glslang": "16.6.0 (Khronos, WASM)",
+    "validator": "@moreplease/glslang 16.6.0-1",
+    "opcodeTables": {
+      "_provenance": "KhronosGroup/SPIRV-Headers, include/spirv/unified1/{spirv.core.grammar.json, extinst.glsl.std.450.grammar.json}, получено через api.github.com 10.11.2026",
+      "_license": "MIT (Khronos Group)",
+      "_revision_core": 7,
+      "_version_core": null,
+      "_revision_glsl": 2,
+      "_version_glsl": 100
+    }
+  },
+  "essl310Note": "SPIR-V собран из механически преобразованной ESSL 3.10 версии (меняются только объявления входа/выхода); валидация шага 1 — по настоящему ESSL 1.00",
+  "validation": {
+    "webgl1": {
+      "ok": true,
+      "diagnostics": []
+    },
+    "webgl2": {
+      "ok": true,
+      "diagnostics": []
+    }
+  },
+  "fragment": {
+    "total": 1039,
+    "executable": 658,
+    "arithmetic": 275,
+    "transcendental": 14,
+    "memory": 352,
+    "composite": 31,
+    "texture": 1,
+    "branch": 5,
+    "controlFlow": 5,
+    "spirvBytes": 17808,
+    "unknownOpcodes": [],
+    "byOpcode": {
+      "OpCapability": 1,
+      "OpExtInstImport": 1,
+      "OpMemoryModel": 1,
+      "OpEntryPoint": 1,
+      "OpExecutionMode": 1,
+      "OpSource": 1,
+      "OpName": 100,
+      "OpDecorate": 37,
+      "OpTypeVoid": 1,
+      "OpTypeFunction": 3,
+      "OpTypeFloat": 1,
+      "OpTypeVector": 3,
+      "OpTypePointer": 12,
+      "OpConstant": 77,
+      "OpConstantComposite": 5,
+      "OpTypeInt": 1,
+      "OpTypeImage": 1,
+      "OpTypeSampledImage": 1,
+      "OpVariable": 90,
+      "OpTypeBool": 1,
+      "OpFunction": 4,
+      "OpLabel": 14,
+      "OpLoad": 206,
+      "OpStore": 99,
+      "OpAccessChain": 47,
+      "OpExtInst": 55,
+      "OpFDiv": 9,
+      "OpCompositeConstruct": 25,
+      "OpFSub": 34,
+      "OpVectorTimesScalar": 31,
+      "OpFMul": 81,
+      "OpFAdd": 32,
+      "OpFunctionCall": 12,
+      "OpFNegate": 10,
+      "OpFOrdLessThan": 1,
+      "OpSelectionMerge": 5,
+      "OpBranchConditional": 5,
+      "OpFOrdGreaterThan": 4,
+      "OpBranch": 5,
+      "OpVectorShuffle": 3,
+      "OpCompositeExtract": 3,
+      "OpReturn": 1,
+      "OpFunctionEnd": 4,
+      "OpFunctionParameter": 6,
+      "OpReturnValue": 3,
+      "OpImageSampleImplicitLod": 1
+    },
+    "byExt": {
+      "FMax": 7,
+      "FClamp": 2,
+      "FMix": 16,
+      "Pow": 1,
+      "SmoothStep": 7,
+      "Length": 4,
+      "Exp": 9,
+      "FAbs": 1,
+      "Fract": 3,
+      "Floor": 1,
+      "Step": 4
+    },
+    "byFunc": {
+      "main": {
+        "executable": 545,
+        "arithmetic": 235,
+        "transcendental": 14,
+        "memory": 282,
+        "composite": 28
+      },
+      "hash21(vf2;": {
+        "executable": 19,
+        "arithmetic": 7,
+        "transcendental": 0,
+        "memory": 12,
+        "composite": 0
+      },
+      "vnoise(vf2;": {
+        "executable": 47,
+        "arithmetic": 16,
+        "transcendental": 0,
+        "memory": 30,
+        "composite": 1
+      },
+      "plate(vf2;vf2;f1;f1;": {
+        "executable": 47,
+        "arithmetic": 17,
+        "transcendental": 0,
+        "memory": 28,
+        "composite": 2
+      }
+    }
+  },
+  "vertex": {
+    "total": 57,
+    "executable": 11,
+    "arithmetic": 2,
+    "transcendental": 0,
+    "memory": 5,
+    "composite": 4,
+    "texture": 0,
+    "branch": 0,
+    "controlFlow": 0,
+    "spirvBytes": 968,
+    "unknownOpcodes": [],
+    "byOpcode": {
+      "OpCapability": 1,
+      "OpExtInstImport": 1,
+      "OpMemoryModel": 1,
+      "OpEntryPoint": 1,
+      "OpSource": 1,
+      "OpName": 7,
+      "OpMemberName": 2,
+      "OpDecorate": 5,
+      "OpMemberDecorate": 2,
+      "OpTypeVoid": 1,
+      "OpTypeFunction": 1,
+      "OpTypeFloat": 1,
+      "OpTypeVector": 2,
+      "OpTypePointer": 5,
+      "OpVariable": 5,
+      "OpConstant": 4,
+      "OpTypeStruct": 1,
+      "OpTypeInt": 1,
+      "OpFunction": 1,
+      "OpLabel": 1,
+      "OpLoad": 2,
+      "OpVectorTimesScalar": 1,
+      "OpCompositeConstruct": 2,
+      "OpFAdd": 1,
+      "OpStore": 2,
+      "OpCompositeExtract": 2,
+      "OpAccessChain": 1,
+      "OpReturn": 1,
+      "OpFunctionEnd": 1
+    },
+    "byExt": {},
+    "byFunc": {
+      "main": {
+        "executable": 11,
+        "arithmetic": 2,
+        "transcendental": 0,
+        "memory": 5,
+        "composite": 4
+      }
+    }
+  },
+  "weights": {
+    "rawBytes": 17460,
+    "gzipBytes": 6431,
+    "brotliBytes": 5561,
+    "fragRawBytes": 17319,
+    "fragGzipBytes": 6371,
+    "spirvBytes": 17808,
+    "lines": 254,
+    "limitGzipBytes": 14336
+  },
+  "ok": true
+}
