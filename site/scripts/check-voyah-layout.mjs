@@ -22,11 +22,16 @@
         силуэт гаснет ДО разъезда штор; КАЖДЫЙ заход на страницу показывает
         заставку заново (круг 30: раньше sessionStorage гасил её до конца сессии);
         `?intro=0` — выключает; без JS и при reduced-motion оверлея нет.
+   L6 по умолчанию — ЗАСТАВКИ НЕТ (круг 74, 13.11.2026: владелец показывает
+        страницу заказчику): оверлея `.vy-intro` нет ни сразу, ни через 2,9 с,
+        нет body.vy-lock, нет canvas, заголовок не перекрыт, прокрутка свободна.
+        Сборка с PUBLIC_VY_INTRO=1 и запуск гейта с VY_INTRO=1 проверяют прежние
+        тайминги (2200–2600 / 1200–1500 мс), шторку 250–470 мс и пропуск ≤300 мс.
    Запуск: node site/scripts/check-voyah-layout.mjs (exit 1 при провале).
    --self-test: мутанты вёрстки и заставки (шапка шире контейнера, кнопка
-   холодного цвета, интро 2900 мс, мгновенная шторка, скрытый кадр) и знака
-   (искажённый viewBox, заливка краской владельца #1B1F3C, потерянный контур) —
-   каждый обязан уронить гейт. */
+   холодного цвета, «заставка вернулась»; при VY_INTRO=1 ещё интро 2900 мс,
+   мгновенная шторка, скрытый кадр) и знака (искажённый viewBox, заливка краской
+   владельца #1B1F3C, потерянный контур) — каждый обязан уронить гейт. */
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -40,6 +45,13 @@ const DIST = join(ROOT, 'pages-dist');
 const BASE = '/avtotehservis';
 const PORT = 4338;
 const PAGE = `${BASE}/voyah-free/`;
+
+/* Круг 74 (13.11.2026): заставка выключена на публикации — владелец показывает
+   страницу заказчику. Гейт L6 проверяет то состояние, в котором страница
+   собирается: без VY_INTRO=1 — что оверлея нет и он ничего не перекрывает;
+   с VY_INTRO=1 — прежние тайминги, шторку и пропуск. Так проверка не отстаёт
+   от кода и не требует держать мёртвые мутанты. */
+const INTRO_ON = process.env.VY_INTRO === '1';
 
 const DESKTOP = [[1440, 900], [1366, 768], [1280, 800], [1024, 768]];
 const ALL = [...DESKTOP, [1920, 1080], [768, 1024], [390, 844], [320, 640]];
@@ -73,6 +85,33 @@ const MUTANTS = {
   'интро длиннее нормы': `.vy-intro{--vy-scene:2600ms !important}`,
   'финальная шторка мгновенная': `.vy-intro{--vy-panel:60ms !important}`,
   'кадр заставки не виден': `.vy-intro-canvas,.vy-intro-poster{display:none !important}`,
+};
+
+/* Мутанты, которые имеют смысл только при включённой заставке: при выключенной
+   `.vy-intro` в DOM нет, и CSS-подмене нечего ломать. Чтобы self-test не
+   «зеленел» вхолостую, при INTRO_OFF они не запускаются, а вместо них работает
+   DOM-мутант ниже — он возвращает оверлей и обязан уронить гейт в обоих режимах. */
+const INTRO_MUTANTS = ['интро длиннее нормы', 'финальная шторка мгновенная', 'кадр заставки не виден'];
+
+/* DOM-мутант: заставка «вернулась» на страницу. Гейт обязан это заметить —
+   ровно так выглядел бы регресс, если бы выключение откатили. */
+const DOM_MUTANTS = {
+  'заставка вернулась поверх страницы': () => {
+    const mk = () => {
+      if (document.querySelector('.vy-intro')) return true;
+      if (!document.body) return false;
+      const d = document.createElement('div');
+      d.className = 'vy-intro';
+      d.setAttribute('aria-hidden', 'false');
+      d.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#0B0E14';
+      document.body.append(d);
+      return true;
+    };
+    if (!mk()) {
+      const mo = new MutationObserver(() => { if (mk()) mo.disconnect(); });
+      mo.observe(document, { childList: true, subtree: true });
+    }
+  },
 };
 
 /* L7 нельзя проверить подмешиванием CSS: знак — инлайновый SVG, его ломают
@@ -125,6 +164,7 @@ async function run(mutant) {
           mo.observe(document, { childList: true, subtree: true });
         }
       }, MUTANTS[mutant]);
+      if (DOM_MUTANTS[mutant]) await page.evaluateOnNewDocument(DOM_MUTANTS[mutant]);
       await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
       await page.evaluate(() => window.scrollTo(0, 0));
       /* мутанты подмешивают CSS после DOMContentLoaded — ждём, пока доиграют
@@ -265,6 +305,7 @@ async function run(mutant) {
           mo.observe(document, { childList: true, subtree: true });
         }
       }, MUTANTS[mutant]);
+      if (DOM_MUTANTS[mutant]) await page.evaluateOnNewDocument(DOM_MUTANTS[mutant]);
       await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
       let gapMin = Infinity;
       for (const w of HEADER) {
@@ -289,123 +330,165 @@ async function run(mutant) {
       await page.close();
     }
 
-    /* ---------- L6: интро (круг 30 — 3D-заставка на WebGL2) ---------- */
-    for (const [w, h, min, limit, label] of [[1440, 900, 2200, 2600, 'десктоп'], [390, 844, 1200, 1500, 'мобильный 390'], [360, 780, 1200, 1500, 'мобильный 360']]) {
-      const page = await browser.newPage();
-      await page.setViewport({ width: w, height: h });
-      if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
-        const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
-          .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
-        apply();
-        const mo = new MutationObserver(apply);
-        mo.observe(document, { childList: true, subtree: true });
-        addEventListener('load', apply);
-      }, SVG_MUTANTS[mutant]);
-      else if (mutant) await page.evaluateOnNewDocument((css) => {
-        const add = () => {
-          const head = document.head || document.documentElement;
-          if (!head) return false;
-          const st = document.createElement('style');
-          st.textContent = css;
-          head.append(st);
-          return true;
-        };
-        if (!add()) {
-          const mo = new MutationObserver(() => { if (add()) mo.disconnect(); });
+    if (INTRO_ON) {
+    /* ---------- L6a: интро включено (сборка PUBLIC_VY_INTRO=1) ---------- */
+      /* ---------- L6: интро (круг 30 — 3D-заставка на WebGL2) ---------- */
+      for (const [w, h, min, limit, label] of [[1440, 900, 2200, 2600, 'десктоп'], [390, 844, 1200, 1500, 'мобильный 390'], [360, 780, 1200, 1500, 'мобильный 360']]) {
+        const page = await browser.newPage();
+        await page.setViewport({ width: w, height: h });
+        if (SVG_MUTANTS[mutant]) await page.evaluateOnNewDocument((code) => {
+          const apply = () => document.querySelectorAll('svg.v-mark, svg.v-aside-mark')
+            .forEach((el) => { try { new Function('el', code)(el); } catch { /* noop */ } });
+          apply();
+          const mo = new MutationObserver(apply);
           mo.observe(document, { childList: true, subtree: true });
-        }
-      }, MUTANTS[mutant]);
-      /* счётчик ставим ДО загрузки: иначе отсчёт начнётся после load и
-         укоротит измеренную длительность на время разбора страницы */
-      await page.evaluateOnNewDocument(() => {
-        const rec = { t0: null, seenAt: null, openAt: null, gone: null, aria: null, drawn: false };
-        window.__vyRec = rec;
-        const tick = () => {
-          const root = document.querySelector('.vy-intro');
-          if (root) {
-            if (rec.seenAt == null) rec.seenAt = performance.now();
-            if (!rec.drawn) {
-              const el = document.querySelector('.vy-intro-canvas, .vy-intro-poster');
-              if (el) {
-                const cs = getComputedStyle(el);
-                const r = el.getBoundingClientRect();
-                if (cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 100 && r.height > 100) rec.drawn = true;
+          addEventListener('load', apply);
+        }, SVG_MUTANTS[mutant]);
+        else if (mutant) await page.evaluateOnNewDocument((css) => {
+          const add = () => {
+            const head = document.head || document.documentElement;
+            if (!head) return false;
+            const st = document.createElement('style');
+            st.textContent = css;
+            head.append(st);
+            return true;
+          };
+          if (!add()) {
+            const mo = new MutationObserver(() => { if (add()) mo.disconnect(); });
+            mo.observe(document, { childList: true, subtree: true });
+          }
+        }, MUTANTS[mutant]);
+        if (DOM_MUTANTS[mutant]) await page.evaluateOnNewDocument(DOM_MUTANTS[mutant]);
+        /* счётчик ставим ДО загрузки: иначе отсчёт начнётся после load и
+           укоротит измеренную длительность на время разбора страницы */
+        await page.evaluateOnNewDocument(() => {
+          const rec = { t0: null, seenAt: null, openAt: null, gone: null, aria: null, drawn: false };
+          window.__vyRec = rec;
+          const tick = () => {
+            const root = document.querySelector('.vy-intro');
+            if (root) {
+              if (rec.seenAt == null) rec.seenAt = performance.now();
+              if (!rec.drawn) {
+                const el = document.querySelector('.vy-intro-canvas, .vy-intro-poster');
+                if (el) {
+                  const cs = getComputedStyle(el);
+                  const r = el.getBoundingClientRect();
+                  if (cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 100 && r.height > 100) rec.drawn = true;
+                }
               }
+              if (rec.t0 == null && rec.drawn) rec.t0 = performance.now();
+              if (rec.aria == null) rec.aria = root.getAttribute('aria-hidden');
+              if (rec.openAt == null && root.classList.contains('is-open')) rec.openAt = performance.now();
+            } else if (rec.seenAt != null && rec.gone == null) {
+              rec.gone = performance.now();
+              return;
             }
-            if (rec.t0 == null && rec.drawn) rec.t0 = performance.now();
-            if (rec.aria == null) rec.aria = root.getAttribute('aria-hidden');
-            if (rec.openAt == null && root.classList.contains('is-open')) rec.openAt = performance.now();
-          } else if (rec.seenAt != null && rec.gone == null) {
-            rec.gone = performance.now();
-            return;
-          }
-          if (performance.now() > 12000) return;
-          requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-      });
-      await page.goto(URL_, { waitUntil: 'load' });
-      if (!(await page.$('.vy-intro'))) { bad(`интро ${label}: оверлей не появился при входе на страницу`); await page.close(); continue; }
-      const res = await page.evaluate(() => new Promise((resolve) => {
-        setTimeout(() => { const r = window.__vyRec ?? {}; resolve({ end: 0, fade: null, drawn: r.drawn ?? false, aria: r.aria ?? null, lock: false, canvases: 0, timeout: true }); }, 6000);
-        const wait = () => {
-          const r = window.__vyRec;
-          if (r && r.gone != null) {
-            return resolve({
-              end: r.gone - (r.t0 ?? r.seenAt),
-              fade: r.openAt == null ? null : r.gone - r.openAt,
-              drawn: r.drawn,
-              aria: r.aria,
-              lock: document.body.classList.contains('vy-lock'),
-              canvases: document.querySelectorAll('canvas').length,
-            });
-          }
-          requestAnimationFrame(wait);
-        };
-        wait();
-      }));
-      if (res.timeout) { bad(`интро ${label}: оверлей не снялся за 6 с`); await page.close(); continue; }
-      const dur = Math.round(res.end);
-      if (!res.drawn) bad(`интро ${label}: ни 3D-canvas, ни статичного кадра`);
-      if (res.aria !== 'true') bad(`интро ${label}: оверлей без aria-hidden="true"`);
-      if (dur > limit) bad(`интро ${label}: ${dur} мс при норме ≤${limit}`);
-      else if (dur < min) bad(`интро ${label}: ${dur} мс при норме ≥${min}`);
-      else notes.push(`интро ${label}: ${dur} мс (норма ${min}–${limit})`);
-      if (res.fade == null) bad(`интро ${label}: заставка не дошла до финальной фазы (is-open)`);
-      else if (res.fade < 250 || res.fade > 470) bad(`интро ${label}: финальная шторка ${Math.round(res.fade)} мс при норме 250–300 (+140 запас)`);
-      else notes.push(`интро ${label}: шторка ${Math.round(res.fade)} мс`);
-      if (res.lock) bad(`интро ${label}: остался body.vy-lock`);
-      if (res.canvases > 0) bad(`интро ${label}: после снятия в DOM остался canvas (${res.canvases})`);
-      /* круг 30: повторный заход в той же сессии — заставка снова на месте */
-      await page.goto(URL_, { waitUntil: 'load' });
-      if (!(await page.$('.vy-intro'))) bad(`интро ${label}: при повторном заходе заставки нет (требование владельца)`);
-      /* ?intro=0 — выключение по ссылке */
-      await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
-      if (await page.$('.vy-intro')) bad(`интро ${label}: ?intro=0 не выключает заставку`);
-      await page.close();
-      /* пропуск кликом и Esc — не дольше 300 мс (проверяем на десктопе) */
-      if (w === 1440) {
-        for (const how of ['click', 'esc']) {
-          const sp = await browser.newPage();
-          await sp.setViewport({ width: w, height: h });
-          await sp.goto(URL_, { waitUntil: 'load' });
-          await new Promise((r) => setTimeout(r, 350));
-          const skipMs = await sp.evaluate((mode) => new Promise((resolve) => {
-            const t0 = performance.now();
-            const tick = () => {
-              if (!document.querySelector('.vy-intro')) return resolve(performance.now() - t0);
-              requestAnimationFrame(tick);
-            };
+            if (performance.now() > 12000) return;
             requestAnimationFrame(tick);
-            if (mode === 'esc') window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-            else document.querySelector('.vy-intro')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-          }), how);
-          if (skipMs > 300) bad(`интро: пропуск по ${how} — ${Math.round(skipMs)} мс при норме ≤300`);
-          else notes.push(`интро: пропуск по ${how} — ${Math.round(skipMs)} мс`);
-          await sp.close();
+          };
+          requestAnimationFrame(tick);
+        });
+        await page.goto(URL_, { waitUntil: 'load' });
+        if (!(await page.$('.vy-intro'))) { bad(`интро ${label}: оверлей не появился при входе на страницу`); await page.close(); continue; }
+        const res = await page.evaluate(() => new Promise((resolve) => {
+          setTimeout(() => { const r = window.__vyRec ?? {}; resolve({ end: 0, fade: null, drawn: r.drawn ?? false, aria: r.aria ?? null, lock: false, canvases: 0, timeout: true }); }, 6000);
+          const wait = () => {
+            const r = window.__vyRec;
+            if (r && r.gone != null) {
+              return resolve({
+                end: r.gone - (r.t0 ?? r.seenAt),
+                fade: r.openAt == null ? null : r.gone - r.openAt,
+                drawn: r.drawn,
+                aria: r.aria,
+                lock: document.body.classList.contains('vy-lock'),
+                canvases: document.querySelectorAll('canvas').length,
+              });
+            }
+            requestAnimationFrame(wait);
+          };
+          wait();
+        }));
+        if (res.timeout) { bad(`интро ${label}: оверлей не снялся за 6 с`); await page.close(); continue; }
+        const dur = Math.round(res.end);
+        if (!res.drawn) bad(`интро ${label}: ни 3D-canvas, ни статичного кадра`);
+        if (res.aria !== 'true') bad(`интро ${label}: оверлей без aria-hidden="true"`);
+        if (dur > limit) bad(`интро ${label}: ${dur} мс при норме ≤${limit}`);
+        else if (dur < min) bad(`интро ${label}: ${dur} мс при норме ≥${min}`);
+        else notes.push(`интро ${label}: ${dur} мс (норма ${min}–${limit})`);
+        if (res.fade == null) bad(`интро ${label}: заставка не дошла до финальной фазы (is-open)`);
+        else if (res.fade < 250 || res.fade > 470) bad(`интро ${label}: финальная шторка ${Math.round(res.fade)} мс при норме 250–300 (+140 запас)`);
+        else notes.push(`интро ${label}: шторка ${Math.round(res.fade)} мс`);
+        if (res.lock) bad(`интро ${label}: остался body.vy-lock`);
+        if (res.canvases > 0) bad(`интро ${label}: после снятия в DOM остался canvas (${res.canvases})`);
+        /* круг 30: повторный заход в той же сессии — заставка снова на месте */
+        await page.goto(URL_, { waitUntil: 'load' });
+        if (!(await page.$('.vy-intro'))) bad(`интро ${label}: при повторном заходе заставки нет (требование владельца)`);
+        /* ?intro=0 — выключение по ссылке */
+        await page.goto(URL_ + '?intro=0', { waitUntil: 'load' });
+        if (await page.$('.vy-intro')) bad(`интро ${label}: ?intro=0 не выключает заставку`);
+        await page.close();
+        /* пропуск кликом и Esc — не дольше 300 мс (проверяем на десктопе) */
+        if (w === 1440) {
+          for (const how of ['click', 'esc']) {
+            const sp = await browser.newPage();
+            await sp.setViewport({ width: w, height: h });
+            await sp.goto(URL_, { waitUntil: 'load' });
+            await new Promise((r) => setTimeout(r, 350));
+            const skipMs = await sp.evaluate((mode) => new Promise((resolve) => {
+              const t0 = performance.now();
+              const tick = () => {
+                if (!document.querySelector('.vy-intro')) return resolve(performance.now() - t0);
+                requestAnimationFrame(tick);
+              };
+              requestAnimationFrame(tick);
+              if (mode === 'esc') window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+              else document.querySelector('.vy-intro')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            }), how);
+            if (skipMs > 300) bad(`интро: пропуск по ${how} — ${Math.round(skipMs)} мс при норме ≤300`);
+            else notes.push(`интро: пропуск по ${how} — ${Math.round(skipMs)} мс`);
+            await sp.close();
+          }
         }
       }
+    } else {
+    /* ---------- L6b: интро выключено (боевая сборка, круг 74) ----------
+       Владелец показывает страницу заказчику, заставки быть не должно: ни
+       оверлея, ни блокировки прокрутки, ни 3D-слоя. Проверяем не только
+       «сразу после load», но и позже — заставка играла 2,2–2,6 с, и поздний
+       старт тоже считается регрессом. */
+    for (const [w, h, label] of [[1440, 900, 'десктоп'], [390, 844, 'мобильный 390'], [360, 780, 'мобильный 360']]) {
+      const page = await browser.newPage();
+      await page.setViewport({ width: w, height: h });
+      await page.goto(URL_, { waitUntil: 'load' });
+      const snap = () => page.evaluate(() => ({
+        intro: !!document.querySelector('.vy-intro'),
+        lock: document.body.classList.contains('vy-lock'),
+        canvases: document.querySelectorAll('canvas').length,
+        scroll: getComputedStyle(document.body).overflow,
+        h1: (() => {
+          const el = document.querySelector('.v-hero-h');
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return { text: el.textContent.trim().slice(0, 40), covered: !(hit && (hit === el || el.contains(hit))) };
+        })(),
+      }));
+      for (const [ms, when] of [[350, 'сразу'], [2900, 'через 2,9 с']]) {
+        await new Promise((r) => setTimeout(r, ms - (ms === 2900 ? 350 : 0)));
+        const s = await snap();
+        if (s.intro) bad(`интро ${label}: оверлей .vy-intro на месте (${when}) — заставка должна быть выключена`);
+        if (s.lock) bad(`интро ${label}: body.vy-lock не снят (${when}) — прокрутка заблокирована`);
+        if (s.canvases > 0) bad(`интро ${label}: в DOM ${s.canvases} canvas — 3D-слой должен быть выключен`);
+        if (!s.h1) bad(`интро ${label}: нет заголовка .v-hero-h (${when})`);
+        else if (s.h1.covered) bad(`интро ${label}: заголовок перекрыт посторонним слоем (${when})`);
+      }
+      const scrollY = await page.evaluate(() => { window.scrollTo(0, 600); return window.scrollY; });
+      if (scrollY < 500) bad(`интро ${label}: страница не прокручивается (scrollY ${scrollY}) — осталась блокировка`);
+      notes.push(`интро ${label}: выключено — оверлея нет, прокрутка свободна, canvas 0`);
+      await page.close();
     }
+    }
+
     /* reduced-motion и без JS */
     {
       const page = await browser.newPage();
@@ -433,7 +516,12 @@ await startServer();
 try {
   if (process.argv.includes('--self-test')) {
     let bad = 0;
-    for (const name of [...Object.keys(MUTANTS), ...Object.keys(SVG_MUTANTS)]) {
+    const names = [
+      ...Object.keys(MUTANTS).filter((n) => INTRO_ON || !INTRO_MUTANTS.includes(n)),
+      ...Object.keys(SVG_MUTANTS),
+      ...Object.keys(DOM_MUTANTS),
+    ];
+    for (const name of names) {
       const { fails } = await run(name);
       const fell = fails.length > 0;
       if (!fell) bad = 1;
