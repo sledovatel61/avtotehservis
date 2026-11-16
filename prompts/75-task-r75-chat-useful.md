@@ -65,7 +65,7 @@ git checkout origin/arena/e1d16e9d-avtotehservis -- \
   'site/public/img/vy-art-app-*' \
   site/public/img/vy-art-r75-manifest.json
 
-git diff --stat origin/preview/github-pages HEAD   # только добавления, без удалений
+git diff --cached --stat origin/preview/github-pages   # только добавления, без удалений
 ```
 
 Если в диффе появились удаления сотен файлов — ветка стоит не на превью, вернись к началу.

@@ -22,6 +22,9 @@ git status --porcelain      # должно быть пусто
 git switch --force-create arena/<свой-id> origin/preview/github-pages
 ```
 
+Если git откажется переключаться из-за untracked-файлов («would be overwritten»), посмотри
+`git status --short` и убери лишнее — эти файлы всё равно приедут из истории превью.
+
 `switch --force-create` двигает ветку на превью. Старый коммит `main` никуда не девается,
 он остаётся достижимым через `main`, поэтому «потерять» там нечего — но правило «не
 делать `reset --hard` по работе» остаётся: если свои коммиты уже есть, сначала сделай
@@ -64,7 +67,7 @@ git checkout origin/arena/e1d16e9d-avtotehservis -- \
 
 ```bash
 git status --short
-git diff --stat origin/preview/github-pages HEAD   # только добавленные файлы, без удалений
+git diff --cached --stat origin/preview/github-pages   # только добавленные файлы, без удалений
 ```
 
 Если в диффе появились удаления сотен файлов — значит ветка стоит не на превью, вернись

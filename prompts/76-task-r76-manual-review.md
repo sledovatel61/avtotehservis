@@ -47,7 +47,7 @@ git checkout origin/arena/e1d16e9d-avtotehservis -- \
   prompts/76-task-r76-manual-review.md \
   docs/reports/r76-assignment-message.md \
   docs/research/voyah-free-manual
-git diff --stat origin/preview/github-pages HEAD              # только добавления
+git diff --cached --stat origin/preview/github-pages           # только добавления
 ```
 
 Папка Drive `1xjXxW7W2XcKIRceCRtj10Dub9IF4K5GA` (коннектор Google Drive включён). В папке

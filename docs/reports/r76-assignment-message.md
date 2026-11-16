@@ -25,7 +25,7 @@
 >   prompts/76-task-r76-manual-review.md \
 >   docs/reports/r76-assignment-message.md \
 >   docs/research/voyah-free-manual
-> git diff --stat origin/preview/github-pages HEAD              # только добавления
+> git diff --cached --stat origin/preview/github-pages           # только добавления
 > ```
 >
 > Работаешь в своей сессионной ветке, в `preview/github-pages` не пушить. `reset --hard` по
