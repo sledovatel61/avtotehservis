@@ -66,6 +66,13 @@ git checkout origin/arena/e1d16e9d-avtotehservis -- \
   docs/reports/r77-assignment-message.md \
   site/scripts/build-voyah-art-r77.mjs \
   docs/refs/r77-voyah-free
+
+# A10, круг 77-К (только кадры)
+git checkout origin/arena/e1d16e9d-avtotehservis -- \
+  prompts/77k-task-r77-images-only.md \
+  docs/reports/r77-images-assignment-message.md \
+  site/scripts/build-voyah-art-r77.mjs \
+  docs/refs/r77-voyah-free
 ```
 
 Кавычки вокруг путей с `*` обязательны — иначе glob раскроет шелл, а не git.
