@@ -37,8 +37,18 @@ function parseArticle(file) {
   const raw = readFileSync(file, 'utf8');
   const m = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!m) throw new Error('нет frontmatter: ' + file);
+  /* Значения берём как есть, но снимаем обрамляющие кавычки: часть frontmatter
+     пишет title/excerpt в кавычках (в них двоеточия), часть — без. Иначе кавычки
+     уезжают в <title> и meta description страницы. */
+  const unquote = (v) => {
+    const t = v.trim();
+    if (t.length >= 2 && (t[0] === '"' || t[0] === "'") && t.at(-1) === t[0]) {
+      return t.slice(1, -1).replace(/\\(["'\\])/g, '$1');
+    }
+    return t;
+  };
   const fm = Object.fromEntries(
-    m[1].split('\n').map((l) => l.match(/^([a-z_]+):\s*(.*)$/)).filter(Boolean).map((x) => [x[1], x[2]]),
+    m[1].split('\n').map((l) => l.match(/^([a-z_]+):\s*(.*)$/)).filter(Boolean).map((x) => [x[1], unquote(x[2])]),
   );
   for (const key of REQUIRED) {
     if (!fm[key]) throw new Error(`${file}: нет поля ${key}`);
