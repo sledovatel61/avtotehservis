@@ -33,7 +33,22 @@
 цифру из него перепроверь по самому PDF и в отчёте ссылайся на файл и страницу, а не на
 manifest.
 
-## 3. Вход
+## 3. Вход и синхронизация
+
+**Сначала про git.** Сессионная ветка Arena создаётся от `main`, а сайт живёт в
+`preview/github-pages` — истории несвязанные, и `git merge` между ними отказывает. Это не
+повод для `--allow-unrelated-histories`. Памятка: `docs/reports/how-to-sync.md`, коротко:
+
+```bash
+git fetch origin
+git branch backup-<свой-id>                                   # страховка
+git switch --force-create arena/<свой-id> origin/preview/github-pages
+git checkout origin/arena/e1d16e9d-avtotehservis -- \
+  prompts/76-task-r76-manual-review.md \
+  docs/reports/r76-assignment-message.md \
+  docs/research/voyah-free-manual
+git diff --stat origin/preview/github-pages HEAD              # только добавления
+```
 
 Папка Drive `1xjXxW7W2XcKIRceCRtj10Dub9IF4K5GA` (коннектор Google Drive включён). В папке
 14 PDF + `result.zip` — **zip не трогать**, чат уже разобран отдельно

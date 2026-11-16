@@ -42,24 +42,37 @@ Arena, PR — в `preview/github-pages`. **Не мержить, не публи�
 
 ### Как забрать корпус и картинки
 
-Всё перечисленное лежит в ветке приёмки `origin/arena/e1d16e9d-avtotehservis` (она собрана
-от `main`, поэтому файлов сайта в ней нет — только корпус, мастера и обложки).
-
-Ты работаешь в **своей сессионной ветке Arena** — новую не создавай и не переименовывай:
+**Важно:** сессионная ветка Arena создаётся от `main`, а сайт живёт в
+`preview/github-pages` — это **две несвязанные истории**, поэтому `git merge` между ними
+отказывает. Не лечи это `--allow-unrelated-histories`: получишь ~50 конфликтов и мусор из
+`main` в ветке. Полная памятка — `docs/reports/how-to-sync.md`.
 
 ```bash
 git fetch origin
-git merge origin/preview/github-pages --no-edit      # база сайта, 15307ca и новее
-git merge origin/arena/e1d16e9d-avtotehservis --no-edit   # корпус, сканер, обложки
+# своих коммитов ещё нет? страховка + ветка на превью:
+git branch backup-<свой-id>
+git switch --force-create arena/<свой-id> origin/preview/github-pages
+
+# материалы приёмки — путями, без мержа истории:
+git checkout origin/arena/e1d16e9d-avtotehservis -- \
+  prompts/75-task-r75-chat-useful.md \
+  docs/reports/r75-assignment-message.md \
+  docs/research/voyah-chat-r75 \
+  docs/photos-source/r75 \
+  site/scripts/build-voyah-art-r75.mjs \
+  'site/public/img/vy-art-update-*' \
+  'site/public/img/vy-art-connect-*' \
+  'site/public/img/vy-art-app-*' \
+  site/public/img/vy-art-r75-manifest.json
+
+git diff --stat origin/preview/github-pages HEAD   # только добавления, без удалений
 ```
 
-Если своя ветка ещё пустая (стоит на `main` или на старом коммите) — это нормально:
-первый мерж и натянет на неё весь сайт. Ветку `preview/github-pages` не переключать,
-в неё не пушить, PR — из своей ветки.
+Если в диффе появились удаления сотен файлов — ветка стоит не на превью, вернись к началу.
 
-**Не** делать `git rebase` и тем более `git reset --hard` — в этом репозитории этим уже
-один раз снесли дерево (удалили 1 529 файлов, включая страницу `/voyah-free/`). Мерж
-безопасен: пересечений с `preview` у файлов корпуса и обложек нет, проверено.
+**Не** делать `git reset --hard` по ветке, где уже есть работа: в этом репозитории так
+уже сносили дерево (1 529 файлов, включая страницу `/voyah-free/`). В `preview/github-pages`
+не пушить — только PR из своей ветки.
 
 Если ветка `origin/arena/e1d16e9d-avtotehservis` недоступна — написать об этом сразу,
 а не собирать корпус заново из `result.zip`.

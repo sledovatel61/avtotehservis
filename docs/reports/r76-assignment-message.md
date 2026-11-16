@@ -13,16 +13,23 @@
 > расхождения с тем, что уже опубликовано, и план использования. Решение, что публиковать,
 > принимает владелец по твоему отчёту.
 >
-> Начни так:
+> **Про git (твоя ветка упёрлась в это):** сессионная ветка создаётся от `main`, а сайт
+> живёт в `preview/github-pages` — истории несвязанные, обычный `merge` отказывает. Ты
+> правильно не стал ломать это обходным режимом. Памятка: `docs/reports/how-to-sync.md`.
 >
 > ```bash
 > git fetch origin
-> git merge origin/preview/github-pages --no-edit
-> git merge origin/arena/e1d16e9d-avtotehservis --no-edit
+> git branch backup-<свой-id>                                   # страховка
+> git switch --force-create arena/<свой-id> origin/preview/github-pages
+> git checkout origin/arena/e1d16e9d-avtotehservis -- \
+>   prompts/76-task-r76-manual-review.md \
+>   docs/reports/r76-assignment-message.md \
+>   docs/research/voyah-free-manual
+> git diff --stat origin/preview/github-pages HEAD              # только добавления
 > ```
 >
-> Работаешь в своей сессионной ветке, новую не создавай, в `preview/github-pages` не пушить.
-> Никаких `rebase` и `reset --hard` — этим уже сносили дерево.
+> Работаешь в своей сессионной ветке, в `preview/github-pages` не пушить. `reset --hard` по
+> ветке с работой не делать — этим уже сносили дерево.
 >
 > Что уже готово: `docs/research/voyah-free-manual/manifest.md` — поверхностный осмотр
 > приёмки: инвентарь файлов, объёмы, найденные интервалы и список расхождений с сайтом.
