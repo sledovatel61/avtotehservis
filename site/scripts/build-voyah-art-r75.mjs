@@ -39,6 +39,7 @@ const ART = {
   'vy-art-update': join(SRC, 'voyah-art-update.png'),
   'vy-art-connect': join(SRC, 'voyah-art-connect.png'),
   'vy-art-app': join(SRC, 'voyah-art-app.png'),
+  'vy-art-media': join(SRC, 'voyah-art-media.png'),
 };
 
 /* Лимиты веса, КБ. Отталкиваемся от уже собранных webp (12/21/15, 31/63/45,

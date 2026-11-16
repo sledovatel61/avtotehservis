@@ -99,6 +99,36 @@
       "file": "vy-art-app-1600.webp",
       "kb": 65,
       "quality": 80
+    },
+    {
+      "file": "vy-art-media-480.avif",
+      "kb": 11,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-media-480.webp",
+      "kb": 14,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-media-960.avif",
+      "kb": 30,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-media-960.webp",
+      "kb": 40,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-media-1600.avif",
+      "kb": 60,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-media-1600.webp",
+      "kb": 79,
+      "quality": 80
     }
   ]
 }
