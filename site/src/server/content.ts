@@ -42,21 +42,34 @@ export function newsTotal(): number {
   return (db().prepare(`SELECT COUNT(*) AS c FROM news WHERE status='published'`).get() as { c: number }).c;
 }
 
+/** Moscow now as YYYY-MM-DD HH:MM for sorting — UTC+3 without depending on host TZ. */
+function nowMoscowStr(): string {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  const p = fmt.formatToParts(new Date());
+  const g = (t: string): string => p.find((x) => x.type === t)?.value ?? '00';
+  return `${g('year')}-${g('month')}-${g('day')} ${g('hour')}:${g('minute')}`;
+}
+
 export function listNews(opts: { category?: string | null; page?: number; per?: number } = {}): { items: NewsRow[]; total: number; pages: number } {
   const per = opts.per ?? 6;
   const page = Math.max(1, opts.page ?? 1);
   const where = opts.category ? `status='published' AND category=?` : `status='published'`;
   const params: unknown[] = opts.category ? [opts.category] : [];
   const total = (db().prepare(`SELECT COUNT(*) AS c FROM news WHERE ${where}`).get(...params) as { c: number }).c;
-  const items = db().prepare(`SELECT * FROM news WHERE ${where} ORDER BY published_at DESC LIMIT ? OFFSET ?`)
-    .all(...params, per, (page - 1) * per) as NewsRow[];
+  const now = nowMoscowStr();
+  const items = db().prepare(`SELECT * FROM news WHERE ${where} ORDER BY (published_at > ?) ASC, published_at DESC LIMIT ? OFFSET ?`)
+    .all(...params, now, per, (page - 1) * per) as NewsRow[];
   return { items, total, pages: Math.max(1, Math.ceil(total / per)) };
 }
 export function getNews(slug: string): NewsRow | undefined {
   return db().prepare(`SELECT * FROM news WHERE slug=? AND status='published'`).get(slug) as NewsRow | undefined;
 }
 export function otherNews(slug: string, limit = 3): NewsRow[] {
-  return db().prepare(`SELECT * FROM news WHERE slug != ? AND status='published' ORDER BY published_at DESC LIMIT ?`).all(slug, limit) as NewsRow[];
+  const now = nowMoscowStr();
+  return db().prepare(`SELECT * FROM news WHERE slug != ? AND status='published' ORDER BY (published_at > ?) ASC, published_at DESC LIMIT ?`).all(slug, now, limit) as NewsRow[];
 }
 /** Обложка целиком: src, крупный вариант, srcset и alt (из media.alt, если владелец заполнил). */
 export interface CoverInfo { src: string; lg: string; srcset: string | null; alt: string }
