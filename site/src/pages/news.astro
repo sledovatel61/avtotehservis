@@ -9,17 +9,26 @@ const cat = Astro.url.searchParams.get('cat');
 const PER = 6;
 const counts = newsCategoryCounts();
 const allCount = newsTotal();
-const requestedPage = Math.max(1, parseInt(Astro.url.searchParams.get('page') ?? '1', 10) || 1);
+/* Круг 77: пагинация путями, а не query. На GitHub Pages query-строка игнорируется,
+   поэтому ссылки ?page=2 вели на ту же первую страницу, а с 15 статьями листинг
+   показывал 6 из 15 и остальные были недоступны. Страницы 2..N отдаются как
+   /news/page/N и попадают в sitemap, откуда статический экспорт их и рендерит.
+   Query оставлен как совместимый вход: старые ?page=2 не ломаются. */
+const pathPage = Astro.url.pathname.match(/\/news\/page\/(\d+)\/?$/);
+const requestedPage = Math.max(1, parseInt(pathPage?.[1] ?? Astro.url.searchParams.get('page') ?? '1', 10) || 1);
 const first = listNews({ category: cat, page: 1, per: PER });
 const pageNum = Math.min(requestedPage, first.pages);
 const { items, total, pages } = pageNum === 1 ? first : listNews({ category: cat, page: pageNum, per: PER });
 const fallbackCovers = ['/img/news-1.svg', '/img/news-2.svg', '/img/news-3.svg', '/img/news-4.svg'];
 const pageUrl = (p: number): string => {
-  const q = new URLSearchParams();
-  if (cat) q.set('cat', cat);
-  if (p > 1) q.set('page', String(p));
-  const s = q.toString();
-  return '/news' + (s ? `?${s}` : '');
+  if (cat) {
+    /* С категорией — по-прежнему query: статических страниц под каждую пару
+       «категория + страница» не генерируем, это десятки файлов. */
+    const q = new URLSearchParams({ cat });
+    if (p > 1) q.set('page', String(p));
+    return '/news?' + q.toString();
+  }
+  return p > 1 ? `/news/page/${p}` : '/news';
 };
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = {
