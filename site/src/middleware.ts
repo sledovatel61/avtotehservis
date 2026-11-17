@@ -81,7 +81,7 @@ const securityHeaders = defineMiddleware(async (context: APIContext, next) => {
     "connect-src 'self'",
     "media-src 'self'",
     "object-src 'none'",
-    "frame-ancestors 'none'",
+    process.env.ALLOW_FRAME_PREVIEW === '1' ? '' : "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     isHttps ? 'upgrade-insecure-requests' : '',

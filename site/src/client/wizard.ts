@@ -258,6 +258,9 @@ if (wizEl) {
   const asapBtn = $<HTMLButtonElement>('#asap-btn');
   const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
   const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  /* круг 78: полные подписи для скринридера — без них кнопка дня читалась «вт17ноя» */
+  const WD_FULL = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+  const MON_FULL = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
   function localDay(offset: number): { iso: string; d: Date } {
     const d = new Date();
     d.setHours(12, 0, 0, 0);
@@ -270,7 +273,7 @@ if (wizEl) {
     cal.innerHTML = Array.from({ length: 14 }).map((_, i) => {
       const { iso, d } = localDay(i);
       const on = st.date === iso;
-      return `<button type="button" class="cal-day${on ? ' is-on' : ''}" data-date="${iso}" aria-pressed="${on}">
+      return `<button type="button" class="cal-day${on ? ' is-on' : ''}" data-date="${iso}" aria-label="${WD_FULL[d.getDay()]}, ${d.getDate()} ${MON_FULL[d.getMonth()]}" aria-pressed="${on}">
         <span class="wd">${WD[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="mm">${MON[d.getMonth()]}</span>
       </button>`;
     }).join('');
@@ -346,7 +349,7 @@ if (wizEl) {
       if (!firstBad && el) firstBad = el;
     };
     if (n === 1) {
-      if (fBrand && fBrand.value.trim().length < 2) bad(fBrand, 'Укажите марку — начните вводить или выберите из списка');
+      if (fBrand && fBrand.value.trim().length < 2) bad(fBrand, 'Заполните это поле.');
       const yearSkip = $<HTMLInputElement>('#skip-year')?.checked;
       if (fYear && !yearSkip && fYear.value) {
         const y = Number(fYear.value);
@@ -377,10 +380,10 @@ if (wizEl) {
       }
     }
     if (n === 4) {
-      if (fName && fName.value.trim().length < 2) bad(fName, 'Укажите имя');
+      if (fName && fName.value.trim().length < 2) bad(fName, 'Заполните это поле.');
       const digits = (fPhone?.value ?? '').replace(/\D/g, '');
-      if (digits.length !== 11) bad(fPhone, 'Телефон: +7 (999) 999-99-99');
-      if (fConsent && !fConsent.checked) bad(fConsent, 'Без согласия на обработку данных отправить нельзя');
+      if (digits.length !== 11) bad(fPhone, 'Проверьте номер телефона — по нему мы свяжемся с вами.');
+      if (fConsent && !fConsent.checked) bad(fConsent, 'Чтобы отправить заявку, подтвердите согласие на обработку персональных данных.');
     }
     if (!firstBad) { if (n === 2) setErrAt('svc-err-anchor', ''); if (n === 3) setErrAt('when-err-anchor', ''); }
     return firstBad;
@@ -439,15 +442,6 @@ if (wizEl) {
       form_started_at: st.startedAt,
     };
   }
-  const payloadBtn = $('#payload-btn');
-  const payloadPre = $('#payload-pre');
-  payloadBtn?.addEventListener('click', () => {
-    const open = payloadBtn.getAttribute('aria-expanded') === 'true';
-    payloadBtn.setAttribute('aria-expanded', String(!open));
-    payloadBtn.closest('.payload')?.classList.toggle('is-open', !open);
-    if (!open && payloadPre) { payloadPre.textContent = JSON.stringify(buildPayload(), null, 2); track('payload_view'); }
-  });
-
   /* ---------- навигация ---------- */
   nextBtn?.addEventListener('click', () => {
     clearErrs();
@@ -537,6 +531,9 @@ if (wizEl) {
       track('submit_error', { code: 'http_' + r.status });
     } catch {
       showState('err');
+      /* круг 26 (a8/05-micro): отдельное сообщение, когда нет соединения */
+      const pe = $('#err-text');
+      if (pe) pe.textContent = !navigator.onLine ? 'Похоже, нет соединения. Проверьте интернет и повторите отправку.' : 'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.';
       track('submit_error', { code: 'network' });
     }
   }

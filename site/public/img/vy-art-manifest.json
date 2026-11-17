@@ -1,0 +1,104 @@
+{
+  "widths": [
+    480,
+    960,
+    1600
+  ],
+  "biggest": {
+    "file": "vy-art-maslo-1600.webp",
+    "kb": 144,
+    "quality": 80
+  },
+  "files": [
+    {
+      "file": "vy-art-to-480.avif",
+      "kb": 10,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-to-480.webp",
+      "kb": 14,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-to-960.avif",
+      "kb": 29,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-to-960.webp",
+      "kb": 40,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-to-1600.avif",
+      "kb": 59,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-to-1600.webp",
+      "kb": 81,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-maslo-480.avif",
+      "kb": 13,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-maslo-480.webp",
+      "kb": 23,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-maslo-960.avif",
+      "kb": 38,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-maslo-960.webp",
+      "kb": 69,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-maslo-1600.avif",
+      "kb": 78,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-maslo-1600.webp",
+      "kb": 144,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-bolezni-480.avif",
+      "kb": 11,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-bolezni-480.webp",
+      "kb": 14,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-bolezni-960.avif",
+      "kb": 34,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-bolezni-960.webp",
+      "kb": 44,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-bolezni-1600.avif",
+      "kb": 74,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-bolezni-1600.webp",
+      "kb": 95,
+      "quality": 80
+    }
+  ]
+}

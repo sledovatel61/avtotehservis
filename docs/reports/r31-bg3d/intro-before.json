@@ -1,0 +1,474 @@
+{
+  "generatedAt": "2026-11-10T14:32:10.097Z",
+  "purpose": "«до» по заставке: стоимость кадра scene-прохода ДО правки A5 (задание №55, §1.2)",
+  "source": "git blob 6694d3f96f202b4e6eb1e502b7e02364d882ec4d = 92fb168:site/src/client/voyah-intro.ts (= a35e0f3:site/src/client/voyah-intro.ts); измерялся через --src по временной копии дерева базы",
+  "shader": {
+    "name": "SCENE_FS",
+    "lines": 196,
+    "bytes": 6787,
+    "marchSteps": 72
+  },
+  "port": {
+    "file": "site/tools/intro/ref.mjs",
+    "method": "CPU-порт строка в строку; inst — гранулярность SPIR-V, scalar — компонентные операции",
+    "staleLiterals": [],
+    "allowStale": false
+  },
+  "frame": {
+    "width": 640,
+    "height": 360,
+    "pixels": 230400
+  },
+  "samples": [
+    {
+      "t": 0.1,
+      "instPerPx": 1525.868359375,
+      "scalarPerPx": 2866.5303993055554,
+      "scalarPerPxMax": 22212,
+      "instPerPxMax": 12066,
+      "scalarPerPxP50": 2540,
+      "scalarPerPxP95": 4852,
+      "marchItersAvg": 8.589552951388889,
+      "marchItersMax": 72,
+      "hitRatio": 0.08772569444444445,
+      "normalAtPerPx": 0.08772569444444445,
+      "mapCallsPerPx": 8.940455729166667,
+      "fwidthPerPx": 0.3509027777777778,
+      "floorPixelsRatio": 0.579140625,
+      "nsPerPx": 3518.3532118055555,
+      "cpuMsPerFrame": 810.62858,
+      "probeCostPerPx": {
+        "inst": 1537.868359375,
+        "scalar": 2892.5303993055554
+      }
+    },
+    {
+      "t": 0.3,
+      "instPerPx": 1558.215564236111,
+      "scalarPerPx": 2926.0392317708333,
+      "scalarPerPxMax": 22212,
+      "instPerPxMax": 12066,
+      "scalarPerPxP50": 2577,
+      "scalarPerPxP95": 4889,
+      "marchItersAvg": 8.750824652777778,
+      "marchItersMax": 72,
+      "hitRatio": 0.0973611111111111,
+      "normalAtPerPx": 0.0973611111111111,
+      "mapCallsPerPx": 9.140269097222221,
+      "fwidthPerPx": 0.3894444444444444,
+      "floorPixelsRatio": 0.5929166666666666,
+      "nsPerPx": 3406.652894965278,
+      "cpuMsPerFrame": 784.892827,
+      "probeCostPerPx": {
+        "inst": 1570.215564236111,
+        "scalar": 2952.0392317708333
+      }
+    },
+    {
+      "t": 0.5,
+      "instPerPx": 1609.8430034722223,
+      "scalarPerPx": 3020.3902821180554,
+      "scalarPerPxMax": 22245,
+      "instPerPxMax": 12080,
+      "scalarPerPxP50": 2610,
+      "scalarPerPxP95": 4922,
+      "marchItersAvg": 9.000607638888889,
+      "marchItersMax": 72,
+      "hitRatio": 0.11687065972222223,
+      "normalAtPerPx": 0.11687065972222223,
+      "mapCallsPerPx": 9.468090277777778,
+      "fwidthPerPx": 0.4674826388888889,
+      "floorPixelsRatio": 0.6144618055555555,
+      "nsPerPx": 3343.900490451389,
+      "cpuMsPerFrame": 770.434673,
+      "probeCostPerPx": {
+        "inst": 1621.8430034722223,
+        "scalar": 3046.3902821180554
+      }
+    },
+    {
+      "t": 0.76,
+      "instPerPx": 1709.989509548611,
+      "scalarPerPx": 3203.2541015625,
+      "scalarPerPxMax": 22500,
+      "instPerPxMax": 12223,
+      "scalarPerPxP50": 2865,
+      "scalarPerPxP95": 5466,
+      "marchItersAvg": 9.521848958333333,
+      "marchItersMax": 72,
+      "hitRatio": 0.1483420138888889,
+      "normalAtPerPx": 0.1483420138888889,
+      "mapCallsPerPx": 10.11521701388889,
+      "fwidthPerPx": 0.5933680555555556,
+      "floorPixelsRatio": 0.6420746527777778,
+      "nsPerPx": 3202.2933897569446,
+      "cpuMsPerFrame": 737.808397,
+      "probeCostPerPx": {
+        "inst": 1721.989509548611,
+        "scalar": 3229.2541015625
+      }
+    },
+    {
+      "t": 0.95,
+      "instPerPx": 1761.054626736111,
+      "scalarPerPx": 3297.870529513889,
+      "scalarPerPxMax": 21006,
+      "instPerPxMax": 11451,
+      "scalarPerPxP50": 2866,
+      "scalarPerPxP95": 5686,
+      "marchItersAvg": 9.768211805555556,
+      "marchItersMax": 72,
+      "hitRatio": 0.1641753472222222,
+      "normalAtPerPx": 0.1641753472222222,
+      "mapCallsPerPx": 10.424913194444445,
+      "fwidthPerPx": 0.6567013888888888,
+      "floorPixelsRatio": 0.6530989583333333,
+      "nsPerPx": 3218.1214149305556,
+      "cpuMsPerFrame": 741.455174,
+      "probeCostPerPx": {
+        "inst": 1773.054626736111,
+        "scalar": 3323.870529513889
+      }
+    }
+  ],
+  "headline": {
+    "worstTime": 0.95,
+    "worstScalarPerPx": 3297.9,
+    "worstInstPerPx": 1761.1,
+    "meanScalarPerPx": 3062.8,
+    "meanInstPerPx": 1633,
+    "bg3dScalarPerPx": 940.9,
+    "bg3dNote": "раунд 30, вариант B «силуэт», качество 2, те же 640×360",
+    "helperLaneScalarPerPx": 3323.9,
+    "helperLaneNote": "стоимость предварительного прогона, который собирает значения соседей для fwidth. Артефакт метода: на GPU эти значения приходят из тех же пикселей кадра (каждый пиксель исполняется один раз), дополнительной работой является только расхождение веток внутри квадрата 2×2. В headline НЕ входит."
+  },
+  "portFunctions": [
+    {
+      "name": "hash13",
+      "inst": 9,
+      "scalar": 23
+    },
+    {
+      "name": "smin",
+      "inst": 10,
+      "scalar": 12
+    },
+    {
+      "name": "sdBox2",
+      "inst": 9,
+      "scalar": 16
+    },
+    {
+      "name": "sdRot",
+      "inst": 13,
+      "scalar": 26
+    },
+    {
+      "name": "sdCylZ",
+      "inst": 10,
+      "scalar": 21
+    },
+    {
+      "name": "sdExt",
+      "inst": 11,
+      "scalar": 16
+    },
+    {
+      "name": "cabin",
+      "inst": 12,
+      "scalar": 26
+    },
+    {
+      "name": "prof",
+      "inst": 55,
+      "scalar": 94
+    },
+    {
+      "name": "map",
+      "inst": 141,
+      "scalar": 265
+    },
+    {
+      "name": "normalAt",
+      "inst": 576,
+      "scalar": 1102
+    },
+    {
+      "name": "camera",
+      "inst": 17,
+      "scalar": 31
+    }
+  ],
+  "spirv": {
+    "executable": 886,
+    "arithmetic": 385,
+    "transcendental": 29,
+    "memory": 470,
+    "composite": 31,
+    "texture": 0,
+    "spirvBytes": 25404,
+    "perFunction": [
+      {
+        "name": "hash13",
+        "inst": 9,
+        "scalar": 23,
+        "ownBody": {
+          "inst": 9,
+          "scalar": 23,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 23,
+          "arithmetic": 8,
+          "transcendental": 0,
+          "memory": 12,
+          "composite": 3
+        },
+        "spirvArithmetic": 8,
+        "delta": 1,
+        "why": "Δ +1: перестановка p.yzx в SPIR-V уехала в композитные (OpVectorShuffle)"
+      },
+      {
+        "name": "smin",
+        "inst": 10,
+        "scalar": 12,
+        "ownBody": {
+          "inst": 10,
+          "scalar": 12,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 20,
+          "arithmetic": 10,
+          "transcendental": 0,
+          "memory": 10,
+          "composite": 0
+        },
+        "spirvArithmetic": 10,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "sdBox2",
+        "inst": 9,
+        "scalar": 16,
+        "ownBody": {
+          "inst": 9,
+          "scalar": 16,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 20,
+          "arithmetic": 9,
+          "transcendental": 1,
+          "memory": 10,
+          "composite": 1
+        },
+        "spirvArithmetic": 9,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "sdRot",
+        "inst": 13,
+        "scalar": 26,
+        "ownBody": {
+          "inst": 4,
+          "scalar": 10,
+          "calls": 1
+        },
+        "spirv": {
+          "executable": 28,
+          "arithmetic": 6,
+          "transcendental": 2,
+          "memory": 19,
+          "composite": 3
+        },
+        "spirvArithmetic": 6,
+        "delta": -1,
+        "why": "Δ -1: mat2(co,s,-s,co) в SPIR-V — композитная сборка, не арифметика"
+      },
+      {
+        "name": "sdCylZ",
+        "inst": 10,
+        "scalar": 21,
+        "ownBody": {
+          "inst": 10,
+          "scalar": 21,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 24,
+          "arithmetic": 9,
+          "transcendental": 2,
+          "memory": 12,
+          "composite": 3
+        },
+        "spirvArithmetic": 9,
+        "delta": 1,
+        "why": "Δ +1: vec2(length(…), p.z) в SPIR-V — композитная сборка"
+      },
+      {
+        "name": "sdExt",
+        "inst": 11,
+        "scalar": 16,
+        "ownBody": {
+          "inst": 11,
+          "scalar": 16,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 23,
+          "arithmetic": 10,
+          "transcendental": 1,
+          "memory": 12,
+          "composite": 1
+        },
+        "spirvArithmetic": 10,
+        "delta": 1,
+        "why": "Δ +1: vec2(dd+r, …) в SPIR-V — композитная сборка"
+      },
+      {
+        "name": "cabin",
+        "inst": 12,
+        "scalar": 26,
+        "ownBody": {
+          "inst": 12,
+          "scalar": 26,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 24,
+          "arithmetic": 10,
+          "transcendental": 0,
+          "memory": 14,
+          "composite": 0
+        },
+        "spirvArithmetic": 10,
+        "delta": 2,
+        "why": "Δ +2: две normalize(vec2(константа)) — драйвер сворачивает их при компиляции"
+      },
+      {
+        "name": "prof",
+        "inst": 55,
+        "scalar": 94,
+        "ownBody": {
+          "inst": 1,
+          "scalar": 2,
+          "calls": 5
+        },
+        "spirv": {
+          "executable": 32,
+          "arithmetic": 6,
+          "transcendental": 0,
+          "memory": 26,
+          "composite": 0
+        },
+        "spirvArithmetic": 6,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "map",
+        "inst": 141,
+        "scalar": 265,
+        "ownBody": {
+          "inst": 15,
+          "scalar": 29,
+          "calls": 8
+        },
+        "spirv": {
+          "executable": 81,
+          "arithmetic": 22,
+          "transcendental": 0,
+          "memory": 58,
+          "composite": 1
+        },
+        "spirvArithmetic": 22,
+        "delta": 1,
+        "why": "Δ +1: константы vec3(0,0,±0.80) сворачиваются в адреса"
+      },
+      {
+        "name": "normalAt",
+        "inst": 576,
+        "scalar": 1102,
+        "ownBody": {
+          "inst": 12,
+          "scalar": 42,
+          "calls": 4
+        },
+        "spirv": {
+          "executable": 24,
+          "arithmetic": 16,
+          "transcendental": 1,
+          "memory": 8,
+          "composite": 0
+        },
+        "spirvArithmetic": 16,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "camera",
+        "inst": 17,
+        "scalar": 31,
+        "ownBody": {
+          "inst": 17,
+          "scalar": 31,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 36,
+          "arithmetic": 16,
+          "transcendental": 5,
+          "memory": 19,
+          "composite": 1
+        },
+        "spirvArithmetic": 16,
+        "delta": 1,
+        "why": "Δ +1: часть констант (vec3(0,0.8,0), 1.80) сворачивается"
+      },
+      {
+        "name": "main",
+        "inst": 1019,
+        "scalar": 2014,
+        "ownBody": {
+          "inst": 255,
+          "calls": 6
+        },
+        "spirv": {
+          "executable": 551,
+          "arithmetic": 263,
+          "transcendental": 17,
+          "memory": 270,
+          "composite": 18
+        },
+        "spirvArithmetic": 263,
+        "delta": -2,
+        "why": "режим once: каждая ветка по разу, марш одна итерация",
+        "note": "в динамике main исполняет марш до 72 раз — это учтено в scalar/px выше, а не здесь"
+      }
+    ]
+  },
+  "verify": {
+    "time": 0.1,
+    "width": 160,
+    "height": 90,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "meanAbsDelta": 0.023796296296296298,
+    "boxMeanAbsDelta": 0.018323863636363635,
+    "maxAbsDelta": 25,
+    "exactRatio": 0.9827083333333333,
+    "pixelsOver4": 11,
+    "pixelsOver4Ratio": 0.0007638888888888889,
+    "worstCluster": 0,
+    "ok": true
+  },
+  "caveats": [
+    "scalar/px — модельные единицы (компонентные операции), не миллисекунды; для fps и батареи нужна модель раунда 30",
+    "нс/px — время CPU-порта на Node, не время GPU; пригодно только для сравнения заставки и фона на одной машине",
+    "2487 мс (десктоп) и 1406 мс (мобайл) из задания — время показа сцены целиком, а не стоимость кадра",
+    "замер снят до правки A5: после неё эти числа описывают уже несуществующий шейдер"
+  ],
+  "sourceBlob": "6694d3f96f202b4e6eb1e502b7e02364d882ec4d"
+}

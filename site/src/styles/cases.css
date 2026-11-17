@@ -1,0 +1,119 @@
+/* Кейсы «до / после» (круг 79, задание №82).
+   Новых палитр нет: только токены из tokens.css. Порядок каскада — как у остальных
+   файлов: этот подключается последним в Base.astro и не переопределяет чужие классы,
+   а добавляет свои (c-* и ba-*). */
+
+/* ---------- витрина: карточка-ссылка на кейс ---------- */
+.gal-card--case{display:block;text-decoration:none;color:inherit}
+.gal-card--case:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+.gal-card--case .gal-img img{transition:transform var(--t-slow) var(--ease)}
+.gal-card--case:hover .gal-img img{transform:scale(1.03)}
+
+/* ---------- страница кейса ---------- */
+/* Крошки с длинным заголовком кейса: на 360 px он один не влезал в строку и
+   вылезал за поля контейнера. Держим крошки в одну строку, текущий пункт
+   обрезаем многоточием — полный заголовок всё равно стоит заголовком h1. */
+.crumbs--case{flex-wrap:nowrap;overflow:hidden;gap:6px}
+.crumbs--case>a,.crumbs--case>.sep{flex:none;white-space:nowrap}
+.crumbs--case .cur{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.case-head .lead{margin-top:10px}
+.case-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:6px 0 0;font-size:14px;color:var(--mist)}
+.case-meta time{font-variant-numeric:tabular-nums}
+.case-meta-svc{color:var(--brass);text-decoration:none;border-bottom:1px solid rgba(224,169,109,.4)}
+.case-meta-svc:hover{border-bottom-color:var(--brass)}
+.case-meta-mode::before{content:"·";margin-right:10px;color:var(--copper)}
+.case-meta-mode{margin-left:-8px}
+.case-body{max-width:960px}
+.case-h2{font-size:clamp(20px,2.4vw,26px);margin:0 0 18px}
+
+.case-single{margin:0 0 26px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line-soft);background:var(--deep)}
+/* Кадр 16:10 по заданию (§3.2): рамка держит пропорцию на всех ширинах, фото
+   вписывается в неё cover — так сетка страницы не «прыгает» от разных пропорций. */
+.case-single img{display:block;width:100%;aspect-ratio:16/10;height:auto;object-fit:cover}
+.case-single figcaption{padding:12px 16px;font-size:14px;color:var(--mist)}
+
+/* ---------- сравнение «до / после», база без JS ---------- */
+.ba{display:grid;gap:14px;margin:0 0 26px}
+.ba-fig{margin:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--line-soft);background:var(--deep);position:relative}
+.ba-fig img{display:block;width:100%;height:auto}
+.ba-fig figcaption{
+  position:absolute;left:12px;top:12px;padding:5px 12px;border-radius:999px;
+  background:rgba(6,11,9,.78);border:1px solid rgba(224,169,109,.45);
+  color:var(--brass);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+}
+.ba-fig--after figcaption{left:auto;right:12px}
+
+/* ---------- сравнение, режим слайдера (класс ставит client/cases.ts) ---------- */
+.ba--slider{display:block;position:relative;touch-action:pan-y;user-select:none;margin-bottom:10px}
+.ba--slider .ba-fig{border-radius:var(--r)}
+.ba--slider .ba-fig--before{margin:0}
+.ba--slider .ba-fig--after{
+  position:absolute;inset:0;margin:0;border:0;background:transparent;
+  /* Значение выставляет JS: слева «как было», справа «как стало» */
+  clip-path:inset(0 0 0 50%);
+  will-change:clip-path;
+}
+.ba--slider .ba-fig--after img{border-radius:var(--r)}
+.ba--slider .ba-fig figcaption{z-index:2}
+.ba-divider{
+  position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;z-index:3;
+  background:linear-gradient(180deg,rgba(224,169,109,.2),var(--brass),rgba(224,169,109,.2));
+  box-shadow:0 0 0 1px rgba(6,11,9,.5);pointer-events:none;
+}
+.ba-divider::after{
+  content:"";position:absolute;top:50%;left:50%;width:34px;height:34px;margin:-17px 0 0 -17px;
+  border-radius:50%;background:rgba(6,11,9,.72);border:1px solid var(--brass);
+}
+.ba--drag{cursor:ew-resize}
+.ba-range-wrap{display:flex;justify-content:center;padding:10px 0 0}
+.ba-range{
+  width:min(420px,100%);height:28px;background:transparent;appearance:none;cursor:pointer;
+  --track:rgba(183,196,187,.25);
+}
+.ba-range:focus-visible{outline:2px solid var(--brass);outline-offset:4px;border-radius:999px}
+.ba-range::-webkit-slider-runnable-track{height:4px;border-radius:999px;background:var(--track)}
+.ba-range::-moz-range-track{height:4px;border-radius:999px;background:var(--track)}
+.ba-range::-webkit-slider-thumb{
+  appearance:none;width:20px;height:20px;margin-top:-8px;border-radius:50%;
+  background:var(--brass);border:1px solid rgba(6,11,9,.6);
+}
+.ba-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--brass);border:1px solid rgba(6,11,9,.6)}
+
+/* ---------- сетка остальных кадров ---------- */
+.case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin:0 0 28px}
+.case-grid-card{flex:none;width:100%}
+.case-grid-card .gal-img{aspect-ratio:4/3}
+.case-grid-card .gal-img img{width:100%;height:100%;object-fit:cover}
+
+/* ---------- блок записи ---------- */
+.case-cta{
+  display:flex;flex-wrap:wrap;gap:16px 28px;justify-content:space-between;align-items:center;
+  padding:22px 24px;border-radius:var(--r);border:1px solid var(--line);
+  background:linear-gradient(180deg,var(--deep2),var(--deep));
+}
+.case-cta p{margin:6px 0 0;color:var(--mist);font-size:14.5px;max-width:52ch}
+.case-cta-btns{display:flex;flex-wrap:wrap;gap:12px;margin:0}
+
+/* ---------- адаптив ---------- */
+@media (max-width:768px){
+  .case-cta{padding:18px 18px}
+  .case-cta-btns{width:100%}
+  .case-cta-btns .btn{flex:1 1 auto;justify-content:center;text-align:center}
+}
+@media (max-width:480px){
+  /* 360 px: слайдер остаётся горизонтальным, кадр не выше ~240 px по высоте,
+     поэтому сравнение читается целиком и ничего не выезжает за экран */
+  .ba--slider .ba-fig{max-height:240px}
+  .ba--slider .ba-fig img{height:240px;object-fit:cover}
+  .ba-fig figcaption{font-size:10px;padding:4px 9px;letter-spacing:.06em}
+  .case-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .case-meta{gap:8px 12px}
+  .case-meta-mode::before{content:none}
+  .case-meta-mode{margin-left:0}
+}
+
+/* Уважаем «меньше движения»: убираем плавные переходы, ползунок остаётся рабочим */
+@media (prefers-reduced-motion:reduce){
+  .ba-range,.gal-card--case .gal-img img{transition:none}
+  .gal-card--case:hover .gal-img img{transform:none}
+}
