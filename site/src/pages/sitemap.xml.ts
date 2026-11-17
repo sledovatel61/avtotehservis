@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { listCatalogServices } from '../server/services.ts';
 import { listNews, NEWS_CATEGORIES, newsCategoryCounts } from '../server/content.ts';
+import { listSiteCaseSlugs } from '../server/cases-store.ts';
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -27,6 +28,11 @@ export const GET: APIRoute = ({ site }) => {
       for (let i = 2; i <= Math.ceil(count / per); i++) urls.push({ loc: `${categoryBase}/page/${i}` });
     }
   } catch { /* БД не мигрирована — отдаём только статику */ }
+  /* круг 79: страницы кейсов. Файл не зависит от БД, поэтому отдельным try —
+     падение базы не должно выкидывать кейсы из карты сайта. Листинга /cases/ нет. */
+  try {
+    for (const c of listSiteCaseSlugs()) urls.push({ loc: `${base}/cases/${c.slug}`, lastmod: c.published_at || undefined });
+  } catch { /* файл кейсов битый — просто без них */ }
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u) => `  <url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${esc(u.lastmod.slice(0, 10))}</lastmod>` : ''}</url>`).join('\n')}
