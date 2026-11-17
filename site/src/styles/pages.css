@@ -59,6 +59,7 @@
 }
 .filter-chip:hover{color:var(--ivory);border-color:rgba(224,169,109,.5)}
 .filter-chip.is-on{background:rgba(200,127,69,.16);border-color:var(--copper);color:var(--brass)}
+.filter-chip[aria-disabled="true"]{opacity:.6;cursor:default;pointer-events:none}
 .news-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
 .news-card{
   display:flex;gap:18px;border:1px solid var(--line-soft);border-radius:var(--r);background:var(--deep);
