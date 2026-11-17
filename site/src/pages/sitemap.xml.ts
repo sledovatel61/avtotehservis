@@ -13,6 +13,10 @@ export const GET: APIRoute = ({ site }) => {
   try {
     for (const s of listCatalogServices()) urls.push({ loc: `${base}/services/${s.slug}` });
     for (const n of listNews({ per: 500 }).items) urls.push({ loc: `${base}/news/${n.slug}`, lastmod: n.published_at ?? undefined });
+    /* Страницы листинга «Полезного» — реальные пути, а не query: статический экспорт
+       рендерит ровно то, что перечислено в sitemap. */
+    const newsPages = listNews({ per: 6 }).pages;
+    for (let i = 2; i <= newsPages; i++) urls.push({ loc: `${base}/news/page/${i}` });
   } catch { /* БД не мигрирована — отдаём только статику */ }
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
