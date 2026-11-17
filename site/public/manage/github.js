@@ -20,7 +20,18 @@ export class GitHub {
   return {data:await res.json(),headers:res.headers};
  }
  async user(){ return this.request('/user'); }
- async read(){ const {data}=await this.request(`${REPO}/contents/${CONTENT}?ref=${REF}`); const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0)); let json; try {json=JSON.parse(new TextDecoder().decode(bytes));} catch {throw new GitHubError('Не удалось прочитать cases.json: неверный формат.',0);} if(json.version!==1 || !Array.isArray(json.cases)) throw new GitHubError('Неизвестный формат cases.json. Обратитесь к разработчику.',0); return {json,sha:data.sha}; }
+ async read(){
+  let data;
+  try { ({data}=await this.request(`${REPO}/contents/${CONTENT}?ref=${REF}`)); }
+  catch(e) {
+   if(e.status!==404) throw e;
+   // 404 у Contents также означает недоступный репозиторий или ветку.
+   // Считаем файл отсутствующим только после проверки ветки тем же токеном.
+   await this.request(`${REPO}/git/ref/heads/${REF}`);
+   return {json:{version:1,updated_at:new Date().toISOString(),cases:[]},sha:null};
+  }
+  const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0)); let json; try {json=JSON.parse(new TextDecoder().decode(bytes));} catch {throw new GitHubError('Не удалось прочитать cases.json: неверный формат.',0);} if(json.version!==1 || !Array.isArray(json.cases)) throw new GitHubError('Неизвестный формат cases.json. Обратитесь к разработчику.',0); return {json,sha:data.sha};
+ }
  async image(path) { const {data}=await this.request(`${REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${REF}`); const content=data.content || (await this.request(`${REPO}/git/blobs/${data.sha}`)).data.content; if(!content) throw new GitHubError('Не удалось загрузить исходную фотографию из GitHub.',0); return new Blob([Uint8Array.from(atob(content.replace(/\s/g,'')),c=>c.charCodeAt(0))]); }
  async budget(){ const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`); const {data:commit}=await this.request(`${REPO}/git/commits/${ref.object.sha}`); const {data}=await this.request(`${REPO}/git/trees/${commit.tree.sha}?recursive=1`); const files=data.tree.filter(x=>x.type==='blob' && x.path.startsWith('site/public/media/cases/')); return {bytes:files.reduce((s,x)=>s+(x.size||0),0), count:files.length/3, truncated:data.truncated}; }
  async save(initial, apply, buildFiles, progress=()=>{}) {
