@@ -28,6 +28,9 @@ const ARTICLES = [
   { dir: 'r75/a9', file: '02-svyaz-voyah-free.md' },
   { dir: 'r75/a9', file: '03-prilozhenie-voyah-free.md' },
   { dir: 'r75/a9', file: '04-ekran-i-media-voyah-free.md' },
+  { dir: 'r77/a9', file: '01-reglament-raznye-cifry.md' },
+  { dir: 'r77/a9', file: '02-momenty-i-obemy.md' },
+  { dir: 'r77/a9', file: '03-kondicioner-voyah-free.md' },
 ];
 
 const REQUIRED = ['slug', 'category', 'title', 'excerpt', 'seo_description', 'published_at'];
