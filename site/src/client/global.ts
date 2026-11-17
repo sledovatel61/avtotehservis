@@ -149,7 +149,7 @@ export function initCarousel(root: HTMLElement | null): CarouselInst | null {
     live.setAttribute('aria-live', 'polite');
     root.appendChild(live);
   }
-  const word = root.dataset.liveWord ?? 'Экран';
+  const word = root.dataset.liveWord ?? 'Слайд';
   const say = (): void => { if (live) live.textContent = `${word} ${idx + 1} из ${cards().length}`; };
   function render(animate?: boolean): void {
     const c = cards()[0];
