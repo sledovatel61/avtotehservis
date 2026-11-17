@@ -3,15 +3,9 @@ import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import { listCatalogServices } from '../server/services.ts';
 import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
-/* круг 23 (§D): шесть фото-обложек кейсов только для «О компании» (галерея главной не тронута) */
-const CASE_COVERS: Record<string, { avif: string; webp: string; alt: string }> = {
-  'case-1': { avif: '/img/ab-case-1-640.avif', webp: '/img/ab-case-1-640.webp', alt: 'Иллюстрация: боковой порез шины на монтажном станке' },
-  'case-2': { avif: '/img/ab-case-2-640.avif', webp: '/img/ab-case-2-640.webp', alt: 'Иллюстрация: грыжа на боковине шины перед вулканизацией' },
-  'case-3': { avif: '/img/ab-case-3-640.avif', webp: '/img/ab-case-3-640.webp', alt: 'Иллюстрация: пример работы сервиса — подвеска и колесо' },
-  'case-4': { avif: '/img/ab-case-4-640.avif', webp: '/img/ab-case-4-640.webp', alt: 'Иллюстрация: суппорт и тормозные колодки при замене' },
-  'case-5': { avif: '/img/ab-case-5-640.avif', webp: '/img/ab-case-5-640.webp', alt: 'Иллюстрация: слив отработанного масла и фильтр при ТО' },
-  'case-6': { avif: '/img/ab-case-6-640.avif', webp: '/img/ab-case-6-640.webp', alt: 'Иллюстрация: пример работы сервиса — узлы трансмиссии' },
-};
+/* круг 23 (§D) → круг 78: карта обложек переехала в ../server/case-covers.ts —
+   её теперь использует и главная (раньше там были SVG-заглушки с бейджем «до / после») */
+import { CASE_COVERS } from '../server/case-covers.ts';
 import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
@@ -181,7 +175,7 @@ const jsonLd = {
         <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
       </div>
     </div>
-    <div class="carousel reveal" data-carousel>
+    <div class="carousel reveal" data-carousel data-live-word="Кейс">
       <div class="carousel-win"><div class="carousel-track gal-track">
           {cases.map((c, ci) => {
             /* круг 23 (§D): обложки кейсов на «О компании» — фото-иллюстрации работы по теме
@@ -213,7 +207,7 @@ const jsonLd = {
         </div>
       )}
     </div>
-    <div class="carousel reveal" data-carousel>
+    <div class="carousel reveal" data-carousel data-live-word="Отзыв">
       <div class="carousel-win"><div class="carousel-track">
           {reviews.length === 0 ? (
             <article class="rev-card">
