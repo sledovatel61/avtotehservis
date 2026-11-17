@@ -39,7 +39,7 @@ body{background:radial-gradient(1200px 620px at 78% 18%,#16302A 0%,#0F1F1A 46%,#
 <div class="wrap">
   <div class="top"><img src="/img/logo.svg" alt=""><div class="name">АвтоТехСервис</div></div>
   <div class="sub">Автосервис и шиномонтаж в Ростове-на-Дону · сначала смета, потом ремонт</div>
-  <div class="plate"><span class="dot"></span>ул. Портовая, 439 · ежедневно 9:00–19:00 · +7 (928) 906-57-00</div>
+  <div class="plate"><span class="dot"></span>ул. Портовая, 439 · ежедневно 9:00–19:00 · +7 (951) 826-98-39</div>
 </div>
 <div class="rule"></div>
 </body></html>`;

@@ -15,6 +15,8 @@ const CASE_COVERS: Record<string, { avif: string; webp: string; alt: string }> =
 import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
+const E0 = S.phones_extra[0];
+const E1 = S.phones_extra[1];
 const services = listCatalogServices();
 const cases = listPublishedCases(6);
 const reviews = listPublishedReviews(8);
@@ -48,7 +50,7 @@ const jsonLd = {
     <span class="eyebrow">О компании</span>
     <h1>Шесть мастеров и понятный порядок работ</h1>
     <p class="lead">«АвтоТехСервис» — автосервис и шиномонтаж в Ростове-на-Дону: улица Портовая, 439, Западный жилой массив. Работаем ежедневно, без выходных, с 9:00 до 19:00.</p>
-    <p class="lead u-mt14">Телефоны: <a class="u-brass" href="tel:+79289065700">+7 (928) 906-57-00</a>, <a class="u-brass" href="tel:+78632291950">+7 (863) 229-19-50</a> и <a class="u-brass" href="tel:+79518265847">+7 (951) 826-58-47</a>.</p>
+    <p class="lead u-mt14">Телефоны: <a class="u-brass" href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a>, <a class="u-brass" href={`tel:${E0.tel}`} data-track="call_click">{E0.display}</a> и <a class="u-brass" href={`tel:${E1.tel}`} data-track="call_click">{E1.display}</a>.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="ab-text-h">
