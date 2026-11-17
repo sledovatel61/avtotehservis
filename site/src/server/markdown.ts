@@ -3,7 +3,11 @@
  * Сырой HTML экранируется (никакого HTML из ввода не исполняется), поддерживаются:
  * # / ## / ###, списки (- и 1.), цитата >, абзацы, **жирный**, *курсив*, `код`,
  * [текст](ссылка) — только http(s)/mailto/tel и относительные /,
- * таблицы GFM (| шапка |, |---|, строки) — в обёртке .post-table-wrap.
+ * таблицы GFM (| шапка |, |---|, строки) — в обёртке .post-table-wrap,
+ * картинка отдельной строкой — только в виде <img> по белому списку атрибутов (круг 75):
+ *   <img src="/img/…" width="800" height="450" alt="…">
+ * Любой другой HTML по-прежнему экранируется: из строки берутся ровно src (только
+ * относительный /img/), числа width/height и текст alt, всё остальное отбрасывается.
  */
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -22,6 +26,16 @@ function inline(s: string): string {
     return text; // небезопасная ссылка — оставляем только текст
   });
   return out;
+}
+
+/* Картинка отдельной строкой (круг 75). Разрешён ровно один формат тега с четырьмя
+   атрибутами; всё, что не совпало с шаблоном, уходит в обычный абзац и экранируется. */
+const IMG_LINE = /^<img\s+src="(\/img\/[\w./-]+\.(?:webp|avif|svg|png|jpg|jpeg))"(?:\s+width="(\d{1,4})")?(?:\s+height="(\d{1,4})")?(?:\s+alt="([^"<>]{0,200})")?\s*\/?>$/i;
+function imgTag(line: string): string | null {
+  const m = IMG_LINE.exec(line.trim());
+  if (!m) return null;
+  const [, src, w, h, alt] = m;
+  return `<img src="${src}"${w ? ` width="${w}"` : ''}${h ? ` height="${h}"` : ''} alt="${esc(alt ?? '')}" loading="lazy" decoding="async">`;
 }
 
 /* Таблицы (круг 69): строка вида |…|, под ней разделитель |---|, дальше строки тела. */
@@ -63,6 +77,8 @@ export function mdToHtml(md: string): string {
       continue;
     }
     if (!line.trim()) { closeList(); closePara(); continue; }
+    const img = imgTag(line);
+    if (img) { closeList(); closePara(); html.push(img); continue; }
     const h = /^(#{1,3})\s+(.*)$/.exec(line);
     if (h) { closeList(); closePara(); const lvl = h[1].length + 1; html.push(`<h${lvl}>${inline(h[2])}</h${lvl}>`); continue; }
     if (/^>\s?/.test(line)) { closeList(); closePara(); html.push(`<blockquote>${inline(line.replace(/^>\s?/, ''))}</blockquote>`); continue; }
