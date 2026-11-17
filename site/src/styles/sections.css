@@ -275,6 +275,10 @@
 }
 .lb-arrow:hover{background:var(--copper);color:var(--night)}
 .lb-prev{left:16px}.lb-next{right:16px}
+/* одиночный просмотр (`data-zoom`: сертификаты): ни стрелок, ни счётчика, ни листания */
+.lightbox.is-single .lb-arrow{display:none}
+.lightbox.is-single .lb-box{max-width:min(720px,100%)}
+.lb-arrow[hidden],.lb-cap [hidden]{display:none}
 
 /* ---------- Отзывы ---------- */
 .rev-card{
