@@ -1,0 +1,183 @@
+---
+/**
+ * Страница кейса «как было / как стало» (круг 79, задание №82).
+ *
+ * Данные — `site/content/cases.json` (который пишет админка). Сайт собирается
+ * сервером, поэтому `getStaticPaths` не нужен: слаг берём из `Astro.params`.
+ * Кейса нет или он в черновике — отдаём страницу 404 с настоящим статусом 404
+ * (на статике `redirect` не работает, поэтому `rewrite`).
+ */
+import Base from '../../layouts/Base.astro';
+import { getSettings } from '../../server/settings.ts';
+import { getPublishedSiteCase } from '../../server/cases-store.ts';
+import { getService } from '../../server/services.ts';
+import { fmtDateRu } from '../../server/format.ts';
+import { caseCover, photoPath, photoSrcset, type SitePhoto } from '../../shared/cases-schema.ts';
+
+const S = getSettings();
+const { slug } = Astro.params;
+const item = slug ? getPublishedSiteCase(slug) : undefined;
+if (!item) {
+  Astro.response.status = 404;
+  return Astro.rewrite('/404');
+}
+
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const svc = item.service_slug ? getService(item.service_slug) : undefined;
+const dateRu = fmtDateRu(item.published_at);
+const modeLabel = item.mode === 'before_after' ? 'до и после' : 'фото работы';
+
+/* Пара для слайдера: первый «до» и первый «после». Всё остальное уходит в галерею.
+   Слайдеру нужны ОБЕ стороны: если одной нет, блок сравнения не рисуем — показываем
+   обычную галерею из того, что загружено, без пустых рамок (правило §3.2). */
+const hasPair = item.mode === 'before_after' && item.before.length > 0 && item.after.length > 0;
+const pairBefore = hasPair ? item.before[0] : null;
+const pairAfter = hasPair ? (item.after[0] as SitePhoto) : null;
+/* Крупный кадр в режиме «одно фото» — первый из photos; в «до/после» без пары —
+   обложка по контракту (cover → after → photos → before). */
+const single: SitePhoto | null = hasPair ? null : (item.mode === 'single' ? (item.photos[0] ?? caseCover(item)) : caseCover(item));
+const allPhotos: SitePhoto[] = [...item.before, ...item.after, ...item.photos];
+const restPhotos: SitePhoto[] = hasPair
+  ? [...item.before.slice(1), ...item.after.slice(1), ...item.photos]
+  : allPhotos.filter((p) => p !== single);
+
+/** Заголовок ≤ 60 и описание ≤ 160: режем по словам, а не посреди слова. */
+function clampWords(text: string, max: number): string {
+  const s = text.replace(/\s+/g, ' ').trim();
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max + 1);
+  const sp = cut.lastIndexOf(' ');
+  const base = sp >= Math.floor(max * 0.55) ? cut.slice(0, sp) : s.slice(0, max);
+  return base.replace(/[\s,.;:—–-]+$/, '') + '…';
+}
+const pageTitle = clampWords(item.title, 60);
+const pageDesc = clampWords(item.description || `${item.title} — пример работы сервиса «АвтоТехСервис», Ростов-на-Дону, Портовая, 439.`, 160);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+    { '@type': 'ListItem', position: 2, name: 'Кейсы', item: siteUrl + '/about' },
+    { '@type': 'ListItem', position: 3, name: item.title },
+  ],
+};
+const sizesWide = '(max-width:900px) 92vw, 860px';
+---
+
+<Base page="cases" title={pageTitle} description={pageDesc} jsonLd={jsonLd} ogType="article" publishedTime={item.published_at}>
+  <nav class="crumbs crumbs--case container" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span class="sep" aria-hidden="true">/</span>
+    <a href="/about#ab-gal-h">Кейсы</a><span class="sep" aria-hidden="true">/</span>
+    <span class="cur" aria-current="page">{item.title}</span>
+  </nav>
+
+  <section class="page-head case-head">
+    <div class="container">
+      <span class="eyebrow">Кейс{svc ? ` · ${svc.title}` : ''}</span>
+      <h1>{item.title}</h1>
+      <p class="case-meta">
+        {svc && <a class="case-meta-svc" href={`/services/${svc.slug}`}>{svc.title}</a>}
+        {dateRu && <time datetime={item.published_at}>{dateRu}</time>}
+        <span class="case-meta-mode">{modeLabel}</span>
+      </p>
+      {item.description && <p class="lead">{item.description}</p>}
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="case-photos-h">
+    <div class="container case-body">
+      <h2 id="case-photos-h" class="case-h2">{hasPair ? 'Как было и как стало' : 'Фотографии работы'}</h2>
+
+      {hasPair ? (
+        <div class="ba" data-ba data-ba-kind="pair">
+          <figure class="ba-fig ba-fig--before">
+            <img
+              src={photoPath(item.slug, item.before[0], 960)}
+              srcset={photoSrcset(item.slug, item.before[0])}
+              sizes={sizesWide}
+              alt={item.before[0].alt}
+              width={item.before[0].w}
+              height={item.before[0].h}
+              loading="lazy"
+              decoding="async"
+            >
+            <figcaption>как было</figcaption>
+          </figure>
+          <figure class="ba-fig ba-fig--after">
+            <img
+              src={photoPath(item.slug, pairAfter as SitePhoto, 960)}
+              srcset={photoSrcset(item.slug, pairAfter as SitePhoto)}
+              sizes={sizesWide}
+              alt={(pairAfter as SitePhoto).alt}
+              width={(pairAfter as SitePhoto).w}
+              height={(pairAfter as SitePhoto).h}
+              loading="lazy"
+              decoding="async"
+            >
+            <figcaption>как стало</figcaption>
+          </figure>
+        </div>
+      ) : single ? (
+        <figure class="case-single">
+          <img
+            src={photoPath(item.slug, single, 960)}
+            srcset={photoSrcset(item.slug, single)}
+            sizes={sizesWide}
+            alt={single.alt}
+            width={single.w}
+            height={single.h}
+            loading="lazy"
+            decoding="async"
+          >
+          {item.description && <figcaption>{item.description}</figcaption>}
+        </figure>
+      ) : null}
+
+      {restPhotos.length > 0 && (
+        <div class="case-grid">
+          {restPhotos.map((p, i) => (
+            <button
+              class="gal-card case-grid-card"
+              type="button"
+              data-gal={i}
+              data-img={photoPath(item.slug, p, 1600)}
+              data-title={item.title}
+              data-sub={p.alt}
+              aria-label={`Открыть фото: ${p.alt}`}
+            >
+              <span class="gal-img">
+                <img
+                  src={photoPath(item.slug, p, 480)}
+                  srcset={photoSrcset(item.slug, p)}
+                  sizes="(max-width:640px) 44vw, 280px"
+                  alt={p.alt}
+                  width={p.w}
+                  height={p.h}
+                  loading="lazy"
+                  decoding="async"
+                >
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div class="case-cta">
+        <div>
+          <b>Похожая работа?</b>
+          <p>Позвоните — скажем, что делаем в таком случае и сколько это стоит до начала работ.</p>
+        </div>
+        <p class="case-cta-btns">
+          <a class="btn btn--copper" href="/appointment">Записаться</a>
+          <a class="btn btn--ghost" href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    import '../../client/cases.ts';
+    import '../../client/lightbox.ts';
+  </script>
+</Base>
