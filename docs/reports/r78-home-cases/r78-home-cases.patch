@@ -1,0 +1,131 @@
+diff --git a/site/src/pages/about.astro b/site/src/pages/about.astro
+index ff9203f..2c4e9ad 100644
+--- a/site/src/pages/about.astro
++++ b/site/src/pages/about.astro
+@@ -3,15 +3,9 @@ import Base from '../layouts/Base.astro';
+ import { getSettings } from '../server/settings.ts';
+ import { listCatalogServices } from '../server/services.ts';
+ import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
+-/* круг 23 (§D): шесть фото-обложек кейсов только для «О компании» (галерея главной не тронута) */
+-const CASE_COVERS: Record<string, { avif: string; webp: string; alt: string }> = {
+-  'case-1': { avif: '/img/ab-case-1-640.avif', webp: '/img/ab-case-1-640.webp', alt: 'Иллюстрация: боковой порез шины на монтажном станке' },
+-  'case-2': { avif: '/img/ab-case-2-640.avif', webp: '/img/ab-case-2-640.webp', alt: 'Иллюстрация: грыжа на боковине шины перед вулканизацией' },
+-  'case-3': { avif: '/img/ab-case-3-640.avif', webp: '/img/ab-case-3-640.webp', alt: 'Иллюстрация: пример работы сервиса — подвеска и колесо' },
+-  'case-4': { avif: '/img/ab-case-4-640.avif', webp: '/img/ab-case-4-640.webp', alt: 'Иллюстрация: суппорт и тормозные колодки при замене' },
+-  'case-5': { avif: '/img/ab-case-5-640.avif', webp: '/img/ab-case-5-640.webp', alt: 'Иллюстрация: слив отработанного масла и фильтр при ТО' },
+-  'case-6': { avif: '/img/ab-case-6-640.avif', webp: '/img/ab-case-6-640.webp', alt: 'Иллюстрация: пример работы сервиса — узлы трансмиссии' },
+-};
++/* круг 23 (§D) → круг 78: карта обложек переехала в ../server/case-covers.ts —
++   её теперь использует и главная (раньше там были SVG-заглушки с бейджем «до / после») */
++import { CASE_COVERS } from '../server/case-covers.ts';
+ import { fmtDateRu, plural } from '../server/format.ts';
+ 
+ const S = getSettings();
+@@ -181,7 +175,7 @@ const jsonLd = {
+         <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
+       </div>
+     </div>
+-    <div class="carousel reveal" data-carousel>
++    <div class="carousel reveal" data-carousel data-live-word="Кейс">
+       <div class="carousel-win"><div class="carousel-track gal-track">
+           {cases.map((c, ci) => {
+             /* круг 23 (§D): обложки кейсов на «О компании» — фото-иллюстрации работы по теме
+@@ -213,7 +207,7 @@ const jsonLd = {
+         </div>
+       )}
+     </div>
+-    <div class="carousel reveal" data-carousel>
++    <div class="carousel reveal" data-carousel data-live-word="Отзыв">
+       <div class="carousel-win"><div class="carousel-track">
+           {reviews.length === 0 ? (
+             <article class="rev-card">
+diff --git a/site/src/pages/index.astro b/site/src/pages/index.astro
+index 5372f59..bd31b57 100644
+--- a/site/src/pages/index.astro
++++ b/site/src/pages/index.astro
+@@ -2,8 +2,11 @@
+ import Base from '../layouts/Base.astro';
+ import { getSettings } from '../server/settings.ts';
+ import { listCatalogServices, listHomeServices } from '../server/services.ts';
+-import { listPublishedCases, listPublishedReviews, coverInfo } from '../server/content.ts';
++import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
+ import { fmtDateRu, plural } from '../server/format.ts';
++/* круг 78: кейсы на главной — те же фото-обложки, что и на «О компании» (карта общая,
++   см. ../server/case-covers.ts); раньше тут были шесть SVG-заглушек с бейджем «до / после» */
++import { CASE_COVERS } from '../server/case-covers.ts';
+ 
+ const S = getSettings();
+ const services = listHomeServices();
+@@ -378,31 +381,34 @@ const jsonLd = {
+     <div class="sec-head reveal">
+       <div>
+         <span class="eyebrow">Галерея работ</span>
+-        <h2 id="gal-h">Шесть кейсов «до / после»</h2>
++        <h2 id="gal-h">Шесть кейсов из практики</h2>
+       </div>
+       <div class="slider-nav">
+         <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
+         <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
+       </div>
+     </div>
+-    <div class="carousel reveal" data-carousel>
++    <div class="carousel reveal" data-carousel data-live-word="Кейс">
+       <div class="carousel-win">
+         <div class="carousel-track gal-track">
+           {cases.map((c, ci) => {
+-            const cov = coverInfo(c, '/img/case-1.svg', c.title, '');
+-            // Раунд 7: фраза-заглушка о съёмке остаётся только в одной заметке под секцией.
+-            const sub = (c.description ?? '').replace(/\.?\s*Фото появится после съёмки в сервисе\./i, '').trim();
++            /* круг 78: обложки кейсов на главной — те же фото-иллюстрации, что и на «О компании»
++               (общая карта CASE_COVERS); бейдж «до / после» и приписка про будущую съёмку убраны —
++               обложка иллюстрирует тему кейса, а не обещает фото конкретной машины */
++            const cv = CASE_COVERS[c.slug] ?? CASE_COVERS['case-1'];
+             return (
+-              <button class="gal-card" type="button" data-gal={ci} data-img={cov.lg} data-title={c.title} data-sub={sub} aria-label={`Открыть кейс: ${c.title}`}>
+-                <span class="gal-img"><img src={cov.src} srcset={cov.srcset ?? undefined} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cov.alt} width="800" height="600" loading="lazy" decoding="async"><span class="ba" aria-hidden="true">до / после</span></span>
+-                <span class="gal-cap">{c.title}</span>
++              <button class="gal-card" type="button" data-gal={ci} data-img={cv.webp} data-title={c.title} data-sub={c.description ?? ''} aria-label={`Открыть кейс: ${c.title}`}>
++                <span class="gal-img"><picture>
++                  <source type="image/avif" srcset={cv.avif}>
++                  <img src={cv.webp} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cv.alt} width="640" height="480" loading="lazy" decoding="async">
++                </picture></span>
++                <span class="gal-cap gal-cap--case"><span>{c.title}</span><span class="ba">пример работы</span></span>
+               </button>
+             );
+           })}
+           </div>
+       </div>
+     </div>
+-    <p class="gal-note">Показываем только реальные работы — фото появятся после съёмки.</p>
+   </div>
+ </section>
+ <section class="sec sec--deep sec--narrow" aria-labelledby="rev-h">
+@@ -421,7 +427,7 @@ const jsonLd = {
+         </div>
+       )}
+     </div>
+-    <div class="carousel reveal" data-carousel>
++    <div class="carousel reveal" data-carousel data-live-word="Отзыв">
+       <div class="carousel-win">
+         <div class="carousel-track">
+           {reviews.length === 0 ? (
+diff --git a/site/src/server/case-covers.ts b/site/src/server/case-covers.ts
+new file mode 100644
+index 0000000..c4c9e79
+--- /dev/null
++++ b/site/src/server/case-covers.ts
+@@ -0,0 +1,14 @@
++/* круг 23 (§D) → круг 78: шесть фото-обложек кейсов, общие для главной и «О компании».
++   Раньше карта жила только в about.astro — главная показывала вместо неё шесть векторных
++   SVG-заглушек (/img/case-1..6.svg) с бейджем «до / после» и припиской про будущую съёмку.
++   Кейсы одни и те же, кадры одни и те же — карта вынесена сюда, чтобы не плодить третью копию. */
++export interface CaseCover { avif: string; webp: string; alt: string }
++
++export const CASE_COVERS: Record<string, CaseCover> = {
++  'case-1': { avif: '/img/ab-case-1-640.avif', webp: '/img/ab-case-1-640.webp', alt: 'Иллюстрация: боковой порез шины на монтажном станке' },
++  'case-2': { avif: '/img/ab-case-2-640.avif', webp: '/img/ab-case-2-640.webp', alt: 'Иллюстрация: грыжа на боковине шины перед вулканизацией' },
++  'case-3': { avif: '/img/ab-case-3-640.avif', webp: '/img/ab-case-3-640.webp', alt: 'Иллюстрация: пример работы сервиса — подвеска и колесо' },
++  'case-4': { avif: '/img/ab-case-4-640.avif', webp: '/img/ab-case-4-640.webp', alt: 'Иллюстрация: суппорт и тормозные колодки при замене' },
++  'case-5': { avif: '/img/ab-case-5-640.avif', webp: '/img/ab-case-5-640.webp', alt: 'Иллюстрация: слив отработанного масла и фильтр при ТО' },
++  'case-6': { avif: '/img/ab-case-6-640.avif', webp: '/img/ab-case-6-640.webp', alt: 'Иллюстрация: пример работы сервиса — узлы трансмиссии' },
++};

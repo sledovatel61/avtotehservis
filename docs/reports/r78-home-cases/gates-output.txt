@@ -1,0 +1,78 @@
+### npm run typecheck
+
+> avtotehservis-site@0.1.0 typecheck
+> tsc --noEmit
+
+
+### BG3D=off npm run build:pages
+
+> avtotehservis-site@0.1.0 build:pages
+> node scripts/export-pages.mjs
+
+БД: /tmp/ats-pages-JO2W44/data/site.sqlite3
+Применено миграций: 001_init.sql, 002_service_price.sql
+Сид завершён: услуг 12 (в каталоге 8), кейсов-заглушек 6, статей 15.
+Отзывов намеренно нет: пустое состояние + добавление через админку.
+12:52:40 [@astrojs/node] Enabling sessions with filesystem storage
+12:52:40 [types] Generated 51ms
+12:52:40 [build] output: "server"
+12:52:40 [build] mode: "server"
+12:52:40 [build] directory: /tmp/r78-work/site/dist/
+12:52:40 [build] adapter: @astrojs/node
+12:52:40 [build] Collecting build info...
+12:52:40 [build] ✓ Completed in 97ms.
+12:52:40 [build] Building server entrypoints...
+12:52:40 [vite] ✓ built in 149ms
+12:52:41 [vite] ✓ built in 563ms
+12:52:41 [vite] ✓ built in 124ms
+12:52:41 [build] Rearranging server assets...
+12:52:41 [build] ✓ Completed in 893ms.
+12:52:41 [build] Server built in 1.01s
+12:52:41 [build] Complete!
+12:52:41 [@astrojs/node] Server listening on http://127.0.0.1:4337
+Exported 35 public pages + 404 to /tmp/r78-work/site/pages-dist
+
+### node scripts/check-pages.mjs
+PASS: 39 pages, 2844 local links/assets; no private directories.
+
+### node --test tests/unit.test.ts (summary)
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 589.505823
+
+### node --test tests/content.test.ts (summary)
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 199.300405
+
+### node scripts/check-voyah-content.mjs
+     объём: страница 7994, тизер 741
+     прайс: 15 строк, суммы 2000₽ / 2500₽ / 2500₽…
+     метаданные: title 40, description 158, h1 48
+     FAQ: 15 вопросов
+     адрес: страница 1, тизер 1
+     кадры: alt 3, подписи 3
+
+check-voyah-content: чисто — /tmp/r78-work/content/merged-r28/a8/voyah-free.md
+
+### node scripts/check-intro-3d-off.mjs
+ok   страниц 39: ни заставки, ни 3D-слоя, ни <canvas>
+ok   шейдеры заставки выкинуты из бандла; inline-модуль 44 Б (маркер off)
+INTRO-3D-OFF: заставка и 3D выключены, как требует показ заказчику
+
+### node scripts/check-mobile-grid.mjs
+check-mobile-grid: OK (10 контейнеров, на 390 px везде одна колонка)
