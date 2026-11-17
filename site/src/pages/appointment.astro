@@ -202,10 +202,6 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
             </div>
           </div>
           <noscript><p class="hint">Форма записи работает с включённым JavaScript. Без него запишитесь, пожалуйста, по телефону: {S.phone_main} ({S.hours}).</p></noscript>
-          <div class="payload" id="payload">
-            <button class="payload-btn" type="button" id="payload-btn" aria-expanded="false" aria-controls="payload-pre"><span class="car" aria-hidden="true">▶</span> Что уйдёт на сервер (JSON payload)</button>
-            <pre id="payload-pre"></pre>
-          </div>
         </div>
 
         <div class="wiz-state" id="state-sending" role="status" aria-live="polite">
