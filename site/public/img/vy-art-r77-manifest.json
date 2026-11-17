@@ -1,0 +1,289 @@
+{
+  "widths": [
+    480,
+    960,
+    1600
+  ],
+  "biggest": {
+    "file": "vy-art-to-lift-1600.webp",
+    "kb": 161,
+    "quality": 74
+  },
+  "missing": [
+    "vy-art-connect",
+    "vy-art-app",
+    "vy-art-media"
+  ],
+  "files": [
+    {
+      "file": "vy-art-to-lift-480.avif",
+      "kb": 13,
+      "quality": 46
+    },
+    {
+      "file": "vy-art-to-lift-480.webp",
+      "kb": 25,
+      "quality": 68
+    },
+    {
+      "file": "vy-art-to-lift-960.avif",
+      "kb": 39,
+      "quality": 46
+    },
+    {
+      "file": "vy-art-to-lift-960.webp",
+      "kb": 69,
+      "quality": 62
+    },
+    {
+      "file": "vy-art-to-lift-1600.avif",
+      "kb": 79,
+      "quality": 46
+    },
+    {
+      "file": "vy-art-to-lift-1600.webp",
+      "kb": 161,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-maslo-page-480.avif",
+      "kb": 15,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-maslo-page-480.webp",
+      "kb": 24,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-maslo-page-960.avif",
+      "kb": 38,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-maslo-page-960.webp",
+      "kb": 63,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-maslo-page-1600.avif",
+      "kb": 79,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-maslo-page-1600.webp",
+      "kb": 159,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-bolezni-page-480.avif",
+      "kb": 13,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-bolezni-page-480.webp",
+      "kb": 26,
+      "quality": 68
+    },
+    {
+      "file": "vy-art-bolezni-page-960.avif",
+      "kb": 27,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-bolezni-page-960.webp",
+      "kb": 70,
+      "quality": 68
+    },
+    {
+      "file": "vy-art-bolezni-page-1600.avif",
+      "kb": 47,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-bolezni-page-1600.webp",
+      "kb": 132,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-intervaly-480.avif",
+      "kb": 12,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-intervaly-480.webp",
+      "kb": 19,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-intervaly-960.avif",
+      "kb": 29,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-intervaly-960.webp",
+      "kb": 45,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-intervaly-1600.avif",
+      "kb": 55,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-intervaly-1600.webp",
+      "kb": 83,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-momenty-480.avif",
+      "kb": 16,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-momenty-480.webp",
+      "kb": 25,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-momenty-960.avif",
+      "kb": 36,
+      "quality": 46
+    },
+    {
+      "file": "vy-art-momenty-960.webp",
+      "kb": 66,
+      "quality": 68
+    },
+    {
+      "file": "vy-art-momenty-1600.avif",
+      "kb": 89,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-momenty-1600.webp",
+      "kb": 136,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-hodovaya-480.avif",
+      "kb": 15,
+      "quality": 52
+    },
+    {
+      "file": "vy-art-hodovaya-480.webp",
+      "kb": 25,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-hodovaya-960.avif",
+      "kb": 36,
+      "quality": 46
+    },
+    {
+      "file": "vy-art-hodovaya-960.webp",
+      "kb": 70,
+      "quality": 68
+    },
+    {
+      "file": "vy-art-hodovaya-1600.avif",
+      "kb": 76,
+      "quality": 46
+    },
+    {
+      "file": "vy-art-hodovaya-1600.webp",
+      "kb": 154,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-kondicioner-480.avif",
+      "kb": 13,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-kondicioner-480.webp",
+      "kb": 25,
+      "quality": 56
+    },
+    {
+      "file": "vy-art-kondicioner-960.avif",
+      "kb": 29,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-kondicioner-960.webp",
+      "kb": 69,
+      "quality": 62
+    },
+    {
+      "file": "vy-art-kondicioner-1600.avif",
+      "kb": 52,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-kondicioner-1600.webp",
+      "kb": 134,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-zapravka-480.avif",
+      "kb": 15,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-zapravka-480.webp",
+      "kb": 22,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-zapravka-960.avif",
+      "kb": 38,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-zapravka-960.webp",
+      "kb": 58,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-zapravka-1600.avif",
+      "kb": 74,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-zapravka-1600.webp",
+      "kb": 111,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-update-480.avif",
+      "kb": 13,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-update-480.webp",
+      "kb": 25,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-update-960.avif",
+      "kb": 30,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-update-960.webp",
+      "kb": 68,
+      "quality": 74
+    },
+    {
+      "file": "vy-art-update-1600.avif",
+      "kb": 51,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-update-1600.webp",
+      "kb": 129,
+      "quality": 80
+    }
+  ]
+}
