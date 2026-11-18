@@ -142,10 +142,10 @@ jobs:
             fi
           done
           if [ "$OK" != "1" ]; then
-            echo "::error::Воркер не ответил на /health за 60 секунд"
+            echo "::error::Воркер не ответил на /health. Адрес: $URL/health, последний ответ: $(cat /tmp/health.json 2>/dev/null | head -c 200)"
             exit 1
           fi
-          echo "Воркер жив и видит Telegram." 
+          echo "Воркер жив и видит Telegram: $URL" 
 
       - name: Notify group in Telegram
         run: |
