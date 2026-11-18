@@ -45,6 +45,18 @@ jobs:
       # что ни оверлея, ни canvas, ни шейдеров заставки в бандле нет.
       - run: node scripts/check-intro-3d-off.mjs
         working-directory: site
+      - name: Check photo records
+        run: node scripts/check-cases.mjs
+        working-directory: site
+      - name: Check media size budget
+        run: node scripts/check-media-budget.mjs
+        working-directory: site
+      - name: Test photo pipeline
+        run: node --test tests/photo-pipeline.test.ts
+        working-directory: site
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/pages-dist
