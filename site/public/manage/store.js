@@ -33,13 +33,17 @@ export function validate(c, cases, originalSlug) {
  if (cases.some(x=>x.slug===c.slug && x.slug!==originalSlug)) throw new ValidationError('Этот слаг уже занят. Выберите другой.','slug');
  if (!SERVICES.some(([slug])=>slug===c.service_slug)) throw new ValidationError('Выберите услугу из списка.','service_slug');
  if (typeof c.published_at!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(c.published_at)) throw new ValidationError('Укажите дату работы.','published_at');
- if (!Number.isFinite(Number(c.sort))) throw new ValidationError('Порядок кейса должен быть числом.');
+ if (!Number.isFinite(Number(c.sort))) throw new ValidationError('Порядок работы должен быть числом.');
  if (!['single','before_after'].includes(c.mode)) throw new ValidationError('Выберите режим.');
  if (!['draft','published'].includes(c.status)) throw new ValidationError('Выберите статус работы.','status');
  if (!['before','after','photos'].every(key=>Array.isArray(c[key]))) throw new ValidationError('Список фотографий повреждён.');
+ if (c.mode==='before_after' && (!c.before.length || !c.after.length)) {
+  const emptyZone=c.before.length ? 'after' : 'before';
+  throw new ValidationError('В режиме «До и после» нужны обе фотографии: «как было» и «как стало». Добавьте вторую или переключитесь на «Одно фото работы».',`zone:${emptyZone}`);
+ }
  const frames=[...c.before,...c.after,...c.photos];
- if (!frames.length) throw new ValidationError('Добавьте хотя бы одно фото.');
- if (frames.length>10) throw new ValidationError('Не больше 10 фото на кейс.');
+ if (!frames.length) throw new ValidationError('Добавьте хотя бы одно фото.', 'zone:photos');
+ if (frames.length>10) throw new ValidationError('Не больше 10 фото на работу.');
  for(const key of ['before','after','photos']) for(const [i,p] of c[key].entries()) {
   const field=`alt:${key}:${i}`;
   if (!p || typeof p.alt!=='string' || !p.alt.trim()) throw new ValidationError('Добавьте подпись к снимку: 3–160 символов.',field);

@@ -1,6 +1,9 @@
 ---
 import { getSettings } from '../server/settings.ts';
+import { listPublishedSiteCases } from '../server/cases-store.ts';
 const S = getSettings();
+/* Пункт «Наши работы» — только когда работы есть (то же условие, что в шапке) */
+const hasWorks = listPublishedSiteCases(1).length > 0;
 const E0 = S.phones_extra[0];
 const E1 = S.phones_extra[1];
 ---
@@ -12,7 +15,7 @@ const E1 = S.phones_extra[1];
     </div>
     <div>
       <h4>Меню</h4>
-      <ul><li><a href="/">Главная</a></li><li><a href="/services">Услуги и цены</a></li><li><a href="/prices">Прайс</a></li><li><a href="/about">О компании</a></li><li><a href="/garantii">Гарантии</a></li><li><a href="/voyah-free">Voyah Free</a></li><li><a href="/news">Полезное</a></li><li><a href="/contacts">Контакты</a></li><li><a href="/appointment">Записаться</a></li></ul>
+      <ul><li><a href="/">Главная</a></li><li><a href="/services">Услуги и цены</a></li><li><a href="/prices">Прайс</a></li><li><a href="/about">О компании</a></li>{hasWorks && <li><a href="/raboty">Наши работы</a></li>}<li><a href="/garantii">Гарантии</a></li><li><a href="/voyah-free">Voyah Free</a></li><li><a href="/news">Полезное</a></li><li><a href="/contacts">Контакты</a></li><li><a href="/appointment">Записаться</a></li></ul>
     </div>
     <div>
       <h4>Услуги</h4>
