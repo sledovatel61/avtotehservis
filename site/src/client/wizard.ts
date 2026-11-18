@@ -1,7 +1,10 @@
 /* Мастер записи из 5 экранов — перенос утверждённой логики (122 jsdom-теста) на реальное API:
-   GET /api/slots, POST /api/uploads, POST /api/leads. Черновик в localStorage, идемпотентность,
+   GET слотов, POST /api/uploads (только демо), POST заявки. Адреса берутся из
+   shared/leads-endpoint.ts: свой сервер (/api/slots, /api/leads) или прослойка
+   Cloudflare Worker при PUBLIC_LEADS_ENDPOINT. Черновик в localStorage, идемпотентность,
    ошибки под полями с фокусом на первое, состояния отправка/успех/ошибка, .ics на клиенте. */
 import { $, $$, safeLS, track, attachMask, attachVin, reducedMotion } from './lib.ts';
+import { leadsUrl, leadsFetch, retryAfterSeconds, relayMode } from '../shared/leads-endpoint.ts';
 
 const wizEl = $('#wiz');
 if (wizEl) {
@@ -295,7 +298,7 @@ if (wizEl) {
     slotsBox.innerHTML = '<p class="hint">Загружаем свободное время…</p>';
     if (slotTitle) slotTitle.textContent = 'Время визита — выберите дату';
     try {
-      const r = await fetch(`/api/slots?date=${st.date}`);
+      const r = await leadsFetch(leadsUrl('slots', `date=${st.date}`));
       const j = await r.json() as { slots?: { time: string; available: boolean; reason?: string }[] };
       renderSlots(j.slots ?? []);
     } catch {
@@ -433,7 +436,8 @@ if (wizEl) {
       },
       services: st.dontknow ? ['diagnostika'] : [...st.services],
       preferred: { date: st.asap ? null : st.date, slot: st.asap ? null : st.slot, asap: st.asap },
-      photos: st.photos.filter((p) => p.state === 'done' && p.id).map((p) => p.id),
+      /* в режиме прослойки фото не загружаются — блок скрыт в разметке, массив пустой */
+      photos: relayMode ? [] : st.photos.filter((p) => p.state === 'done' && p.id).map((p) => p.id),
       consent: st.consent,
       consent_version: CONSENT_VERSION,
       page: 'appointment',
@@ -479,20 +483,51 @@ if (wizEl) {
     if (which === 'err') stateErr?.classList.add('is-on');
   }
 
+  /* 429: кнопку «Повторить отправку» держим заблокированной до конца Retry-After */
+  const errRetryBtn = $<HTMLButtonElement>('#err-retry');
+  const RETRY_LABEL = errRetryBtn?.textContent ?? 'Повторить отправку';
+  const ERR_TEXT_DEFAULT = $('#err-text')?.textContent ?? 'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.';
+  let retryTimer: ReturnType<typeof setInterval> | null = null;
+  function blockRetry(seconds: number): void {
+    if (!errRetryBtn) return;
+    if (retryTimer) clearInterval(retryTimer);
+    let left = Math.max(1, Math.round(seconds));
+    const tick = (): void => {
+      if (left <= 0) {
+        errRetryBtn.disabled = false;
+        errRetryBtn.textContent = RETRY_LABEL;
+        if (retryTimer) clearInterval(retryTimer);
+        retryTimer = null;
+        return;
+      }
+      errRetryBtn.disabled = true;
+      errRetryBtn.textContent = `Повторить через ${left} с`;
+      left -= 1;
+    };
+    tick();
+    retryTimer = setInterval(tick, 1000);
+  }
+  function releaseRetry(): void {
+    if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+    if (errRetryBtn) { errRetryBtn.disabled = false; errRetryBtn.textContent = RETRY_LABEL; }
+  }
+
   async function submit(): Promise<void> {
     clearErrs();
     const first = validateStep(4, true);
     if (first) { goStep(4); try { first.focus(); } catch { /* ignore */ } return; }
     track('submit_attempt');
+    releaseRetry();
     showState('sending');
     try {
-      const r = await fetch('/api/leads', {
+      const r = await leadsFetch(leadsUrl('leads'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildPayload()),
       });
       const j = await r.json().catch(() => null) as Record<string, unknown> | null;
-      if (r.status === 201 && j && typeof j.ticket === 'string') {
+      /* Контракт 80-1: 201 от прослойки и 200 от Telegram-бота — одинаковый экран успеха. */
+      if ((r.status === 201 || r.status === 200) && j && typeof j.ticket === 'string') {
         st.lastTicket = j.ticket;
         const okNo = $('#ok-no'); if (okNo) okNo.textContent = `№ ${j.ticket}`;
         const dup = $('#ok-dup'); if (dup) (dup as HTMLElement).hidden = !j.duplicate;
@@ -501,6 +536,15 @@ if (wizEl) {
         safeLS.del(DRAFT_KEY);
         showState('ok');
         track('submit_success', { ticket: j.ticket });
+        return;
+      }
+      if (r.status === 429) {
+        const wait = retryAfterSeconds(r.headers.get('retry-after')) ?? 60;
+        showState('err');
+        const p = $('#err-text');
+        if (p) p.textContent = 'Слишком много заявок с вашего адреса. Повторите позже или позвоните нам.';
+        blockRetry(wait);
+        track('submit_error', { code: 'too_many', retry_after: wait });
         return;
       }
       if (r.status === 409 && j?.error) {
@@ -556,7 +600,14 @@ if (wizEl) {
     if (firstEl) { try { firstEl.focus(); } catch { /* ignore */ } }
   }
   submitBtn?.addEventListener('click', () => { void submit(); });
-  $('#err-retry')?.addEventListener('click', () => { showState('form'); goStep(5); });
+  $('#err-retry')?.addEventListener('click', () => {
+    if (retryTimer) return; // ещё идёт блокировка после 429
+    releaseRetry();
+    const p = $('#err-text');
+    if (p) p.textContent = ERR_TEXT_DEFAULT;
+    showState('form');
+    goStep(5);
+  });
   $('#ok-again')?.addEventListener('click', () => {
     st = freshSt();
     if (fBrand) fBrand.value = ''; if (fModel) fModel.value = '';

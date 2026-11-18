@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, cp, readFile, writeFile, rm, readdir } from 'node:fs/pr
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { JSDOM } from 'jsdom';
+import { parseLeadsEndpoint } from '../src/shared/leads-endpoint.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const output = join(root, 'pages-dist');
@@ -11,6 +12,14 @@ const temp = await mkdtemp(join(tmpdir(), 'ats-pages-'));
 const base = '/avtotehservis';
 const publicOrigin = 'https://sledovatel61.github.io';
 const port = process.env.PREVIEW_PORT || '4337';
+/* Круг 80 / 80-1: одна переменная решает, куда уходят заявки.
+   Без PUBLIC_LEADS_ENDPOINT — демо-сборка со своим сервером и плашкой «не отправляются».
+   С адресом прослойки — боевой режим: формы идут в Cloudflare Worker, плашки нет.
+   Кривой адрес роняет сборку: иначе на Pages тихо уедет демо-версия с «не отправляются». */
+const leads = parseLeadsEndpoint(process.env.PUBLIC_LEADS_ENDPOINT);
+if (leads.error) throw new Error(`PUBLIC_LEADS_ENDPOINT: ${leads.error}`);
+const relayMode = leads.base !== '';
+if (relayMode) console.log(`[pages] заявки идут в прослойку: ${leads.base}`);
 const origin = `http://127.0.0.1:${port}`;
 const env = { ...process.env, DATA_DIR: join(temp, 'data'), MEDIA_DIR: join(temp, 'media'), PUBLIC_SITE_URL: publicOrigin, HOST: '127.0.0.1', PORT: port };
 const run = (args) => new Promise((resolveRun, reject) => {
@@ -71,13 +80,18 @@ try {
     }
     doc.querySelectorAll('a[href*="/admin"]').forEach((el) => el.remove());
     doc.querySelectorAll('input[type="file"]').forEach((el) => { el.disabled = true; });
-    const notice = doc.createElement('p');
-    /* раунд 15: плашка — отдельной полосой НАД шапкой (фон --deep, свой отступ),
-       иначе её вторая строка наезжает на меню на 1024–1279 px */
-    notice.className = 'demo-notice container';
-    notice.textContent = 'Демонстрационная версия для согласования. Заявки и сообщения не отправляются. Время записи — пример.';
-    const header = doc.querySelector('header');
-    if (header) header.parentNode?.insertBefore(notice, header); else doc.querySelector('main')?.prepend(notice);
+    /* Плашка — только в демо-режиме (без PUBLIC_LEADS_ENDPOINT): с прослойкой заявки
+       уходят по-настоящему, и текст «не отправляются» был бы ложью. data-preview остаётся
+       всегда — на нём держатся гейты раскладки. */
+    if (!relayMode) {
+      const notice = doc.createElement('p');
+      /* раунд 15: плашка — отдельной полосой НАД шапкой (фон --deep, свой отступ),
+         иначе её вторая строка наезжает на меню на 1024–1279 px */
+      notice.className = 'demo-notice container';
+      notice.textContent = 'Демонстрационная версия для согласования. Заявки и сообщения не отправляются. Время записи — пример.';
+      const header = doc.querySelector('header');
+      if (header) header.parentNode?.insertBefore(notice, header); else doc.querySelector('main')?.prepend(notice);
+    }
     const file = route === '/404' ? join(output, '404.html') : join(output, route.slice(1), 'index.html');
     await mkdir(dirname(file), { recursive: true });
     await writeFile(file, dom.serialize());

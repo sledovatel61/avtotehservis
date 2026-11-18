@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { getSettings, getSetting } from '../server/settings.ts';
 import { listChipServices } from '../server/services.ts';
+import { relayMode } from '../shared/leads-endpoint.ts';
 
 const S = getSettings();
 const chipLabels = getSetting<Record<string, string>>('chip_labels', {});
@@ -111,12 +112,19 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               </div>
             </div>
               <div class="field" id="svc-err-anchor"><span class="err" role="alert"></span></div>
-              <div class="field u-mt26">
-                <span class="f-label">Фото автомобиля или повреждения <span class="opt">до 3 файлов, необязательно</span></span>
-                <span class="hint">Помогает оценить задачу до визита. Фото (до 3 файлов, до 15 МБ каждое) загружаются на сервер сервиса и видны только сотрудникам.</span>
-                <input type="file" id="f-photos" accept="image/*" multiple hidden>
-                <div class="photos" id="photos"></div>
-              </div>
+              {relayMode ? (
+                <div class="field u-mt26">
+                  <span class="f-label">Фото автомобиля или повреждения</span>
+                  <span class="hint">В этой версии сайта фото к заявке не прикладываются — покажите их мастеру при визите или пришлите в <a href={S.telegram_url} data-track="telegram_click">Telegram</a> после звонка.</span>
+                </div>
+              ) : (
+                <div class="field u-mt26">
+                  <span class="f-label">Фото автомобиля или повреждения <span class="opt">до 3 файлов, необязательно</span></span>
+                  <span class="hint">Помогает оценить задачу до визита. Фото (до 3 файлов, до 15 МБ каждое) загружаются на сервер сервиса и видны только сотрудникам.</span>
+                  <input type="file" id="f-photos" accept="image/*" multiple hidden>
+                  <div class="photos" id="photos"></div>
+                </div>
+              )}
             </div>
 
             <div class="step" data-step="3" aria-hidden="true">
@@ -236,7 +244,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
             <button class="btn btn--copper" type="button" id="ok-again">Создать новую заявку</button>
             <a class="btn btn--ghost" href="/" id="ok-home">Вернуться на главную</a>
           </p>
-          <p class="hint u-mt16">Заявка записана в базу сервиса и сразу передана в доставку: владельцу в Telegram и письмом на почту. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.</p>
+          <p class="hint u-mt16">{relayMode
+            ? 'Заявка передана в сервис: владелец получит её в Telegram. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.'
+            : 'Заявка записана в базу сервиса и сразу передана в доставку: владельцу в Telegram и письмом на почту. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.'}</p>
         </div>
 
         <div class="wiz-state" id="state-err" role="alert" aria-live="assertive">

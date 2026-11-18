@@ -1,5 +1,8 @@
-/* Короткая форма контактов: имя, телефон, сообщение, согласие → POST /api/leads (kind=message, талон K-…). */
+/* Короткая форма контактов: имя, телефон, сообщение, согласие → POST на приёмник заявок
+   (kind=message, талон K-…). Адрес берётся из shared/leads-endpoint.ts: свой сервер
+   /api/leads в демо-режиме или прослойка Cloudflare Worker при PUBLIC_LEADS_ENDPOINT. */
 import { $, track, attachMask } from './lib.ts';
+import { leadsUrl, leadsFetch, retryAfterSeconds } from '../shared/leads-endpoint.ts';
 
 const form = $('#cform');
 if (form) {
@@ -49,6 +52,49 @@ if (form) {
     };
   }
 
+  /* ---------- экран ошибки и блокировка повтора (429) ---------- */
+  const errHead = $<HTMLElement>('#cform-err b');
+  const errHint = $('#cform-err .hint');
+  const errRetry = $<HTMLButtonElement>('#c-err-retry');
+  const ERR_HEAD = errHead?.textContent ?? '';
+  const ERR_HINT = errHint?.textContent ?? '';
+  const RETRY_LABEL = errRetry?.textContent ?? 'Вернуться к форме';
+  let retryTimer: ReturnType<typeof setInterval> | null = null;
+
+  function resetErrBox(): void {
+    if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+    if (errHead) errHead.textContent = ERR_HEAD;
+    if (errHint) errHint.textContent = ERR_HINT;
+    if (errRetry) { errRetry.disabled = false; errRetry.textContent = RETRY_LABEL; }
+  }
+
+  /* кнопка «Вернуться к форме» заблокирована, пока не истёк Retry-After */
+  function blockRetry(seconds: number): void {
+    if (!errRetry) return;
+    if (retryTimer) clearInterval(retryTimer);
+    let left = Math.max(1, Math.round(seconds));
+    const tick = (): void => {
+      if (left <= 0) {
+        errRetry.disabled = false;
+        errRetry.textContent = RETRY_LABEL;
+        if (retryTimer) clearInterval(retryTimer);
+        retryTimer = null;
+        return;
+      }
+      errRetry.disabled = true;
+      errRetry.textContent = `Повторить через ${left} с`;
+      left -= 1;
+    };
+    tick();
+    retryTimer = setInterval(tick, 1000);
+  }
+
+  function showError(head: string | null, hint: string | null): void {
+    if (errHead) errHead.textContent = head ?? ERR_HEAD;
+    if (errHint) errHint.textContent = hint ?? ERR_HINT;
+    show('err');
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     let bad: HTMLElement | null = null;
@@ -58,35 +104,84 @@ if (form) {
     if ((cMsg?.value ?? '').trim().length < 10) { setErr(cMsg, 'Опишите вопрос — минимум 10 символов'); bad = bad ?? cMsg; }
     if (!cConsent?.checked) { setErr(cConsent, 'Без согласия на обработку данных отправить нельзя'); bad = bad ?? cConsent; }
     if (bad) { try { bad.focus(); } catch { /* ignore */ } track('cform_invalid'); return; }
-
-    track('cform_submit');
-    show('sending');
-    if (cSend) cSend.disabled = true;
-    fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload()),
-    })
-      .then((r) => r.json().catch(() => null).then((j) => ({ r, j })))
-      .then(({ r, j }) => {
-        if (r.status === 201 && j && typeof j.ticket === 'string') {
-          const no = $('#c-ok-no');
-          if (no) no.textContent = `№ ${j.ticket}`;
-          show('ok');
-          track('cform_success', { ticket: j.ticket });
-          idem = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2);
-          if (cName) cName.value = '';
-          if (cPhone) cPhone.value = '';
-          if (cMsg) cMsg.value = '';
-          if (cConsent) cConsent.checked = false;
-        } else {
-          show('err');
-          track('cform_error', { status: r.status });
-        }
-      })
-      .catch(() => { show('err'); track('cform_error', { status: 'network' }); })
-      .finally(() => { if (cSend) cSend.disabled = false; });
+    void send();
   });
 
-  $('#c-err-retry')?.addEventListener('click', () => show('form'));
+  /* Кнопка «Отправить» в разметке — type="button" (так свёрстано), сама она форму
+     не отправляет: без этого обработчика работал только Enter в поле. */
+  cSend?.addEventListener('click', () => {
+    const f = form as HTMLFormElement;
+    if (typeof f.requestSubmit === 'function') f.requestSubmit();
+    else f.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  });
+
+  async function send(): Promise<void> {
+    if (retryTimer) return; // ещё идёт блокировка после 429
+    track('cform_submit');
+    resetErrBox();
+    show('sending');
+    if (cSend) cSend.disabled = true;
+    try {
+      const r = await leadsFetch(leadsUrl('leads'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload()),
+      });
+      const j = await r.json().catch(() => null) as Record<string, unknown> | null;
+      /* Контракт 80-1: 201 от сервера прослойки и 200 от Telegram-бота — один экран успеха. */
+      if ((r.status === 201 || r.status === 200) && j && typeof j.ticket === 'string') {
+        const no = $('#c-ok-no');
+        if (no) no.textContent = `№ ${j.ticket}`;
+        show('ok');
+        track('cform_success', { ticket: j.ticket });
+        idem = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2);
+        if (cName) cName.value = '';
+        if (cPhone) cPhone.value = '';
+        if (cMsg) cMsg.value = '';
+        if (cConsent) cConsent.checked = false;
+        return;
+      }
+      if (r.status === 429) {
+        const wait = retryAfterSeconds(r.headers.get('retry-after')) ?? 60;
+        showError('Слишком много заявок', 'Слишком много заявок с вашего адреса. Повторите позже или позвоните нам.');
+        blockRetry(wait);
+        track('cform_error', { status: 429, retry_after: wait });
+        return;
+      }
+      if (r.status === 400 && j?.error) {
+        const err = j.error as { code?: string; message?: string; fields?: Record<string, string> };
+        if (err.code === 'consent_version') {
+          show('form');
+          setErr(cConsent, err.message ? String(err.message) : 'Форма устарела — обновите страницу и отметьте согласие заново');
+          track('cform_error', { code: 'consent_version' });
+          return;
+        }
+        const byKey: Record<string, HTMLElement | null> = { name: cName, phone: cPhone, message: cMsg, consent: cConsent };
+        let first: HTMLElement | null = null;
+        for (const [k, msg] of Object.entries(err.fields ?? {})) {
+          const el = byKey[k];
+          if (!el) continue;
+          setErr(el, String(msg));
+          if (!first) first = el;
+        }
+        if (first) {
+          show('form');
+          try { first.focus(); } catch { /* ignore */ }
+        } else {
+          showError(err.message ? String(err.message) : null, null);
+        }
+        track('cform_error', { code: err.code ?? 'validation' });
+        return;
+      }
+      showError(null, null);
+      track('cform_error', { status: r.status });
+    } catch {
+      showError(null, navigator.onLine ? null : 'Похоже, нет соединения. Проверьте интернет и повторите отправку.');
+      track('cform_error', { status: 'network' });
+    } finally {
+      if (cSend) cSend.disabled = false;
+    }
+  }
+
+  $('#c-err-retry')?.addEventListener('click', () => { resetErrBox(); show('form'); });
 }
