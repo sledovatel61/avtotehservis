@@ -6,7 +6,7 @@ export class GitHubError extends Error { constructor(message, status) { super(me
 export function friendly(e) {
  if (e.status===401) return 'Токен не принят. Проверьте срок действия и права.';
  if (e.status===403) return 'Нет доступа: проверьте право Contents: Read and write и ограничения GitHub.';
- if (e.status===404) return 'Репозиторий, ветка или файл не найдены. Проверьте доступ токена и наличие cases.json.';
+ if (e.status===404) return 'Не удалось найти сайт или его данные на GitHub. Проверьте доступ токена и обратитесь к разработчику.';
  if (e.status===409 || e.status===422) return 'Кто-то сохранил изменения. Проверьте их и повторите сохранение.';
  return e instanceof GitHubError ? e.message : 'Нет связи с GitHub. Проверьте интернет и повторите.';
 }
@@ -39,16 +39,16 @@ export class GitHub {
    await this.request(`${REPO}/git/ref/heads/${REF}`);
    return {json:{version:1,updated_at:new Date().toISOString(),cases:[]},sha:null};
   }
-  const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0)); let json; try {json=JSON.parse(new TextDecoder().decode(bytes));} catch {throw new GitHubError('Не удалось прочитать cases.json: неверный формат.',0);} if(json.version!==1 || !Array.isArray(json.cases)) throw new GitHubError('Неизвестный формат cases.json. Обратитесь к разработчику.',0); return {json,sha:data.sha};
+  const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0)); let json; try {json=JSON.parse(new TextDecoder().decode(bytes));} catch {throw new GitHubError('Не удалось прочитать список работ: неверный формат. Обратитесь к разработчику.',0);} if(json.version!==1 || !Array.isArray(json.cases)) throw new GitHubError('Неизвестный формат списка работ. Обратитесь к разработчику.',0); return {json,sha:data.sha};
  }
  async image(path) { const {data}=await this.request(`${REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${REF}`); const content=data.content || (await this.request(`${REPO}/git/blobs/${data.sha}`)).data.content; if(!content) throw new GitHubError('Не удалось загрузить исходную фотографию из GitHub.',0); return new Blob([Uint8Array.from(atob(content.replace(/\s/g,'')),c=>c.charCodeAt(0))]); }
  async budget(){ const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`); const {data:commit}=await this.request(`${REPO}/git/commits/${ref.object.sha}`); const {data}=await this.request(`${REPO}/git/trees/${commit.tree.sha}?recursive=1`); const files=data.tree.filter(x=>x.type==='blob' && x.path.startsWith('site/public/media/cases/')); return {bytes:files.reduce((s,x)=>s+(x.size||0),0), count:files.length/3, truncated:data.truncated}; }
  async save(initial, apply, buildFiles, progress=()=>{}) {
   let snapshot=initial;
   for(let attempt=0;attempt<2;attempt++) {
-   progress(attempt ? 'Кто-то сохранил изменения. Проверяем и повторяем…' : 'Проверяем изменения в репозитории…');
+   progress(attempt ? 'Кто-то сохранил изменения. Проверяем и повторяем…' : 'Проверяем сохранённые изменения…');
    const latest=await this.read();
-   if (latest.sha!==snapshot.sha && !apply.canRebase(latest.json)) throw new GitHubError('Кто-то изменил этот кейс. Обновите список и повторите сохранение.',409);
+   if (latest.sha!==snapshot.sha && !apply.canRebase(latest.json)) throw new GitHubError('Кто-то изменил эту работу. Обновите список и повторите сохранение.',409);
    snapshot=latest;
    const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`);
    const parent=ref.object.sha;
