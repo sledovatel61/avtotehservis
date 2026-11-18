@@ -24,7 +24,7 @@ jobs:
       - name: Health
         run: |
           set -e
-          URL="${{ inputs.endpoint }}"
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
           echo "GET $URL/health"
           BODY=$(curl -sS -w '\n%{http_code}' "$URL/health")
           CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
@@ -35,7 +35,7 @@ jobs:
       - name: Send test lead
         run: |
           set -e
-          URL="${{ inputs.endpoint }}"
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
           KEY=$(node -e 'console.log(require("crypto").randomUUID())')
           NOW=$(date +%s%3N)
           START=$((NOW - 12000))
@@ -70,7 +70,7 @@ jobs:
       - name: Проверка чужого Origin
         run: |
           set -e
-          URL="${{ inputs.endpoint }}"
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
           CODE=$(curl -sS -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/leads" \
             -H 'origin: https://evil.example' -H 'access-control-request-method: POST')
           HDR=$(curl -sSI -X OPTIONS "$URL/leads" -H 'origin: https://evil.example' \
