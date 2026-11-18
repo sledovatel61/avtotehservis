@@ -9,7 +9,7 @@ const { page } = Astro.props as Props;
 const hasWorks = listPublishedSiteCases(1).length > 0;
 ---
 <header class="hdr" id="hdr">
-  <div class="hdr-in container">
+  <div class="hdr-in">
     <a class="logo" href="/" aria-label={`${S.site_name} — на главную`}>
       <img src="/img/logo.svg" alt="" width="68" height="42">
       <span class="logo-t">{S.site_name}<b>{S.city} · {S.address_short}</b></span>

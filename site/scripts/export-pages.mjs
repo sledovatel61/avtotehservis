@@ -93,7 +93,7 @@ try {
       const notice = doc.createElement('p');
       /* раунд 15: плашка — отдельной полосой НАД шапкой (фон --deep, свой отступ),
          иначе её вторая строка наезжает на меню на 1024–1279 px */
-      notice.className = 'demo-notice container';
+      notice.className = 'demo-notice hdr-wrap';
       notice.textContent = 'Демонстрационная версия для согласования. Заявки и сообщения не отправляются. Время записи — пример.';
       const header = doc.querySelector('header');
       if (header) header.parentNode?.insertBefore(notice, header); else doc.querySelector('main')?.prepend(notice);
