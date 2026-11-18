@@ -37,12 +37,14 @@ jobs:
       # ни canvas, ни кнопку «Выключить 3D-фон». Заставка выключена на уровне
       # кода (`voyah-intro.ts`, флаг PUBLIC_VY_INTRO). Вернуть оба — отдельным
       # решением владельца: BG3D=voyah-free BG3D_DEMO=1 и PUBLIC_VY_INTRO=1.
-      # Адрес прослойки заявок (Cloudflare Worker). Пока переменная не задана,
-      # сайт остаётся в демо-режиме: формы ничего не отправляют.
+      # Адрес прослойки заявок (Cloudflare Worker). Боевой адрес зашит по умолчанию,
+      # чтобы заявки шли без ручной настройки; переменная репозитория
+      # PUBLIC_LEADS_ENDPOINT перекрывает его, если воркер когда-нибудь переедет
+      # на свой домен.
       - run: npm run build:pages
         working-directory: site
         env:
-          PUBLIC_LEADS_ENDPOINT: ${{ vars.PUBLIC_LEADS_ENDPOINT }}
+          PUBLIC_LEADS_ENDPOINT: ${{ vars.PUBLIC_LEADS_ENDPOINT || 'https://ats-leads.ats439.workers.dev' }}
       - run: node scripts/check-pages.mjs
         working-directory: site
       # Заставка и 3D выключены (круг 74): проверяем по собранному артефакту,
