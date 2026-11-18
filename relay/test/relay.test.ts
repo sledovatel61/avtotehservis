@@ -391,3 +391,12 @@ test('multipart: ошибка Telegram на фото не отменяет пр�
     }) as typeof fetch;
   }
 });
+
+test('composeTelegram: в уведомлении есть версия согласия и отметка времени', () => {
+  const v = validateLead(booking({ idempotency_key: uuid(), consent_version: '2026-11-19' }));
+  assert.equal(v.ok, true);
+  if (!v.ok) return;
+  const text = composeTelegram(v.value, 'A-1118-1234', { siteName: 'АвтоТехСервис', at: new Date('2026-11-18T09:15:00Z') });
+  assert.match(text, /Согласие на обработку ПД: версия <b>2026-11-19<\/b>/);
+  assert.match(text, /отметка 18 ноя, 12:15 МСК/);
+});

@@ -44,6 +44,10 @@ export function composeTelegram(lead: LeadPayload, ticket: string, opts: Compose
     `\nИмя: <b>${esc(lead.name)}</b>`,
     `\nТелефон: <b>${esc(fmtPhone(lead.phone))}</b> (${lead.contact_method === 'telegram' ? 'писать в Telegram' : 'звонок'})`,
   ];
+  /* Журнал согласий: в самом уведомлении видно, на какой версии документа человек
+     поставил галочку и когда именно. Этого достаточно, чтобы подтвердить факт
+     согласия по конкретной заявке — отдельной базы у прослойки нет. */
+  const consent = `\nСогласие на обработку ПД: версия <b>${esc(lead.consent_version)}</b>, отметка ${esc(fmtStamp(at))} МСК`;
   const footer = `\n\n<b>${esc(ticket)}</b> · ${esc(fmtStamp(at))} МСК`;
 
   if (lead.kind === 'message') {
@@ -52,6 +56,7 @@ export function composeTelegram(lead: LeadPayload, ticket: string, opts: Compose
       ...common,
       `\nСообщение: ${esc(lead.message)}`,
       `\nИсточник: ${esc(lead.page)}`,
+      consent,
       footer,
     ].join('');
   }
@@ -80,6 +85,7 @@ export function composeTelegram(lead: LeadPayload, ticket: string, opts: Compose
     '\n<i>Время предварительное — подтвердить звонком.</i>',
     `\nИсточник: ${esc(lead.page)}`,
     opts.address ? `\n${esc(opts.siteName)}, ${esc(opts.address)}` : '',
+    consent,
     footer,
   ].join('');
 }
