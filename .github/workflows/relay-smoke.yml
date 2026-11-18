@@ -1,3 +1,5 @@
+# ВАЖНО: consent_version ниже должен совпадать с relay/wrangler.toml CONSENT_VERSION.
+# Воркер отвечает 400 consent_version, если версии разошлись.
 name: Проверка прослойки заявок (smoke)
 
 # Ручная проверка «живого» пути: POST на воркер с тем же Origin, что у сайта.
