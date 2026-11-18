@@ -27,10 +27,10 @@ export function validate(c, cases, originalSlug) {
  lengthCheck(c.title,LIMITS.title,'Название','title');
  if(typeof c.description!=='string') throw new ValidationError('Укажите описание текстом.','description');
  lengthCheck(c.description,LIMITS.description,'Описание','description');
- if(typeof c.slug!=='string') throw new ValidationError('Укажите слаг.','slug');
- lengthCheck(c.slug,LIMITS.slug,'Слаг','slug');
- if (!/^[a-z0-9-]{3,60}$/.test(c.slug)) throw new ValidationError('Слаг: только латинские буквы, цифры и дефисы.','slug');
- if (cases.some(x=>x.slug===c.slug && x.slug!==originalSlug)) throw new ValidationError('Этот слаг уже занят. Выберите другой.','slug');
+ if(typeof c.slug!=='string') throw new ValidationError('Укажите адрес страницы.','slug');
+ lengthCheck(c.slug,LIMITS.slug,'Адрес страницы','slug');
+ if (!/^[a-z0-9-]{3,60}$/.test(c.slug)) throw new ValidationError('Адрес страницы: только латинские буквы, цифры и дефисы.','slug');
+ if (cases.some(x=>x.slug===c.slug && x.slug!==originalSlug)) throw new ValidationError('Этот адрес страницы уже занят. Выберите другой.','slug');
  if (!SERVICES.some(([slug])=>slug===c.service_slug)) throw new ValidationError('Выберите услугу из списка.','service_slug');
  if (typeof c.published_at!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(c.published_at)) throw new ValidationError('Укажите дату работы.','published_at');
  if (!Number.isFinite(Number(c.sort))) throw new ValidationError('Порядок работы должен быть числом.');
@@ -43,7 +43,7 @@ export function validate(c, cases, originalSlug) {
  }
  const frames=[...c.before,...c.after,...c.photos];
  if (!frames.length) throw new ValidationError('Добавьте хотя бы одно фото.', 'zone:photos');
- if (frames.length>10) throw new ValidationError('Не больше 10 фото на работу.');
+ if (frames.length>10) throw new ValidationError('Не больше 10 фотографий на работу.');
  for(const key of ['before','after','photos']) for(const [i,p] of c[key].entries()) {
   const field=`alt:${key}:${i}`;
   if (!p || typeof p.alt!=='string' || !p.alt.trim()) throw new ValidationError('Добавьте подпись к снимку: 3–160 символов.',field);
