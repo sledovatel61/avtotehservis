@@ -36,12 +36,12 @@
 Workflow `.github/workflows/relay.yml` заливает воркер сам. Нужно один раз добавить в
 **Settings → Secrets and variables → Actions** четыре секрета:
 
-| секрет | откуда |
-|---|---|
-| `CLOUDFLARE_ACCOUNT_ID` | дашборд Cloudflare, правая колонка Account ID |
-| `CLOUDFLARE_API_TOKEN` | My Profile → API Tokens → Create Token → шаблон **Edit Cloudflare Workers** |
-| `BOT_TOKEN` | @BotFather, `/newbot` или `/token` |
-| `TELEGRAM_CHAT_ID` | число из `getUpdates` (личный чат) или `-100…` (группа) |
+| секрет | обязателен | откуда |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | да | My Profile → API Tokens → Create Token → шаблон **Edit Cloudflare Workers** |
+| `BOT_TOKEN` | да | @BotFather, `/newbot` или `/token` |
+| `TELEGRAM_CHAT_ID` | да | число из `getUpdates` (личный чат) или `-100…`/`-5…` (группа) |
+| `CLOUDFLARE_ACCOUNT_ID` | нет | если не задан, workflow определяет его сам по токену |
 
 Дальше — **Actions → Deploy leads relay → Run workflow** (или любой push в `preview/github-pages`,
 если менялось в `relay/`). В логе будет адрес воркера `https://ats-leads.<аккаунт>.workers.dev`.
