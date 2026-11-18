@@ -322,3 +322,35 @@ test('safe-zone: ловит машину ниже видимой полосы (�
   assert.ok(row, 'строка 1440×900 есть');
   assert.equal(row.cars, 'нет', 'машина ниже кадра падает');
 });
+
+/* ---------- сортировка новостей: актуальные перед будущими (круг 78) ---------- */
+test('сортировка новостей: актуальные перед будущими', async () => {
+  const { listNews } = await import('../src/server/content.ts');
+  const ymd = (d: Date): string => {
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const p = fmt.formatToParts(d);
+    const g = (t: string): string => p.find((x) => x.type === t)?.value ?? '00';
+    return `${g('year')}-${g('month')}-${g('day')}`;
+  };
+  const now = new Date();
+  const yest = new Date(now.getTime() - 24 * 3600 * 1000);
+  const before = new Date(now.getTime() - 2 * 24 * 3600 * 1000);
+  const tom = new Date(now.getTime() + 24 * 3600 * 1000);
+  const yestStr = `${ymd(yest)} 09:00`;
+  const beforeStr = `${ymd(before)} 09:00`;
+  const tomStr = `${ymd(tom)} 09:00`;
+  const slugs = ['__t-yest', '__t-before', '__t-tom'];
+  // cleanup before
+  for (const s of slugs) db().prepare('DELETE FROM news WHERE slug=?').run(s);
+  db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES(?,?,?,?,?,?,?)`).run(slugs[0], 'Yest', 'x', 'x', 'sovety', 'published', yestStr);
+  db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES(?,?,?,?,?,?,?)`).run(slugs[1], 'Before', 'x', 'x', 'sovety', 'published', beforeStr);
+  db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES(?,?,?,?,?,?,?)`).run(slugs[2], 'Tom', 'x', 'x', 'sovety', 'published', tomStr);
+  const { items } = listNews({ per: 100 });
+  const pos = (slug: string): number => items.findIndex((r) => r.slug === slug);
+  const py = pos(slugs[0]), pb = pos(slugs[1]), pt = pos(slugs[2]);
+  assert.ok(py >= 0 && pb >= 0 && pt >= 0, 'все три тестовые статьи найдены');
+  // актуальные по убыванию: вчера перед позавчера, будущая последней
+  assert.ok(py < pb, `вчерашняя перед позавчерашней: ${py} < ${pb} (${yestStr} / ${beforeStr})`);
+  assert.ok(pb < pt, `позавчерашняя перед будущей: ${pb} < ${pt} (${beforeStr} / ${tomStr})`);
+  for (const s of slugs) db().prepare('DELETE FROM news WHERE slug=?').run(s);
+});

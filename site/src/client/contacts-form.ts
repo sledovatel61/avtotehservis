@@ -49,15 +49,6 @@ if (form) {
     };
   }
 
-  const pBtn = $('#c-payload-btn');
-  const pPre = $('#c-payload-pre');
-  pBtn?.addEventListener('click', () => {
-    const open = pBtn.getAttribute('aria-expanded') === 'true';
-    pBtn.setAttribute('aria-expanded', String(!open));
-    pBtn.closest('.payload')?.classList.toggle('is-open', !open);
-    if (!open && pPre) { pPre.textContent = JSON.stringify(payload(), null, 2); track('payload_view', { page: 'contacts' }); }
-  });
-
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     let bad: HTMLElement | null = null;

@@ -19,8 +19,10 @@ async function walk(dir) {
       pages++;
       const dom = new JSDOM(await readFile(file, 'utf8'));
       assert.equal(dom.window.document.body.dataset.preview, 'true');
-      for (const el of dom.window.document.querySelectorAll('[href], [src], [poster]')) {
-        for (const attr of ['href', 'src', 'poster']) {
+      /* data-img/data-cover: адреса картинок лайтбокса. Гейт не проверял их — из-за этого
+         на Pages «увеличенный» сертификат открывался пустой рамкой (путь без /avtotehservis). */
+      for (const el of dom.window.document.querySelectorAll('[href], [src], [poster], [data-img], [data-cover]')) {
+        for (const attr of ['href', 'src', 'poster', 'data-img', 'data-cover']) {
           const value = el.getAttribute(attr);
           if (!value?.startsWith('/') || value.startsWith('//')) continue;
           assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed URL: ${value} in ${file}`);

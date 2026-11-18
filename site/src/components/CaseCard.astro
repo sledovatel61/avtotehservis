@@ -1,0 +1,74 @@
+---
+/**
+ * Карточка кейса для витрин «Главная» и «О компании» (круг 79, задание №82).
+ *
+ * Одна разметка на два случая, чтобы не было третьей копии:
+ *   • `mode="link"` — реальный кейс из `cases.json`: карточка ведёт на `/cases/<slug>`,
+ *     лайтбокс на неё не навешивается (переход важнее), бейджа «пример работы» нет —
+ *     это фото конкретной работы;
+ *   • `mode="lightbox"` — прежний вид на иллюстрациях `CASE_COVERS`: кнопка открывает
+ *     лайтбокс, в подписи честный бейдж «пример работы».
+ */
+import { caseCover, photoPath, photoSrcset, type SiteCase } from '../shared/cases-schema.ts';
+import type { CaseCover } from '../server/case-covers.ts';
+
+export interface Props {
+  case: SiteCase;
+  mode: 'link' | 'lightbox';
+  /** Иллюстрация для `mode="lightbox"` (карта `CASE_COVERS`). */
+  staticCover?: CaseCover;
+  /** Порядковый номер для `data-gal` — лайтбокс ходит по порядку кнопок в DOM. */
+  index?: number;
+}
+
+/* `case` — имя пропа из задания; внутри переименовываем, потому что это ключевое слово */
+const { case: item, mode, staticCover, index = 0 } = Astro.props;
+const cover = caseCover(item);
+const coverW = cover?.w ?? 1600;
+const coverH = cover?.h ?? 1200;
+const sizes = '(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px';
+---
+
+{mode === 'link' && cover ? (
+  <a class="gal-card gal-card--case" href={`/cases/${item.slug}`}>
+    <span class="gal-img">
+      <img
+        src={photoPath(item.slug, cover, 960)}
+        srcset={photoSrcset(item.slug, cover)}
+        sizes={sizes}
+        alt={cover.alt}
+        width={coverW}
+        height={coverH}
+        loading="lazy"
+        decoding="async"
+      >
+    </span>
+    <span class="gal-cap gal-cap--case"><span>{item.title}</span></span>
+  </a>
+) : (
+  <button
+    class="gal-card"
+    type="button"
+    data-gal={index}
+    data-img={staticCover?.webp ?? (cover ? photoPath(item.slug, cover, 1600) : '')}
+    data-title={item.title}
+    data-sub={item.description ?? ''}
+    aria-label={`Открыть кейс: ${item.title}`}
+  >
+    <span class="gal-img">
+      <picture>
+        {staticCover?.avif && <source type="image/avif" srcset={staticCover.avif}>}
+        <img
+          src={staticCover?.webp ?? (cover ? photoPath(item.slug, cover, 960) : '')}
+          sizes={sizes}
+          alt={staticCover?.alt ?? cover?.alt ?? item.title}
+          width={staticCover ? 640 : coverW}
+          height={staticCover ? 480 : coverH}
+          loading="lazy"
+          decoding="async"
+        >
+      </picture>
+    </span>
+    <span class="gal-cap gal-cap--case"><span>{item.title}</span>{staticCover && <span class="ba">пример работы</span>}</span>
+  </button>
+)}

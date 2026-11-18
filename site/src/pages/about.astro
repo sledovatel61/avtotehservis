@@ -3,20 +3,21 @@ import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import { listCatalogServices } from '../server/services.ts';
 import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
-/* круг 23 (§D): шесть фото-обложек кейсов только для «О компании» (галерея главной не тронута) */
-const CASE_COVERS: Record<string, { avif: string; webp: string; alt: string }> = {
-  'case-1': { avif: '/img/ab-case-1-640.avif', webp: '/img/ab-case-1-640.webp', alt: 'Иллюстрация: боковой порез шины на монтажном станке' },
-  'case-2': { avif: '/img/ab-case-2-640.avif', webp: '/img/ab-case-2-640.webp', alt: 'Иллюстрация: грыжа на боковине шины перед вулканизацией' },
-  'case-3': { avif: '/img/ab-case-3-640.avif', webp: '/img/ab-case-3-640.webp', alt: 'Иллюстрация: пример работы сервиса — подвеска и колесо' },
-  'case-4': { avif: '/img/ab-case-4-640.avif', webp: '/img/ab-case-4-640.webp', alt: 'Иллюстрация: суппорт и тормозные колодки при замене' },
-  'case-5': { avif: '/img/ab-case-5-640.avif', webp: '/img/ab-case-5-640.webp', alt: 'Иллюстрация: слив отработанного масла и фильтр при ТО' },
-  'case-6': { avif: '/img/ab-case-6-640.avif', webp: '/img/ab-case-6-640.webp', alt: 'Иллюстрация: пример работы сервиса — узлы трансмиссии' },
-};
+/* круг 23 (§D) → круг 78: карта обложек переехала в ../server/case-covers.ts —
+   её теперь использует и главная (раньше там были SVG-заглушки с бейджем «до / после») */
+import { CASE_COVERS } from '../server/case-covers.ts';
+/* круг 79: реальные кейсы из site/content/cases.json; пустой файл — прежний вид */
+import { listPublishedSiteCases } from '../server/cases-store.ts';
+import CaseCard from '../components/CaseCard.astro';
 import { fmtDateRu, plural } from '../server/format.ts';
 
 const S = getSettings();
+const E0 = S.phones_extra[0];
+const E1 = S.phones_extra[1];
 const services = listCatalogServices();
 const cases = listPublishedCases(6);
+const siteCases = listPublishedSiteCases(6);
+const realCases = siteCases.length > 0;
 const reviews = listPublishedReviews(8);
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = {
@@ -48,7 +49,7 @@ const jsonLd = {
     <span class="eyebrow">О компании</span>
     <h1>Шесть мастеров и понятный порядок работ</h1>
     <p class="lead">«АвтоТехСервис» — автосервис и шиномонтаж в Ростове-на-Дону: улица Портовая, 439, Западный жилой массив. Работаем ежедневно, без выходных, с 9:00 до 19:00.</p>
-    <p class="lead u-mt14">Телефоны: <a class="u-brass" href="tel:+79289065700">+7 (928) 906-57-00</a>, <a class="u-brass" href="tel:+78632291950">+7 (863) 229-19-50</a> и <a class="u-brass" href="tel:+79518265847">+7 (951) 826-58-47</a>.</p>
+    <p class="lead u-mt14">Телефоны: <a class="u-brass" href={`tel:${S.phone_main_tel}`} data-track="call_click">{S.phone_main}</a>, <a class="u-brass" href={`tel:${E0.tel}`} data-track="call_click">{E0.display}</a> и <a class="u-brass" href={`tel:${E1.tel}`} data-track="call_click">{E1.display}</a>.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="ab-text-h">
@@ -118,7 +119,7 @@ const jsonLd = {
     <p class="lead">Сертификаты оформлены на «АвтоТехСервис», Портовая, 439, и действуют до 23.06.2027. Для клиента это подтверждение официального канала продукции и дополнительный ориентир по качеству расходных материалов и деталей, используемых в сервисе.</p>
     <div class="certs">
       <figure class="cert">
-        <button class="cert-zoom" type="button" data-gal data-img="/img/cert-lynxauto-1200.webp"
+        <button class="cert-zoom" type="button" data-zoom data-img="/img/cert-lynxauto-1200.webp"
           data-title="Сертификат LYNXauto" data-sub="Akita Kaihatsu G.K., Япония"
           aria-label="Увеличить сертификат LYNXauto">
           <picture>
@@ -130,7 +131,7 @@ const jsonLd = {
         <figcaption><b>LYNXauto</b><span>Akita Kaihatsu G.K., Япония</span></figcaption>
       </figure>
       <figure class="cert">
-        <button class="cert-zoom" type="button" data-gal data-img="/img/cert-sufix-1200.webp"
+        <button class="cert-zoom" type="button" data-zoom data-img="/img/cert-sufix-1200.webp"
           data-title="Сертификат SUFIX" data-sub="ООО «ЛН Дистрибьюция»"
           aria-label="Увеличить сертификат SUFIX">
           <picture>
@@ -142,7 +143,7 @@ const jsonLd = {
         <figcaption><b>SUFIX</b><span>ООО «ЛН Дистрибьюция»</span></figcaption>
       </figure>
       <figure class="cert">
-        <button class="cert-zoom" type="button" data-gal data-img="/img/cert-korson-1200.webp"
+        <button class="cert-zoom" type="button" data-zoom data-img="/img/cert-korson-1200.webp"
           data-title="Сертификат KORSON" data-sub="TREUS OTOMOTIV, Анталья, Турция"
           aria-label="Увеличить сертификат KORSON">
           <picture>
@@ -154,7 +155,7 @@ const jsonLd = {
         <figcaption><b>KORSON</b><span>TREUS OTOMOTIV, Анталья, Турция</span></figcaption>
       </figure>
       <figure class="cert">
-        <button class="cert-zoom" type="button" data-gal data-img="/img/cert-ngn-1200.webp"
+        <button class="cert-zoom" type="button" data-zoom data-img="/img/cert-ngn-1200.webp"
           data-title="Сертификат NGN" data-sub="официальная точка продаж"
           aria-label="Увеличить сертификат NGN">
           <picture>
@@ -173,28 +174,47 @@ const jsonLd = {
 <section class="sec" aria-labelledby="ab-gal-h">
   <div class="container">
     <div class="sec-head reveal">
-      <div><span class="eyebrow">Работы</span><h2 id="ab-gal-h">Примеры кейсов</h2></div>
-      <div class="slider-nav">
-        <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
-        <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
-      </div>
+      {/* m10 (приёмка A9): то же правило, что на главной — иллюстрации подписаны
+          «пример работы», поэтому без реальных кейсов заголовок общий, без слова «кейсы» */}
+      <div><span class="eyebrow">Работы</span><h2 id="ab-gal-h">{realCases ? 'Кейсы из практики' : 'Примеры работ'}</h2></div>
+      {/* Стрелки только когда листать есть что: при одной-двух карточках они мертвы */}
+      {((realCases ? siteCases.length : cases.length) > 2) && (
+        <div class="slider-nav">
+          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
+          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
+        </div>
+      )}
     </div>
-    <div class="carousel reveal" data-carousel>
+    <div class="carousel reveal" data-carousel data-live-word="Кейс">
       <div class="carousel-win"><div class="carousel-track gal-track">
-          {cases.map((c, ci) => {
-            /* круг 23 (§D): обложки кейсов на «О компании» — фото-иллюстрации работы по теме
-               кейса; бейдж «до / после» убран (обложка не обещает фото конкретной машины) */
-            const cv = CASE_COVERS[c.slug] ?? CASE_COVERS['case-1'];
-            return (
-              <button class="gal-card" type="button" data-gal={ci} data-img={cv.webp} data-title={c.title} data-sub={c.description ?? ''} aria-label={`Открыть кейс: ${c.title}`}>
-                <span class="gal-img"><picture>
-                  <source type="image/avif" srcset={cv.avif}>
-                  <img src={cv.webp} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px" alt={cv.alt} width="640" height="480" loading="lazy" decoding="async">
-                </picture></span>
-                <span class="gal-cap gal-cap--case"><span>{c.title}</span><span class="ba">пример работы</span></span>
-              </button>
-            );
-          })}
+          {realCases
+            ? siteCases.map((c) => <CaseCard case={c} mode="link" />)
+            : cases.map((c, ci) => {
+              /* круг 23 (§D): обложки кейсов на «О компании» — фото-иллюстрации работы по теме
+                 кейса; бейдж «до / после» убран (обложка не обещает фото конкретной машины) */
+              const cv = CASE_COVERS[c.slug] ?? CASE_COVERS['case-1'];
+              return (
+                <CaseCard
+                  case={{
+                    slug: c.slug,
+                    title: c.title,
+                    description: c.description ?? '',
+                    service_slug: c.service_slug,
+                    mode: 'single',
+                    status: 'published',
+                    published_at: c.published_at ?? '',
+                    sort: c.sort,
+                    cover: null,
+                    before: [],
+                    after: [],
+                    photos: [],
+                  }}
+                  mode="lightbox"
+                  staticCover={cv}
+                  index={ci}
+                />
+              );
+            })}
           </div></div>
     </div>
   </div>
@@ -211,7 +231,7 @@ const jsonLd = {
         </div>
       )}
     </div>
-    <div class="carousel reveal" data-carousel>
+    <div class="carousel reveal" data-carousel data-live-word="Отзыв">
       <div class="carousel-win"><div class="carousel-track">
           {reviews.length === 0 ? (
             <article class="rev-card">

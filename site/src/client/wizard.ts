@@ -258,6 +258,9 @@ if (wizEl) {
   const asapBtn = $<HTMLButtonElement>('#asap-btn');
   const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
   const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  /* круг 78: полные подписи для скринридера — без них кнопка дня читалась «вт17ноя» */
+  const WD_FULL = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+  const MON_FULL = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
   function localDay(offset: number): { iso: string; d: Date } {
     const d = new Date();
     d.setHours(12, 0, 0, 0);
@@ -270,7 +273,7 @@ if (wizEl) {
     cal.innerHTML = Array.from({ length: 14 }).map((_, i) => {
       const { iso, d } = localDay(i);
       const on = st.date === iso;
-      return `<button type="button" class="cal-day${on ? ' is-on' : ''}" data-date="${iso}" aria-pressed="${on}">
+      return `<button type="button" class="cal-day${on ? ' is-on' : ''}" data-date="${iso}" aria-label="${WD_FULL[d.getDay()]}, ${d.getDate()} ${MON_FULL[d.getMonth()]}" aria-pressed="${on}">
         <span class="wd">${WD[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="mm">${MON[d.getMonth()]}</span>
       </button>`;
     }).join('');
@@ -439,15 +442,6 @@ if (wizEl) {
       form_started_at: st.startedAt,
     };
   }
-  const payloadBtn = $('#payload-btn');
-  const payloadPre = $('#payload-pre');
-  payloadBtn?.addEventListener('click', () => {
-    const open = payloadBtn.getAttribute('aria-expanded') === 'true';
-    payloadBtn.setAttribute('aria-expanded', String(!open));
-    payloadBtn.closest('.payload')?.classList.toggle('is-open', !open);
-    if (!open && payloadPre) { payloadPre.textContent = JSON.stringify(buildPayload(), null, 2); track('payload_view'); }
-  });
-
   /* ---------- навигация ---------- */
   nextBtn?.addEventListener('click', () => {
     clearErrs();

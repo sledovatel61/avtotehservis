@@ -52,8 +52,11 @@ try {
     const robots = doc.createElement('meta');
     robots.name = 'robots'; robots.content = 'noindex, nofollow'; doc.head.append(robots);
     doc.querySelectorAll('script[type="application/ld+json"]').forEach((el) => el.remove());
-    for (const el of doc.querySelectorAll('[href], [src], [poster], [srcset]')) {
-      for (const attr of ['href', 'src', 'poster']) {
+    /* data-img / data-cover — адреса картинок для лайтбокса и карточек: их читает JS уже в
+       браузере, поэтому без префикса они уходили в /img/... корня домена и на Pages давали
+       404. Так «увеличенный» сертификат открывался пустой рамкой с alt вместо картинки. */
+    for (const el of doc.querySelectorAll('[href], [src], [poster], [srcset], [data-img], [data-cover]')) {
+      for (const attr of ['href', 'src', 'poster', 'data-img', 'data-cover']) {
         const value = el.getAttribute(attr);
         if (value) el.setAttribute(attr, prefix(value));
       }

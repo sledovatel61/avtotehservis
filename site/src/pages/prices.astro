@@ -10,7 +10,16 @@ import { getSettings } from '../server/settings.ts';
 const S = getSettings();
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 
-const GROUPS = [
+interface PriceGroup {
+  id: string;
+  h: string;
+  svc: string;
+  svcLabel?: string;
+  rows: string[][];
+  note: string;
+}
+
+const GROUPS: PriceGroup[] = [
   {
     id: 'to', h: 'ТО и жидкости', svc: 'to-maslo',
     rows: [
@@ -80,6 +89,7 @@ const GROUPS = [
   },
   {
     id: 'kondicioner', h: 'Автокондиционеры', svc: 'diagnostika',
+    svcLabel: 'Диагностика и кондиционер: как ищем утечку',
     rows: [
       ['Заправка автокондиционера', '2000 ₽'],
       ['Поиск утечки', 'от 500 ₽'],
@@ -197,7 +207,7 @@ const jsonLd = [
           </table>
         </div>
         <p class="price-note-txt">{g.note}</p>
-        <p class="price-svc"><a class="u-brass" href={`/services/${g.svc}`}>Страница услуги: {g.h}</a></p>
+        <p class="price-svc"><a class="u-brass" href={`/services/${g.svc}`}>{g.svcLabel ?? `Страница услуги: ${g.h}`}</a></p>
       </div>
     ))}
     <div class="price-grp" id="shiny">
