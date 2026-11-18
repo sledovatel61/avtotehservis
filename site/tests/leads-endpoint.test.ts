@@ -25,7 +25,7 @@ test('без переменной — демо-режим: пустая база
   assert.equal(relayMode, false);
   assert.equal(leadsUrl('leads'), '/api/leads');
   assert.equal(leadsUrl('slots'), '/api/slots');
-  assert.equal(leadsUrl('slots', 'date=2026-10-21'), '/api/slots?date=2026-10-21');
+  assert.equal(leadsUrl('slots', 'date=2026-11-18'), '/api/slots?date=2026-11-18');
 });
 
 test('адрес прослойки нормализуется: пробелы по краям и хвостовые слэши убираются', () => {
@@ -39,10 +39,10 @@ test('адреса ресурсов в режиме прослойки', () => {
   const base = 'https://leads.example.workers.dev';
   assert.equal(buildLeadsUrl(base, 'leads'), `${base}/leads`);
   assert.equal(buildLeadsUrl(base, 'slots'), `${base}/slots`);
-  assert.equal(buildLeadsUrl(base, 'slots', 'date=2026-10-21'), `${base}/slots?date=2026-10-21`);
+  assert.equal(buildLeadsUrl(base, 'slots', 'date=2026-11-18'), `${base}/slots?date=2026-11-18`);
   /* без базы тот же вызов уходит на свой сервер — поведение не меняется */
   assert.equal(buildLeadsUrl('', 'leads'), '/api/leads');
-  assert.equal(buildLeadsUrl('', 'slots', 'date=2026-10-21'), '/api/slots?date=2026-10-21');
+  assert.equal(buildLeadsUrl('', 'slots', 'date=2026-11-18'), '/api/slots?date=2026-11-18');
 });
 
 test('http://, пробелы внутри, мусор и адрес без хоста отвергаются', () => {

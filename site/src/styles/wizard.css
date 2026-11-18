@@ -146,8 +146,11 @@
 .sum-row .edit:hover{color:var(--ivory)}
 .consent-row{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:14px 16px;background:rgba(11,20,16,.35)}
 .consent-row input{width:22px;height:22px;flex-shrink:0;margin:2px 0 0;accent-color:var(--copper);cursor:pointer}
-.consent-row label{font-size:14px;color:var(--mist);cursor:pointer}
-.consent-row label a{color:var(--brass);border-bottom:1px dashed}
+.consent-row label{font-size:14px;color:var(--mist);cursor:pointer;line-height:1.45;display:block}
+.consent-row label a,
+.consent-row .hint a{color:var(--brass);border-bottom:1px dashed}
+.consent-row .hint{line-height:1.5}
+.consent-row .req{margin-left:2px;white-space:nowrap}
 .consent-row.is-bad{border-color:var(--danger)}
 .radio-row{display:flex;gap:12px;flex-wrap:wrap}
 .radio-card{position:relative;flex:1;min-width:150px}

@@ -187,7 +187,7 @@ test('заявка с сайта видна в админке; смена ста
       name: 'Админ Тест', phone: '+79289065700', contact_method: 'call',
       car: { brand: 'Kia', model: 'Rio', year: 2020, vin: null, mileage: null },
       services: ['balansirovka'], preferred: { date: null, slot: null, asap: true },
-      photos: [], consent: true, consent_version: '2026-10-21', page: 'appointment',
+      photos: [], consent: true, consent_version: '2026-11-18', page: 'appointment',
       idempotency_key: crypto.randomUUID(), honeypot: '', form_started_at: Date.now() - 60000,
     }),
   });
@@ -318,7 +318,7 @@ test('настройки: пустые рейтинги не убивают пу
       lat: String(cur.coords?.lat ?? 47.193068), lon: String(cur.coords?.lon ?? 39.648295),
       map_link: String(cur.map_link ?? ''),
       legal_name: String(cur.legal?.name ?? ''), legal_inn: String(cur.legal?.inn ?? ''), legal_ogrnip: String(cur.legal?.ogrnip ?? ''),
-      consent_version: String(cur.consent_version ?? '2026-10-21'),
+      consent_version: String(cur.consent_version ?? '2026-11-18'),
       brands: Array.isArray(cur.brands) ? cur.brands.join('\n') : '',
     });
     if (cur.ratings_visible) p.set('ratings_visible', '1');

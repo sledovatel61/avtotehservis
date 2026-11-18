@@ -185,12 +185,16 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <div class="consent-row" id="consent-row">
                     <input type="checkbox" id="f-consent" aria-describedby="consent-hint">
                     <div class="u-flex1">
-                      <label for="f-consent">Нажимая кнопку, вы соглашаетесь на обработку персональных данных. <span class="req" aria-hidden="true">*</span></label>
+                      <label for="f-consent">Даю согласие на обработку персональных данных<span class="req" aria-hidden="true">*</span></label>
                       <span class="hint u-blk-mt4" id="consent-hint">
-                        <button type="button" class="linklike" data-modal="consent">Текст согласия</button> ·
-                        <button type="button" class="linklike" data-modal="policy">Политика конфиденциальности</button> ·
-                        галочка не проставлена заранее
+                        <a href="/consent">Согласие на обработку ПД</a> ·
+                        <a href="/privacy">Политика обработки ПД</a>
                       </span>
+                      <span class="hint u-blk-mt4">
+                        <button type="button" class="linklike" data-modal="consent">Согласие — кратко</button> ·
+                        <button type="button" class="linklike" data-modal="policy">Политика — кратко</button>
+                      </span>
+                      <span class="hint u-blk-mt4">Версия документа: {S.consent_version}. Отметка о согласии и её дата сохраняются вместе с заявкой.</span>
                       <span class="err" role="alert"></span>
                     </div>
                   </div>

@@ -33,7 +33,7 @@ test('bookingSchema: год 1980–2026', () => {
     name: 'Иван', phone: '+79289065700', contact_method: 'call',
     car: { brand: 'Лада', model: null, year: 2019, vin: null, mileage: null },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    photos: [], consent: true, consent_version: '2026-10-21', page: 'appointment',
+    photos: [], consent: true, consent_version: '2026-11-18', page: 'appointment',
     idempotency_key: crypto.randomUUID(), honeypot: '', form_started_at: Date.now() - 60000,
   };
   runMigrations();
@@ -50,7 +50,7 @@ test('валидация: сообщения об ошибках — всегд�
     name: 'Иван', phone: '+79289065700', contact_method: 'call',
     car: { brand: 'Лада', model: null, year: 2019, vin: null, mileage: null },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    photos: [], consent: true, consent_version: '2026-10-21', page: 'appointment',
+    photos: [], consent: true, consent_version: '2026-11-18', page: 'appointment',
     idempotency_key: crypto.randomUUID(), honeypot: '', form_started_at: Date.now() - 60000,
   };
   const bad = bookingSchema.safeParse({
@@ -75,7 +75,7 @@ test('bookingSchema: VIN без I/O/Q, 17 символов', () => {
     name: 'Иван', phone: '89289065700', contact_method: 'call',
     car: { brand: 'Kia', model: 'Rio', year: 2020, vin: 'XTWKIA12345678901'.slice(0, 17), mileage: 84000 },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    consent: true, consent_version: '2026-10-21', page: 'appointment', idempotency_key: crypto.randomUUID(),
+    consent: true, consent_version: '2026-11-18', page: 'appointment', idempotency_key: crypto.randomUUID(),
   };
   assert.ok(bookingSchema.safeParse({ ...base, car: { ...base.car, vin: 'XTWA1234567890123' } }).success);
   const bad = bookingSchema.safeParse({ ...base, car: { ...base.car, vin: 'IOQ12345678901234' } });
@@ -89,7 +89,7 @@ test('bookingSchema: пробег 0–2 000 000, услуги whitelist, сог�
     name: 'Иван', phone: '89289065700', contact_method: 'call',
     car: { brand: 'Kia', model: null, year: null, vin: null, mileage: 2000000 },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    consent: true, consent_version: '2026-10-21', page: 'appointment', idempotency_key: crypto.randomUUID(),
+    consent: true, consent_version: '2026-11-18', page: 'appointment', idempotency_key: crypto.randomUUID(),
   };
   assert.ok(bookingSchema.safeParse(base).success);
   assert.ok(!bookingSchema.safeParse({ ...base, car: { ...base.car, mileage: 2000001 } }).success);
@@ -103,7 +103,7 @@ test('bookingSchema: пробег 0–2 000 000, услуги whitelist, сог�
 test('messageSchema: короткая форма', () => {
   const base = {
     name: 'Мария', phone: '+7 951 826-98-39', message: 'Подскажите по замене масла',
-    consent: true, consent_version: '2026-10-21', page: 'contacts', idempotency_key: crypto.randomUUID(),
+    consent: true, consent_version: '2026-11-18', page: 'contacts', idempotency_key: crypto.randomUUID(),
   };
   const ok = messageSchema.safeParse(base);
   assert.ok(ok.success);
