@@ -20,6 +20,15 @@ export class GitHub {
   return {data:await res.json(),headers:res.headers};
  }
  async user(){ return this.request('/user'); }
+ // Публичный Actions API: токен Contents не даёт Actions: read и сюда не передаётся.
+ async publicRuns(){
+  try {
+   const res=await fetch(`${ROOT}${REPO}/actions/runs?branch=${REF}&per_page=10`,{headers:{Accept:'application/vnd.github+json'},credentials:'omit'});
+   if(!res.ok) return null;
+   const data=await res.json();
+   return Array.isArray(data.workflow_runs)?data.workflow_runs:null;
+  } catch {return null;}
+ }
  async read(){
   let data;
   try { ({data}=await this.request(`${REPO}/contents/${CONTENT}?ref=${REF}`)); }
