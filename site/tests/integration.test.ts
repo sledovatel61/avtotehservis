@@ -118,7 +118,7 @@ function booking(over: Record<string, unknown> = {}): Record<string, unknown> {
     name: 'Пётр Тестов', phone: '+7 (928) 906-57-00', contact_method: 'call',
     car: { brand: 'Лада (LADA)', model: 'Vesta', year: 2019, vin: null, mileage: 84000 },
     services: ['to-maslo'], preferred: { date, slot: '10:00', asap: false },
-    photos: [], consent: true, consent_version: '2026-11-19', page: 'appointment',
+    photos: [], consent: true, consent_version: '2026-11-20', page: 'appointment',
     idempotency_key: crypto.randomUUID(), honeypot: '', form_started_at: Date.now() - 60000,
     ...over,
   };
@@ -471,7 +471,7 @@ test('honeypot и мгновенная отправка — тихо игнор�
 test('обращение с контактов: талон K-, kind=message', async () => {
   const r = await postLead(portA, {
     name: 'Мария', phone: '89518269839', message: 'Работаете ли вы в новогоднюю ночь?',
-    consent: true, consent_version: '2026-11-19', page: 'contacts',
+    consent: true, consent_version: '2026-11-20', page: 'contacts',
     idempotency_key: crypto.randomUUID(), honeypot: '', form_started_at: Date.now() - 30000,
   });
   assert.equal(r.status, 201);

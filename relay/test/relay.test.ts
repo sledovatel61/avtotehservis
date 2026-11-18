@@ -33,7 +33,7 @@ function env(over: Partial<Env> = {}): Env {
     ALLOWED_ORIGINS: 'https://sledovatel61.github.io,http://localhost:4321',
     SITE_NAME: 'АвтоТехСервис',
     SITE_ADDRESS: 'Ростов-на-Дону, ул. Портовая, 439',
-    CONSENT_VERSION: '2026-11-19',
+    CONSENT_VERSION: '2026-11-20',
     ...over,
   };
 }
@@ -47,7 +47,7 @@ const booking = (over: Record<string, unknown> = {}): Record<string, unknown> =>
   preferred: { date: null, slot: null, asap: true },
   photos: [],
   consent: true,
-  consent_version: '2026-11-19',
+  consent_version: '2026-11-20',
   page: 'appointment',
   idempotency_key: uuid(),
   honeypot: '',
@@ -194,7 +194,7 @@ test('вопрос с формы контактов: 201 и сообщение �
     phone: '89289065700',
     message: 'Нужна диагностика подвески, стучит справа.',
     consent: true,
-    consent_version: '2026-11-19',
+    consent_version: '2026-11-20',
     page: 'contacts',
     idempotency_key: uuid(),
     honeypot: '',
@@ -393,11 +393,11 @@ test('multipart: ошибка Telegram на фото не отменяет пр�
 });
 
 test('composeTelegram: в уведомлении есть версия согласия и отметка времени', () => {
-  const v = validateLead(booking({ idempotency_key: uuid(), consent_version: '2026-11-19' }));
+  const v = validateLead(booking({ idempotency_key: uuid(), consent_version: '2026-11-20' }));
   assert.equal(v.ok, true);
   if (!v.ok) return;
   const text = composeTelegram(v.value, 'A-1118-1234', { siteName: 'АвтоТехСервис', at: new Date('2026-11-18T09:15:00Z') });
-  assert.match(text, /Согласие на обработку ПД: версия <b>2026-11-19<\/b>/);
+  assert.match(text, /Согласие на обработку ПД: версия <b>2026-11-20<\/b>/);
   assert.match(text, /отметка 18 ноя, 12:15 МСК/);
 });
 
@@ -435,7 +435,7 @@ test('emailFrom: по умолчанию свой ящик, Resend — onboardin
 });
 
 test('composeEmail: тема и текст содержат талон, имя, телефон и версию согласия', () => {
-  const v = validateLead(booking({ idempotency_key: uuid(), name: 'Иван', consent_version: '2026-11-19' }));
+  const v = validateLead(booking({ idempotency_key: uuid(), name: 'Иван', consent_version: '2026-11-20' }));
   assert.equal(v.ok, true);
   if (!v.ok) return;
   const m = composeEmail(v.value, 'A-1118-7777', {
@@ -444,7 +444,7 @@ test('composeEmail: тема и текст содержат талон, имя, 
   assert.match(m.subject, /A-1118-7777/);
   assert.match(m.subject, /Иван/);
   assert.match(m.subject, /\+7 \(951\) 826-98-39/);
-  assert.match(m.text, /Согласие: версия 2026-11-19/);
+  assert.match(m.text, /Согласие: версия 2026-11-20/);
   assert.match(m.text, /18 ноября 2026, 12:15 \(МСК\)/);
   assert.match(m.text, /Автомобиль: Kia Ceed 2019 г\./);
   assert.match(m.html, /<html/);
