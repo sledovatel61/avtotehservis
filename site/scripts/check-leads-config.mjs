@@ -135,9 +135,10 @@ if (!chunk) {
       if (leads !== '/api/leads') bad(`демо-форма шлёт не на /api/leads: «${leads}»`);
       if (slots !== '/api/slots?date=2026-10-21') bad(`демо-слоты запрашиваются не с /api/slots: «${slots}»`);
       if (leads === '/api/leads' && slots.startsWith('/api/slots')) ok('клиент шлёт заявки на /api/leads, слоты на /api/slots');
-      const anyEndpoint = js.filter((f) => /https:\/\/[a-z0-9.-]+\.workers\.dev/i.test(texts.get(f) ?? ''));
+      /* «нигде нет» — по всем текстовым файлам pages-dist, а не только по JS */
+      const anyEndpoint = [...texts.keys()].filter((f) => /https:\/\/[a-z0-9.-]+\.workers\.dev/i.test(texts.get(f) ?? ''));
       if (anyEndpoint.length) bad(`в демо-сборке найден адрес прослойки: ${anyEndpoint.map(rel).join(', ')}`);
-      else ok('адреса прослойки в клиентском JS нет');
+      else ok(`адреса прослойки нет ни в одном из ${texts.size} текстовых файлов`);
     }
   }
 }
