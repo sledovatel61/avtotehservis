@@ -5,6 +5,7 @@
  *   GET  /health              → { ok, service:'ats-leads', time }
  *   GET  /slots?date=…        → { date, slots:[{time, available, reason?}] }
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
+ *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
  *                               400 { error:{ code:'validation'|'bad_json'|'consent_version', message, fields? } }
  *                               429 { error:{ code:'too_many', message } } + Retry-After
  *
@@ -14,7 +15,7 @@
 
 import { validateLead, MIN_FILL_MS, type LeadPayload } from './validate.ts';
 import { getSlots, isValidSlotDate } from './slots.ts';
-import { composeTelegram, sendTelegram } from './telegram.ts';
+import { composeTelegram, sendTelegram, sendPhotos } from './telegram.ts';
 
 export interface Env {
   BOT_TOKEN?: string;
@@ -111,9 +112,51 @@ export async function hashIp(ip: string): Promise<string> {
 
 /* ---------- обработчики ---------- */
 
+/* Фото: до 3 файлов, только изображения, до 6 МБ каждое после сжатия в браузере.
+   Потолок нужен, чтобы один запрос не съел лимиты воркера и не залил группу мусором. */
+const MAX_PHOTOS = 3;
+const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+
+interface LeadBody { payload: unknown; photos: File[] }
+
+/** Тело заявки: обычный JSON или multipart (payload=JSON + photo…). */
+async function readLeadBody(req: Request): Promise<LeadBody | null> {
+  const type = (req.headers.get('content-type') ?? '').toLowerCase();
+  if (type.startsWith('multipart/form-data')) {
+    let form: FormData;
+    try { form = await req.formData(); } catch { return null; }
+    const raw = form.get('payload');
+    if (typeof raw !== 'string') return null;
+    let payload: unknown;
+    try { payload = JSON.parse(raw); } catch { return null; }
+    const photos = form.getAll('photo').filter((f): f is File => f instanceof File && f.size > 0);
+    return { payload, photos };
+  }
+  try { return { payload: await req.json(), photos: [] }; } catch { return null; }
+}
+
+/** Почему фото не годится — null, если всё в порядке. */
+function photoProblem(files: File[]): string | null {
+  if (files.length > MAX_PHOTOS) return `Не больше ${MAX_PHOTOS} фото`;
+  const total = files.reduce((n, f) => n + f.size, 0);
+  if (total > MAX_TOTAL_BYTES) return 'Фото слишком тяжёлые — приложите меньше снимков';
+  for (const f of files) {
+    if (!/^image\//.test(f.type)) return 'Принимаются только изображения';
+    if (/^image\/svg/i.test(f.type)) return 'SVG не принимается';
+    if (f.size > MAX_PHOTO_BYTES) return 'Фото больше 6 МБ';
+  }
+  return null;
+}
+
 async function handleLead(req: Request, env: Env): Promise<Response> {
-  let body: unknown;
-  try { body = await req.json(); } catch { return err(400, 'bad_json', 'Ожидался JSON-запрос'); }
+  const read = await readLeadBody(req);
+  if (!read) return err(400, 'bad_json', 'Ожидался JSON-запрос');
+  const body = read.payload;
+  const photos = read.photos;
+
+  const badPhoto = photoProblem(photos);
+  if (badPhoto) return err(400, 'validation', badPhoto, { photos: badPhoto });
 
   const v = validateLead(body);
   if (!v.ok) {
@@ -162,16 +205,23 @@ async function handleLead(req: Request, env: Env): Promise<Response> {
     address: env.SITE_ADDRESS ?? 'Ростов-на-Дону, ул. Портовая, 439',
   });
 
+  const tg = { token: env.BOT_TOKEN, chatId: env.TELEGRAM_CHAT_ID, apiBase: env.TELEGRAM_API_BASE };
   try {
-    await sendTelegram(text, {
-      token: env.BOT_TOKEN,
-      chatId: env.TELEGRAM_CHAT_ID,
-      apiBase: env.TELEGRAM_API_BASE,
-    });
+    await sendTelegram(text, tg);
   } catch (e) {
     // Телефон в логи не попадаем: только код ошибки.
     console.error('[leads] telegram failed', String((e as Error)?.message ?? e).slice(0, 120));
     return err(502, 'telegram', 'Не удалось доставить заявку. Позвоните нам, пожалуйста.');
+  }
+
+  /* Фото — после текста: мастер сразу видит, к какой заявке они относятся.
+     Ошибку фото не считаем отказом: заявка уже в группе, телефон у мастера есть. */
+  if (photos.length) {
+    try {
+      await sendPhotos(photos, ticket, tg);
+    } catch (e) {
+      console.error('[leads] photos failed', String((e as Error)?.message ?? e).slice(0, 120));
+    }
   }
 
   await kvPut(env, idemKey, `${ticket}|${await hashIp(lead.phone)}`, 86400);

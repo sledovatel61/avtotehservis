@@ -9,7 +9,7 @@ workers_dev = true
 ALLOWED_ORIGINS = "https://sledovatel61.github.io,http://localhost:4321,http://127.0.0.1:4321"
 SITE_NAME = "АвтоТехСервис"
 SITE_ADDRESS = "Ростов-на-Дону, ул. Портовая, 439"
-CONSENT_VERSION = "2026-11-18"
+CONSENT_VERSION = "2026-11-19"
 
 # Секреты задаются командами (в файле их быть не должно):
 #   npx wrangler secret put BOT_TOKEN

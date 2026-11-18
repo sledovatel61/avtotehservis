@@ -82,7 +82,10 @@ try {
       el.setAttribute('content', publicOrigin + base + '/img/og.png');
     }
     doc.querySelectorAll('a[href*="/admin"]').forEach((el) => el.remove());
-    doc.querySelectorAll('input[type="file"]').forEach((el) => { el.disabled = true; });
+    /* Файловые поля гасим только в демо: с прослойкой фото уходят вместе с заявкой.
+       Раньше здесь стояло безусловное disabled — из-за него на Pages нельзя было
+       приложить ни одного снимка, хотя текст обещал «до 3 файлов». */
+    if (!relayMode) doc.querySelectorAll('input[type="file"]').forEach((el) => { el.disabled = true; });
     /* Плашка — только в демо-режиме (без PUBLIC_LEADS_ENDPOINT): с прослойкой заявки
        уходят по-настоящему, и текст «не отправляются» был бы ложью. data-preview остаётся
        всегда — на нём держатся гейты раскладки. */

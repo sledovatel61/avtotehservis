@@ -72,21 +72,30 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                   <input class="input" type="text" inputmode="numeric" id="f-year" name="year" maxlength="4" placeholder="Например: 2019" aria-describedby="year-hint">
                   <span class="hint" id="year-hint">Число от 1980 до 2026</span>
                   <span class="err" role="alert"></span>
-                  <button type="button" class="skip-chip" id="skip-year" aria-pressed="false">Не помню год</button>
+                  <label class="skip-chip skip-toggle" for="skip-year">
+                    <input type="checkbox" id="skip-year">
+                    <span>Не помню год</span>
+                  </label>
                 </div>
                 <div class="field">
                   <label for="f-vin">VIN (если знаете) <span class="opt">необязательно</span></label>
                   <input class="input" type="text" id="f-vin" name="vin" data-vin maxlength="17" placeholder="17 символов" autocomplete="off" aria-describedby="vin-hint">
                   <span class="hint" id="vin-hint">17 символов · буквы I, O, Q в VIN не используются</span>
                   <span class="err" role="alert"></span>
-                  <button type="button" class="skip-chip" id="skip-vin" aria-pressed="false">Не знаю VIN</button>
+                  <label class="skip-chip skip-toggle" for="skip-vin">
+                    <input type="checkbox" id="skip-vin">
+                    <span>Не знаю VIN</span>
+                  </label>
                 </div>
                 <div class="field">
                   <label for="f-mileage">Пробег, км <span class="opt">необязательно</span></label>
                   <input class="input" type="text" inputmode="numeric" id="f-mileage" name="mileage" maxlength="7" placeholder="Например: 84000" aria-describedby="mil-hint">
                   <span class="hint" id="mil-hint">Число километров — помогает понять ресурс расходников</span>
                   <span class="err" role="alert"></span>
-                  <button type="button" class="skip-chip" id="skip-mileage" aria-pressed="false">Не знаю пробег</button>
+                  <label class="skip-chip skip-toggle" for="skip-mileage">
+                    <input type="checkbox" id="skip-mileage">
+                    <span>Не знаю пробег</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -113,19 +122,17 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               </div>
             </div>
               <div class="field" id="svc-err-anchor"><span class="err" role="alert"></span></div>
-              {relayMode ? (
-                <div class="field u-mt26">
-                  <span class="f-label">Фото автомобиля или повреждения</span>
-                  <span class="hint">В этой версии сайта фото к заявке не прикладываются — покажите их мастеру при визите или пришлите в <a href={S.telegram_url} data-track="telegram_click">Telegram</a> после звонка.</span>
-                </div>
-              ) : (
-                <div class="field u-mt26">
-                  <span class="f-label">Фото автомобиля или повреждения <span class="opt">до 3 файлов, необязательно</span></span>
-                  <span class="hint">Помогает оценить задачу до визита. Фото (до 3 файлов, до 15 МБ каждое) загружаются на сервер сервиса и видны только сотрудникам.</span>
-                  <input type="file" id="f-photos" accept="image/*" multiple hidden>
-                  <div class="photos" id="photos"></div>
-                </div>
-              )}
+              <div class="field u-mt26" id="photo-field">
+                <label class="f-label" for="f-photos">Фото автомобиля или повреждения <span class="opt">до 3 файлов, необязательно</span></label>
+                <span class="hint" id="photo-hint">Помогает оценить задачу до визита. Снимок сжимается прямо в браузере (до 1600 px по длинной стороне) и уходит вместе с заявкой в Telegram сервиса — фото видят только сотрудники. Не больше 3 файлов.</span>
+                <input type="file" id="f-photos" accept="image/*" multiple class="photo-input">
+                <label class="photo-add" for="f-photos" id="photo-add">
+                  <span class="plus" aria-hidden="true">+</span>
+                  <span>Добавить фото</span>
+                </label>
+                <div class="photos" id="photos"></div>
+                <span class="err" role="alert" id="photo-err"></span>
+              </div>
             </div>
 
             <div class="step" data-step="3" aria-hidden="true">
@@ -207,7 +214,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <h2>Проверьте заявку</h2>
               <p class="step-desc">Всё выбранное — одним экраном. Что-то не так? Кнопка «изменить» вернёт на нужный шаг, данные не потеряются.</p>
               <div class="sum-list" id="summary"></div>
-              <p class="hint">Нажмите «Отправить заявку» — она сразу уйдёт в сервис: вы получите номер, а мастер — уведомление в Telegram и письмом. Если один канал доставки временно недоступен, заявка не потеряется: доставка повторится автоматически.</p>
+              <p class="hint">{relayMode
+                ? 'Нажмите «Отправить заявку» — она сразу уйдёт в Telegram сервиса вместе с фотографиями: вы получите номер, а мастер — уведомление с вашим телефоном и списком работ. Если канал временно недоступен, форма предложит повторить отправку или позвонить.'
+                : 'Нажмите «Отправить заявку» — она сразу уйдёт в сервис: вы получите номер, а мастер — уведомление в Telegram и письмом. Если один канал доставки временно недоступен, заявка не потеряется: доставка повторится автоматически.'}</p>
             </div>
 
           </div>

@@ -44,6 +44,10 @@ export function composeTelegram(lead: LeadPayload, ticket: string, opts: Compose
     `\nИмя: <b>${esc(lead.name)}</b>`,
     `\nТелефон: <b>${esc(fmtPhone(lead.phone))}</b> (${lead.contact_method === 'telegram' ? 'писать в Telegram' : 'звонок'})`,
   ];
+  /* Журнал согласий: в самом уведомлении видно, на какой версии документа человек
+     поставил галочку и когда именно. Этого достаточно, чтобы подтвердить факт
+     согласия по конкретной заявке — отдельной базы у прослойки нет. */
+  const consent = `\nСогласие на обработку ПД: версия <b>${esc(lead.consent_version)}</b>, отметка ${esc(fmtStamp(at))} МСК`;
   const footer = `\n\n<b>${esc(ticket)}</b> · ${esc(fmtStamp(at))} МСК`;
 
   if (lead.kind === 'message') {
@@ -52,6 +56,7 @@ export function composeTelegram(lead: LeadPayload, ticket: string, opts: Compose
       ...common,
       `\nСообщение: ${esc(lead.message)}`,
       `\nИсточник: ${esc(lead.page)}`,
+      consent,
       footer,
     ].join('');
   }
@@ -80,6 +85,7 @@ export function composeTelegram(lead: LeadPayload, ticket: string, opts: Compose
     '\n<i>Время предварительное — подтвердить звонком.</i>',
     `\nИсточник: ${esc(lead.page)}`,
     opts.address ? `\n${esc(opts.siteName)}, ${esc(opts.address)}` : '',
+    consent,
     footer,
   ].join('');
 }
@@ -119,4 +125,39 @@ export async function sendTelegram(text: string, opts: SendOpts): Promise<void> 
     if (res.status !== 429 && res.status < 500) break; // 4xx — повторять бессмысленно
   }
   throw new Error(`telegram_${lastErr}`);
+}
+
+/**
+ * Фото к заявке: каждое уходит отдельным сообщением с подписью «к заявке A-…»,
+ * чтобы в группе было видно, к чему оно относится. Сжатие делает браузер,
+ * здесь только доставка. Одна попытка + один повтор на 5xx/429/сеть.
+ */
+export async function sendPhotos(files: File[], ticket: string, opts: SendOpts): Promise<void> {
+  const base = (opts.apiBase ?? 'https://api.telegram.org').replace(/\/$/, '');
+  const doFetch = opts.fetchImpl ?? fetch;
+  const url = `${base}/bot${opts.token}/sendPhoto`;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const name = (file.name || `photo-${i + 1}.jpg`).replace(/[^\w.\-]+/g, '_') || `photo-${i + 1}.jpg`;
+    let lastErr = 'unknown';
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 400));
+      const fd = new FormData();
+      fd.append('chat_id', opts.chatId);
+      fd.append('caption', `Фото ${i + 1} к заявке ${ticket}`);
+      fd.append('photo', file, name);
+      let res: Response;
+      try {
+        res = await doFetch(url, { method: 'POST', body: fd });
+      } catch (e) {
+        lastErr = `network:${(e as Error)?.name ?? 'error'}`;
+        continue;
+      }
+      if (res.ok) { lastErr = ''; break; }
+      lastErr = `http:${res.status}`;
+      if (res.status !== 429 && res.status < 500) break;
+    }
+    if (lastErr) throw new Error(`telegram_photos_${lastErr}`);
+  }
 }
