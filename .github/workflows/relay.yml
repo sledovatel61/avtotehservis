@@ -73,8 +73,22 @@ jobs:
         id: deploy
         run: |
           set -e
-          npx wrangler deploy 2>&1 | tee /tmp/deploy.log
-          URL=$(grep -Eo 'https://[a-z0-9-]+\.workers\.dev' /tmp/deploy.log | head -1)
+          npx wrangler deploy 2>&1 | tee /tmp/deploy.log || { echo "::error::wrangler deploy упал"; tail -40 /tmp/deploy.log; exit 1; }
+          tail -25 /tmp/deploy.log || true
+
+          # Адрес воркера: сначала пробуем достать из вывода wrangler, потом собираем
+          # из сабдомена аккаунта (GET /accounts/<id>/workers/subdomain).
+          URL=$(grep -Eo 'https://[a-z0-9-]+\.workers\.dev' /tmp/deploy.log | head -1 || true)
+          if [ -z "$URL" ]; then
+            SUB=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain" \
+              | grep -Eo '"subdomain": *"[a-z0-9-]+"' | head -1 | sed 's/.*"\([a-z0-9-]*\)"$/\1/')
+            if [ -n "$SUB" ]; then URL="https://ats-leads.${SUB}.workers.dev"; fi
+          fi
+          if [ -z "$URL" ]; then
+            echo "::error::Не удалось определить адрес воркера — смотрите лог деплоя выше"
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Адрес прослойки: $URL"
         env:
@@ -94,10 +108,23 @@ jobs:
         run: |
           set -e
           URL="${{ steps.deploy.outputs.url }}"
-          sleep 6
-          curl -sS --fail-with-body --retry 3 --retry-delay 5 "$URL/health" | tee /tmp/health.json
-          echo
-          grep -q '"telegram":true' /tmp/health.json || { echo "::error::Воркер не видит BOT_TOKEN/TELEGRAM_CHAT_ID"; exit 1; }
+          echo "Проверяем $URL/health"
+          OK=0
+          for i in $(seq 1 12); do
+            sleep 5
+            CODE=$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health" || echo 000)
+            echo "попытка $i: HTTP $CODE $(cat /tmp/health.json 2>/dev/null | head -c 300)"
+            if [ "$CODE" = "200" ] && grep -q '"telegram":true' /tmp/health.json; then OK=1; break; fi
+            if [ "$CODE" = "200" ] && grep -q '"telegram":false' /tmp/health.json && [ "$i" -ge 6 ]; then
+              echo "::error::Воркер отвечает, но не видит BOT_TOKEN/TELEGRAM_CHAT_ID (секреты не применились)"
+              exit 1
+            fi
+          done
+          if [ "$OK" != "1" ]; then
+            echo "::error::Воркер не ответил на /health за 60 секунд"
+            exit 1
+          fi
+          echo "Воркер жив и видит Telegram." 
 
       - name: Notify group in Telegram
         run: |
