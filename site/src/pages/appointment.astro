@@ -202,7 +202,10 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                         <span class="consent-pair"><button type="button" class="linklike" data-modal="consent">Согласие — кратко</button> ·</span>
                         <span class="consent-pair"><button type="button" class="linklike" data-modal="policy">Политика — кратко</button></span>
                       </span>
-                      <span class="hint u-blk-mt4">Версия документа: {S.consent_version}. Отметка о согласии и её дата сохраняются вместе с заявкой.</span>
+                      <span class="hint u-blk-mt4">
+                        Заявка передаётся через внешние сервисы Cloudflare и Telegram — это трансграничная передача данных, необходимая для доставки заявки сотрудникам (подробнее — в <a href="/privacy#transfer">политике</a>).
+                      </span>
+                      <span class="hint u-blk-mt4">Версия документа: {S.consent_version}. Отметка о согласии, её дата и время сохраняются вместе с заявкой.</span>
                       <span class="err" role="alert"></span>
                     </div>
                   </div>
