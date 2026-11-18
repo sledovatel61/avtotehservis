@@ -137,6 +137,8 @@
 .sum-row .k{flex:0 0 130px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding-top:2px}
 .sum-row .v{flex:1;font-size:15.5px;color:var(--ivory)}
 .sum-row .v small{display:block;color:var(--mist);font-size:13px;margin-top:2px}
+/* приписка «подтвердим по телефону» рядом с желаемым временем */
+.sum-row .sum-note{display:inline-block;margin-left:8px;color:var(--mist);font-size:13px;white-space:nowrap}
 .sum-row .edit{
   background:none;border:0;color:var(--brass);font-size:13px;font-weight:500;cursor:pointer;
   min-height:36px;padding:2px 8px;border-bottom:1px dashed rgba(224,169,109,.5);flex-shrink:0;

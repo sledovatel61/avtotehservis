@@ -19,7 +19,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
 <Base
   page="appointment"
   title="Запись на сервис — АвтоТехСервис, Ростов-на-Дону"
-  description="Онлайн-запись в автосервис на Портовой, 439: пять шагов, марка и VIN, услуги, удобные дата и время 9:00–19:00. Стоимость — после осмотра, смета до начала работ."
+  description="Заявка в автосервис на Портовой, 439: пять шагов, марка и VIN, услуги, желаемые дата и время. Приём в порядке живой очереди, время подтверждаем звонком. Стоимость — после осмотра, смета до начала работ."
 >
 
 <nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">Запись</span></nav>
@@ -27,7 +27,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
   <div class="container">
     <span class="eyebrow">Запись</span>
     <h1>Запись на визит</h1>
-    <p class="lead">Пять коротких шагов: автомобиль — услуги — дата и время — контакты — проверка. Займёт пару минут, а к вашему приезду бокс и мастер будут готовы. Не хочется заполнять? Позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a>.</p>
+    <p class="lead">Пять коротких шагов: автомобиль — услуги — желаемые день и время — контакты — проверка. Займёт пару минут. Сервис принимает машины в порядке живой очереди, поэтому время визита мы согласуем звонком. Не хочется заполнять? Позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a>.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="appt-h">
@@ -130,13 +130,13 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
 
             <div class="step" data-step="3" aria-hidden="true">
               <h2>Когда вам удобно</h2>
-              <p class="step-desc">Работаем {S.hours}. Запись — на ближайшие 14 дней, шаг один час. Занятое время видно сразу и недоступно для выбора; формат даты — ДД.ММ.ГГГГ.</p>
+              <p class="step-desc">Работаем {S.hours}. Приём — в порядке живой очереди: выберите удобные день и время, а мастер подтвердит их звонком, обычно в течение рабочего дня. Лента показывает ближайшие 14 дней, формат даты — ДД.ММ.ГГГГ.</p>
               <div class="field">
-                <span class="f-label">Дата визита</span>
+                <span class="f-label">Желаемый день визита</span>
                 <div class="cal" id="cal" role="group" aria-label="Выбор даты: ближайшие 14 дней"></div>
               </div>
               <div class="field u-mt16">
-                <span class="f-label" id="slot-title">Когда вам удобно приехать?</span>
+                <span class="f-label" id="slot-title">Желаемое время</span>
                 {/* Сетка статическая: сервис принимает в порядке живой очереди, «занятых» часов
                     в ней нет. Разметку рендерит сервер — клиенту не нужен сетевой запрос,
                     и на GitHub Pages форма работает без сервера. */}
@@ -145,8 +145,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                     <button type="button" class="slot" data-slot={t} aria-pressed="false" aria-label={t}>{t}</button>
                   ))}
                 </div>
+                <p class="hint u-mt10">Время — пожелание. Если в этот час будет очередь, мастер предложит ближайшее удобное.</p>
                 <div class="asap">
-                  <p>Не можете выбрать день? Подберём ближайшее окно и перезвоним для подтверждения.</p>
+                  <p>Время не принципиально? Приезжайте в рабочие часы — примем в порядке очереди.</p>
                   <button type="button" class="skip-chip" id="asap-btn" aria-pressed="false">Как можно скорее</button>
                 </div>
               </div>
@@ -231,7 +232,8 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
           <div class="next-steps">
             <h3>Что дальше</h3>
             <ul>
-              <li>Перезвоним с номера {S.phone_main} (или напишем в Telegram — как выбрали) и подтвердим визит.</li>
+              <li>Позвоним и согласуем время визита — оно пока предварительное.</li>
+              <li>Свяжемся так, как вы выбрали: звонком с номера {S.phone_main} или в Telegram.</li>
               <li>Если выбрана диагностика: мастер осмотрит автомобиль и подготовит смету до начала работ.</li>
               <li>Планы изменились? Позвоните — перенесём время без обид и уговоров.</li>
             </ul>
@@ -243,7 +245,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
             </ul>
           </div>
           <p class="u-actions-center">
-            <button class="btn btn--ghost" type="button" id="ok-ics">Добавить в календарь (.ics)</button>
+            <button class="btn btn--ghost" type="button" id="ok-ics">В календарь (предварительно)</button>
             <button class="btn btn--copper" type="button" id="ok-again">Создать новую заявку</button>
             <a class="btn btn--ghost" href="/" id="ok-home">Вернуться на главную</a>
           </p>

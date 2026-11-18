@@ -385,7 +385,7 @@ if (wizEl) {
   }
 
   /* ---------- сводка ---------- */
-  function summaryRows(): { label: string; value: string; step: number }[] {
+  function summaryRows(): { label: string; value: string; note?: string; step: number }[] {
     const car = [st.brand, st.model, st.year ? `${st.year} г.` : '', st.mileage && !st.milSkip ? `${Number(st.mileage).toLocaleString('ru-RU')} км` : '', st.vin && !st.vinSkip ? `VIN ${st.vin}` : ''].filter(Boolean).join(', ');
     const chipLabels = new Map($$<HTMLInputElement>('input[name="svc"]', wiz).map((i) => [i.value, i.closest('.chip')?.querySelector('span')?.textContent ?? i.value]));
     const svc = st.dontknow ? 'Не знаю — нужна диагностика' : st.services.map((s) => chipLabels.get(s) ?? s).join(', ');
@@ -394,7 +394,7 @@ if (wizEl) {
       { label: 'Автомобиль', value: car || '—', step: 1 },
       { label: 'Услуги', value: svc || '—', step: 2 },
       { label: 'Фото', value: st.photos.length ? `${st.photos.filter((p) => p.state === 'done').length} файл(ов)` : 'не прикрепляли', step: 2 },
-      { label: 'Когда', value: when, step: 3 },
+      { label: 'Желаемое время', value: when, note: 'подтвердим по телефону', step: 3 },
       { label: 'Имя и телефон', value: `${st.name}, ${st.phone}`, step: 4 },
       { label: 'Связь', value: st.channel === 'telegram' ? 'Написать в Telegram' : 'Позвонить', step: 4 },
     ];
@@ -405,7 +405,7 @@ if (wizEl) {
     box.innerHTML = summaryRows().map((r) => `
       <div class="sum-row">
         <span class="sum-label">${r.label}</span>
-        <span class="sum-value">${r.value.replace(/</g, '&lt;')}</span>
+        <span class="sum-value">${r.value.replace(/</g, '&lt;')}${r.note ? ` <span class="sum-note">${r.note}</span>` : ''}</span>
         <button type="button" class="linklike" data-gostep="${r.step}">изменить</button>
       </div>`).join('');
   }
@@ -524,7 +524,7 @@ if (wizEl) {
         const okNo = $('#ok-no'); if (okNo) okNo.textContent = `№ ${j.ticket}`;
         const dup = $('#ok-dup'); if (dup) (dup as HTMLElement).hidden = !j.duplicate;
         const dl = $('#ok-dl');
-        if (dl) dl.innerHTML = summaryRows().map((x) => `<dt>${x.label}</dt><dd>${x.value.replace(/</g, '&lt;')}</dd>`).join('');
+        if (dl) dl.innerHTML = summaryRows().map((x) => `<dt>${x.label}</dt><dd>${x.value.replace(/</g, '&lt;')}${x.note ? ` (${x.note})` : ''}</dd>`).join('');
         safeLS.del(DRAFT_KEY);
         showState('ok');
         track('submit_success', { ticket: j.ticket });
@@ -630,9 +630,9 @@ if (wizEl) {
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//avtotehservis//ru', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
       `UID:${st.idem}@avtotehservis`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `DTSTART:${start}`, `DTEND:${end}`,
-      `SUMMARY:Визит в АвтоТехСервис (заявка ${st.lastTicket ?? ''})`,
+      'SUMMARY:Предварительно: АвтоТехСервис, визит',
       'LOCATION:Ростов-на-Дону, ул. Портовая, 439',
-      `DESCRIPTION:Номер заявки: ${st.lastTicket ?? ''}. Возьмите СТС и ключи; для переобувки — второй комплект колёс.`,
+      `DESCRIPTION:Время предварительное, подтвердим по телефону. Номер заявки: ${st.lastTicket ?? ''}. Возьмите СТС и ключи; для переобувки — второй комплект колёс.`,
       'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:Через 2 часа — визит в автосервис', 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR',
     ].join('\r\n');
