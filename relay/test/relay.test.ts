@@ -33,7 +33,7 @@ function env(over: Partial<Env> = {}): Env {
     ALLOWED_ORIGINS: 'https://sledovatel61.github.io,http://localhost:4321',
     SITE_NAME: 'АвтоТехСервис',
     SITE_ADDRESS: 'Ростов-на-Дону, ул. Портовая, 439',
-    CONSENT_VERSION: '2026-11-18',
+    CONSENT_VERSION: '2026-11-19',
     ...over,
   };
 }
@@ -47,7 +47,7 @@ const booking = (over: Record<string, unknown> = {}): Record<string, unknown> =>
   preferred: { date: null, slot: null, asap: true },
   photos: [],
   consent: true,
-  consent_version: '2026-11-18',
+  consent_version: '2026-11-19',
   page: 'appointment',
   idempotency_key: uuid(),
   honeypot: '',
@@ -194,7 +194,7 @@ test('вопрос с формы контактов: 201 и сообщение �
     phone: '89289065700',
     message: 'Нужна диагностика подвески, стучит справа.',
     consent: true,
-    consent_version: '2026-11-18',
+    consent_version: '2026-11-19',
     page: 'contacts',
     idempotency_key: uuid(),
     honeypot: '',

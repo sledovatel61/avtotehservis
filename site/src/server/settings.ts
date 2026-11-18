@@ -55,7 +55,7 @@ export const DEFAULTS: Settings = {
     { source: '2ГИС', value: '3,6', count: 12, note: 'поисковая выдача на 21.10.2026', url: 'https://2gis.ru/rostov-na-donu/search/АвтоТехСервис%20Портовая%20439' },
     { source: 'Zoon', value: '2,2', count: 1, note: 'поисковая выдача на 21.10.2026', url: 'https://zoon.ru/rostov-na-donu/?query=АвтоТехСервис+Портовая+439' },
   ],
-  consent_version: '2026-11-18',
+  consent_version: '2026-11-19',
   slot_capacity: 2,
   map_link: 'https://yandex.ru/maps/?pt=39.648295,47.193068&z=17&l=map',
   brands: [],
