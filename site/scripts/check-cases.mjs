@@ -42,6 +42,27 @@ function dimensionsFor(photo, width) {
   const scale = Math.min(1, width / Math.max(photo.w, photo.h));
   return { width: Math.max(1, Math.round(photo.w * scale)), height: Math.max(1, Math.round(photo.h * scale)) };
 }
+function sitemapInfo(xml) {
+  const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1].replace(/&amp;/g, '&'));
+  const objects = urls.map((value) => new URL(value));
+  const homePath = objects.map((url) => url.pathname).filter((pathname) => pathname.endsWith('/')).sort((a, b) => a.length - b.length)[0] ?? '/';
+  const basePath = homePath.replace(/\/+$/, '');
+  const route = (value) => {
+    let pathname = decodeURIComponent(new URL(value).pathname);
+    if (basePath && pathname === basePath) pathname = '';
+    else if (basePath && pathname.startsWith(`${basePath}/`)) pathname = pathname.slice(basePath.length);
+    return pathname.replace(/^\/+|\/+$/g, '');
+  };
+  return {
+    urls,
+    route,
+    lastSegment: (value) => route(value).split('/').filter(Boolean).at(-1) ?? '',
+    pagePath: (value, root) => {
+      const pageRoute = route(value);
+      return pageRoute ? join(root, pageRoute, 'index.html') : join(root, 'index.html');
+    },
+  };
+}
 
 async function main() {
   let opt;
@@ -49,6 +70,14 @@ async function main() {
   catch (error) { console.error(error.message); process.exitCode = 2; return; }
 
   const errors = [];
+  let sitemap = sitemapInfo('');
+  try {
+    const xml = await readFile(join(opt.pagesDist, 'sitemap.xml'), 'utf8');
+    sitemap = sitemapInfo(xml);
+    if (!sitemap.urls.length) errors.push(`sitemap.xml пуст: ${join(opt.pagesDist, 'sitemap.xml')}`);
+  } catch (error) {
+    errors.push(`sitemap.xml не найден или не читается: ${error.message}`);
+  }
   let raw;
   try { raw = JSON.parse(await readFile(opt.casesFile, 'utf8')); }
   catch (error) {
@@ -75,6 +104,7 @@ async function main() {
     }
 
     const frames = [...item.before, ...item.after, ...item.photos];
+    if (!frames.length) errors.push(`${item.slug}: у кейса должно быть хотя бы одно фото`);
     if (item.cover) {
       const match = frames.find((photo) => photo.base === item.cover.base);
       if (!match) errors.push(`${item.slug}: cover не ссылается на кадр в before/after/photos`);
@@ -108,8 +138,14 @@ async function main() {
     }
 
     if (item.status === 'draft') {
-      const page = join(opt.pagesDist, 'cases', item.slug, 'index.html');
-      if (await isFile(page)) errors.push(`${item.slug}: черновик появился в pages-dist (${page})`);
+      for (const url of sitemap.urls.filter((value) => sitemap.lastSegment(value) === item.slug)) {
+        const page = sitemap.pagePath(url, opt.pagesDist);
+        if (!(await isFile(page))) continue;
+        const html = await readFile(page, 'utf8');
+        if (html.includes(`/media/cases/${item.slug}/`)) {
+          errors.push(`${item.slug}: черновик опубликован в sitemap/pages-dist по адресу ${url}`);
+        }
+      }
     }
   }
   if (!(await isFile(join(opt.pagesDist, 'index.html')))) errors.push(`pages-dist не найден или не собран: ${opt.pagesDist}`);

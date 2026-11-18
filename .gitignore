@@ -18,8 +18,8 @@ build/
 *.key
 
 # uploads / media (в репозиторий не кладём, живут на сервере)
-uploads/
-media/
+/uploads/
+/media/
 !media/.gitkeep
 
 # backups / dumps

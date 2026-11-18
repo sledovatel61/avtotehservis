@@ -2,10 +2,10 @@
 
 ## Что сделано
 
-- В `site/.gitignore` серверное `site/media/` ограничено корнем, а `site/public/media/` явно исключено из игнорирования. Корневой `.gitignore` не менял.
+- В обоих `.gitignore` серверные каталоги привязаны к корню соответствующего уровня (`/uploads/`, `/media/`). Поэтому `site/public/media/` не попадает под корневое игнорирование; в `site/.gitignore` сохранено правило `/media/` только для серверной `site/media/`.
 - Созданы `site/scripts/check-media-budget.mjs` и `site/scripts/check-cases.mjs`. Оба поддерживают `--json`, возвращают ненулевой код при ошибках; для локальных прогонов можно передать временные пути аргументами.
 - Добавлен `site/tests/photo-pipeline.test.ts`: восемь проверок схемы, адресов фото, обложки, сортировки, лимитов админки, чтения/кэша cases-store и обоих гейтов.
-- Точечно дополнен `site/scripts/check-pages.mjs`: robots noindex и отсутствие `/admin` у `/manage/`, опубликованные кейсы, три ширины `srcset`, запрет старых `ab-case` картинок и присутствие URL в sitemap.
+- Точечно дополнен `site/scripts/check-pages.mjs`: robots noindex и отсутствие `/admin` у `/manage/`, опубликованные работы, три ширины `srcset`, запрет старых `ab-case` картинок и присутствие URL в sitemap. Каталог страницы определяется из sitemap и слага в `cases.json`, без зашитого `/cases/`.
 - Создана инструкция владельцу `docs/16-photo-admin-manual.md` с адресом админки, пятью шагами выпуска токена, двумя сценариями добавления фото, публикацией, лимитами, безопасностью и памяткой по ошибкам.
 
 Не изменялись `site/src/**`, `site/public/manage/**`, `package.json`, lockfile, workflows и `site/content/cases.json`.
@@ -33,7 +33,7 @@
 1. Указанный в задании `docs/15-photo-pipeline.md` отсутствует в ветке preview; вместо него присутствуют `docs/17-photo-admin-dev-notes.md`. Документ №15 не создавал и не переименовывал. Проверить его на расхождения имён/полей невозможно; текущую документацию сверял по `cases-schema.ts`, `cases-store.ts` и файлам админки.
 2. `parseCasesFile` валидирует поля и отбрасывает испорченные фото, но сам не отклоняет межполевое противоречие `mode: single` + кадр в `before`. Админка проверяет режим при сохранении; здесь это дополнительно закрыто `check-cases.mjs` и тестом, запрещённые файлы не менялись.
 3. Константы лимитов в схеме не экспортируются. Тест импортирует `LIMITS` из `site/public/manage/store.js` и сопоставляет их с граничным поведением `parseCasesFile`: title 5–90, description 0–200, alt 3–160, slug 3–60 — совпадают.
-4. В корневом `.gitignore` есть общий шаблон `media/`, поэтому одного `/media/` в `site/.gitignore` недостаточно для `site/public/media`. Добавлены локальные исключения `!public/media/` и `!public/media/**`, корневой файл не тронут. `git check-ignore -q site/public/media/cases/demo/demo-after-960.webp` возвращает 1 (путь не игнорируется); `-v` показывает совпавшее отрицательное правило `!public/media/**`, а не запрещающий шаблон.
+4. Первоначальная проверка показала, что свободный шаблон `media/` корневого `.gitignore` затрагивает `site/public/media`. По решению владельца корневые правила теперь записаны как `/uploads/` и `/media/`; `site/.gitignore` не содержит специальных исключений `public/media`. В результате `git check-ignore -v site/public/media/cases/x/a.webp` ничего не выводит, а `git check-ignore -v media/srv.webp` указывает на корневое правило `/media/`.
 
 ## Проверки
 

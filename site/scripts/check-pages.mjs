@@ -107,13 +107,42 @@ assert.ok(Array.isArray(casesFile.cases), 'cases.json cases must be an array');
 const sitemapPath = join(root, 'sitemap.xml');
 assert.ok(await exists(sitemapPath), 'Missing pages-dist/sitemap.xml');
 const sitemap = await readFile(sitemapPath, 'utf8');
+const sitemapUrls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1].replace(/&amp;/g, '&'));
+assert.ok(sitemapUrls.length, 'sitemap.xml contains no loc entries');
+const sitemapUrlObjects = sitemapUrls.map((value) => new URL(value));
+const homePath = sitemapUrlObjects
+  .map((url) => url.pathname)
+  .filter((pathname) => pathname.endsWith('/'))
+  .sort((a, b) => a.length - b.length)[0] ?? '/';
+const basePath = homePath.replace(/\/+$/, '');
+function routeFromSitemap(value) {
+  let pathname = decodeURIComponent(new URL(value).pathname);
+  if (basePath && pathname === basePath) pathname = '';
+  else if (basePath && pathname.startsWith(`${basePath}/`)) pathname = pathname.slice(basePath.length);
+  return pathname.replace(/^\/+|\/+$/g, '');
+}
+function outputPageForSitemapUrl(value) {
+  const route = routeFromSitemap(value);
+  return route ? join(root, route, 'index.html') : join(root, 'index.html');
+}
+function lastRouteSegment(value) {
+  const route = routeFromSitemap(value);
+  return route.split('/').filter(Boolean).at(-1) ?? '';
+}
 for (const item of casesFile.cases.filter((entry) => entry?.status === 'published')) {
   const slug = String(item.slug ?? '');
   assert.match(slug, /^[a-z0-9-]{3,60}$/, 'Published case must have a safe slug');
-  const file = join(root, 'cases', slug, 'index.html');
-  assert.ok(await exists(file), `Missing published case page: ${file}`);
-  const html = await readFile(file, 'utf8');
-  const dom = new JSDOM(html);
+  const listedUrls = sitemapUrls.filter((value) => lastRouteSegment(value) === slug);
+  assert.ok(listedUrls.length, `${slug}: published work is missing from sitemap.xml`);
+  const candidates = [];
+  for (const value of listedUrls) {
+    const file = outputPageForSitemapUrl(value);
+    if (await exists(file)) candidates.push({ value, file, html: await readFile(file, 'utf8') });
+  }
+  const casePath = `/media/cases/${slug}/`;
+  const page = candidates.find(({ html }) => html.includes(casePath));
+  assert.ok(page, `${slug}: no sitemap-linked page with this work's media was found`);
+  const dom = new JSDOM(page.html);
   const srcsets = [...dom.window.document.querySelectorAll('[srcset]')].map((el) => el.getAttribute('srcset') ?? '');
   const hasThreeWidths = srcsets.some((srcset) => {
     const widths = new Set(srcset.split(',').map((part) => part.trim().match(/(?:^|\s)(480|960|1600)w$/)?.[1]).filter(Boolean));
@@ -127,7 +156,6 @@ for (const item of casesFile.cases.filter((entry) => entry?.status === 'publishe
     }
   }
   dom.window.close();
-  assert.ok(sitemap.includes(`/cases/${slug}`), `${slug}: missing /cases/${slug} in sitemap.xml`);
 }
 
 assert.ok(pages >= 9);

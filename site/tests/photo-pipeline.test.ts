@@ -198,6 +198,7 @@ test('check-cases: сверяет реальные размеры, предуп�
     await mkdir(folder, { recursive: true });
     await mkdir(pagesDist, { recursive: true });
     await writeFile(join(pagesDist, 'index.html'), '<!doctype html><title>test</title>');
+    await writeFile(join(pagesDist, 'sitemap.xml'), '<urlset><url><loc>https://example.test/avtotehservis/</loc></url></urlset>');
     for (const width of [480, 960, 1600]) {
       const height = Math.round(1200 * width / 1600);
       await sharp({ create: { width, height, channels: 3, background: '#456' } }).webp().toFile(join(folder, `abcd-after-${width}.webp`));
@@ -215,12 +216,13 @@ test('check-cases: сверяет реальные размеры, предуп�
     assert.ok(JSON.parse(result.stdout).errors.some((error: string) => error.includes('режим single')));
 
     await writeFile(cases, JSON.stringify(casesFile([siteCase({ status: 'draft' })])));
-    const draftPage = join(pagesDist, 'cases', 'demo-case', 'index.html');
+    const draftPage = join(pagesDist, 'raboty', 'demo-case', 'index.html');
+    await writeFile(join(pagesDist, 'sitemap.xml'), '<urlset><url><loc>https://example.test/avtotehservis/</loc></url><url><loc>https://example.test/avtotehservis/raboty/demo-case/</loc></url></urlset>');
     await mkdir(dirname(draftPage), { recursive: true });
-    await writeFile(draftPage, '<!doctype html>');
+    await writeFile(draftPage, '<!doctype html><img src="/avtotehservis/media/cases/demo-case/abcd-after-480.webp">');
     result = runNode(caseScript, ['--json', '--cases', cases, '--media-dir', media, '--pages-dist', pagesDist]);
     assert.equal(result.status, 1);
-    assert.ok(JSON.parse(result.stdout).errors.some((error: string) => error.includes('черновик появился')));
+    assert.ok(JSON.parse(result.stdout).errors.some((error: string) => error.includes('черновик опубликован')));
     await rm(draftPage);
 
     await writeFile(cases, JSON.stringify(casesFile([siteCase({ after: [photo({ alt: 'Официальный сервис' })] })])));
