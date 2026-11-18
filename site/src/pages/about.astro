@@ -174,7 +174,9 @@ const jsonLd = {
 <section class="sec" aria-labelledby="ab-gal-h">
   <div class="container">
     <div class="sec-head reveal">
-      <div><span class="eyebrow">Работы</span><h2 id="ab-gal-h">{realCases ? 'Кейсы из практики' : 'Примеры кейсов'}</h2></div>
+      {/* m10 (приёмка A9): то же правило, что на главной — иллюстрации подписаны
+          «пример работы», поэтому без реальных кейсов заголовок общий, без слова «кейсы» */}
+      <div><span class="eyebrow">Работы</span><h2 id="ab-gal-h">{realCases ? 'Кейсы из практики' : 'Примеры работ'}</h2></div>
       {/* Стрелки только когда листать есть что: при одной-двух карточках они мертвы */}
       {((realCases ? siteCases.length : cases.length) > 2) && (
         <div class="slider-nav">
