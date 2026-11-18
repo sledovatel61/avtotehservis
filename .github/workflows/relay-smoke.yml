@@ -5,6 +5,11 @@ name: Проверка прослойки заявок (smoke)
 # сайт → Cloudflare Worker → Telegram работает целиком, а не только /health.
 
 on:
+  # Кнопка в Actions доступна, когда файл есть в основной ветке; пока правим
+  # в preview — запускаем правкой самого файла.
+  push:
+    paths:
+      - '.github/workflows/relay-smoke.yml'
   workflow_dispatch:
     inputs:
       endpoint:
