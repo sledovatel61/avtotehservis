@@ -1,0 +1,22 @@
+name = "ats-leads"
+main = "src/index.ts"
+compatibility_date = "2026-11-18"
+workers_dev = true
+
+# Адреса, которым разрешено обращаться к прослойке из браузера.
+# Домен появится позже — добавь его сюда через запятую, когда подключим.
+[vars]
+ALLOWED_ORIGINS = "https://sledovatel61.github.io,http://localhost:4321,http://127.0.0.1:4321"
+SITE_NAME = "АвтоТехСервис"
+SITE_ADDRESS = "Ростов-на-Дону, ул. Портовая, 439"
+CONSENT_VERSION = "2026-11-18"
+
+# Секреты задаются командами (в файле их быть не должно):
+#   npx wrangler secret put BOT_TOKEN
+#   npx wrangler secret put TELEGRAM_CHAT_ID
+
+# Лимиты и идемпотентность. Без KV работают в памяти изолята (сбрасываются при
+# перезапуске). Включается после `npx wrangler kv namespace create ATS_KV`.
+# [[kv_namespaces]]
+# binding = "ATS_KV"
+# id = "ВСТАВИТЬ_ID"

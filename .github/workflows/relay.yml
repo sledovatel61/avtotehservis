@@ -1,0 +1,122 @@
+name: Deploy leads relay
+
+# Прослойка relay/ → Cloudflare Worker + проверка связи с Telegram.
+#
+# Секреты репозитория (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  — токен с шаблоном «Edit Cloudflare Workers»
+#   CLOUDFLARE_ACCOUNT_ID — Account ID из дашборда Cloudflare
+#   BOT_TOKEN             — токен бота от @BotFather
+#   TELEGRAM_CHAT_ID      — id группы заявок (отрицательное число)
+#
+# Запускается сам при изменении relay/ в ветке публикации. В логе и в Summary
+# печатается адрес воркера — его нужно положить в переменную PUBLIC_LEADS_ENDPOINT.
+
+on:
+  push:
+    branches: [preview/github-pages]
+    paths:
+      - 'relay/**'
+      - '.github/workflows/relay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: relay
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: relay
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Tests (сеть подменена, наружу ничего не уходит)
+        run: node --test test/*.test.ts
+
+      # Account ID можно не задавать: если секрета нет, определяем его по токену.
+      - name: Resolve account id
+        id: acct
+        run: |
+          set -e
+          ACC="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          if [ -z "$ACC" ]; then
+            echo "Секрет CLOUDFLARE_ACCOUNT_ID не задан — определяю по токену."
+            ACC=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              https://api.cloudflare.com/client/v4/accounts \
+              | grep -Eo '"id": *"[0-9a-f]{32}"' | head -1 | grep -Eo '[0-9a-f]{32}')
+          fi
+          if [ -z "$ACC" ]; then
+            echo "::error::Не удалось определить Account ID. Задайте секрет CLOUDFLARE_ACCOUNT_ID (дашборд → Manage account → Account home, число в адресной строке)."
+            exit 1
+          fi
+          echo "Account ID: $ACC"
+          echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> "$GITHUB_ENV"
+          echo "account=$ACC" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy worker
+        id: deploy
+        run: |
+          set -e
+          npx wrangler deploy 2>&1 | tee /tmp/deploy.log
+          URL=$(grep -Eo 'https://[a-z0-9-]+\.workers\.dev' /tmp/deploy.log | head -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Адрес прослойки: $URL"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Push secrets to worker
+        run: |
+          set -e
+          printf '%s' "$BOT_TOKEN" | npx wrangler secret put BOT_TOKEN
+          printf '%s' "$TELEGRAM_CHAT_ID" | npx wrangler secret put TELEGRAM_CHAT_ID
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Health check
+        run: |
+          set -e
+          URL="${{ steps.deploy.outputs.url }}"
+          sleep 6
+          curl -sS --fail-with-body --retry 3 --retry-delay 5 "$URL/health" | tee /tmp/health.json
+          echo
+          grep -q '"telegram":true' /tmp/health.json || { echo "::error::Воркер не видит BOT_TOKEN/TELEGRAM_CHAT_ID"; exit 1; }
+
+      - name: Notify group in Telegram
+        run: |
+          set -e
+          curl -sS --fail-with-body -X POST \
+            "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -H 'content-type: application/json' \
+            -d "{\"chat_id\":\"${TELEGRAM_CHAT_ID}\",\"text\":\"Прослойка заявок подключена. Заявки с сайта будут приходить в этот чат.\"}"
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Summary
+        run: |
+          {
+            echo "### Прослойка задеплоена"
+            echo ""
+            echo "Адрес: \`${{ steps.deploy.outputs.url }}\`"
+            echo ""
+            echo "Дальше: Settings → Secrets and variables → Actions → **Variables** →"
+            echo "новая переменная \`PUBLIC_LEADS_ENDPOINT\` со значением этого адреса (без слэша в конце)."
+          } >> "$GITHUB_STEP_SUMMARY"
