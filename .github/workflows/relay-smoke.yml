@@ -1,0 +1,31 @@
+name: Relay smoke (Telegram check)
+
+# Ручная проверка связи: отправляет одно тестовое сообщение в чат заявок.
+# Нужны те же секреты, что и для деплоя: BOT_TOKEN, TELEGRAM_CHAT_ID.
+# Запуск: Actions → Relay smoke (Telegram check) → Run workflow.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send test message
+        run: |
+          set -e
+          if [ -z "$BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "::error::Не заданы секреты BOT_TOKEN и/или TELEGRAM_CHAT_ID"
+            exit 1
+          fi
+          curl -sS --fail-with-body -X POST \
+            "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            -H 'content-type: application/json' \
+            -d "{\"chat_id\":\"${TELEGRAM_CHAT_ID}\",\"text\":\"✅ Проверка связи: бот подключён. Сюда будут приходить заявки с сайта.\",\"disable_notification\":true}"
+          echo "Сообщение отправлено."
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
