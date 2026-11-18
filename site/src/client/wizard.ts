@@ -1,7 +1,12 @@
 /* Мастер записи из 5 экранов — перенос утверждённой логики (122 jsdom-теста) на реальное API:
-   GET /api/slots, POST /api/uploads, POST /api/leads. Черновик в localStorage, идемпотентность,
-   ошибки под полями с фокусом на первое, состояния отправка/успех/ошибка, .ics на клиенте. */
+   POST /api/uploads (только демо), POST заявки. Адреса берутся из shared/leads-endpoint.ts:
+   свой сервер (/api/leads) или прослойка Cloudflare Worker при PUBLIC_LEADS_ENDPOINT.
+   Сервис принимает в порядке живой очереди, поэтому шаг 3 — пожелание клиента: сетку времени
+   рендерит сервер, запросов расписания нет, и сервер не отклоняет заявку из-за часа.
+   Черновик в localStorage, идемпотентность, ошибки под полями с фокусом на первое,
+   состояния отправка/успех/ошибка, .ics на клиенте. */
 import { $, $$, safeLS, track, attachMask, attachVin, reducedMotion } from './lib.ts';
+import { leadsUrl, leadsFetch, retryAfterSeconds, relayMode } from '../shared/leads-endpoint.ts';
 
 const wizEl = $('#wiz');
 if (wizEl) {
@@ -228,6 +233,8 @@ if (wizEl) {
     const item: PhotoItem = { id: null, url: URL.createObjectURL(file), name: file.name, state: 'uploading' };
     st.photos.push(item);
     renderPhotos();
+    /* демо: загрузка идёт на /api/uploads, которого в статике нет — fetch не делаем */
+    if (isDemo()) { item.state = 'done'; return; }
     const fd = new FormData();
     fd.append('file', file);
     fetch('/api/uploads', { method: 'POST', body: fd })
@@ -254,7 +261,6 @@ if (wizEl) {
   /* ---------- шаг 3: дата и слоты ---------- */
   const cal = $('#cal');
   const slotsBox = $('#slots');
-  const slotTitle = $('#slot-title');
   const asapBtn = $<HTMLButtonElement>('#asap-btn');
   const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
   const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -286,46 +292,36 @@ if (wizEl) {
     asapBtn?.classList.remove('is-on');
     asapBtn?.setAttribute('aria-pressed', 'false');
     renderCal();
-    void loadSlots();
+    syncSlots();
     setErrAt('when-err-anchor', '');
     saveDraftSoon();
   });
-  async function loadSlots(): Promise<void> {
-    if (!slotsBox || !st.date) return;
-    slotsBox.innerHTML = '<p class="hint">Загружаем свободное время…</p>';
-    if (slotTitle) slotTitle.textContent = 'Время визита — выберите дату';
-    try {
-      const r = await fetch(`/api/slots?date=${st.date}`);
-      const j = await r.json() as { slots?: { time: string; available: boolean; reason?: string }[] };
-      renderSlots(j.slots ?? []);
-    } catch {
-      slotsBox.innerHTML = '<p class="hint">Не удалось получить расписание. Повторите попытку или позвоните нам.</p>';
-    }
-  }
-  function renderSlots(slots: { time: string; available: boolean; reason?: string }[]): void {
+  /* Сетку времени рендерит сервер (SLOT_TIMES в src/server/slots.ts). Клиент только
+     подсвечивает выбранный час: никаких запросов расписания — шаг 3 проходится без сети. */
+  function syncSlots(): void {
     if (!slotsBox) return;
-    slotsBox.innerHTML = slots.map((s) => {
-      const on = st.slot === s.time && st.date;
-      return `<button type="button" class="slot${on ? ' is-on' : ''}" data-slot="${s.time}"${s.available ? '' : ' disabled'} aria-label="${s.time}${s.available ? '' : ` — ${s.reason ?? 'занято'}`}">${s.time}</button>`;
-    }).join('');
-    if (slotTitle) slotTitle.textContent = `Время визита на ${st.date ? st.date.split('-').reverse().join('.') : ''}`;
+    for (const b of $$<HTMLButtonElement>('.slot[data-slot]', slotsBox)) {
+      const on = !!st.date && !st.asap && st.slot === b.getAttribute('data-slot');
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', String(on));
+      b.disabled = false;
+    }
   }
   slotsBox?.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-slot]') as HTMLButtonElement | null;
-    if (!b || b.disabled) return;
+    if (!b) return;
     st.slot = b.getAttribute('data-slot');
     st.asap = false;
     asapBtn?.classList.remove('is-on');
     asapBtn?.setAttribute('aria-pressed', 'false');
-    $$('.slot', slotsBox).forEach((x) => x.classList.remove('is-on'));
-    b.classList.add('is-on');
+    syncSlots();
     setErrAt('when-err-anchor', '');
     saveDraftSoon();
   });
   asapBtn?.addEventListener('click', () => {
     st.asap = !st.asap;
-    if (st.asap) { st.date = null; st.slot = null; renderCal(); if (slotsBox) slotsBox.innerHTML = '<p class="hint">Приедем к ближайшему свободному времени — перезвоним и согласуем.</p>'; if (slotTitle) slotTitle.textContent = 'Время визита'; }
-    else { if (slotsBox) slotsBox.innerHTML = '<p class="hint">Выберите дату на ленте выше.</p>'; }
+    if (st.asap) { st.date = null; st.slot = null; renderCal(); }
+    syncSlots();
     asapBtn.classList.toggle('is-on', st.asap);
     asapBtn.setAttribute('aria-pressed', String(st.asap));
     setErrAt('when-err-anchor', '');
@@ -375,8 +371,9 @@ if (wizEl) {
     }
     if (n === 3) {
       if (!st.asap && !(st.date && st.slot)) {
-        setErrAt('when-err-anchor', 'Выберите дату и время или нажмите «Как можно скорее»');
-        if (!firstBad) firstBad = cal ?? null;
+        setErrAt('when-err-anchor', 'Выберите желаемый день и время или нажмите «Как можно скорее»');
+        /* фокус — на первый день ленты, а не в пустоту */
+        if (!firstBad) firstBad = (cal?.querySelector('button[data-date]') as HTMLElement | null) ?? cal ?? null;
       }
     }
     if (n === 4) {
@@ -390,7 +387,7 @@ if (wizEl) {
   }
 
   /* ---------- сводка ---------- */
-  function summaryRows(): { label: string; value: string; step: number }[] {
+  function summaryRows(): { label: string; value: string; note?: string; step: number }[] {
     const car = [st.brand, st.model, st.year ? `${st.year} г.` : '', st.mileage && !st.milSkip ? `${Number(st.mileage).toLocaleString('ru-RU')} км` : '', st.vin && !st.vinSkip ? `VIN ${st.vin}` : ''].filter(Boolean).join(', ');
     const chipLabels = new Map($$<HTMLInputElement>('input[name="svc"]', wiz).map((i) => [i.value, i.closest('.chip')?.querySelector('span')?.textContent ?? i.value]));
     const svc = st.dontknow ? 'Не знаю — нужна диагностика' : st.services.map((s) => chipLabels.get(s) ?? s).join(', ');
@@ -399,7 +396,7 @@ if (wizEl) {
       { label: 'Автомобиль', value: car || '—', step: 1 },
       { label: 'Услуги', value: svc || '—', step: 2 },
       { label: 'Фото', value: st.photos.length ? `${st.photos.filter((p) => p.state === 'done').length} файл(ов)` : 'не прикрепляли', step: 2 },
-      { label: 'Когда', value: when, step: 3 },
+      { label: 'Желаемое время', value: when, note: 'подтвердим по телефону', step: 3 },
       { label: 'Имя и телефон', value: `${st.name}, ${st.phone}`, step: 4 },
       { label: 'Связь', value: st.channel === 'telegram' ? 'Написать в Telegram' : 'Позвонить', step: 4 },
     ];
@@ -410,7 +407,7 @@ if (wizEl) {
     box.innerHTML = summaryRows().map((r) => `
       <div class="sum-row">
         <span class="sum-label">${r.label}</span>
-        <span class="sum-value">${r.value.replace(/</g, '&lt;')}</span>
+        <span class="sum-value">${r.value.replace(/</g, '&lt;')}${r.note ? ` <span class="sum-note">${r.note}</span>` : ''}</span>
         <button type="button" class="linklike" data-gostep="${r.step}">изменить</button>
       </div>`).join('');
   }
@@ -433,7 +430,8 @@ if (wizEl) {
       },
       services: st.dontknow ? ['diagnostika'] : [...st.services],
       preferred: { date: st.asap ? null : st.date, slot: st.asap ? null : st.slot, asap: st.asap },
-      photos: st.photos.filter((p) => p.state === 'done' && p.id).map((p) => p.id),
+      /* в режиме прослойки фото не загружаются — блок скрыт в разметке, массив пустой */
+      photos: relayMode ? [] : st.photos.filter((p) => p.state === 'done' && p.id).map((p) => p.id),
       consent: st.consent,
       consent_version: CONSENT_VERSION,
       page: 'appointment',
@@ -469,14 +467,49 @@ if (wizEl) {
   const stateSending = $('#state-sending');
   const stateOk = $('#state-ok');
   const stateErr = $('#state-err');
-  function showState(which: 'form' | 'sending' | 'ok' | 'err'): void {
+  const stateDemo = $('#state-demo');
+  /* Задание 80-2 §5: в статике (Pages) <body data-demo="1"> — витрина: заявку никуда
+     не отправляем, показываем экран «Демо-версия». Если включена прослойка (relayMode),
+     она важнее: там заявка настоящая. В dev атрибута нет — поведение прежнее. */
+  const isDemo = (): boolean => document.body.dataset.demo === '1' && !relayMode;
+  function showState(which: 'form' | 'sending' | 'ok' | 'err' | 'demo'): void {
     // display переключается через CSSOM (CSP style-src 'self' это разрешает)
     if (wizStepsBox) wizStepsBox.style.display = which === 'form' ? '' : 'none';
     if (wizFoot) wizFoot.style.display = which === 'form' ? '' : 'none';
-    for (const el of [stateSending, stateOk, stateErr]) el?.classList.remove('is-on');
+    for (const el of [stateSending, stateOk, stateErr, stateDemo]) el?.classList.remove('is-on');
     if (which === 'sending') stateSending?.classList.add('is-on');
     if (which === 'ok') stateOk?.classList.add('is-on');
     if (which === 'err') stateErr?.classList.add('is-on');
+    if (which === 'demo') stateDemo?.classList.add('is-on');
+  }
+
+  /* 429: кнопку «Повторить отправку» держим заблокированной до конца Retry-After */
+  const errRetryBtn = $<HTMLButtonElement>('#err-retry');
+  const RETRY_LABEL = errRetryBtn?.textContent ?? 'Повторить отправку';
+  const ERR_TEXT_DEFAULT = $('#err-text')?.textContent ?? 'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.';
+  let retryTimer: ReturnType<typeof setInterval> | null = null;
+  function blockRetry(seconds: number): void {
+    if (!errRetryBtn) return;
+    if (retryTimer) clearInterval(retryTimer);
+    let left = Math.max(1, Math.round(seconds));
+    const tick = (): void => {
+      if (left <= 0) {
+        errRetryBtn.disabled = false;
+        errRetryBtn.textContent = RETRY_LABEL;
+        if (retryTimer) clearInterval(retryTimer);
+        retryTimer = null;
+        return;
+      }
+      errRetryBtn.disabled = true;
+      errRetryBtn.textContent = `Повторить через ${left} с`;
+      left -= 1;
+    };
+    tick();
+    retryTimer = setInterval(tick, 1000);
+  }
+  function releaseRetry(): void {
+    if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+    if (errRetryBtn) { errRetryBtn.disabled = false; errRetryBtn.textContent = RETRY_LABEL; }
   }
 
   async function submit(): Promise<void> {
@@ -484,34 +517,35 @@ if (wizEl) {
     const first = validateStep(4, true);
     if (first) { goStep(4); try { first.focus(); } catch { /* ignore */ } return; }
     track('submit_attempt');
+    releaseRetry();
+    if (isDemo()) { showState('demo'); track('submit_demo'); return; }
     showState('sending');
     try {
-      const r = await fetch('/api/leads', {
+      const r = await leadsFetch(leadsUrl('leads'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildPayload()),
       });
       const j = await r.json().catch(() => null) as Record<string, unknown> | null;
-      if (r.status === 201 && j && typeof j.ticket === 'string') {
+      /* Контракт 80-1: 201 от прослойки и 200 от Telegram-бота — одинаковый экран успеха. */
+      if ((r.status === 201 || r.status === 200) && j && typeof j.ticket === 'string') {
         st.lastTicket = j.ticket;
         const okNo = $('#ok-no'); if (okNo) okNo.textContent = `№ ${j.ticket}`;
         const dup = $('#ok-dup'); if (dup) (dup as HTMLElement).hidden = !j.duplicate;
         const dl = $('#ok-dl');
-        if (dl) dl.innerHTML = summaryRows().map((x) => `<dt>${x.label}</dt><dd>${x.value.replace(/</g, '&lt;')}</dd>`).join('');
+        if (dl) dl.innerHTML = summaryRows().map((x) => `<dt>${x.label}</dt><dd>${x.value.replace(/</g, '&lt;')}${x.note ? ` (${x.note})` : ''}</dd>`).join('');
         safeLS.del(DRAFT_KEY);
         showState('ok');
         track('submit_success', { ticket: j.ticket });
         return;
       }
-      if (r.status === 409 && j?.error) {
-        // слот заняли — возвращаем на шаг 3 и перерисовываем слоты
-        goStep(3);
-        showState('form');
-        setErrAt('when-err-anchor', String((j.error as { message?: string }).message ?? 'Выбранное время занято — выберите другой слот'));
-        const slots = (j.error as { slots?: { time: string; available: boolean; reason?: string }[] }).slots;
-        st.slot = null;
-        if (slots && st.date) renderSlots(slots);
-        track('submit_error', { code: 'slot_taken' });
+      if (r.status === 429) {
+        const wait = retryAfterSeconds(r.headers.get('retry-after')) ?? 60;
+        showState('err');
+        const p = $('#err-text');
+        if (p) p.textContent = 'Слишком много заявок с вашего адреса. Повторите позже или позвоните нам.';
+        blockRetry(wait);
+        track('submit_error', { code: 'too_many', retry_after: wait });
         return;
       }
       if (r.status === 400 && j?.error) {
@@ -556,7 +590,18 @@ if (wizEl) {
     if (firstEl) { try { firstEl.focus(); } catch { /* ignore */ } }
   }
   submitBtn?.addEventListener('click', () => { void submit(); });
-  $('#err-retry')?.addEventListener('click', () => { showState('form'); goStep(5); });
+  $('#err-retry')?.addEventListener('click', () => {
+    if (retryTimer) return; // ещё идёт блокировка после 429
+    releaseRetry();
+    const p = $('#err-text');
+    if (p) p.textContent = ERR_TEXT_DEFAULT;
+    showState('form');
+    goStep(5);
+  });
+  $('#demo-again')?.addEventListener('click', () => {
+    showState('form');
+    goStep(1);
+  });
   $('#ok-again')?.addEventListener('click', () => {
     st = freshSt();
     if (fBrand) fBrand.value = ''; if (fModel) fModel.value = '';
@@ -588,9 +633,9 @@ if (wizEl) {
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//avtotehservis//ru', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
       `UID:${st.idem}@avtotehservis`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `DTSTART:${start}`, `DTEND:${end}`,
-      `SUMMARY:Визит в АвтоТехСервис (заявка ${st.lastTicket ?? ''})`,
+      'SUMMARY:Предварительно: АвтоТехСервис, визит',
       'LOCATION:Ростов-на-Дону, ул. Портовая, 439',
-      `DESCRIPTION:Номер заявки: ${st.lastTicket ?? ''}. Возьмите СТС и ключи; для переобувки — второй комплект колёс.`,
+      `DESCRIPTION:Время предварительное, подтвердим по телефону. Номер заявки: ${st.lastTicket ?? ''}. Возьмите СТС и ключи; для переобувки — второй комплект колёс.`,
       'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:Через 2 часа — визит в автосервис', 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR',
     ].join('\r\n');
@@ -639,7 +684,7 @@ if (wizEl) {
     $$<HTMLInputElement>('input[name="channel"]').forEach((r) => { r.checked = r.value === st.channel; });
     syncSkips(); restoreChips(); renderPhotos(); renderCal();
     if (st.asap) { asapBtn?.classList.add('is-on'); asapBtn?.setAttribute('aria-pressed', 'true'); }
-    if (st.date && !st.asap) void loadSlots();
+    syncSlots();
     if (PRESELECT && !st.services.length && !st.dontknow) {
       const cb = $<HTMLInputElement>(`#svc-chips input[value="${CSS.escape(PRESELECT)}"]`);
       if (cb) { cb.checked = true; st.services.push(PRESELECT); }

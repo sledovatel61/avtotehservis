@@ -29,6 +29,12 @@
 }
 @media (max-width:640px){
   body{font-size:16px}
+  /* задание 80-2 §3.1: согласие на 390 — подпись не обрезается, ссылки переносятся,
+     кликабельная область не меньше 44 px */
+  .consent-row{padding:12px;gap:10px}
+  .consent-row input{width:24px;height:24px}
+  .consent-row label{min-height:44px;display:block;padding:8px 0}
+  .consent-row .hint{font-size:12.5px}
   .fields{grid-template-columns:1fr}
   .feats{grid-template-columns:1fr}
   .facts{grid-template-columns:1fr}
