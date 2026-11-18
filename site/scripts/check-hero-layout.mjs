@@ -238,12 +238,12 @@ await (async () => {
   const hdr = readFileSync(join(HERE, '../src/styles/header.css'), 'utf8');
   for (const [name, re] of [
     ['.nav a{white-space:nowrap}', /\.nav a\{white-space:nowrap\}/],
-    ['1024–1199: подпись логотипа и цифры телефона скрыты', /@media \(min-width:1024px\) and \(max-width:1199px\)\{(?=[^}]*\})[\s\S]*?\.logo-t b\{display:none\}[\s\S]*?\.hdr-phone span\{display:none\}/],
-    ['1024–1199: меню уплотнено (8px 6px, 13.5px)', /@media \(min-width:1024px\) and \(max-width:1199px\)\{[\s\S]*?\.nav a\{padding:8px 6px;font-size:13\.5px\}/],
-    ['1200–1279: цифры скрыты, меню плотнее', /@media \(min-width:1200px\) and \(max-width:1279px\)\{[\s\S]*?\.hdr-phone span\{display:none\}[\s\S]*?\.nav a\{padding:8px 7px;font-size:14px\}/],
-    ['1280–1359: меню плотнее, цифры на месте', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.nav a\{padding:8px 7px;font-size:13\.5px\}/],
-    ['1280–1359: подпись логотипа скрыта', /@media \(min-width:1280px\) and \(max-width:1359px\)\{[\s\S]*?\.logo-t b\{display:none\}/],
-    ['1360–1439: шапка плотнее, цифры на месте', /@media \(min-width:1360px\) and \(max-width:1439px\)\{[\s\S]*?\.nav a\{padding:9px 9px;font-size:14px\}/],
+    ['шапка тянется по окну, а не по контейнеру 1200', /\.hdr-in,\.hdr-wrap\{[^}]*max-width:var\(--hdr-max\)[^}]*padding-inline:clamp\(20px,3vw,48px\)/],
+    ['1024–1199: подпись логотипа и телефон скрыты', /@media \(min-width:1024px\) and \(max-width:1199px\)\{(?=[^}]*\})[\s\S]*?\.logo-t b\{display:none\}[\s\S]*?\.hdr-phone\{display:none\}/],
+    ['1024–1199: меню уплотнено (6px 4px, 13.5px)', /@media \(min-width:1024px\) and \(max-width:1199px\)\{[\s\S]*?\.nav a\{padding:6px 4px;font-size:13\.5px\}/],
+    ['1200–1359: цифры телефона скрыты', /@media \(min-width:1200px\) and \(max-width:1359px\)\{[\s\S]*?\.hdr-phone span\{display:none\}/],
+    ['пункты меню крупнеют по clamp, а не прыгают', /\.nav a\{[^}]*font-size:clamp\(13\.5px,calc\(\.625vw \+ 5px\),15\.5px\)/],
+    ['логотип крупнеет по clamp', /\.logo img\{[^}]*width:clamp\(62px,4\.4vw,88px\)/],
   ]) chk('шапка: ' + name, re.test(hdr), re.test(hdr) ? 'есть' : 'нет', 'есть');
   /* 3c. короткие экраны и неон */
   /* раунд 15 / приёмка: на коротком ландшафте контролы больше не в потоке, а в правом

@@ -5,37 +5,72 @@
   border-bottom:1px solid var(--line);
   transition:padding var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease);
 }
-.hdr-in{display:flex;align-items:center;gap:14px;padding-top:14px;padding-bottom:14px;transition:padding var(--t-mid) var(--ease)}
+/* круг 81: шапка больше не сидит в контейнере 1200 px. У неё своя ширина
+   --hdr-max (1800 px) и боковые поля clamp(20…48px), поэтому на 1920 она занимает
+   ~94 % окна, на 2560 — 70 %. Текст секций остаётся в 1200 px: расширяем только
+   шапку и демо-плашку над ней, иначе длинные строки станут нечитаемыми. */
+.hdr-in,.hdr-wrap{
+  max-width:var(--hdr-max);
+  margin-inline:auto;
+  padding-inline:clamp(20px,3vw,48px);
+}
+.hdr-in{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:clamp(8px,1vw,24px);
+  /* вертикальные поля ужимаются ровно настолько, насколько вырос логотип:
+     36 − 1.359vw держит полосу в 72 px, пока логотип ≤ 71 px (до 1620), и
+     отпускает её до 74 px только там, где логотип уже 88 px. Первый экран
+     не съезжает (--hdr:96px), компакт-режим по-прежнему её уменьшает. */
+  padding-top:clamp(9px,calc(36px - 1.359vw),14px);
+  padding-bottom:clamp(9px,calc(36px - 1.359vw),14px);
+  transition:padding var(--t-mid) var(--ease);
+}
 .hdr.is-compact .hdr-in{padding-top:8px;padding-bottom:8px}
 .logo{display:flex;align-items:center;gap:10px;color:var(--ivory);flex-shrink:0}
 .logo:hover{color:var(--ivory)}
-.logo img{width:68px;height:42px;transition:transform var(--t-mid) var(--ease)}
+.logo img{
+  width:clamp(62px,4.4vw,88px);height:auto;aspect-ratio:68/42;
+  transition:transform var(--t-mid) var(--ease);
+}
 .hdr.is-compact .logo img{transform:scale(.86)}
-.logo-t{font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:-.01em;line-height:1.1}
-.logo-t b{display:block;font-family:var(--font-text);font-weight:400;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--mist);margin-top:3px}
-.nav{margin-left:auto}
+.logo-t{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(16px,calc(.335vw + 12.57px),19px);
+  letter-spacing:-.01em;line-height:1.1;
+}
+.logo-t b{
+  display:block;font-family:var(--font-text);font-weight:400;
+  font-size:clamp(10px,calc(.2vw + 7.95px),11px);
+  letter-spacing:.04em;text-transform:uppercase;color:var(--mist);margin-top:3px;
+}
+/* меню центрируется между логотипом и контактами — на широких экранах
+   расстояние распределяется, а не сбивается вправо */
+.nav{margin-inline:auto}
 /* раунд 15: пункты меню не ломаются на две строки (скрин g: 1212 px) */
 .nav a{white-space:nowrap}
-.nav ul{display:flex;gap:2px}
+.nav ul{display:flex;gap:clamp(0px,.2vw,6px)}
 .nav a{
-  display:block;padding:8px 7px;border-radius:8px;color:var(--mist);
-  font-size:13.5px;font-weight:500;letter-spacing:.01em;min-height:44px;
-  display:flex;align-items:center;
+  display:flex;align-items:center;border-radius:8px;color:var(--mist);
+  padding:clamp(6px,.55vw,11px) clamp(4px,.55vw,12px);
+  font-size:clamp(13.5px,calc(.625vw + 5px),15.5px);
+  font-weight:500;letter-spacing:0;min-height:44px;
   transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
 }
 .nav a:hover{color:var(--ivory);background:rgba(224,169,109,.08)}
 .nav a.is-active{color:var(--brass);background:rgba(224,169,109,.1)}
 .nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:6px}
-/* круг 27 (приёмка A6 major 4.2): логотип 68×42 + подпись + 6 пунктов меню + телефон + CTA
-   обязаны укладываться в 1200 px контента .hdr-in на 1360–1440+ без выхода за контейнер */
-.hdr-cta{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.hdr-cta .btn{padding:10px 14px;font-size:12.5px}
+.hdr-cta{display:flex;align-items:center;gap:clamp(8px,.4vw,12px);flex-shrink:0}
+.hdr-cta .btn{
+  padding:clamp(9px,.5vw,12px) clamp(12px,.9vw,18px);
+  font-size:clamp(12.5px,calc(.35vw + 8.9px),14px);
+}
 .hdr-phone{
-  font-weight:700;font-size:14.5px;color:var(--ivory);white-space:nowrap;
-  display:flex;align-items:center;gap:6px;min-height:44px;
+  font-weight:700;font-size:clamp(14.5px,calc(.3vw + 11.7px),17px);
+  color:var(--ivory);white-space:nowrap;
+  display:flex;align-items:center;gap:clamp(6px,.1vw,8px);min-height:44px;
 }
 .hdr-phone:hover{color:var(--brass)}
-.hdr-phone svg{width:17px;height:17px;stroke:var(--brass)}
+.hdr-phone svg{width:clamp(17px,.2vw + 15px,19px);height:clamp(17px,.2vw + 15px,19px);stroke:var(--brass)}
 .burger{
   display:none;width:48px;height:48px;border-radius:10px;border:1px solid var(--line);
   background:transparent;cursor:pointer;position:relative;flex-shrink:0;
@@ -73,41 +108,39 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
 .m-menu-contacts a{font-weight:500;font-size:17px;min-height:44px;display:flex;align-items:center;gap:10px}
 .m-menu-contacts .tel{font-size:22px;font-weight:700;color:var(--ivory)}
 
-/* РАУНД 15 / патч оркестратора. nowrap у пунктов вернул меню в одну строку (жалоба `g`),
-   но шапка перестала влезать в окно: «Записаться» обрезалась краем (A6: +83 px на 1024,
-   +60 на 1217, +74 на 1280, +31 на 1366). Ширину считали по метрикам Golos Text (fontTools):
-   пункты меню 448 px при 14.5 — самый дорогой блок шапки, поэтому на 1024–1199 убираем
-   подпись под логотипом и цифры телефона (они есть в док-панели, мобильном меню, футере
-   и на «Контактах»), а меню уплотняем. С 1200 подпись возвращается, с 1280 — цифры. */
+/* ---------- Десктоп: 1024 px и шире ----------
+   Раньше здесь лежали пять «патчей» кругов 15/27/29, перекрывавших друг друга
+   ради того, чтобы семь-восемь пунктов меню влезали в 1200 px. Теперь ширину
+   даёт --hdr-max, а размеры растут через clamp. Остались только два режима
+   экономии: на 1024–1199 убираем подпись логотипа и телефон целиком, на
+   1200–1279 показываем подпись, но прячем цифры телефона (трубка остаётся
+   ссылкой tel:). С 1280 всё на месте. Порог 1280 измерен: на 1200 с цифрами
+   шапке нужно 1138 px при доступных 1128. */
 @media (min-width:1024px) and (max-width:1199px){
-  .hdr-in{gap:16px}
-  .hdr-cta{gap:12px}
+  .hdr-in{gap:8px}
+  .logo img{width:62px}
   .logo-t b{display:none}
-  .hdr-phone span{display:none}
-  .nav ul{gap:2px}
-  .nav a{padding:8px 6px;font-size:13.5px}
-}
-@media (min-width:1200px) and (max-width:1279px){
-  .hdr-in{gap:16px}
-  .hdr-cta{gap:12px}
-  .hdr-phone span{display:none}
-  .nav ul{gap:2px}
-  .nav a{padding:8px 7px;font-size:14px}
-}
-@media (min-width:1280px) and (max-width:1359px){
-  .hdr-in{gap:16px}
-  .hdr-cta{gap:12px}
-  .logo-t b{display:none}
-  .nav ul{gap:2px}
-  .nav a{padding:8px 7px;font-size:13.5px}
-}
-@media (min-width:1360px) and (max-width:1439px){
-  .hdr-in{gap:12px}
+  .hdr-phone{display:none}
+  .nav ul{gap:0}
+  .nav a{padding:6px 4px;font-size:13.5px}
+  .logo-t{font-size:15.5px}
   .hdr-cta{gap:10px}
-  .logo-t b{display:none}
-  .nav ul{gap:2px}
-  .nav a{padding:9px 9px;font-size:14px}
+  .hdr-cta .btn{padding:10px 11px;font-size:12.5px}
 }
+@media (min-width:1200px) and (max-width:1359px){
+  .hdr-in{gap:10px}
+  .hdr-phone span{display:none}
+  .nav ul{gap:0}
+  .nav a{padding:6px 6px;font-size:13.5px}
+  .hdr-cta{gap:10px}
+}
+
+/* круг 28: пункт «Voyah Free» — холодная точка-маркер, чтобы раздел
+   отличался от «Контактов», но не спорил с латунью CTA */
+.nav .nav-voyah a{position:relative;padding-left:clamp(14px,1vw,18px)}
+.nav .nav-voyah a::before{content:'';position:absolute;left:5px;top:50%;width:5px;height:5px;
+  margin-top:-2.5px;border-radius:50%;background:#EAF2FF;box-shadow:0 0 8px rgba(234,242,255,.9)}
+.nav .nav-voyah a.is-active::before{background:#fff}
 
 /* РАУНД 15 / патч оркестратора: на телефоне шапка была шире окна (рендер: .burger
    x 363…411 при clientWidth 360, scrollWidth 411). Подпись под логотипом — 196 px,
@@ -116,7 +149,7 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
   .logo-t b{display:none}
   .hdr-in{gap:14px}
   .logo{gap:10px}
-  .logo img{width:58px;height:36px}
+  .logo img{width:58px}
   .logo-t{font-size:16px}
   .burger{width:44px;height:44px}
   .burger span{left:11px;right:11px}
@@ -129,44 +162,5 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
 @media (max-width:380px){
   .hdr-in{gap:10px}
   .logo-t{font-size:15px}
-  .logo img{width:52px;height:32px}
-}
-
-/* круг 28: седьмой пункт «Voyah Free» — холодная точка-маркер, чтобы раздел
-   отличался от «Контактов», но не спорил с латунью CTA */
-.nav .nav-voyah a{position:relative;padding-left:16px}
-.nav .nav-voyah a::before{content:'';position:absolute;left:5px;top:50%;width:5px;height:5px;
-  margin-top:-2.5px;border-radius:50%;background:#EAF2FF;box-shadow:0 0 8px rgba(234,242,255,.9)}
-.nav .nav-voyah a.is-active::before{background:#fff}
-@media (min-width:1024px) and (max-width:1199px){
-  .hdr-phone{display:none}
-  .hdr-in{gap:8px}
-  .nav ul{gap:0}
-  .nav a{padding:8px 5px;font-size:13.5px}
-  .hdr-cta .btn{padding:10px 12px}
-  .logo img{width:62px;height:38px}
-}
-@media (min-width:1200px) and (max-width:1279px){
-  .nav a{padding:8px 6px;font-size:13.5px}
-}
-
-/* круг 29 (S2, рецидив мажора к27): седьмой пункт «Voyah Free» снова вытолкнул
-   «Записаться» за контейнер — +39 px на 1440/1920, +50 на 1366, +12 на 1280.
-   Седьмой пункт оставлен (требование владельца), поэтому шапка уплотняется:
-   горизонтальные паддинги пунктов, промежутки, логотип и кнопка. Проверяется
-   на 1024…1920 с шагом 16 px — scripts/check-voyah-layout.mjs. */
-@media (min-width:1200px){
-  .hdr-in{gap:10px}
-  .nav ul{gap:0}
-  .nav a{padding:8px 6px;font-size:13.5px;letter-spacing:0}
-  .logo img{width:62px;height:38px}
-  .hdr-cta{gap:8px}
-  .hdr-cta .btn{padding:10px 12px}
-  .hdr-phone{font-size:14px;gap:5px}
-  .nav .nav-voyah a{padding-left:14px}
-  .nav .nav-voyah a::before{left:4px}
-}
-@media (min-width:1360px){
-  .hdr-in{gap:12px}
-  .nav a{padding:8px 7px;font-size:13.5px}
+  .logo img{width:52px}
 }
