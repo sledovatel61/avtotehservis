@@ -132,8 +132,10 @@
 .side-tel{font-family:var(--font-display);font-weight:600;font-size:18px;color:var(--ivory)}
 
 /* ---------- Контакты ---------- */
-/* Задание 80-2 §4: правая колонка не сжимается — телефон и Telegram в одну строку,
-   высота карточки по содержимому, а не по высоте формы. */
+/* Задание 80-2 §4: правая колонка не сжимается (minmax(0,1fr) / minmax(300px,340px)),
+   высота карточки по содержимому, а не по высоте формы.
+   Телефон и Telegram идут каждая своей строкой карточки (.svc-side — grid с gap:14);
+   внутри строки номер не переносится (white-space:nowrap у .svc-side-tel). */
 .contacts-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,340px);gap:44px;align-items:start}
 /* до 1100 px — одна колонка; minmax(0,1fr) обязателен: иначе min-content ленты дат
    (14 дней, шаг 3) распирает колонку и форма вылезает за экран на 390/768 */

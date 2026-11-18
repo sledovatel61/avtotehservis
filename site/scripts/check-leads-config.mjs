@@ -116,13 +116,15 @@ if (!chunk) {
     const urlFn = values.find((v) => typeof v === 'function' && v.length === 2
       && typeof v('leads') === 'string' && String(v('leads')).endsWith('/leads'));
     const leads = urlFn ? String(urlFn('leads')) : '';
-    const slots = urlFn ? String(urlFn('slots', 'date=2026-10-21')) : '';
+    /* N4 (приёмка 80-3): дата-фикстура всегда в окне 14 дней, а не литерал, который истечёт */
+    const probeDate = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const slots = urlFn ? String(urlFn('slots', `date=${probeDate}`)) : '';
     if (!urlFn) bad('в собранном модуле не нашлась функция адреса заявок');
     if (wantRelay && !conf.error) {
       if (relayFlag !== true) bad('в собранном модуле relayMode = false, хотя адрес задан');
       if (leads !== `${conf.base}/leads`) bad(`заявки уходят не туда: «${leads}» вместо «${conf.base}/leads»`);
-      if (slots !== `${conf.base}/slots?date=2026-10-21`) bad(`слоты запрашиваются не там: «${slots}»`);
-      if (leads === `${conf.base}/leads`) ok(`клиент шлёт заявки по ${leads}, слоты по ${slots}`);
+      if (slots !== `${conf.base}/slots?date=${probeDate}`) bad(`адрес слотов собирается не там: «${slots}»`);
+      if (leads === `${conf.base}/leads`) ok(`клиент шлёт заявки по ${leads}; /api/slots — совместимость, клиент его не вызывает`);
       for (const f of js) {
         const text = texts.get(f) ?? '';
         if (text.includes('/api/leads') || text.includes('/api/slots')) bad(`в ${rel(f)} остался адрес своего сервера (/api/leads или /api/slots)`);
@@ -133,8 +135,8 @@ if (!chunk) {
     } else {
       if (relayFlag !== false) bad('в демо-сборке relayMode = true');
       if (leads !== '/api/leads') bad(`демо-форма шлёт не на /api/leads: «${leads}»`);
-      if (slots !== '/api/slots?date=2026-10-21') bad(`демо-слоты запрашиваются не с /api/slots: «${slots}»`);
-      if (leads === '/api/leads' && slots.startsWith('/api/slots')) ok('клиент шлёт заявки на /api/leads, слоты на /api/slots');
+      if (slots !== `/api/slots?date=${probeDate}`) bad(`адрес слотов собирается не с /api/slots: «${slots}»`);
+      if (leads === '/api/leads' && slots.startsWith('/api/slots')) ok('клиент шлёт заявки на /api/leads; /api/slots — совместимость, клиент его не вызывает');
       /* «нигде нет» — по всем текстовым файлам pages-dist, а не только по JS */
       const anyEndpoint = [...texts.keys()].filter((f) => /https:\/\/[a-z0-9.-]+\.workers\.dev/i.test(texts.get(f) ?? ''));
       if (anyEndpoint.length) bad(`в демо-сборке найден адрес прослойки: ${anyEndpoint.map(rel).join(', ')}`);
