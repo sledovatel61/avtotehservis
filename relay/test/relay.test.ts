@@ -68,10 +68,12 @@ test.beforeEach(() => { calls = []; tgStatus = 200; });
 test('health: отвечает ok и показывает, настроен ли Telegram', async () => {
   const r = await worker.fetch(new Request('https://relay.test/health'), env());
   assert.equal(r.status, 200);
-  const j = await r.json() as { ok: boolean; service: string; telegram: boolean };
+  const j = await r.json() as { ok: boolean; service: string; telegram: boolean; consentVersion: string };
   assert.equal(j.ok, true);
   assert.equal(j.service, 'ats-leads');
   assert.equal(j.telegram, true);
+  /* версия согласия видна снаружи: по ней смоук и владелец сверяют сборку */
+  assert.equal(j.consentVersion, '2026-11-20');
 
   const off = await worker.fetch(new Request('https://relay.test/health'), env({ BOT_TOKEN: undefined }));
   assert.equal((await off.json() as { telegram: boolean }).telegram, false);

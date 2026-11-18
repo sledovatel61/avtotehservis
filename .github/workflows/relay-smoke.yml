@@ -1,5 +1,6 @@
-# ВАЖНО: consent_version ниже должен совпадать с relay/wrangler.toml CONSENT_VERSION.
-# Воркер отвечает 400 consent_version, если версии разошлись.
+# Версию согласия смоук больше не хранит у себя: он читает её из relay/wrangler.toml
+# и берёт фактическую из /health воркера. Раньше рассинхрон давал ложный красный
+# прогон с 400 consent_version сразу после смены версии на сайте.
 name: Проверка прослойки заявок (smoke)
 
 # Ручная проверка «живого» пути: POST на воркер с тем же Origin, что у сайта.
@@ -23,6 +24,23 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      # Версия из репозитория и версия, на которой реально стоит воркер.
+      - name: Версия согласия
+        id: cv
+        run: |
+          set -e
+          CV_REPO=$(grep -E '^CONSENT_VERSION' relay/wrangler.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
+          CV_WORKER=$(curl -sS "$URL/health" | grep -o '"consentVersion":"[^"]*"' | head -1 | sed -E 's/.*:"([^"]*)"/\1/')
+          [ -n "$CV_REPO" ] || { echo "::error::Не нашёл CONSENT_VERSION в relay/wrangler.toml"; exit 1; }
+          echo "В репозитории: $CV_REPO, у воркера: ${CV_WORKER:-не отдаёт}"
+          if [ -n "$CV_WORKER" ] && [ "$CV_WORKER" != "$CV_REPO" ]; then
+            echo "::warning::Воркер ещё на версии $CV_WORKER, в репозитории $CV_REPO — деплой не доехал. Проверяем на версии воркера."
+          fi
+          echo "value=${CV_WORKER:-$CV_REPO}" >> "$GITHUB_OUTPUT"
+
       - name: Health
         run: |
           set -e
@@ -53,7 +71,7 @@ jobs:
             "phone": "+79518269839",
             "contact_method": "call",
             "consent": true,
-            "consent_version": "2026-11-20",
+            "consent_version": "${{ steps.cv.outputs.value }}",
             "page": "/appointment",
             "idempotency_key": "$KEY",
             "honeypot": "",
@@ -120,7 +138,7 @@ jobs:
             "phone": "+79518269839",
             "contact_method": "call",
             "consent": true,
-            "consent_version": "2026-11-20",
+            "consent_version": "${{ steps.cv.outputs.value }}",
             "page": "/appointment",
             "idempotency_key": "$KEY",
             "honeypot": "",
