@@ -2,7 +2,7 @@
    POST /api/uploads (только демо), POST заявки. Адреса берутся из shared/leads-endpoint.ts:
    свой сервер (/api/leads) или прослойка Cloudflare Worker при PUBLIC_LEADS_ENDPOINT.
    Сервис принимает в порядке живой очереди, поэтому шаг 3 — пожелание клиента: сетку времени
-   рендерит сервер, запросов расписания нет и «занято» не бывает.
+   рендерит сервер, запросов расписания нет, и сервер не отклоняет заявку из-за часа.
    Черновик в localStorage, идемпотентность, ошибки под полями с фокусом на первое,
    состояния отправка/успех/ошибка, .ics на клиенте. */
 import { $, $$, safeLS, track, attachMask, attachVin, reducedMotion } from './lib.ts';
@@ -546,16 +546,6 @@ if (wizEl) {
         if (p) p.textContent = 'Слишком много заявок с вашего адреса. Повторите позже или позвоните нам.';
         blockRetry(wait);
         track('submit_error', { code: 'too_many', retry_after: wait });
-        return;
-      }
-      if (r.status === 409 && j?.error) {
-        // слот заняли — возвращаем на шаг 3 и перерисовываем слоты
-        goStep(3);
-        showState('form');
-        setErrAt('when-err-anchor', String((j.error as { message?: string }).message ?? 'Выбранное время занято — выберите другой слот'));
-        st.slot = null;
-        syncSlots();
-        track('submit_error', { code: 'slot_taken' });
         return;
       }
       if (r.status === 400 && j?.error) {

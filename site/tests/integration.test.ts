@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn, type ChildProcess } from 'node:child_process';
 import http from 'node:http';
 import net from 'node:net';
+import { SLOT_TIMES, moscowNow } from '../src/server/slots.ts';
 
 const SITE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = mkdtempSync(join(tmpdir(), 'ats-int-'));
@@ -392,23 +393,37 @@ test('идемпотентность: повтор с тем же ключом �
   assert.equal(dup[0]?.c, 1, 'заявка ровно одна');
 });
 
-test('занятый слот → 409 со списком свободных', async () => {
+test('живая очередь: три заявки на один час подряд — все 201', async () => {
   const d = new Date(Date.now() + 2 * 86400000);
   const date = d.toISOString().slice(0, 10);
-  const r1 = await postLead(portA, booking({ preferred: { date, slot: '11:00', asap: false } }));
-  assert.equal(r1.status, 201);
-  const r2 = await postLead(portA, booking({ preferred: { date, slot: '11:00', asap: false } }));
-  assert.equal(r2.status, 201); // вместимость 2
-  const r3 = await postLead(portA, booking({ preferred: { date, slot: '11:00', asap: false } }));
-  assert.equal(r3.status, 409);
-  const j = await r3.json() as { error: { code: string; slots: { time: string; available: boolean }[] } };
-  assert.equal(j.error.code, 'slot_taken');
-  assert.equal(j.error.slots.length, 10);
-  assert.equal(j.error.slots.find((s) => s.time === '11:00')?.available, false);
-  assert.equal(j.error.slots.find((s) => s.time === '12:00')?.available, true);
-  // 409 не создал заявку
+  const tickets: string[] = [];
+  for (let i = 1; i <= 3; i++) {
+    const r = await postLead(portA, booking({ preferred: { date, slot: '11:00', asap: false } }));
+    assert.equal(r.status, 201, `заявка №${i} на 11:00 должна приниматься, а не отклоняться`);
+    const j = await r.json() as { ticket: string; duplicate: boolean };
+    assert.equal(j.duplicate, false, `заявка №${i} — не дубль`);
+    tickets.push(j.ticket);
+  }
+  assert.equal(new Set(tickets).size, 3, 'три разные талона');
   const n = await one<{ c: number }>(A, 'SELECT COUNT(*) AS c FROM leads WHERE preferred_date=? AND preferred_slot=?', date, '11:00');
-  assert.equal(n?.c, 2);
+  assert.equal(n?.c, 3, 'в БД три заявки на один час');
+
+  // час не «занимается»: /api/slots по-прежнему считает его доступным
+  const rs = await fetch(`http://127.0.0.1:${portA}/api/slots?date=${date}`);
+  assert.equal(rs.status, 200);
+  const js = await rs.json() as { slots: { time: string; available: boolean; reason?: string }[] };
+  assert.equal(js.slots.find((x) => x.time === '11:00')?.available, true, 'три заявки не закрывают час');
+});
+
+test('живая очередь: заявка на прошедший час сегодня — 201', async () => {
+  // Сервер не сверяет час приёма с часами работы: время — пожелание, его согласует мастер.
+  const now = moscowNow();
+  const past = SLOT_TIMES.filter((t) => Number(t.slice(0, 2)) <= now.hour);
+  const slot = past.length ? past[past.length - 1] : SLOT_TIMES[0];
+  const r = await postLead(portA, booking({ preferred: { date: now.date, slot, asap: false } }));
+  assert.equal(r.status, 201, `заявка на ${slot} сегодня (прошедший час) должна приниматься`);
+  const j = await r.json() as { ticket: string };
+  assert.ok(j.ticket, 'талон выдан');
 });
 
 test('невалидные поля → 400 с перечнем полей', async () => {
@@ -515,17 +530,35 @@ test('фото привязываются к заявке', async () => {
   assert.equal(m?.attached_to, `lead:${j.lead_id}`);
 });
 
-test('слоты API: дата обязательна, 14 дней, занятость из БД', async () => {
+test('слоты API: дата обязательна, 14 дней, единственная недоступность — прошедшие часы', async () => {
   const bad = await fetch(`http://127.0.0.1:${portA}/api/slots?date=2020-01-01`);
   assert.equal(bad.status, 400);
   const d = new Date(Date.now() + 3 * 86400000);
   const date = d.toISOString().slice(0, 10);
   const r = await fetch(`http://127.0.0.1:${portA}/api/slots?date=${date}`);
   assert.equal(r.status, 200);
-  const j = await r.json() as { date: string; slots: { time: string; available: boolean }[] };
+  const j = await r.json() as { date: string; slots: { time: string; available: boolean; reason?: string }[] };
   assert.equal(j.date, date);
   assert.equal(j.slots.length, 10);
-  assert.ok(j.slots.every((s) => s.available), 'свежая дата — всё свободно');
+  assert.deepEqual(j.slots.map((s) => s.time), [...SLOT_TIMES]);
+  assert.ok(j.slots.every((s) => s.available && s.reason === undefined), 'будущая дата — все десять часов доступны');
+
+  // сегодня: недоступны ровно прошедшие часы, и причина у них одна — 'past'.
+  // Ёмкость и ручные блокировки в модель больше не входят (живая очередь).
+  const now = moscowNow();
+  const rt = await fetch(`http://127.0.0.1:${portA}/api/slots?date=${now.date}`);
+  assert.equal(rt.status, 200);
+  const jt = await rt.json() as { slots: { time: string; available: boolean; reason?: string }[] };
+  assert.equal(jt.slots.length, 10);
+  for (const s of jt.slots) {
+    if (Number(s.time.slice(0, 2)) <= now.hour) {
+      assert.equal(s.available, false, `${s.time} уже прошёл — недоступен`);
+      assert.equal(s.reason, 'past', `${s.time}: причина только «прошедшее время»`);
+    } else {
+      assert.equal(s.available, true, `${s.time} ещё впереди — доступен`);
+      assert.equal(s.reason, undefined);
+    }
+  }
 });
 
 test('Telegram недоступен → письмо уходит; заявка видна', async () => {

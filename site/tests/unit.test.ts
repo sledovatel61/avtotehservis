@@ -144,6 +144,15 @@ test('слоты: 10 штук 09:00–18:00, даты в пределах 14 д�
   const slots = getSlots(now.date);
   assert.equal(slots.length, 10);
   assert.ok(slots.every((s) => typeof s.available === 'boolean'));
+  // живая очередь (80-4, B1): недоступны только прошедшие часы, причина одна — 'past'
+  assert.ok(slots.every((s) => (s.available ? s.reason === undefined : s.reason === 'past')));
+  assert.deepEqual(
+    slots.filter((s) => !s.available).map((s) => s.time),
+    SLOT_TIMES.filter((t) => Number(t.slice(0, 2)) <= now.hour),
+  );
+  // на будущую дату все десять часов доступны, чем бы ни была занята БД
+  const future = new Date(now.date + 'T12:00:00Z'); future.setUTCDate(future.getUTCDate() + 3);
+  assert.ok(getSlots(future.toISOString().slice(0, 10)).every((s) => s.available && s.reason === undefined));
 });
 
 test('markdown: экранирует HTML, ссылки только безопасные', () => {

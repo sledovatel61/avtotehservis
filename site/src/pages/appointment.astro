@@ -137,9 +137,10 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               </div>
               <div class="field u-mt16">
                 <span class="f-label" id="slot-title">Желаемое время</span>
-                {/* Сетка статическая: сервис принимает в порядке живой очереди, «занятых» часов
-                    в ней нет. Разметку рендерит сервер — клиенту не нужен сетевой запрос,
-                    и на GitHub Pages форма работает без сервера. */}
+                {/* Сетка статическая: сервис принимает в порядке живой очереди, время —
+                    пожелание, деления часов на свободные и нет. Разметку рендерит сервер —
+                    клиенту не нужен сетевой запрос, и на GitHub Pages форма работает
+                    без сервера. */}
                 <div class="slots" id="slots" role="group" aria-label="Выбор времени">
                   {SLOT_TIMES.map((t) => (
                     <button type="button" class="slot" data-slot={t} aria-pressed="false" aria-label={t}>{t}</button>
