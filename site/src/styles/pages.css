@@ -40,14 +40,18 @@
 .svc-side{
   position:sticky;top:96px;border:1px solid var(--line);border-radius:var(--r);
   background:var(--deep);padding:26px 24px;display:grid;gap:14px;
+  align-self:start;height:fit-content;
 }
 .svc-side h3{font-size:1.05rem;margin:0}
 .svc-side p{color:var(--mist);font-size:14.5px;margin:0}
 .svc-side .btn{width:100%}
-.svc-side-tel{font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--ivory);display:flex;align-items:center;gap:9px;min-height:44px}
+.svc-side-tel{font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--ivory);display:flex;align-items:center;gap:9px;min-height:44px;white-space:nowrap;min-width:0}
 .svc-side-tel:hover{color:var(--brass)}
-.svc-side-tel svg{width:17px;height:17px;stroke:var(--brass)}
+.svc-side-tel svg{width:17px;height:17px;stroke:var(--brass);flex:0 0 auto}
 .svc-side small{color:var(--mist);font-size:12.5px;display:block;margin-top:-8px}
+/* Задание 80-2 §4: у иконки адреса не было размера — в широкой колонке она растягивалась
+   на всю ширину и распирала карточку на 300–900 px пустоты. */
+.svc-side p svg{width:16px;height:16px;vertical-align:-2px;stroke:var(--brass);flex:0 0 auto}
 @media (max-width:1024px){.svc-side{position:static}}
 
 /* ---------- Новости ---------- */
@@ -128,8 +132,12 @@
 .side-tel{font-family:var(--font-display);font-weight:600;font-size:18px;color:var(--ivory)}
 
 /* ---------- Контакты ---------- */
-.contacts-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:start}
-@media (max-width:1024px){.contacts-grid{grid-template-columns:1fr;gap:30px}}
+/* Задание 80-2 §4: правая колонка не сжимается — телефон и Telegram в одну строку,
+   высота карточки по содержимому, а не по высоте формы. */
+.contacts-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,340px);gap:44px;align-items:start}
+/* до 1100 px — одна колонка; minmax(0,1fr) обязателен: иначе min-content ленты дат
+   (14 дней, шаг 3) распирает колонку и форма вылезает за экран на 390/768 */
+@media (max-width:1100px){.contacts-grid{grid-template-columns:minmax(0,1fr);gap:30px}}
 .map-box{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--deep2)}
 .map-box svg{width:100%;height:auto;display:block}
 .map-cap{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--line-soft);font-size:13.5px;color:var(--mist)}
