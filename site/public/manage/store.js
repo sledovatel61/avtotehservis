@@ -37,8 +37,12 @@ export function validate(c, cases, originalSlug) {
  if (!['single','before_after'].includes(c.mode)) throw new ValidationError('Выберите режим.');
  if (!['draft','published'].includes(c.status)) throw new ValidationError('Выберите статус работы.','status');
  if (!['before','after','photos'].every(key=>Array.isArray(c[key]))) throw new ValidationError('Список фотографий повреждён.');
+ if (c.mode==='before_after' && (!c.before.length || !c.after.length)) {
+  const emptyZone=c.before.length ? 'after' : 'before';
+  throw new ValidationError('В режиме «До и после» нужны обе фотографии: «как было» и «как стало». Добавьте вторую или переключитесь на «Одно фото работы».',`zone:${emptyZone}`);
+ }
  const frames=[...c.before,...c.after,...c.photos];
- if (!frames.length) throw new ValidationError('Добавьте хотя бы одно фото.');
+ if (!frames.length) throw new ValidationError('Добавьте хотя бы одно фото.', 'zone:photos');
  if (frames.length>10) throw new ValidationError('Не больше 10 фото на кейс.');
  for(const key of ['before','after','photos']) for(const [i,p] of c[key].entries()) {
   const field=`alt:${key}:${i}`;
