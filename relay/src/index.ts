@@ -2,7 +2,7 @@
  * ats-leads — прослойка между статическим сайтом на GitHub Pages и Telegram.
  *
  * Контракт (задание 80-1, менять нельзя):
- *   GET  /health              → { ok, service:'ats-leads', time, telegram, email, kv }
+ *   GET  /health              → { ok, service:'ats-leads', time, telegram, email, emailTo, consentVersion, kv }
  *   GET  /slots?date=…        → { date, slots:[{time, available, reason?}] }
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
  *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
@@ -299,6 +299,9 @@ export default {
           telegram: Boolean(env.BOT_TOKEN && env.TELEGRAM_CHAT_ID),
           email: emailProvider(env),
           emailTo: emailProvider(env) ? (env.EMAIL_TO ?? DEFAULT_EMAIL_TO) : undefined,
+          /* Версия согласия, которую принимает воркер. Смоук и владелец видят её
+             здесь и не гадают, почему форма получает 400 consent_version. */
+          consentVersion: env.CONSENT_VERSION ?? null,
           kv: Boolean(env.ATS_KV),
         }));
       }
