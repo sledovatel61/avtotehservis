@@ -139,7 +139,7 @@ test('визард: 5 экранов до успеха с серверным т�
   // шаг 4
   $('#wiz-next', doc)?.click(); // пусто — не пускает
   assert.equal($('#wiz-step-label', doc)?.textContent, 'Контакты', 'без данных шаг не проходит');
-  assert.ok(($('#f-name', doc)?.closest('.field')?.textContent ?? '').includes('Укажите имя'), 'ошибка под полем имени');
+  assert.ok(($('#f-name', doc)?.closest('.field')?.textContent ?? '').includes('Заполните это поле.'), 'ошибка под полем имени');
   setVal($('#f-name', doc), 'Анна');
   setVal($('#f-phone', doc), '89289065700');
   assert.equal(($('#f-phone', doc) as HTMLInputElement).value, '+7 (928) 906-57-00', 'маска телефона');
@@ -171,8 +171,8 @@ test('визард: 5 экранов до успеха с серверным т�
 });
 
 test('визард: prefill ?s=, «не знаю», ASAP, ошибка телефона с сервера не теряет данные', async () => {
-  const { doc } = await loadWizard('?s=elektrika');
-  const chip = $$('#svc-chips input[name="svc"]', doc).find((i) => (i as HTMLInputElement).value === 'elektrika') as HTMLInputElement | undefined;
+  const { doc } = await loadWizard('?s=diagnostika');
+  const chip = $$('#svc-chips input[name="svc"]', doc).find((i) => (i as HTMLInputElement).value === 'diagnostika') as HTMLInputElement | undefined;
   assert.ok(chip?.checked, 'услуга из ?s= предвыбрана');
   setVal($('#f-brand', doc), 'Kia Rio');
   $('#wiz-next', doc)?.click();
@@ -224,4 +224,59 @@ test('короткая форма контактов: отправка → та�
   const okState = await poll(() => $('#cform-ok', doc)?.classList.contains('is-on') === true);
   assert.ok(okState, 'экран успеха короткой формы');
   assert.match($('#c-ok-no', doc)?.textContent ?? '', /K-\d{4}-\d{4}/, 'талон обращения K-');
+});
+
+/* ---------- Раунд 8, M6: лайтбокс галереи работает (клик / Esc / стрелки / фокус) ---------- */
+async function loadHome(): Promise<{ doc: Document; win: Win & Window }> {
+  const html = await (await fetch(`${BASE}/`)).text();
+  const dom = new JSDOM(html, { url: 'http://localhost/', runScripts: 'outside-only', pretendToBeVisual: true });
+  const win = dom.window as unknown as Win & Window;
+  (globalThis as Record<string, unknown>).window = win;
+  (globalThis as Record<string, unknown>).document = win.document;
+  (globalThis as Record<string, unknown>).HTMLElement = win.HTMLElement;
+  (globalThis as Record<string, unknown>).Element = win.Element;
+  (globalThis as Record<string, unknown>).Node = win.Node;
+  (globalThis as Record<string, unknown>).Event = win.Event;
+  (globalThis as Record<string, unknown>).CustomEvent = win.CustomEvent;
+  (globalThis as Record<string, unknown>).KeyboardEvent = win.KeyboardEvent;
+  const mm = (): { matches: boolean; addListener: () => void; removeListener: () => void } =>
+    ({ matches: false, addListener: () => undefined, removeListener: () => undefined });
+  (win as Record<string, unknown>).matchMedia = mm;
+  (globalThis as Record<string, unknown>).matchMedia = mm;
+  (globalThis as Record<string, unknown>).requestAnimationFrame = (cb: (t: number) => void) =>
+    (win as unknown as { requestAnimationFrame: (cb: (t: number) => void) => number }).requestAnimationFrame(cb);
+  await import('../src/client/lightbox.ts?' + Math.random());
+  return { doc: win.document, win };
+}
+
+test('лайтбокс: клик по карточке открывает, Esc закрывает, стрелки листают, фокус возвращается', async () => {
+  const { doc, win } = await loadHome();
+  const lb = $('#lightbox', doc);
+  assert.ok(lb, '#lightbox есть в разметке');
+  assert.equal(lb?.getAttribute('role'), 'dialog');
+  assert.equal(lb?.getAttribute('aria-modal'), 'true');
+  assert.ok(!lb?.classList.contains('is-open'), 'скрыт по умолчанию');
+
+  const cards = $$('[data-gal]', doc);
+  assert.ok(cards.length >= 2, 'карточки кейсов на месте');
+  const first = cards[0] as HTMLElement;
+  const wantTitle = first.getAttribute('data-title') ?? '';
+  first.focus(); // в браузере клик фокусирует кнопку — воспроизводим
+  first.click();
+  assert.ok(lb?.classList.contains('is-open'), 'клик открыл лайтбокс');
+  assert.equal($('#lb-title', doc)?.textContent, wantTitle, 'заголовок первого кейса');
+  assert.ok($('#lb-img img', doc), 'картинка вставлена');
+  // 7.2: фокус ставится на следующем кадре (rAF), когда visibility уже visible
+  await new Promise((r) => setTimeout(r, 40));
+  assert.equal(doc.activeElement, $('#lb-close', doc), 'фокус на кнопке закрытия (после rAF)');
+
+  const KE = (win as unknown as { KeyboardEvent: typeof KeyboardEvent }).KeyboardEvent;
+  const ev = new KE('keydown', { key: 'ArrowRight', bubbles: true });
+  doc.dispatchEvent(ev);
+  assert.equal($('#lb-title', doc)?.textContent, cards[1].getAttribute('data-title'), 'стрелка листает вперёд');
+
+  const esc = new KE('keydown', { key: 'Escape', bubbles: true });
+  doc.dispatchEvent(esc);
+  assert.ok(!lb?.classList.contains('is-open'), 'Esc закрыл лайтбокс');
+  assert.equal(doc.activeElement, first, 'фокус вернулся на карточку');
 });

@@ -1,14 +1,23 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Bg3dLayer from '../../components/Bg3dLayer.astro';
+import { bg3dFor, bg3dDemo } from '../../server/bg3d-config.ts';
 import { getSettings } from '../../server/settings.ts';
 import { getService, otherServices } from '../../server/services.ts';
 import { mdToHtml } from '../../server/markdown.ts';
+import { svcImgKey } from '../../server/svc-img.ts';
+import { SVC_ALIASES, PRICE_ANCHOR } from '../../server/svc-aliases.ts';
 
 const S = getSettings();
 const { slug } = Astro.params;
+/* круг 26: старые адреса расформированных услуг уходят 301 на преемников */
+if (slug && SVC_ALIASES[slug]) return Astro.redirect('/services/' + SVC_ALIASES[slug], 301);
 const svc = slug ? getService(slug) : undefined;
 if (!svc) Astro.response.status = 404;
 const others = svc ? otherServices(svc.slug, 3) : [];
+/* 3D-фон (задание №44): по умолчанию выключен везде, включается env BG3D — см. server/bg3d-config.ts */
+const bg3d = bg3dFor(svc?.slug);
+const demo3d = bg3dDemo();
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = svc ? [
   {
@@ -42,9 +51,11 @@ const jsonLd = svc ? [
 >
   <nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><a href="/services">Услуги</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">{svc.title}</span></nav>
   <section class="page-head">
+    {bg3d.enabled && <Bg3dLayer variant={bg3d.variant} demo={demo3d} />}
     <div class="container">
       <span class="eyebrow" id="svc-tag">{svc.tag ?? svc.grp}</span>
       <h1 id="svc-title">{svc.title}</h1>
+      {svc.price_from ? <p class="svc-price svc-price--head" id="svc-price">{svc.price_from} — за работу</p> : null}
       <p class="lead" id="svc-lead">{svc.short}</p>
     </div>
   </section>
@@ -52,12 +63,16 @@ const jsonLd = svc ? [
     <div class="container svc-detail" id="svc-detail">
       <div class="svc-text reveal">
         <div class="svc-detail-img" id="svc-img">
-          <img src={svc.icon ?? '/img/svc-1.svg'} alt={`${svc.title} — фото появится после съёмки в сервисе`} width="800" height="600">
+          <picture>
+            <source type="image/avif" srcset={`/img/${svcImgKey(svc.slug)}-640.avif 640w, /img/${svcImgKey(svc.slug)}-960.avif 960w`} sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 560px">
+            <source type="image/webp" srcset={`/img/${svcImgKey(svc.slug)}-640.webp 640w, /img/${svcImgKey(svc.slug)}-960.webp 960w`} sizes="(max-width:640px) 92vw, (max-width:1024px) 46vw, 560px">
+            <img src={`/img/${svcImgKey(svc.slug)}-960.webp`} alt={svc.title} width="800" height="600" decoding="async">
+          </picture>
         </div>
         <div id="svc-body" set:html={mdToHtml(svc.description ?? '')} />
         <div class="price-note">
-          <b>Стоимость — после осмотра</b>
-          <p>Прайса нет: цена зависит от состояния автомобиля и объёма работ. Сначала осмотр и смета, потом — решение владельца. Цифры называем до начала работ.</p>
+          <b>Цены — за работу</b>
+          <p>Запчасти и расходники в стоимость не входят. Диапазон означает разную сложность и крепление на разных машинах: точную сумму называем до начала работ, после осмотра. Полный прайс — в разделе <a href={`/prices#${PRICE_ANCHOR[svc.slug] ?? 'to'}`} class="u-brass">«Прайс»</a>.</p>
         </div>
       </div>
       <aside class="svc-side reveal" data-d="1">
@@ -80,7 +95,13 @@ const jsonLd = svc ? [
       <div class="svc-grid" id="svc-others">
         {others.map((o) => (
           <a class="svc-card" href={`/services/${o.slug}`}>
-            <span class="svc-img"><img src={o.icon ?? '/img/svc-1.svg'} alt={`${o.title} — фото появится после съёмки`} width="800" height="600" loading="lazy"></span>
+            <span class="svc-img">
+              <picture>
+                <source type="image/avif" srcset={`/img/${svcImgKey(o.slug)}-640.avif 640w, /img/${svcImgKey(o.slug)}-960.avif 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                <source type="image/webp" srcset={`/img/${svcImgKey(o.slug)}-640.webp 640w, /img/${svcImgKey(o.slug)}-960.webp 960w`} sizes="(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px">
+                <img src={`/img/${svcImgKey(o.slug)}-640.webp`} alt={o.title} width="800" height="600" loading="lazy" decoding="async">
+              </picture>
+            </span>
             <span class="svc-body"><span class="svc-tag">{o.tag ?? o.grp}</span><h3>{o.title}</h3><p>{o.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
           </a>
         ))}

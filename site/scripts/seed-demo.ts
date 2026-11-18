@@ -83,12 +83,12 @@ export function runSeedDemo(): void {
   const dbx = db();
   const insNews = dbx.prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,cover_static,status,published_at)
     VALUES(@slug,@title,@excerpt,@body_md,@category,@cover_static,'published',datetime('now','-' || @age || ' minutes'))`);
-  const insReview = dbx.prepare(`INSERT INTO reviews(author,text,rating,source,published_at,status)
-    VALUES(@author,@text,@rating,'demo',datetime('now','-' || @age || ' minutes'),'published')`);
+  /* круг 26 (задание №30): демо-отзывы больше не вставляем — по решению владельца
+     отзывы на сайте только с Яндекс.Карт, выдуманных оценок нет ни в боевом сиде,
+     ни в демо-наборе, ни в статическом экспорте preview. */
   const tx = dbx.transaction(() => {
     clearSeedDemo();
     for (const n of DEMO_NEWS) insNews.run(n);
-    for (const r of DEMO_REVIEWS) insReview.run(r);
   });
   tx();
 }

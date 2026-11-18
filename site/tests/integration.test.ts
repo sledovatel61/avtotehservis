@@ -657,7 +657,7 @@ test('кейсы: свежая публикация сразу видна на /
     const about = await (await fetch(`http://127.0.0.1:${portA}/about`)).text();
     assert.ok(about.includes('Свежий кейс ПРОВЕРКА'), 'новый кейс виден на /about');
     // Новые выше старых: свежий кейс встречается в галерее раньше первого сеянного.
-    assert.ok(home.indexOf('Свежий кейс ПРОВЕРКА') < home.indexOf('Боковой порез шины'), 'порядок: свежий кейс первым в галерее');
+    assert.ok(home.indexOf('Свежий кейс ПРОВЕРКА') < home.indexOf('Порез по боковине'), 'порядок: свежий кейс первым в галерее');
   } finally {
     db().prepare(`DELETE FROM cases WHERE slug='test-fresh-case'`).run();
     closeDb();
