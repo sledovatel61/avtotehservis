@@ -1,0 +1,74 @@
+name: Проверка прослойки заявок (smoke)
+
+# Ручная проверка «живого» пути: POST на воркер с тем же Origin, что у сайта.
+# Заявка приходит в группу «АвтоТехСервис» в Telegram — так видно, что цепочка
+# сайт → Cloudflare Worker → Telegram работает целиком, а не только /health.
+
+on:
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: 'Адрес прослойки (без слэша в конце)'
+        required: false
+        default: 'https://ats-leads.ats439.workers.dev'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health
+        run: |
+          set -e
+          URL="${{ inputs.endpoint }}"
+          echo "GET $URL/health"
+          BODY=$(curl -sS -w '\n%{http_code}' "$URL/health")
+          CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
+          echo "HTTP $CODE $TEXT"
+          echo "::notice::health: HTTP $CODE $TEXT"
+          [ "$CODE" = "200" ] || { echo "::error::/health ответил $CODE"; exit 1; }
+
+      - name: Send test lead
+        run: |
+          set -e
+          URL="${{ inputs.endpoint }}"
+          KEY=$(node -e 'console.log(require("crypto").randomUUID())')
+          NOW=$(date +%s%3N)
+          START=$((NOW - 12000))
+          cat > /tmp/lead.json <<JSON
+          {
+            "kind": "booking",
+            "name": "Проверка формы",
+            "phone": "+79518269839",
+            "contact_method": "call",
+            "consent": true,
+            "consent_version": "2026-11-18",
+            "page": "/appointment",
+            "idempotency_key": "$KEY",
+            "honeypot": "",
+            "form_started_at": $START,
+            "car": { "brand": "Лада (LADA)", "model": "Vesta", "year": 2019, "vin": null, "mileage": 74000 },
+            "services": ["diagnostika"],
+            "preferred": { "asap": true, "date": null, "slot": null },
+            "photos": []
+          }
+          JSON
+          echo "POST $URL/leads (Origin: https://sledovatel61.github.io)"
+          BODY=$(curl -sS -w '\n%{http_code}' -X POST "$URL/leads" \
+            -H 'content-type: application/json' \
+            -H 'origin: https://sledovatel61.github.io' \
+            --data @/tmp/lead.json)
+          CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
+          echo "HTTP $CODE $TEXT"
+          echo "::notice::POST /leads: HTTP $CODE $TEXT"
+          [ "$CODE" = "201" ] || { echo "::error::Заявка не принята: HTTP $CODE $TEXT"; exit 1; }
+
+      - name: Проверка чужого Origin
+        run: |
+          set -e
+          URL="${{ inputs.endpoint }}"
+          CODE=$(curl -sS -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/leads" \
+            -H 'origin: https://evil.example' -H 'access-control-request-method: POST')
+          HDR=$(curl -sSI -X OPTIONS "$URL/leads" -H 'origin: https://evil.example' \
+            -H 'access-control-request-method: POST' | tr -d '\r' | grep -i '^access-control-allow-origin' || true)
+          echo "OPTIONS с чужого Origin: HTTP $CODE, $HDR"
+          echo "::notice::CORS чужой Origin: HTTP $CODE, $HDR"
