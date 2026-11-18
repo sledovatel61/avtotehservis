@@ -46,6 +46,19 @@ Workflow `.github/workflows/relay.yml` заливает воркер сам. Н�
 Дальше — **Actions → Deploy leads relay → Run workflow** (или любой push в `preview/github-pages`,
 если менялось в `relay/`). В логе будет адрес воркера `https://ats-leads.<аккаунт>.workers.dev`.
 
+#### Если в аккаунте нет доменов
+
+Шаблон **Edit Cloudflare Workers** добавляет политику *Zone → Workers Routes Write* с выбором
+конкретной зоны. У нового аккаунта зон нет — выпадающий список пуст, и кнопка «Continue to summary»
+не пускает («Choose a zone resource»). Для выкатки воркера на `*.workers.dev` зоны не нужны:
+
+1. В поле **Token name** напишите `ats-leads` — без имени токен не создать.
+2. В блоке **Edit Zone policy** нажмите иконку удаления (корзина) — политика уйдёт.
+3. Оставьте **Account policy** (Workers Scripts: Edit, Workers KV Storage: Edit, Account Settings:
+   Read) и **User policy** (User Details: Read, Memberships: Read). В Account policy ресурс —
+   **Include → All accounts** либо ваш аккаунт.
+4. **Continue to summary → Create Token**, токен копируется один раз.
+
 ### Вариант Б — локально
 
 ```bash
