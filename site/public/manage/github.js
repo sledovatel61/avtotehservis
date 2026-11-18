@@ -48,7 +48,7 @@ export class GitHub {
   for(let attempt=0;attempt<2;attempt++) {
    progress(attempt ? 'Кто-то сохранил изменения. Проверяем и повторяем…' : 'Проверяем изменения в репозитории…');
    const latest=await this.read();
-   if (latest.sha!==snapshot.sha && !apply.canRebase(latest.json)) throw new GitHubError('Кто-то изменил этот кейс. Обновите список и повторите сохранение.',409);
+   if (latest.sha!==snapshot.sha && !apply.canRebase(latest.json)) throw new GitHubError('Кто-то изменил эту работу. Обновите список и повторите сохранение.',409);
    snapshot=latest;
    const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`);
    const parent=ref.object.sha;

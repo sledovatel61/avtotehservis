@@ -1,4 +1,4 @@
-/* Кейсы «до / после» (круг 79, задание №82).
+/* Работы «до / после» (круг 79, задание №82 → 79-2: раздел «Наши работы»).
    Новых палитр нет: только токены из tokens.css. Порядок каскада — как у остальных
    файлов: этот подключается последним в Base.astro и не переопределяет чужие классы,
    а добавляет свои (c-* и ba-*). */
@@ -13,9 +13,9 @@
 /* Крошки с длинным заголовком кейса: на 360 px он один не влезал в строку и
    вылезал за поля контейнера. Держим крошки в одну строку, текущий пункт
    обрезаем многоточием — полный заголовок всё равно стоит заголовком h1. */
-.crumbs--case{flex-wrap:nowrap;overflow:hidden;gap:6px}
-.crumbs--case>a,.crumbs--case>.sep{flex:none;white-space:nowrap}
-.crumbs--case .cur{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumbs--work{flex-wrap:nowrap;overflow:hidden;gap:6px}
+.crumbs--work>a,.crumbs--work>.sep{flex:none;white-space:nowrap}
+.crumbs--work .cur{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .case-head .lead{margin-top:10px}
 .case-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:6px 0 0;font-size:14px;color:var(--mist)}
 .case-meta time{font-variant-numeric:tabular-nums}
@@ -116,4 +116,86 @@
 @media (prefers-reduced-motion:reduce){
   .ba-range,.gal-card--case .gal-img img{transition:none}
   .gal-card--case:hover .gal-img img{transform:none}
+}
+
+
+/* ---------- листинг «Наши работы» ---------- */
+/* Шапка блока на главной и «О компании», когда работы есть: заголовок слева,
+   «Все работы →» и стрелки карусели справа. Пустое состояние не меняется —
+   класс sec-head--works добавляется только при реальных работах. */
+.sec-head--works{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;max-width:none;flex-wrap:wrap}
+.sec-head-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.works-all{
+  display:inline-flex;align-items:center;gap:8px;color:var(--brass);font-size:14px;
+  text-decoration:none;border-bottom:1px solid rgba(224,169,109,.4);padding-bottom:2px;
+  transition:border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+}
+.works-all:hover{color:var(--ivory);border-bottom-color:var(--brass)}
+.works-all .ar{transition:transform var(--t-fast) var(--ease)}
+.works-all:hover .ar{transform:translateX(3px)}
+
+.works-body{max-width:1200px}
+/* 3 / 2 / 1 колонки: 1280 — три, 768 — две, 360 — одна */
+.works-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 18px;margin:0 0 8px}
+.work-card{position:relative;display:flex;flex-direction:column;gap:12px;min-width:0}
+.work-img{
+  display:block;border-radius:var(--r);overflow:hidden;border:1px solid var(--line-soft);
+  background:var(--deep2);position:relative;
+}
+.work-img img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;transition:transform var(--t-slow) var(--ease)}
+.work-card:hover .work-img img{transform:scale(1.03)}
+.work-card:hover .work-img{border-color:rgba(224,169,109,.45)}
+.work-title{margin:0;font-size:16px;line-height:1.35;font-family:var(--font-text);font-weight:600}
+.work-title a{color:var(--ivory);text-decoration:none}
+/* Растянутая область нажатия: вся карточка кликабельна, но ссылка на услугу
+   остаётся отдельной и лежит выше (вложенные <a> в HTML нельзя) */
+.work-title a::after{content:"";position:absolute;inset:0;z-index:1}
+.work-card:focus-within .work-img{outline:2px solid var(--brass);outline-offset:3px}
+.work-title a:focus-visible{outline:none}
+.work-meta{
+  position:relative;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;
+  margin:0;font-size:13.5px;color:var(--mist);pointer-events:none;
+}
+.work-meta .work-svc{pointer-events:auto}
+.work-svc{color:var(--brass);text-decoration:none;border-bottom:1px solid rgba(224,169,109,.35)}
+.work-svc:hover{border-bottom-color:var(--brass)}
+.work-meta time{font-variant-numeric:tabular-nums}
+.work-badge{
+  padding:3px 9px;border-radius:999px;border:1px solid rgba(224,169,109,.45);
+  color:var(--brass);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+}
+
+/* Пагинация: те же кнопки, что в «Полезном», плюс счётчик между ними */
+.works-pager{gap:14px}
+.works-pager .pager-count{
+  min-width:auto;height:44px;display:inline-flex;align-items:center;padding:0 10px;
+  border:0;color:var(--mist);font-size:14px;background:transparent;
+}
+.works-pager .pager-off{
+  min-width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:10px;border:1px solid var(--line-soft);color:var(--mist);opacity:.45;padding:0 12px;font-size:15px;
+}
+
+.works-empty{
+  border:1px dashed var(--line);border-radius:var(--r);background:var(--deep);
+  padding:28px 24px;margin:0 0 30px;max-width:760px;
+}
+.works-empty b{display:block;font-size:18px;margin-bottom:8px}
+.works-empty p{margin:0;color:var(--mist);max-width:60ch}
+.works-empty-btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px !important}
+.works-empty-btns .btn{justify-content:center}
+.works-back{margin:0 0 22px}
+
+@media (max-width:1024px){
+  .works-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .works-grid{grid-template-columns:1fr;gap:20px}
+  .sec-head--works{align-items:flex-start}
+  .sec-head-actions{width:100%;justify-content:space-between}
+  .works-pager{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){
+  .work-img img,.works-all .ar{transition:none}
+  .work-card:hover .work-img img{transform:none}
 }
