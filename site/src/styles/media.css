@@ -1,9 +1,15 @@
 /* ---------- Медиазапросы ---------- */
 @media (max-width:1024px){
+  /* раунд 20 (A2): при схлопывании .about-grid мера колонки и фото ограничена */
+  .about-grid>*{max-width:680px}
+  .about-media{max-width:720px;margin-inline:auto}
   .tri{grid-template-columns:1fr;gap:14px}
   .tri-card{min-height:0}
-  .about-grid,.est-grid,.svc-detail,.contacts-grid,.post-layout,.adm-grid{grid-template-columns:1fr;gap:30px}
-  .svc-side,.post-side{position:static}
+  .about-grid,.est-grid,.adm-grid{grid-template-columns:1fr;gap:30px}
+  /* .svc-detail, .contacts-grid, .post-layout и .svc-side/.post-side переехали в pages.css:
+     их базовые правила живут там, а media.css попадает в Base.*.css, который грузится РАНЬШЕ
+     misc.*.css с pages.css — при равной специфичности медиа правило проигрывало каскадом.
+     Это причина переполнения /contacts, /appointment, /services/<slug>, /news/<slug> на 390. */
   .feats{grid-template-columns:1fr 1fr}
   .svc-card,.gal-card,.rev-card{flex-basis:calc((100% - 18px)/2)}
   .ftr-grid{grid-template-columns:1fr 1fr;gap:30px}
@@ -11,7 +17,9 @@
   .slots{grid-template-columns:repeat(4,1fr)}
   .hdr-phone span{display:none}
 }
-@media (max-width:860px){
+/* раунд 15: порог опущен с 860 до 1023 — в рендере шапка на 926 px была шириной 1146 px
+   (меню + телефон + CTA не помещались, .burger уходил за правый край) */
+@media (max-width:1023px){
   .nav{display:none}
   .burger{display:block;margin-left:auto}
   .hdr-cta .btn{display:none}
@@ -40,7 +48,9 @@
   .sum-row .k{flex-basis:100%}
   .lb-arrow{width:44px;height:44px}
   .lb-prev{left:8px}.lb-next{right:8px}
-  .hero{min-height:calc(100svh - 54px)}
+  /* раунд 15 / патч оркестратора: высоту мобильного героя задают фото и текст,
+     а не окно — иначе под контролами остаётся пустая полоса */
+  .hero{min-height:0}
   .hero-ui .container{gap:12px}
   .hero-note{display:none}
   .cform{padding:20px 18px}
@@ -63,4 +73,67 @@
   .reveal{opacity:1;transform:none;transition:none}
   .carousel-track{transition:none}
 }
+
+
+/* ---------- раунд 20 (A2/B4): переопределения ПОСЛЕ исходных медиаблоков ---------- */
+@media (min-width:900px) and (max-width:1024px){
+  /* секция «О компании» на 1024 ≤ 1500 px: карточки в один ряд */
+  .feats{grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px}
+}
+@media (max-width:1024px){
+  .about{padding-block:56px}
+  .about-media{max-width:640px}   /* фактическая мера фото на планшете; предел задания 720 */
+  .about-grid{gap:26px}
+  .facts{margin-top:20px}
+}
+@media (max-width:960px){
+  /* about ≤ 1500 px и на 900: компактнее хром карточек и отступы секции */
+  .about{padding-block:48px}
+  .about-grid{gap:22px}
+  .facts{margin-top:14px}
+  .feat{padding:16px 14px}
+}
+@media (max-width:640px){
+  .est-panels{grid-template-columns:1fr;gap:16px}
+  /* секция на 390 ≤ 1450 px: компактнее хром панелей, кегли и тексты не тронуты */
+  .est-sec{padding-block:44px}
+  .est-sec .sec-head{margin-bottom:26px}
+  .est-sec .est-grid{gap:24px}
+  .est-step{padding:10px 16px 12px}
+  .est-step p{line-height:1.5}
+  .est-step .n{font-size:34px;padding-bottom:4px;margin-bottom:6px}
+  .est-aside{padding:16px 18px 14px}
+}
+
+/* ---------- раунд 21 (задание №23): стрелки карусели «Услуги» ---------- */
+@media (min-width:1280px){
+  .svc-body h3{font-size:19px}
+}
+@media (max-width:1023px){
+  /* своя строка, но по правому краю контейнера */
+  .slider-sec .sec-head{flex-wrap:wrap}
+  .slider-sec .slider-nav{width:auto;margin-left:auto;justify-content:flex-end}
+}
+@media (max-width:640px){
+  .slider-hint{display:block}
+  .slider-sec .slider-nav{width:auto;gap:10px;margin-left:auto}
+  .slider-sec .hero-arrow{width:44px;height:44px}
+}
+/* ---------- раунд 22 (задание №24): ритм текста и медиа страницы «О компании» ---------- */
+@media (max-width:1023px){
+  .about-media{max-width:720px;width:100%;margin-inline:auto}
+}
+@media (max-width:640px){
+  .facts{grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .ab-acc{margin-top:4px}
+  .about-grid .lead{margin-bottom:10px}
+  section[aria-labelledby="ab-text-h"]{padding-block:44px}
+  .about-grid{gap:20px}
+  .about-grid h2{margin-top:18px;font-size:20px}
+  .about-grid .lead{font-size:15px;line-height:1.52}
+  .facts .fact b{font-size:14px}
+  .facts .fact span{font-size:12px}
+  .about-media figcaption{font-size:12.5px}
+}
+
 

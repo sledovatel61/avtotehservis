@@ -1,0 +1,69 @@
+name: Publish client preview
+
+on:
+  push:
+    branches: [preview/github-pages]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - uses: actions/configure-pages@v5
+      - run: npm ci
+        working-directory: site
+      # Круг 74 (13.11.2026): 3D-фон и заставка на превью ВЫКЛЮЧЕНЫ.
+      # Владелец показывает страницу заказчику, и в текущем виде 3D показывать
+      # нельзя. Поэтому BG3D здесь больше не выставляется: `bg3d-config.ts`
+      # по умолчанию отдаёт «off», страница рисует обычный кадр и не создаёт
+      # ни canvas, ни кнопку «Выключить 3D-фон». Заставка выключена на уровне
+      # кода (`voyah-intro.ts`, флаг PUBLIC_VY_INTRO). Вернуть оба — отдельным
+      # решением владельца: BG3D=voyah-free BG3D_DEMO=1 и PUBLIC_VY_INTRO=1.
+      # Адрес прослойки заявок (Cloudflare Worker). Пока переменная не задана,
+      # сайт остаётся в демо-режиме: формы ничего не отправляют.
+      - run: npm run build:pages
+        working-directory: site
+        env:
+          PUBLIC_LEADS_ENDPOINT: ${{ vars.PUBLIC_LEADS_ENDPOINT }}
+      - run: node scripts/check-pages.mjs
+        working-directory: site
+      # Заставка и 3D выключены (круг 74): проверяем по собранному артефакту,
+      # что ни оверлея, ни canvas, ни шейдеров заставки в бандле нет.
+      - run: node scripts/check-intro-3d-off.mjs
+        working-directory: site
+      - name: Check photo records
+        run: node scripts/check-cases.mjs
+        working-directory: site
+      - name: Check media size budget
+        run: node scripts/check-media-budget.mjs
+        working-directory: site
+      - name: Test photo pipeline
+        run: node --test tests/photo-pipeline.test.ts
+        working-directory: site
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/pages-dist
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
