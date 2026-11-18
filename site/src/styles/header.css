@@ -48,29 +48,43 @@
 .nav{margin-inline:auto}
 /* раунд 15: пункты меню не ломаются на две строки (скрин g: 1212 px) */
 .nav a{white-space:nowrap}
-.nav ul{display:flex;gap:clamp(0px,.2vw,6px)}
+/* круг 82: пункты меню — уже не «текст с подчёркиванием», а пилюли-кнопки:
+   у каждой свой фон и латунный контур (box-shadow inset, чтобы рамка не съедала
+   ширину при наведении). Подписи крупнее: 13.5 → 17 px, отступы 6/4 → 12/16 px,
+   зазор до 10 px. Всё это помещается за счёт ширины шапки от 1360 px. */
+.nav ul{display:flex;gap:clamp(2px,.45vw,10px)}
 .nav a{
-  display:flex;align-items:center;border-radius:8px;color:var(--mist);
-  padding:clamp(6px,.55vw,11px) clamp(4px,.55vw,12px);
-  font-size:clamp(13.5px,calc(.625vw + 5px),15.5px);
-  font-weight:500;letter-spacing:0;min-height:44px;
-  transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+  display:flex;align-items:center;border-radius:999px;color:var(--mist);
+  background:rgba(244,239,230,.035);
+  box-shadow:inset 0 0 0 1px rgba(224,169,109,.12);
+  padding:clamp(6px,.7vw,12px) clamp(4px,.85vw,16px);
+  font-size:clamp(13.5px,calc(.75vw + 3.5px),17px);
+  font-weight:500;letter-spacing:.005em;min-height:44px;
+  transition:color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
 }
-.nav a:hover{color:var(--ivory);background:rgba(224,169,109,.08)}
-.nav a.is-active{color:var(--brass);background:rgba(224,169,109,.1)}
+.nav a:hover{
+  color:var(--ivory);background:rgba(224,169,109,.14);
+  box-shadow:inset 0 0 0 1px rgba(224,169,109,.4);
+}
+.nav a.is-active{
+  color:var(--brass);background:rgba(224,169,109,.16);
+  box-shadow:inset 0 0 0 1px rgba(224,169,109,.45);
+}
 .nav a.is-active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:6px}
 .hdr-cta{display:flex;align-items:center;gap:clamp(8px,.4vw,12px);flex-shrink:0}
 .hdr-cta .btn{
-  padding:clamp(9px,.5vw,12px) clamp(12px,.9vw,18px);
-  font-size:clamp(12.5px,calc(.35vw + 8.9px),14px);
+  min-height:48px;
+  padding:clamp(9px,.7vw,14px) clamp(12px,1.25vw,24px);
+  font-size:clamp(12.5px,calc(.7vw + 4.5px),16.5px);
 }
 .hdr-phone{
-  font-weight:700;font-size:clamp(14.5px,calc(.3vw + 11.7px),17px);
+  font-weight:700;font-size:clamp(14.5px,calc(.45vw + 8.4px),18px);
   color:var(--ivory);white-space:nowrap;
-  display:flex;align-items:center;gap:clamp(6px,.1vw,8px);min-height:44px;
+  display:flex;align-items:center;gap:clamp(6px,.1vw,9px);min-height:44px;
 }
 .hdr-phone:hover{color:var(--brass)}
-.hdr-phone svg{width:clamp(17px,.2vw + 15px,19px);height:clamp(17px,.2vw + 15px,19px);stroke:var(--brass)}
+.hdr-phone svg{width:clamp(17px,calc(.25vw + 13.5px),20px);height:clamp(17px,calc(.25vw + 13.5px),20px);stroke:var(--brass)}
 .burger{
   display:none;width:48px;height:48px;border-radius:10px;border:1px solid var(--line);
   background:transparent;cursor:pointer;position:relative;flex-shrink:0;
@@ -127,12 +141,21 @@ body.menu-open .m-menu{opacity:1;visibility:visible;transform:none}
   .hdr-cta{gap:10px}
   .hdr-cta .btn{padding:10px 11px;font-size:12.5px}
 }
-@media (min-width:1200px) and (max-width:1359px){
+/* 1200–1499: цифры телефона скрыты (трубка остаётся ссылкой tel:). С 1500 меню
+   и телефон уже заметно крупнее, и цифры возвращаются. */
+@media (min-width:1200px) and (max-width:1499px){
   .hdr-in{gap:10px}
   .hdr-phone span{display:none}
+  .hdr-cta{gap:10px}
+}
+@media (min-width:1200px) and (max-width:1359px){
   .nav ul{gap:0}
   .nav a{padding:6px 6px;font-size:13.5px}
-  .hdr-cta{gap:10px}
+}
+@media (min-width:1360px) and (max-width:1499px){
+  .nav ul{gap:4px}
+  .nav a{padding:9px 11px;font-size:14.5px}
+  .hdr-cta .btn{padding:11px 16px;font-size:14px}
 }
 
 /* круг 28: пункт «Voyah Free» — холодная точка-маркер, чтобы раздел

@@ -241,8 +241,8 @@ await (async () => {
     ['шапка тянется по окну, а не по контейнеру 1200', /\.hdr-in,\.hdr-wrap\{[^}]*max-width:var\(--hdr-max\)[^}]*padding-inline:clamp\(20px,3vw,48px\)/],
     ['1024–1199: подпись логотипа и телефон скрыты', /@media \(min-width:1024px\) and \(max-width:1199px\)\{(?=[^}]*\})[\s\S]*?\.logo-t b\{display:none\}[\s\S]*?\.hdr-phone\{display:none\}/],
     ['1024–1199: меню уплотнено (6px 4px, 13.5px)', /@media \(min-width:1024px\) and \(max-width:1199px\)\{[\s\S]*?\.nav a\{padding:6px 4px;font-size:13\.5px\}/],
-    ['1200–1359: цифры телефона скрыты', /@media \(min-width:1200px\) and \(max-width:1359px\)\{[\s\S]*?\.hdr-phone span\{display:none\}/],
-    ['пункты меню крупнеют по clamp, а не прыгают', /\.nav a\{[^}]*font-size:clamp\(13\.5px,calc\(\.625vw \+ 5px\),15\.5px\)/],
+    ['1200–1499: цифры телефона скрыты', /@media \(min-width:1200px\) and \(max-width:1499px\)\{[\s\S]*?\.hdr-phone span\{display:none\}/],
+    ['пункты меню крупнеют по clamp, а не прыгают', /\.nav a\{[^}]*font-size:clamp\(13\.5px,calc\(\.75vw \+ 3\.5px\),17px\)/],
     ['логотип крупнеет по clamp', /\.logo img\{[^}]*width:clamp\(62px,4\.4vw,88px\)/],
   ]) chk('шапка: ' + name, re.test(hdr), re.test(hdr) ? 'есть' : 'нет', 'есть');
   /* 3c. короткие экраны и неон */

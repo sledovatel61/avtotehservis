@@ -238,6 +238,9 @@ const checks = [
   ['пункт меню ≥ 44 px', /\.nav a\{[^}]*min-height:44px/.test(CSS)],
   ['--container не тронут', /--container:1200px/.test(TOKENS)],
   ['на ≤1023 меню спрятано, бургер показан', /@media \(max-width:1023px\)\{[\s\S]*?\.nav\{display:none\}[\s\S]*?\.burger\{display:block/.test(MEDIA_CSS)],
+  ['пункты меню — пилюли с рамкой', /\.nav a\{[^}]*border-radius:999px[^}]*box-shadow:inset 0 0 0 1px/.test(CSS)],
+  ['подписи меню крупнеют до 17 px', /\.nav a\{[^}]*font-size:clamp\(13\.5px,calc\(\.75vw \+ 3\.5px\),17px\)/.test(CSS)],
+  ['кнопка «Записаться» до 16.5 px', /\.hdr-cta \.btn\{[^}]*font-size:clamp\(12\.5px,calc\(\.7vw \+ 4\.5px\),16\.5px\)/.test(CSS)],
 ];
 for (const [name, pass] of checks) (pass ? ok(name) : bad(name));
 
@@ -264,9 +267,20 @@ const a = measure(1280), b = measure(1440), c = measure(2560), d = measure(1024)
   : bad(`меню не растёт: 1280 ${a.navFont} px, 1440 ${b.navFont} px`));
 (c.logoW > d.logoW ? ok(`логотип крупнее на 2560, чем на 1024 (${d.logoW.toFixed(0)} → ${c.logoW.toFixed(0)} px)`)
   : bad(`логотип не растёт: 1024 ${d.logoW} px, 2560 ${c.logoW} px`));
-(Math.abs(measure(1024).navFont - measure(1360).navFont) < 0.01
-  ? ok('на 1024–1360 пункты меню не растут — тесный диапазон')
-  : bad(`пункты меню растут на 1024–1360: ${measure(1024).navFont} → ${measure(1360).navFont}`));
+/* круг 82: подписи меню крупнее (13.5 → 17 px), поэтому «не расти» теперь
+   относится только к самому тесному диапазону 1024–1199 и к 1200–1359,
+   где ещё прячется телефон. Внутри каждого диапазона размер фиксирован,
+   дальше растёт по clamp без прыжков. */
+(Math.abs(measure(1024).navFont - measure(1199).navFont) < 0.01 && Math.abs(measure(1199).navFont - measure(1200).navFont) < 0.01
+  ? ok('на 1024–1199 и 1200–1359 пункты меню не дёргаются — тесный диапазон')
+  : bad(`пункты меню дёргаются на 1024–1359: ${measure(1024).navFont} → ${measure(1199).navFont} → ${measure(1200).navFont}`));
+(measure(1360).navFont > measure(1199).navFont
+  ? ok(`с 1360 подписи заметно крупнее: ${measure(1199).navFont.toFixed(1)} → ${measure(1360).navFont.toFixed(1)} px`)
+  : bad('с 1360 подписи не стали крупнее'));
+(measure(1920).navFont >= 16 ? ok(`на 1920 подписи меню ${measure(1920).navFont.toFixed(1)} px (было 15.5 — мелко)`)
+  : bad(`на 1920 подписи меню ${measure(1920).navFont.toFixed(1)} px — мелко, норма ≥16`));
+(measure(1920).btnFont >= 15.5 ? ok(`на 1920 надпись «Записаться» ${measure(1920).btnFont.toFixed(1)} px (было 14)`)
+  : bad(`на 1920 надпись «Записаться» ${measure(1920).btnFont.toFixed(1)} px — мелко, норма ≥15.5`));
 (c.need > b.need ? ok(`содержимое шапки шире на 2560, чем на 1440 (${b.need.toFixed(0)} → ${c.need.toFixed(0)} px)`)
   : bad('содержимое не растёт с шириной'));
 
@@ -303,7 +317,7 @@ if (SELF) {
   const boxShare = parseFloat((brokenMax.match(/--hdr-max:\s*(\d+)px/) || [])[1]) / 1920;
   expectFail('max-width 1200 px → доля окна 62 % (норма ≥80 %) — гейт падает', !(boxShare >= 0.8));
 
-  const hugeNav = CSS.replace(/font-size:clamp\(13\.5px,calc\(\.625vw \+ 5px\),15\.5px\)/, 'font-size:38px');
+  const hugeNav = CSS.replace(/font-size:clamp\(13\.5px,calc\(\.75vw \+ 3\.5px\),17px\)/, 'font-size:38px');
   if (hugeNav === CSS) expectFail('правило размера пункта меню найдено для подмены', false);
   else {
     const need8 = Object.values(META.nav).reduce((sum, em) => sum + em * 38 + 4 * 2, 0);
