@@ -6,7 +6,7 @@ import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
 /* круг 23 (§D) → круг 78: карта обложек переехала в ../server/case-covers.ts —
    её теперь использует и главная (раньше там были SVG-заглушки с бейджем «до / после») */
 import { CASE_COVERS } from '../server/case-covers.ts';
-/* круг 79: реальные кейсы из site/content/cases.json; пустой файл — прежний вид */
+/* круг 79 → 79-2: реальные работы из site/content/cases.json; пустой файл — прежний вид */
 import { listPublishedSiteCases } from '../server/cases-store.ts';
 import CaseCard from '../components/CaseCard.astro';
 import { fmtDateRu, plural } from '../server/format.ts';
@@ -173,19 +173,27 @@ const jsonLd = {
 </section>
 <section class="sec" aria-labelledby="ab-gal-h">
   <div class="container">
-    <div class="sec-head reveal">
-      {/* m10 (приёмка A9): то же правило, что на главной — иллюстрации подписаны
-          «пример работы», поэтому без реальных кейсов заголовок общий, без слова «кейсы» */}
-      <div><span class="eyebrow">Работы</span><h2 id="ab-gal-h">{realCases ? 'Кейсы из практики' : 'Примеры работ'}</h2></div>
-      {/* Стрелки только когда листать есть что: при одной-двух карточках они мертвы */}
-      {((realCases ? siteCases.length : cases.length) > 2) && (
+    <div class:list={['sec-head', 'reveal', realCases && 'sec-head--works']}>
+      {/* Задание 79-2: то же правило, что на главной */}
+      <div><span class="eyebrow">Работы</span><h2 id="ab-gal-h">{realCases ? 'Наши работы' : 'Примеры работ'}</h2></div>
+      {realCases ? (
+        <div class="sec-head-actions">
+          <a class="works-all" href="/raboty">Все работы <span class="ar" aria-hidden="true">→</span></a>
+          {siteCases.length > 2 && (
+            <div class="slider-nav">
+              <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие работы">←</button>
+              <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие работы">→</button>
+            </div>
+          )}
+        </div>
+      ) : cases.length > 2 && (
         <div class="slider-nav">
-          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
-          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
+          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие примеры работ">←</button>
+          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие примеры работ">→</button>
         </div>
       )}
     </div>
-    <div class="carousel reveal" data-carousel data-live-word="Кейс">
+    <div class="carousel reveal" data-carousel data-live-word="Работа">
       <div class="carousel-win"><div class="carousel-track gal-track">
           {realCases
             ? siteCases.map((c) => <CaseCard case={c} mode="link" />)
