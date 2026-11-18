@@ -94,6 +94,20 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
+      # Диагностика: печатает хвост лога деплоя и ответ API про сабдомен в аннотациях,
+      # чтобы адрес воркера можно было найти даже без доступа к логам run.
+      - name: Deploy diagnostics
+        if: always()
+        run: |
+          tail -n 15 /tmp/deploy.log 2>/dev/null | while IFS= read -r line; do
+            echo "::warning::LOG ${line}"
+          done || true
+          SUBRESP=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain" || true)
+          echo "::warning::SUBDOMAIN ${SUBRESP}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Push secrets to worker
         run: |
           set -e
