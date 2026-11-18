@@ -6,10 +6,13 @@ data/
 *.sqlite3-*
 .astro/
 
-# Загруженные медиа живут на сервере (MEDIA_DIR), в git не попадают.
+# Серверные загрузки живут в site/media (MEDIA_DIR), в git не попадают.
 # Негации ниже перекрывают корневой .gitignore (*.sql, media/) — без них
 # в коммит молча не попадают схема БД и маршруты выдачи медиа (блокер Б1/Б2 ревью).
-media/
+# Фото кейсов лежат в public/media и обязаны попадать в git — иначе на статике их нет.
+/media/
+!public/media/
+!public/media/**
 !migrations/
 !migrations/*.sql
 !src/pages/media/

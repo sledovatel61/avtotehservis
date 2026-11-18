@@ -77,5 +77,58 @@ async function walk(dir) {
   }
 }
 await walk(root);
+
+// /manage/ доступна по прямой ссылке для владельца, но не должна индексироваться.
+const manageDir = join(root, 'manage');
+const manageIndex = join(manageDir, 'index.html');
+assert.ok(await exists(manageIndex), 'Missing pages-dist/manage/index.html');
+const manageHtml = await readFile(manageIndex, 'utf8');
+const manageDom = new JSDOM(manageHtml);
+const robots = manageDom.window.document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? '';
+assert.match(robots, /noindex/i, 'Manage page must contain robots noindex');
+manageDom.window.close();
+async function assertNoAdminReferences(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const file = join(dir, entry.name);
+    if (entry.isDirectory()) await assertNoAdminReferences(file);
+    else {
+      const text = await readFile(file, 'utf8');
+      assert.ok(!/(?:href|src|action)\s*=\s*["'][^"']*\/admin(?:[/?#"']|$)/i.test(text), `Manage asset references /admin: ${file}`);
+      assert.ok(!/(?:https?:[^\s"']+)?\/admin(?:[/?#"']|$)/i.test(text), `Manage asset contains /admin URL: ${file}`);
+    }
+  }
+}
+await assertNoAdminReferences(manageDir);
+
+// Страницы опубликованных кейсов должны содержать реальные фото, а не старые иллюстрации.
+const casesFile = JSON.parse(await readFile(resolve(import.meta.dirname, '../content/cases.json'), 'utf8'));
+assert.equal(casesFile.version, 1, 'cases.json version must be 1');
+assert.ok(Array.isArray(casesFile.cases), 'cases.json cases must be an array');
+const sitemapPath = join(root, 'sitemap.xml');
+assert.ok(await exists(sitemapPath), 'Missing pages-dist/sitemap.xml');
+const sitemap = await readFile(sitemapPath, 'utf8');
+for (const item of casesFile.cases.filter((entry) => entry?.status === 'published')) {
+  const slug = String(item.slug ?? '');
+  assert.match(slug, /^[a-z0-9-]{3,60}$/, 'Published case must have a safe slug');
+  const file = join(root, 'cases', slug, 'index.html');
+  assert.ok(await exists(file), `Missing published case page: ${file}`);
+  const html = await readFile(file, 'utf8');
+  const dom = new JSDOM(html);
+  const srcsets = [...dom.window.document.querySelectorAll('[srcset]')].map((el) => el.getAttribute('srcset') ?? '');
+  const hasThreeWidths = srcsets.some((srcset) => {
+    const widths = new Set(srcset.split(',').map((part) => part.trim().match(/(?:^|\s)(480|960|1600)w$/)?.[1]).filter(Boolean));
+    return ['480', '960', '1600'].every((width) => widths.has(width));
+  });
+  assert.ok(hasThreeWidths, `${slug}: no srcset containing 480w, 960w and 1600w`);
+  for (const el of dom.window.document.querySelectorAll('[src], [srcset], [data-img], [data-cover]')) {
+    for (const attr of ['src', 'srcset', 'data-img', 'data-cover']) {
+      const value = el.getAttribute(attr) ?? '';
+      assert.ok(!/(?:^|\/)img\/ab-case-[^/?#\s]*/i.test(value), `${slug}: legacy illustration used instead of case photo: ${value}`);
+    }
+  }
+  dom.window.close();
+  assert.ok(sitemap.includes(`/cases/${slug}`), `${slug}: missing /cases/${slug} in sitemap.xml`);
+}
+
 assert.ok(pages >= 9);
-console.log(`PASS: ${pages} pages, ${links} local links/assets; no private directories.`);
+console.log(`PASS: ${pages} pages, ${links} local links/assets; manage is noindex; published cases and sitemap checked.`);
