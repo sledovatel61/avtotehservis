@@ -258,6 +258,19 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
             : 'Заявка записана в базу сервиса и сразу передана в доставку: владельцу в Telegram и письмом на почту. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.'}</p>
         </div>
 
+        <div class="wiz-state" id="state-demo" role="status" aria-live="polite">
+          <div class="ticket">
+            <div class="ok is-info"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.5"/></svg><b>Демо-версия: заявка не отправлена</b></div>
+            <p class="hint">Это витрина сайта: форма работает как обычно, но данные никуда не уходят — ни в базу, ни в Telegram, ни на почту. Заявку мы не получили.</p>
+            <p class="hint">Чтобы записаться на визит, позвоните: <b class="u-nowrap">{S.phone_main}</b>, {S.hours}. Скажите марку, что нужно сделать и когда удобно приехать.</p>
+          </div>
+          <p class="u-actions-center">
+            <a class="btn btn--copper" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: <span class="u-nowrap">{S.phone_main}</span></a>
+            <button class="btn btn--ghost" type="button" id="demo-again">Заполнить заново</button>
+            <a class="btn btn--ghost" href="/">На главную</a>
+          </p>
+        </div>
+
         <div class="wiz-state" id="state-err" role="alert" aria-live="assertive">
           <div class="err-box">
             <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg><b>Не удалось отправить заявку</b></div>

@@ -2,7 +2,7 @@
    (kind=message, талон K-…). Адрес берётся из shared/leads-endpoint.ts: свой сервер
    /api/leads в демо-режиме или прослойка Cloudflare Worker при PUBLIC_LEADS_ENDPOINT. */
 import { $, track, attachMask } from './lib.ts';
-import { leadsUrl, leadsFetch, retryAfterSeconds } from '../shared/leads-endpoint.ts';
+import { leadsUrl, leadsFetch, retryAfterSeconds, relayMode } from '../shared/leads-endpoint.ts';
 
 const form = $('#cform');
 if (form) {
@@ -30,9 +30,14 @@ if (form) {
     else input?.removeAttribute('aria-invalid');
   }
 
-  function show(which: 'form' | 'sending' | 'ok' | 'err'): void {
+  const demoBox = $('#cform-demo');
+  /* Задание 80-2 §5: в статике (Pages) <body data-demo="1"> — витрина, сообщение никуда
+     не отправляем. Прослойка (relayMode) важнее: там обращение настоящее. В dev атрибута
+     нет — поведение прежнее. */
+  const isDemo = (): boolean => document.body.dataset.demo === '1' && !relayMode;
+  function show(which: 'form' | 'sending' | 'ok' | 'err' | 'demo'): void {
     if (box) box.style.display = which === 'form' ? '' : 'none';
-    for (const [el, w] of [[sending, 'sending'], [okBox, 'ok'], [errBox, 'err']] as [HTMLElement | null, string][]) {
+    for (const [el, w] of [[sending, 'sending'], [okBox, 'ok'], [errBox, 'err'], [demoBox, 'demo']] as [HTMLElement | null, string][]) {
       el?.classList.toggle('is-on', w === which);
     }
   }
@@ -119,6 +124,7 @@ if (form) {
     if (retryTimer) return; // ещё идёт блокировка после 429
     track('cform_submit');
     resetErrBox();
+    if (isDemo()) { show('demo'); track('cform_demo'); return; }
     show('sending');
     if (cSend) cSend.disabled = true;
     try {
@@ -184,4 +190,6 @@ if (form) {
   }
 
   $('#c-err-retry')?.addEventListener('click', () => { resetErrBox(); show('form'); });
+  /* демо-экран: возврат к форме (поля не стираем — человек может вернуться и посмотреть) */
+  $('#c-demo-again')?.addEventListener('click', () => { show('form'); try { cName?.focus(); } catch { /* ignore */ } });
 }

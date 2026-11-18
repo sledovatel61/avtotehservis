@@ -233,6 +233,8 @@ if (wizEl) {
     const item: PhotoItem = { id: null, url: URL.createObjectURL(file), name: file.name, state: 'uploading' };
     st.photos.push(item);
     renderPhotos();
+    /* демо: загрузка идёт на /api/uploads, которого в статике нет — fetch не делаем */
+    if (isDemo()) { item.state = 'done'; return; }
     const fd = new FormData();
     fd.append('file', file);
     fetch('/api/uploads', { method: 'POST', body: fd })
@@ -465,14 +467,20 @@ if (wizEl) {
   const stateSending = $('#state-sending');
   const stateOk = $('#state-ok');
   const stateErr = $('#state-err');
-  function showState(which: 'form' | 'sending' | 'ok' | 'err'): void {
+  const stateDemo = $('#state-demo');
+  /* Задание 80-2 §5: в статике (Pages) <body data-demo="1"> — витрина: заявку никуда
+     не отправляем, показываем экран «Демо-версия». Если включена прослойка (relayMode),
+     она важнее: там заявка настоящая. В dev атрибута нет — поведение прежнее. */
+  const isDemo = (): boolean => document.body.dataset.demo === '1' && !relayMode;
+  function showState(which: 'form' | 'sending' | 'ok' | 'err' | 'demo'): void {
     // display переключается через CSSOM (CSP style-src 'self' это разрешает)
     if (wizStepsBox) wizStepsBox.style.display = which === 'form' ? '' : 'none';
     if (wizFoot) wizFoot.style.display = which === 'form' ? '' : 'none';
-    for (const el of [stateSending, stateOk, stateErr]) el?.classList.remove('is-on');
+    for (const el of [stateSending, stateOk, stateErr, stateDemo]) el?.classList.remove('is-on');
     if (which === 'sending') stateSending?.classList.add('is-on');
     if (which === 'ok') stateOk?.classList.add('is-on');
     if (which === 'err') stateErr?.classList.add('is-on');
+    if (which === 'demo') stateDemo?.classList.add('is-on');
   }
 
   /* 429: кнопку «Повторить отправку» держим заблокированной до конца Retry-After */
@@ -510,6 +518,7 @@ if (wizEl) {
     if (first) { goStep(4); try { first.focus(); } catch { /* ignore */ } return; }
     track('submit_attempt');
     releaseRetry();
+    if (isDemo()) { showState('demo'); track('submit_demo'); return; }
     showState('sending');
     try {
       const r = await leadsFetch(leadsUrl('leads'), {
@@ -598,6 +607,10 @@ if (wizEl) {
     if (p) p.textContent = ERR_TEXT_DEFAULT;
     showState('form');
     goStep(5);
+  });
+  $('#demo-again')?.addEventListener('click', () => {
+    showState('form');
+    goStep(1);
   });
   $('#ok-again')?.addEventListener('click', () => {
     st = freshSt();

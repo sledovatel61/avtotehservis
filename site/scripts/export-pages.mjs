@@ -57,6 +57,9 @@ try {
     const dom = new JSDOM(await response.text());
     const doc = dom.window.document;
     doc.body.dataset.preview = 'true';
+    /* Задание 80-2 §5: статика на Pages — витрина. Клиент (wizard.ts, contacts-form.ts)
+       по этому признаку показывает «Демо-версия: заявка не отправлена» и не делает fetch. */
+    doc.body.dataset.demo = '1';
     doc.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove());
     const robots = doc.createElement('meta');
     robots.name = 'robots'; robots.content = 'noindex, nofollow'; doc.head.append(robots);

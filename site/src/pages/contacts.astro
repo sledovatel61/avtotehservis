@@ -111,6 +111,15 @@ const jsonLd = {
             <p class="hint">Перезвоним с номера {S.phone_main} в рабочее время ({S.hours}). {relayMode ? 'Обращение передано в сервис.' : 'Обращение уже записано в базу сервиса.'}</p>
           </div>
         </div>
+        <div class="cform-state" id="cform-demo" role="status" aria-live="polite">
+          <p><b class="u-brass">Демо-версия: заявка не отправлена.</b></p>
+          <p class="hint">Это витрина сайта: форма работает как обычно, но сообщение никуда не уходит — ни в базу, ни в Telegram, ни на почту.</p>
+          <p class="hint">Чтобы связаться, позвоните: <b class="u-nowrap">{S.phone_main}</b>, {S.hours}.</p>
+          <p class="u-mt16">
+            <a class="btn btn--copper" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: <span class="u-nowrap">{S.phone_main}</span></a>
+            <button type="button" class="btn btn--ghost" id="c-demo-again">Заполнить заново</button>
+          </p>
+        </div>
         <div class="cform-state" id="cform-err" role="alert" aria-live="assertive">
           <p><b class="u-danger">Не удалось отправить.</b></p>
           <p class="hint">Данные сохранены в полях. Повторите отправку или позвоните: {S.phone_main}.</p>
