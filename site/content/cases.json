@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-18T11:17:57.493Z",
+  "updated_at": "2026-11-18T11:24:50.387Z",
   "cases": [
     {
       "slug": "remont-stupitsy",
@@ -29,6 +29,42 @@
           "ext": "webp"
         }
       ]
+    },
+    {
+      "slug": "zamena-rychaga",
+      "title": "Замена рычага",
+      "description": "Замена рычага тест",
+      "service_slug": "podveska",
+      "mode": "before_after",
+      "status": "published",
+      "published_at": "2026-11-19",
+      "sort": 20,
+      "cover": {
+        "base": "7q5bz3-before",
+        "alt": "старый рычаг",
+        "w": 356,
+        "h": 267,
+        "ext": "webp"
+      },
+      "before": [
+        {
+          "base": "7q5bz3-before",
+          "alt": "старый рычаг",
+          "w": 356,
+          "h": 267,
+          "ext": "webp"
+        }
+      ],
+      "after": [
+        {
+          "base": "khqe1k-after",
+          "alt": "новый рычаг",
+          "w": 356,
+          "h": 267,
+          "ext": "webp"
+        }
+      ],
+      "photos": []
     }
   ]
 }
