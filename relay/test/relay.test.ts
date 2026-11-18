@@ -8,14 +8,20 @@ import { composeTelegram } from '../src/telegram.ts';
 const uuid = (): string => crypto.randomUUID();
 const api = 'https://tg.test';
 
-interface Call { url: string; body: Record<string, unknown> }
+interface Call { url: string; body: Record<string, unknown>; form?: FormData }
 let calls: Call[] = [];
 let tgStatus = 200;
 
 globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
   const url = String(input);
-  const body = init?.body ? JSON.parse(String(init.body)) as Record<string, unknown> : {};
-  calls.push({ url, body });
+  const raw = init?.body;
+  /* sendMessage идёт JSON, sendPhoto — multipart: сохраняем как есть, тесты смотрят нужное. */
+  if (raw instanceof FormData) {
+    calls.push({ url, body: {}, form: raw });
+  } else {
+    const body = raw ? JSON.parse(String(raw)) as Record<string, unknown> : {};
+    calls.push({ url, body });
+  }
   return new Response(JSON.stringify(tgStatus === 200 ? { ok: true } : { ok: false }), { status: tgStatus });
 }) as typeof fetch;
 
@@ -281,4 +287,107 @@ test('composeTelegram: экранирует HTML и пишет источник'
   assert.ok(text.includes('Иван &lt;b&gt;'));
   assert.ok(!text.includes('Иван <b>'));
   assert.ok(text.includes('appointment'));
+});
+
+/* ---------- фото в заявке: multipart ---------- */
+
+function formWith(files: File[], payload = booking()): FormData {
+  const fd = new FormData();
+  fd.append('payload', JSON.stringify(payload));
+  for (const [i, f] of files.entries()) fd.append('photo', f, `photo-${i + 1}.jpg`);
+  return fd;
+}
+
+let ipSeq = 0;
+async function postForm(fd: FormData): Promise<Response> {
+  /* у каждого теста свой IP: лимит 5 заявок на адрес, иначе тесты съедают друг друга */
+  return worker.fetch(new Request('https://relay.test/leads', {
+    method: 'POST',
+    headers: {
+      origin: 'https://sledovatel61.github.io',
+      'cf-connecting-ip': `10.0.0.${++ipSeq}`,
+    },
+    body: fd,
+  }), env());
+}
+
+const jpeg = (name = 'krylo.jpg', bytes = 1024): File =>
+  new File([new Uint8Array(bytes)], name, { type: 'image/jpeg' });
+
+test('multipart: заявка с фото принимается и фото уходят в группу', async () => {
+  const res = await postForm(formWith([jpeg(), jpeg('bamper.jpg', 2048)]));
+  assert.equal(res.status, 201);
+  const j = await res.json() as { ticket: string };
+  assert.match(j.ticket, /^A-\d{4}-\d{4}$/);
+
+  const msg = calls.find((c) => c.url.endsWith('/sendMessage'));
+  assert.ok(msg);
+  const photos = calls.filter((c) => c.url.endsWith('/sendPhoto'));
+  assert.equal(photos.length, 2);
+  assert.equal(photos[0].form?.get('chat_id'), '-1001234567890');
+  assert.match(String(photos[0].form?.get('caption')), new RegExp(`к заявке ${j.ticket}`));
+  assert.ok(photos[0].form?.get('photo') instanceof File);
+});
+
+test('multipart: заявка без фото работает как раньше', async () => {
+  const res = await postForm(formWith([]));
+  assert.equal(res.status, 201);
+  assert.equal(calls.filter((c) => c.url.endsWith('/sendPhoto')).length, 0);
+});
+
+test('multipart: больше 3 фото — 400 и ничего не отправлено', async () => {
+  const res = await postForm(formWith([jpeg(), jpeg(), jpeg(), jpeg()]));
+  assert.equal(res.status, 400);
+  const j = await res.json() as { error: { code: string } };
+  assert.equal(j.error.code, 'validation');
+  assert.equal(calls.length, 0);
+});
+
+test('multipart: не изображение — 400', async () => {
+  const bad = new File([new Uint8Array(64)], 'doc.pdf', { type: 'application/pdf' });
+  const res = await postForm(formWith([bad]));
+  assert.equal(res.status, 400);
+  assert.equal(calls.length, 0);
+});
+
+test('multipart: фото больше 6 МБ — 400', async () => {
+  const heavy = new File([new Uint8Array(6 * 1024 * 1024 + 1)], 'big.jpg', { type: 'image/jpeg' });
+  const res = await postForm(formWith([heavy]));
+  assert.equal(res.status, 400);
+});
+
+test('multipart: битый payload — 400 bad_json', async () => {
+  const fd = new FormData();
+  fd.append('payload', '{не json');
+  fd.append('photo', jpeg(), 'p.jpg');
+  const res = await postForm(fd);
+  assert.equal(res.status, 400);
+  const j = await res.json() as { error: { code: string } };
+  assert.equal(j.error.code, 'bad_json');
+});
+
+test('multipart: ошибка Telegram на фото не отменяет принятую заявку', async () => {
+  let n = 0;
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    n++;
+    const url = String(input);
+    const raw = init?.body;
+    if (raw instanceof FormData) calls.push({ url, body: {}, form: raw });
+    else calls.push({ url, body: raw ? JSON.parse(String(raw)) as Record<string, unknown> : {} });
+    /* первое сообщение с заявкой — ок, фото — падает */
+    return new Response(JSON.stringify({ ok: url.endsWith('/sendMessage') }), { status: url.endsWith('/sendMessage') ? 200 : 400 });
+  }) as typeof fetch;
+  try {
+    const res = await postForm(formWith([jpeg()]));
+    assert.equal(res.status, 201);
+    assert.ok(n >= 2);
+  } finally {
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = String(input);
+      const raw = init?.body;
+      if (raw instanceof FormData) calls.push({ url, body: {}, form: raw });
+      else calls.push({ url, body: raw ? JSON.parse(String(raw)) as Record<string, unknown> : {} });
+      return new Response(JSON.stringify(tgStatus === 200 ? { ok: true } : { ok: false }), { status: tgStatus });
+    }) as typeof fetch;
+  }
 });

@@ -23,7 +23,9 @@ if (wizEl) {
   const VIN_OK = /^[A-HJ-NPR-Z0-9]{17}$/;
   const MIN_YEAR = 1980, MAX_YEAR = 2026;
 
-  interface PhotoItem { id: string | null; url: string; name: string; state: 'uploading' | 'done' | 'error' }
+  /* Фото не «загружаются на сервер» по одному: файл сжимается в браузере и уезжает
+     вместе с заявкой одним multipart-запросом (см. submit()). blob — то, что уйдёт. */
+  interface PhotoItem { name: string; url: string; blob: Blob | null; state: 'uploading' | 'done' | 'error'; note?: string }
   interface St {
     brand: string; model: string; year: string; yearSkip: boolean;
     vin: string; vinSkip: boolean; mileage: string; milSkip: boolean;
@@ -125,6 +127,8 @@ if (wizEl) {
     ];
     for (const [skip, input, hint, offText, onText] of pairs) {
       if (!skip || !input) continue;
+      /* класс на пилюле: подсветка не зависит от поддержки :has() */
+      skip.closest('label')?.classList.toggle('is-on', skip.checked);
       if (skip.checked) {
         input.disabled = true; input.value = '';
         input.setAttribute('aria-disabled', 'true');
@@ -203,58 +207,127 @@ if (wizEl) {
 
   const photosBox = $('#photos');
   const fPhotos = $<HTMLInputElement>('#f-photos');
+  const photoAdd = $('#photo-add');
+  const MAX_PHOTOS = 3;
+  /* Сжатие: телефон отдаёт 3–6 МБ, для оценки повреждения хватает 1600 px.
+     Меньше трафика у клиента, быстрее доставка в Telegram, ничего не храним. */
+  const PHOTO_MAX_SIDE = 1600;
+  const PHOTO_QUALITY = 0.82;
+  const PHOTO_RAW_MAX = 20 * 1024 * 1024;
+
+  function setPhotoErr(msg: string): void {
+    const el = $('#photo-err');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('is-on', Boolean(msg));
+  }
+
+  function compressImage(file: File): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      const done = (blob: Blob | null, err?: string): void => {
+        URL.revokeObjectURL(url);
+        if (blob) resolve(blob); else reject(new Error(err ?? 'compress'));
+      };
+      img.onload = () => {
+        try {
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          if (!w || !h) { done(null, 'no_size'); return; }
+          const k = Math.min(1, PHOTO_MAX_SIDE / Math.max(w, h));
+          const cw = Math.max(1, Math.round(w * k));
+          const ch = Math.max(1, Math.round(h * k));
+          const canvas = document.createElement('canvas');
+          canvas.width = cw; canvas.height = ch;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { done(null, 'no_canvas'); return; }
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, cw, ch);
+          ctx.drawImage(img, 0, 0, cw, ch);
+          canvas.toBlob((b) => done(b, 'no_blob'), 'image/jpeg', PHOTO_QUALITY);
+        } catch { done(null, 'canvas_error'); }
+      };
+      img.onerror = () => done(null, 'decode');
+      img.src = url;
+    });
+  }
+
   fPhotos?.addEventListener('change', () => {
     const files = Array.from(fPhotos.files ?? []);
-    for (const f of files) {
-      if (st.photos.length >= 3) break;
-      addPhoto(f);
-    }
+    const free = MAX_PHOTOS - st.photos.filter((p) => p.state !== 'error').length;
+    if (free <= 0) setPhotoErr('Уже 3 фото — лишние не добавляются.');
+    for (const f of files.slice(0, Math.max(0, free))) addPhoto(f);
+    if (files.length > free && free > 0) setPhotoErr('Можно приложить не больше 3 фото — лишние не добавлены.');
     fPhotos.value = '';
+    saveDraftSoon();
   });
+
   function renderPhotos(): void {
     if (!photosBox) return;
     photosBox.innerHTML = st.photos.map((p, i) => `
       <figure class="photo${p.state === 'error' ? ' photo--error' : ''}" data-i="${i}">
         <img src="${p.url}" alt="Фото ${i + 1}: ${p.name.replace(/"/g, '&quot;')}">
-        <figcaption>${p.state === 'uploading' ? '<span class="spinner" aria-hidden="true"></span> Загрузка…' : p.state === 'error' ? 'Ошибка — нажмите, чтобы убрать' : p.name.replace(/</g, '&lt;')}</figcaption>
+        <figcaption>${p.state === 'uploading' ? 'Готовим…' : p.state === 'error' ? (p.note ?? 'Не приняли — нажмите, чтобы убрать') : p.name.replace(/</g, '&lt;')}</figcaption>
         <button type="button" class="photo-x" aria-label="Удалить фото ${i + 1}">✕</button>
       </figure>`).join('');
-    if (fPhotos) fPhotos.parentElement?.classList.toggle('is-full', st.photos.length >= 3);
+    const used = st.photos.filter((p) => p.state !== 'error').length;
+    if (fPhotos) fPhotos.parentElement?.classList.toggle('is-full', used >= MAX_PHOTOS);
+    if (photoAdd) photoAdd.classList.toggle('u-none', used >= MAX_PHOTOS);
   }
+
   function addPhoto(file: File): void {
-    if (file.size > 15 * 1024 * 1024) {
-      st.photos.push({ id: null, url: URL.createObjectURL(file), name: `${file.name} — больше 15 МБ`, state: 'error' });
-      renderPhotos(); return;
-    }
-    if (/^image\/svg/i.test(file.type)) {
-      st.photos.push({ id: null, url: URL.createObjectURL(file), name: `${file.name} — SVG не принимается`, state: 'error' });
-      renderPhotos(); return;
-    }
-    const item: PhotoItem = { id: null, url: URL.createObjectURL(file), name: file.name, state: 'uploading' };
-    st.photos.push(item);
-    renderPhotos();
-    /* демо: загрузка идёт на /api/uploads, которого в статике нет — fetch не делаем */
-    if (isDemo()) { item.state = 'done'; return; }
-    const fd = new FormData();
-    fd.append('file', file);
-    fetch('/api/uploads', { method: 'POST', body: fd })
-      .then((r) => r.json().then((j) => ({ ok: r.ok, j })))
-      .then(({ ok, j }) => {
-        if (!ok || !j.id) { item.state = 'error'; item.name = `${file.name} — не загрузилось`; }
-        else { item.state = 'done'; item.id = String(j.id); URL.revokeObjectURL(item.url); item.url = String(j.url); }
-      })
-      .catch(() => { item.state = 'error'; item.name = `${file.name} — нет связи`; })
-      .finally(() => { renderPhotos(); saveDraftSoon(); });
-  }
-  photosBox?.addEventListener('click', (e) => {
-    const x = (e.target as HTMLElement).closest('.photo-x');
-    const fig = (e.target as HTMLElement).closest('figure.photo');
-    if (x && fig) {
-      st.photos.splice(Number(fig.getAttribute('data-i')), 1);
-      renderPhotos(); saveDraftSoon();
-    } else if (fig && fig.classList.contains('photo--error')) {
-      st.photos.splice(Number(fig.getAttribute('data-i')), 1);
+    const drop = (note: string): void => {
+      st.photos.push({ name: file.name, url: '', blob: null, state: 'error', note });
+      setPhotoErr(note);
       renderPhotos();
+    };
+    if (!/^image\//.test(file.type)) { drop('Это не изображение — выберите фото'); return; }
+    if (/^image\/svg/i.test(file.type)) { drop('SVG не принимается — нужен JPG или PNG'); return; }
+    if (file.size > PHOTO_RAW_MAX) { drop('Файл больше 20 МБ — выберите фото поменьше'); return; }
+
+    const item: PhotoItem = { name: file.name, url: URL.createObjectURL(file), blob: null, state: 'uploading' };
+    st.photos.push(item);
+    setPhotoErr('');
+    renderPhotos();
+
+    void compressImage(file)
+      .then((blob) => {
+        URL.revokeObjectURL(item.url);
+        item.blob = blob;
+        item.url = URL.createObjectURL(blob);
+        item.state = 'done';
+        renderPhotos();
+        saveDraftSoon();
+      })
+      .catch(() => {
+        /* Canvas недоступен (старый браузер, приватный режим) — отправляем файл как есть,
+           если он не гигантский: лучше фото в большем размере, чем никакого. */
+        if (file.size <= 6 * 1024 * 1024) {
+          item.blob = file;
+          item.state = 'done';
+          renderPhotos();
+          saveDraftSoon();
+        } else {
+          item.state = 'error';
+          item.note = 'Не удалось сжать фото — попробуйте другое';
+          setPhotoErr(item.note);
+          renderPhotos();
+        }
+      });
+  }
+
+  photosBox?.addEventListener('click', (e) => {
+    const fig = (e.target as HTMLElement).closest('figure.photo');
+    if (!fig) return;
+    const i = Number(fig.getAttribute('data-i'));
+    const x = (e.target as HTMLElement).closest('.photo-x');
+    if (x || fig.classList.contains('photo--error')) {
+      const gone = st.photos.splice(i, 1)[0];
+      if (gone?.url) URL.revokeObjectURL(gone.url);
+      setPhotoErr('');
+      renderPhotos();
+      saveDraftSoon();
     }
   });
 
@@ -365,7 +438,7 @@ if (wizEl) {
         if (!firstBad) firstBad = chips ?? null;
       }
       if (st.photos.some((p) => p.state === 'uploading')) {
-        setErrAt('svc-err-anchor', 'Дождитесь окончания загрузки фото или удалите их');
+        setPhotoErr('Секунду — готовим фото к отправке');
         if (!firstBad) firstBad = photosBox ?? null;
       }
     }
@@ -387,6 +460,7 @@ if (wizEl) {
   }
 
   /* ---------- сводка ---------- */
+  const photoTotal = (): number => st.photos.filter((p) => p.state === 'done' && p.blob).length;
   function summaryRows(): { label: string; value: string; note?: string; step: number }[] {
     const car = [st.brand, st.model, st.year ? `${st.year} г.` : '', st.mileage && !st.milSkip ? `${Number(st.mileage).toLocaleString('ru-RU')} км` : '', st.vin && !st.vinSkip ? `VIN ${st.vin}` : ''].filter(Boolean).join(', ');
     const chipLabels = new Map($$<HTMLInputElement>('input[name="svc"]', wiz).map((i) => [i.value, i.closest('.chip')?.querySelector('span')?.textContent ?? i.value]));
@@ -395,7 +469,7 @@ if (wizEl) {
     return [
       { label: 'Автомобиль', value: car || '—', step: 1 },
       { label: 'Услуги', value: svc || '—', step: 2 },
-      { label: 'Фото', value: st.photos.length ? `${st.photos.filter((p) => p.state === 'done').length} файл(ов)` : 'не прикрепляли', step: 2 },
+      { label: 'Фото', value: photoTotal() ? `${photoTotal()} фото — приложены к заявке` : 'не прикрепляли', step: 2 },
       { label: 'Желаемое время', value: when, note: 'подтвердим по телефону', step: 3 },
       { label: 'Имя и телефон', value: `${st.name}, ${st.phone}`, step: 4 },
       { label: 'Связь', value: st.channel === 'telegram' ? 'Написать в Telegram' : 'Позвонить', step: 4 },
@@ -430,8 +504,9 @@ if (wizEl) {
       },
       services: st.dontknow ? ['diagnostika'] : [...st.services],
       preferred: { date: st.asap ? null : st.date, slot: st.asap ? null : st.slot, asap: st.asap },
-      /* в режиме прослойки фото не загружаются — блок скрыт в разметке, массив пустой */
-      photos: relayMode ? [] : st.photos.filter((p) => p.state === 'done' && p.id).map((p) => p.id),
+      /* Фото уходят отдельными частями multipart-запроса (см. submit), в JSON — только счётчик.
+         Поле оставляем в контракте, чтобы старые сборки/тесты не ломались. */
+      photos: [],
       consent: st.consent,
       consent_version: CONSENT_VERSION,
       page: 'appointment',
@@ -521,11 +596,19 @@ if (wizEl) {
     if (isDemo()) { showState('demo'); track('submit_demo'); return; }
     showState('sending');
     try {
-      const r = await leadsFetch(leadsUrl('leads'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload()),
-      });
+      /* С фото — multipart: поле payload (JSON заявки) + до 3 файлов photo.
+         Без фото — прежний JSON, чтобы старый контракт остался рабочим. */
+      const files = st.photos.filter((p) => p.state === 'done' && p.blob).slice(0, 3);
+      let init: RequestInit;
+      if (files.length) {
+        const fd = new FormData();
+        fd.append('payload', JSON.stringify(buildPayload()));
+        files.forEach((p, i) => fd.append('photo', p.blob as Blob, `photo-${i + 1}.jpg`));
+        init = { method: 'POST', body: fd };
+      } else {
+        init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(buildPayload()) };
+      }
+      const r = await leadsFetch(leadsUrl('leads'), init, files.length ? 45_000 : undefined);
       const j = await r.json().catch(() => null) as Record<string, unknown> | null;
       /* Контракт 80-1: 201 от прослойки и 200 от Telegram-бота — одинаковый экран успеха. */
       if ((r.status === 201 || r.status === 200) && j && typeof j.ticket === 'string') {
@@ -653,7 +736,9 @@ if (wizEl) {
   function saveDraftSoon(): void {
     if (draftTimer) clearTimeout(draftTimer);
     draftTimer = setTimeout(() => {
-      const light = { ...st, photos: st.photos.filter((p) => p.state === 'done') };
+      /* Фото в черновик не пишем: object URL умирает вместе со страницей,
+         а blob в localStorage не сериализуется. Человек приложит заново. */
+      const light = { ...st, photos: [] };
       safeLS.set(DRAFT_KEY, JSON.stringify(light));
       const note = $('#draft-note');
       if (note && !note.classList.contains('is-on') && st.step === 1) { /* не показываем на свежей форме */ }
@@ -665,7 +750,7 @@ if (wizEl) {
     try {
       const d = JSON.parse(raw) as Partial<St>;
       if (!d || typeof d !== 'object' || !d.idem) return false;
-      st = { ...freshSt(), ...d, photos: (d.photos ?? []).filter((p) => p.state === 'done') } as St;
+      st = { ...freshSt(), ...d, photos: [] } as St;
       return true;
     } catch { return false; }
   }
