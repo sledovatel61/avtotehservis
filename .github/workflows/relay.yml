@@ -120,10 +120,22 @@ jobs:
           set -e
           printf '%s' "$BOT_TOKEN" | npx wrangler secret put BOT_TOKEN
           printf '%s' "$TELEGRAM_CHAT_ID" | npx wrangler secret put TELEGRAM_CHAT_ID
+          # Почта-дубль необязательна: без ключа заявки идут только в Telegram.
+          if [ -n "$BREVO_API_KEY" ]; then
+            printf '%s' "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY
+            echo "Почта: Brevo подключён"
+          elif [ -n "$RESEND_API_KEY" ]; then
+            printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY
+            echo "Почта: Resend подключён"
+          else
+            echo "::warning::Ключа почты нет (BREVO_API_KEY / RESEND_API_KEY) — копии заявок на почту не уходят"
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
       - name: Health check
         run: |
@@ -145,8 +157,9 @@ jobs:
             echo "::error::Воркер не ответил на /health. Адрес: $URL/health, последний ответ: $(cat /tmp/health.json 2>/dev/null | head -c 200)"
             exit 1
           fi
-          echo "Воркер жив и видит Telegram: $URL"
-          echo "::notice::АДРЕС ВОРКЕРА: $URL"
+          MAIL=$(grep -o '"email":[^,}]*' /tmp/health.json | head -1 || true)
+          echo "Воркер жив и видит Telegram: $URL, почта: ${MAIL:-нет данных}"
+          echo "::notice::АДРЕС ВОРКЕРА: $URL · ${MAIL:-почта не настроена}"
 
       - name: Notify group in Telegram
         run: |
@@ -158,7 +171,9 @@ jobs:
             const res = await fetch(url, {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ chat_id: chat, text: "Прослойка заявок подключена. Заявки с сайта будут приходить в этот чат." }),
+              body: JSON.stringify({ chat_id: chat, text: process.env.EMAIL_ON === 'true'
+                ? "Прослойка заявок подключена. Заявки будут приходить в этот чат и копией на почту."
+                : "Прослойка заявок подключена. Заявки с сайта будут приходить в этот чат." }),
             });
             const body = await res.text();
             console.log("HTTP " + res.status + " " + body.slice(0, 300));
@@ -167,6 +182,9 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_ON: ${{ secrets.BREVO_API_KEY != '' || secrets.RESEND_API_KEY != '' }}
 
       - name: Summary
         if: always()

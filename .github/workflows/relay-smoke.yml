@@ -32,6 +32,11 @@ jobs:
           CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
           echo "HTTP $CODE $TEXT"
           echo "::notice::health: HTTP $CODE $TEXT"
+          if echo "$TEXT" | grep -q '"email":"'; then
+            echo "::notice::Почта включена: $TEXT"
+          else
+            echo "::warning::Почта не настроена: копии заявок на почту не уходят"
+          fi
           [ "$CODE" = "200" ] || { echo "::error::/health ответил $CODE"; exit 1; }
 
       - name: Send test lead

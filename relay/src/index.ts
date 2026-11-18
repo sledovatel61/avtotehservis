@@ -2,12 +2,13 @@
  * ats-leads — прослойка между статическим сайтом на GitHub Pages и Telegram.
  *
  * Контракт (задание 80-1, менять нельзя):
- *   GET  /health              → { ok, service:'ats-leads', time }
+ *   GET  /health              → { ok, service:'ats-leads', time, telegram, email, kv }
  *   GET  /slots?date=…        → { date, slots:[{time, available, reason?}] }
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
  *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
  *                               400 { error:{ code:'validation'|'bad_json'|'consent_version', message, fields? } }
  *                               429 { error:{ code:'too_many', message } } + Retry-After
+ *                               дубль уходит и в Telegram, и на почту (если настроена)
  *
  * Секреты (wrangler secret put): BOT_TOKEN, TELEGRAM_CHAT_ID.
  * Переменные (wrangler.toml): ALLOWED_ORIGINS, SITE_NAME, SITE_ADDRESS, CONSENT_VERSION.
@@ -16,6 +17,7 @@
 import { validateLead, MIN_FILL_MS, type LeadPayload } from './validate.ts';
 import { getSlots, isValidSlotDate } from './slots.ts';
 import { composeTelegram, sendTelegram, sendPhotos } from './telegram.ts';
+import { emailProvider, sendEmail, DEFAULT_EMAIL_TO } from './email.ts';
 
 export interface Env {
   BOT_TOKEN?: string;
@@ -25,6 +27,11 @@ export interface Env {
   SITE_NAME?: string;
   SITE_ADDRESS?: string;
   CONSENT_VERSION?: string;
+  /** Почта-дубль: включается наличием ключа сервиса (Brevo или Resend). */
+  BREVO_API_KEY?: string;
+  RESEND_API_KEY?: string;
+  EMAIL_TO?: string;
+  EMAIL_FROM?: string;
   /** Необязательное KV: лимиты и идемпотентность переживают перезапуск изолята. */
   ATS_KV?: KVNamespace;
 }
@@ -207,13 +214,46 @@ async function handleLead(req: Request, env: Env): Promise<Response> {
     address: env.SITE_ADDRESS ?? 'Ростов-на-Дону, ул. Портовая, 439',
   });
 
+  /* Доставка в два канала. Заявка считается принятой, если сработал хотя бы один:
+     мастеру важнее увидеть заявку хоть где-то, чем потерять её из-за чужого сбоя.
+     Идём параллельно — человек не должен ждать два последовательных запроса. */
   const tg = { token: env.BOT_TOKEN, chatId: env.TELEGRAM_CHAT_ID, apiBase: env.TELEGRAM_API_BASE };
-  try {
-    await sendTelegram(text, tg);
-  } catch (e) {
-    // Телефон в логи не попадаем: только код ошибки.
-    console.error('[leads] telegram failed', String((e as Error)?.message ?? e).slice(0, 120));
-    return err(502, 'telegram', 'Не удалось доставить заявку. Позвоните нам, пожалуйста.');
+  const emailOn = Boolean(emailProvider(env));
+  const telegramJob = (async (): Promise<string | null> => {
+    try {
+      await sendTelegram(text, tg);
+      return null;
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e).slice(0, 120);
+      console.error('[leads] telegram failed', msg);
+      return msg;
+    }
+  })();
+  const emailJob = (async (): Promise<string | null> => {
+    if (!emailOn) return 'email_not_configured';
+    try {
+      await sendEmail({
+        lead, ticket, photos,
+        env,
+        opts: {
+          siteName: env.SITE_NAME ?? 'АвтоТехСервис',
+          address: env.SITE_ADDRESS ?? 'Ростов-на-Дону, ул. Портовая, 439',
+        },
+      });
+      return null;
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e).slice(0, 120);
+      console.error('[leads] email failed', msg);
+      return msg;
+    }
+  })();
+  const [tgErr, mailErr] = await Promise.all([telegramJob, emailJob]);
+  const delivered = { telegram: !tgErr, email: emailOn && !mailErr };
+  if (!delivered.telegram && !delivered.email) {
+    /* Почта не настроена — это не второй канал, и код ошибки должен остаться прежним. */
+    return emailOn
+      ? err(502, 'delivery', 'Не удалось доставить заявку. Позвоните нам, пожалуйста.')
+      : err(502, 'telegram', 'Не удалось доставить заявку. Позвоните нам, пожалуйста.');
   }
 
   /* Фото — после текста: мастер сразу видит, к какой заявке они относятся.
@@ -227,7 +267,7 @@ async function handleLead(req: Request, env: Env): Promise<Response> {
   }
 
   await kvPut(env, idemKey, `${ticket}|${await hashIp(lead.phone)}`, 86400);
-  return json({ ticket, lead_id: 0, status: 'accepted', duplicate: false }, 201);
+  return json({ ticket, lead_id: 0, status: 'accepted', duplicate: false, delivered }, 201);
 }
 
 function handleSlots(url: URL): Response {
@@ -257,6 +297,8 @@ export default {
           service: 'ats-leads',
           time: new Date().toISOString(),
           telegram: Boolean(env.BOT_TOKEN && env.TELEGRAM_CHAT_ID),
+          email: emailProvider(env),
+          emailTo: emailProvider(env) ? (env.EMAIL_TO ?? DEFAULT_EMAIL_TO) : undefined,
           kv: Boolean(env.ATS_KV),
         }));
       }

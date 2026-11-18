@@ -305,7 +305,7 @@ async function postForm(fd: FormData): Promise<Response> {
     method: 'POST',
     headers: {
       origin: 'https://sledovatel61.github.io',
-      'cf-connecting-ip': `10.0.0.${++ipSeq}`,
+      'cf-connecting-ip': `10.0.1.${++ipSeq}`,
     },
     body: fd,
   }), env());
@@ -399,4 +399,143 @@ test('composeTelegram: в уведомлении есть версия согл�
   const text = composeTelegram(v.value, 'A-1118-1234', { siteName: 'АвтоТехСервис', at: new Date('2026-11-18T09:15:00Z') });
   assert.match(text, /Согласие на обработку ПД: версия <b>2026-11-19<\/b>/);
   assert.match(text, /отметка 18 ноя, 12:15 МСК/);
+});
+
+/* ---------- почта-дубль ---------- */
+
+import { composeEmail, emailProvider, emailFrom, DEFAULT_EMAIL_TO, buildAttachments } from '../src/email.ts';
+
+const baseFetch = globalThis.fetch;
+function mockFetch(statuses: Record<string, number>): { urls: string[]; bodies: Record<string, unknown>[] } {
+  const urls: string[] = [];
+  const bodies: Record<string, unknown>[] = [];
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const url = String(input);
+    urls.push(url);
+    const raw = init?.body;
+    if (raw && typeof raw === 'string') bodies.push(JSON.parse(raw) as Record<string, unknown>);
+    else if (raw instanceof FormData) bodies.push({});
+    const key = Object.keys(statuses).find((k) => url.includes(k));
+    const status = key ? statuses[key] : 200;
+    return new Response(JSON.stringify({ ok: status < 400, id: 'test' }), { status });
+  }) as typeof fetch;
+  return { urls, bodies };
+}
+
+test('emailProvider: Brevo в приоритете, без ключей почта выключена', () => {
+  assert.equal(emailProvider({}), null);
+  assert.equal(emailProvider({ RESEND_API_KEY: 'r' }), 'resend');
+  assert.equal(emailProvider({ RESEND_API_KEY: 'r', BREVO_API_KEY: 'b' }), 'brevo');
+});
+
+test('emailFrom: по умолчанию свой ящик, Resend — onboarding@resend.dev', () => {
+  assert.equal(emailFrom({ BREVO_API_KEY: 'b' }, 'Pavel.yakovenko@mail.ru'), 'Pavel.yakovenko@mail.ru');
+  assert.match(emailFrom({ RESEND_API_KEY: 'r' }, 'x@y.ru'), /onboarding@resend\.dev/);
+  assert.equal(emailFrom({ BREVO_API_KEY: 'b', EMAIL_FROM: 'Сервис <box@site.ru>' }, 'x@y.ru'), 'Сервис <box@site.ru>');
+});
+
+test('composeEmail: тема и текст содержат талон, имя, телефон и версию согласия', () => {
+  const v = validateLead(booking({ idempotency_key: uuid(), name: 'Иван', consent_version: '2026-11-19' }));
+  assert.equal(v.ok, true);
+  if (!v.ok) return;
+  const m = composeEmail(v.value, 'A-1118-7777', {
+    siteName: 'АвтоТехСервис', address: 'Портовая, 439', at: new Date('2026-11-18T09:15:00Z'),
+  });
+  assert.match(m.subject, /A-1118-7777/);
+  assert.match(m.subject, /Иван/);
+  assert.match(m.subject, /\+7 \(951\) 826-98-39/);
+  assert.match(m.text, /Согласие: версия 2026-11-19/);
+  assert.match(m.text, /18 ноября 2026, 12:15 \(МСК\)/);
+  assert.match(m.text, /Автомобиль: Kia Ceed 2019 г\./);
+  assert.match(m.html, /<html/);
+  assert.match(m.html, /Позвонить/);
+});
+
+test('composeEmail: обращение без авто не упоминает автомобиль', () => {
+  const v = validateLead(booking({ idempotency_key: uuid(), car: undefined, services: undefined, preferred: undefined, message: 'Здравствуйте, нужна консультация по ТО' }));
+  assert.equal(v.ok, true);
+  if (!v.ok) return;
+  const m = composeEmail(v.value, 'A-1118-0001', { siteName: 'АвтоТехСервис' });
+  assert.match(m.subject, /Обращение с сайта/);
+  assert.ok(!m.text.includes('Автомобиль'));
+  assert.match(m.text, /Сообщение: Здравствуйте/);
+});
+
+test('buildAttachments: png сохраняет расширение и кодируется в base64', async () => {
+  const png = new File([new Uint8Array([137, 80, 78, 71])], 'p.png', { type: 'image/png' });
+  const list = await buildAttachments([png]);
+  assert.equal(list.length, 1);
+  assert.equal(list[0].name, 'zayavka-foto-1.png');
+  assert.equal(atob(list[0].content).charCodeAt(0), 137);
+});
+
+test('Brevo: письмо уходит на Pavel.yakovenko@mail.ru с фото во вложении', async () => {
+  const { urls, bodies } = mockFetch({ 'brevo.com': 201 });
+  try {
+    const res = await postForm(formWith([jpeg()]));
+    assert.equal(res.status, 201);
+    const j = await res.json() as { delivered: { telegram: boolean; email: boolean } };
+    assert.equal(j.delivered.telegram, true);
+    assert.equal(j.delivered.email, false, 'в env() нет ключа почты — канал выключен');
+
+    const env2 = env({ BREVO_API_KEY: 'brevo-key' });
+    const res2 = await worker.fetch(new Request('https://relay.test/leads', {
+      method: 'POST',
+      headers: { origin: 'https://sledovatel61.github.io', 'cf-connecting-ip': '10.20.0.1' },
+      body: formWith([jpeg()]),
+    }), env2);
+    assert.equal(res2.status, 201);
+    const j2 = await res2.json() as { delivered: { telegram: boolean; email: boolean } };
+    assert.deepEqual(j2.delivered, { telegram: true, email: true });
+
+    const mail = urls.findIndex((u) => u.includes('brevo.com'));
+    assert.ok(mail >= 0, urls.join(','));
+    const body = bodies[mail] as {
+      to: { email: string }[]; subject: string; htmlContent: string;
+      attachment: { name: string; content: string }[];
+    };
+    assert.equal(body.to[0].email, DEFAULT_EMAIL_TO);
+    assert.match(body.subject, /Заявка Kia Ceed/);
+    assert.ok(body.htmlContent.includes('Позвонить'));
+    assert.equal(body.attachment.length, 1);
+    assert.equal(body.attachment[0].name, 'zayavka-foto-1.jpg');
+  } finally { globalThis.fetch = baseFetch; }
+});
+
+test('почта упала, Telegram дошёл → заявка всё равно принята (201)', async () => {
+  mockFetch({ 'brevo.com': 500 });
+  try {
+    const res = await worker.fetch(new Request('https://relay.test/leads', {
+      method: 'POST',
+      headers: { origin: 'https://sledovatel61.github.io', 'cf-connecting-ip': '10.20.0.2' },
+      body: formWith([]),
+    }), env({ BREVO_API_KEY: 'k' }));
+    assert.equal(res.status, 201);
+    const j = await res.json() as { delivered: { telegram: boolean; email: boolean } };
+    assert.deepEqual(j.delivered, { telegram: true, email: false });
+  } finally { globalThis.fetch = baseFetch; }
+});
+
+test('оба канала упали → 502 delivery', async () => {
+  mockFetch({ 'tg.test': 500, 'brevo.com': 500 });
+  try {
+    const res = await worker.fetch(new Request('https://relay.test/leads', {
+      method: 'POST',
+      headers: { origin: 'https://sledovatel61.github.io', 'cf-connecting-ip': '10.20.0.3' },
+      body: formWith([]),
+    }), env({ BREVO_API_KEY: 'k' }));
+    assert.equal(res.status, 502);
+    const j = await res.json() as { error: { code: string } };
+    assert.equal(j.error.code, 'delivery');
+  } finally { globalThis.fetch = baseFetch; }
+});
+
+test('/health показывает канал почты и адрес получателя', async () => {
+  const r1 = await worker.fetch(new Request('https://relay.test/health'), env());
+  const j1 = await r1.json() as { email: string | null };
+  assert.equal(j1.email, null);
+  const r2 = await worker.fetch(new Request('https://relay.test/health'), env({ BREVO_API_KEY: 'k' }));
+  const j2 = await r2.json() as { email: string | null; emailTo: string };
+  assert.equal(j2.email, 'brevo');
+  assert.equal(j2.emailTo, DEFAULT_EMAIL_TO);
 });
