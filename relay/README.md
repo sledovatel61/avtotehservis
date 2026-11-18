@@ -31,6 +31,23 @@
 
 ## Деплой
 
+### Вариант А — через GitHub Actions (рекомендуется, ничего ставить не надо)
+
+Workflow `.github/workflows/relay.yml` заливает воркер сам. Нужно один раз добавить в
+**Settings → Secrets and variables → Actions** четыре секрета:
+
+| секрет | откуда |
+|---|---|
+| `CLOUDFLARE_ACCOUNT_ID` | дашборд Cloudflare, правая колонка Account ID |
+| `CLOUDFLARE_API_TOKEN` | My Profile → API Tokens → Create Token → шаблон **Edit Cloudflare Workers** |
+| `BOT_TOKEN` | @BotFather, `/newbot` или `/token` |
+| `TELEGRAM_CHAT_ID` | число из `getUpdates` (личный чат) или `-100…` (группа) |
+
+Дальше — **Actions → Deploy leads relay → Run workflow** (или любой push в `preview/github-pages`,
+если менялось в `relay/`). В логе будет адрес воркера `https://ats-leads.<аккаунт>.workers.dev`.
+
+### Вариант Б — локально
+
 ```bash
 cd relay
 npm install                      # wrangler + typescript
