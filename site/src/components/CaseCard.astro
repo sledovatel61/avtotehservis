@@ -1,16 +1,13 @@
 ---
 /**
- * Карточка работы. Одна разметка на три случая, чтобы не было копий
- * (круг 79 → задание 79-2: раздел «Наши работы»).
+ * Карточка кейса для витрин «Главная» и «О компании» (круг 79, задание №82).
  *
- *   • `mode="link"` + `variant="cover"` — витрина «Главная» и «О компании»:
- *     название поверх обложки, вся карточка — ссылка на `/raboty/<slug>`;
- *   • `mode="link"` + `variant="grid"` — листинг `/raboty`: кадр, название,
- *     услуга ссылкой, дата и (у парных работ) маленький бейдж «до и после»;
- *   • `mode="lightbox"` — прежний вид на иллюстрациях `CASE_COVERS`: кнопка
- *     открывает лайтбокс, в подписи честный бейдж «пример работы».
- *
- * Слова «кейс» в публичных текстах нет — только во внутренних именах.
+ * Одна разметка на два случая, чтобы не было третьей копии:
+ *   • `mode="link"` — реальный кейс из `cases.json`: карточка ведёт на `/cases/<slug>`,
+ *     лайтбокс на неё не навешивается (переход важнее), бейджа «пример работы» нет —
+ *     это фото конкретной работы;
+ *   • `mode="lightbox"` — прежний вид на иллюстрациях `CASE_COVERS`: кнопка открывает
+ *     лайтбокс, в подписи честный бейдж «пример работы».
  */
 import { caseCover, photoPath, photoSrcset, type SiteCase } from '../shared/cases-schema.ts';
 import type { CaseCover } from '../server/case-covers.ts';
@@ -22,52 +19,18 @@ export interface Props {
   staticCover?: CaseCover;
   /** Порядковый номер для `data-gal` — лайтбокс ходит по порядку кнопок в DOM. */
   index?: number;
-  /** `cover` — витрина (название на кадре), `grid` — карточка листинга. */
-  variant?: 'cover' | 'grid';
-  /** Услуга для `variant="grid"`: подпись и ссылка на страницу услуги. */
-  service?: { slug: string; title: string } | null;
-  /** Дата работы для `variant="grid"` (уже отформатированная). */
-  date?: string;
-  /** Парная работа: маленький бейдж «до и после». */
-  pair?: boolean;
 }
 
 /* `case` — имя пропа из задания; внутри переименовываем, потому что это ключевое слово */
-const { case: item, mode, staticCover, index = 0, variant = 'cover', service = null, date = '', pair = false } = Astro.props;
+const { case: item, mode, staticCover, index = 0 } = Astro.props;
 const cover = caseCover(item);
 const coverW = cover?.w ?? 1600;
 const coverH = cover?.h ?? 1200;
-const sizes = variant === 'grid' ? '(max-width:640px) 92vw, (max-width:1024px) 46vw, 380px' : '(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px';
-/* На листинге хватает двух вариантов (480/960): третий, 1600, там не нужен и весит зря */
-const gridSrcset = cover ? `${photoPath(item.slug, cover, 480)} 480w, ${photoPath(item.slug, cover, 960)} 960w` : '';
-const href = `/raboty/${item.slug}`;
+const sizes = '(max-width:640px) 84vw, (max-width:1024px) 44vw, 380px';
 ---
 
-{mode === 'link' && cover && variant === 'grid' ? (
-  /* Карточка листинга: ссылка на работу — заголовок с «растянутой» областью нажатия,
-     ссылка на услугу лежит рядом и остаётся отдельной (вложенные <a> в HTML нельзя). */
-  <article class="work-card">
-    <div class="work-img">
-      <img
-        src={photoPath(item.slug, cover, 480)}
-        srcset={gridSrcset}
-        sizes={sizes}
-        alt={cover.alt}
-        width={coverW}
-        height={coverH}
-        loading="lazy"
-        decoding="async"
-      >
-    </div>
-    <h3 class="work-title"><a href={href}>{item.title}</a></h3>
-    <p class="work-meta">
-      {service && <a class="work-svc" href={`/services/${service.slug}`}>{service.title}</a>}
-      {date && <time datetime={item.published_at}>{date}</time>}
-      {pair && <span class="work-badge">до и после</span>}
-    </p>
-  </article>
-) : mode === 'link' && cover ? (
-  <a class="gal-card gal-card--case" href={href}>
+{mode === 'link' && cover ? (
+  <a class="gal-card gal-card--case" href={`/cases/${item.slug}`}>
     <span class="gal-img">
       <img
         src={photoPath(item.slug, cover, 960)}
@@ -90,7 +53,7 @@ const href = `/raboty/${item.slug}`;
     data-img={staticCover?.webp ?? (cover ? photoPath(item.slug, cover, 1600) : '')}
     data-title={item.title}
     data-sub={item.description ?? ''}
-    aria-label={`Открыть работу: ${item.title}`}
+    aria-label={`Открыть кейс: ${item.title}`}
   >
     <span class="gal-img">
       <picture>

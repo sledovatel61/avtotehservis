@@ -1,12 +1,11 @@
 ---
 /**
- * Страница одной работы «как было / как стало» (круг 79 → задание 79-2).
+ * Страница кейса «как было / как стало» (круг 79, задание №82).
  *
- * Адрес — `/raboty/<slug>`. Данные — `site/content/cases.json` (его пишет
- * админка). Сайт собирается сервером, поэтому `getStaticPaths` не нужен:
- * слаг берём из `Astro.params`. Работы нет или она в черновике — отдаём
- * страницу 404 с настоящим статусом 404 (на статике `redirect` не работает,
- * поэтому `rewrite`).
+ * Данные — `site/content/cases.json` (который пишет админка). Сайт собирается
+ * сервером, поэтому `getStaticPaths` не нужен: слаг берём из `Astro.params`.
+ * Кейса нет или он в черновике — отдаём страницу 404 с настоящим статусом 404
+ * (на статике `redirect` не работает, поэтому `rewrite`).
  */
 import Base from '../../layouts/Base.astro';
 import { getSettings } from '../../server/settings.ts';
@@ -59,23 +58,23 @@ const jsonLd = {
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
-    { '@type': 'ListItem', position: 2, name: 'Наши работы', item: siteUrl + '/raboty' },
+    { '@type': 'ListItem', position: 2, name: 'Кейсы', item: siteUrl + '/about' },
     { '@type': 'ListItem', position: 3, name: item.title },
   ],
 };
 const sizesWide = '(max-width:900px) 92vw, 860px';
 ---
 
-<Base page="works" title={pageTitle} description={pageDesc} jsonLd={jsonLd} ogType="article" publishedTime={item.published_at}>
-  <nav class="crumbs crumbs--work container" aria-label="Хлебные крошки">
+<Base page="cases" title={pageTitle} description={pageDesc} jsonLd={jsonLd} ogType="article" publishedTime={item.published_at}>
+  <nav class="crumbs crumbs--case container" aria-label="Хлебные крошки">
     <a href="/">Главная</a><span class="sep" aria-hidden="true">/</span>
-    <a href="/raboty">Наши работы</a><span class="sep" aria-hidden="true">/</span>
+    <a href="/about#ab-gal-h">Кейсы</a><span class="sep" aria-hidden="true">/</span>
     <span class="cur" aria-current="page">{item.title}</span>
   </nav>
 
   <section class="page-head case-head">
     <div class="container">
-      <span class="eyebrow">Работа{svc ? ` · ${svc.title}` : ''}</span>
+      <span class="eyebrow">Кейс{svc ? ` · ${svc.title}` : ''}</span>
       <h1>{item.title}</h1>
       <p class="case-meta">
         {svc && <a class="case-meta-svc" href={`/services/${svc.slug}`}>{svc.title}</a>}
@@ -163,8 +162,6 @@ const sizesWide = '(max-width:900px) 92vw, 860px';
           ))}
         </div>
       )}
-
-      <p class="works-back"><a class="link-more" href="/raboty">Все работы <span class="ar" aria-hidden="true">→</span></a></p>
 
       <div class="case-cta">
         <div>

@@ -1,12 +1,8 @@
 ---
 import { getSettings } from '../server/settings.ts';
-import { listPublishedSiteCases } from '../server/cases-store.ts';
 const S = getSettings();
 interface Props { page: string }
 const { page } = Astro.props as Props;
-/* Пункт «Работы» показываем только когда есть хотя бы одна опубликованная работа:
-   пустая страница в меню хуже, чем её отсутствие. На статике значение известно на сборке. */
-const hasWorks = listPublishedSiteCases(1).length > 0;
 ---
 <header class="hdr" id="hdr">
   <div class="hdr-in container">
@@ -20,7 +16,6 @@ const hasWorks = listPublishedSiteCases(1).length > 0;
         <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги и цены</a></li>
         <li><a href="/prices" class:list={[{ 'is-active': page === 'prices' }]} aria-current={page === 'prices' ? 'page' : undefined}>Прайс</a></li>
         <li><a href="/about" class:list={[{ 'is-active': page === 'about' }]} aria-current={page === 'about' ? 'page' : undefined}>О компании</a></li>
-        {hasWorks && <li><a href="/raboty" class:list={[{ 'is-active': page === 'works' }]} aria-current={page === 'works' ? 'page' : undefined}>Работы</a></li>}
         <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Полезное</a></li>
         <li><a href="/contacts" class:list={[{ 'is-active': page === 'contacts' }]} aria-current={page === 'contacts' ? 'page' : undefined}>Контакты</a></li>
         <li class="nav-voyah"><a href="/voyah-free" class:list={[{ 'is-active': page === 'voyah' }]} aria-current={page === 'voyah' ? 'page' : undefined}>Voyah Free</a></li>
@@ -46,11 +41,10 @@ const hasWorks = listPublishedSiteCases(1).length > 0;
         <li><a href="/services" class:list={[{ 'is-active': page === 'services' }]} aria-current={page === 'services' ? 'page' : undefined}>Услуги и цены <span class="n">02</span></a></li>
         <li><a href="/prices" class:list={[{ 'is-active': page === 'prices' }]} aria-current={page === 'prices' ? 'page' : undefined}>Прайс <span class="n">03</span></a></li>
         <li><a href="/about" class:list={[{ 'is-active': page === 'about' }]} aria-current={page === 'about' ? 'page' : undefined}>О компании <span class="n">04</span></a></li>
-        {hasWorks && <li><a href="/raboty" class:list={[{ 'is-active': page === 'works' }]} aria-current={page === 'works' ? 'page' : undefined}>Работы <span class="n">05</span></a></li>}
-        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Полезное <span class="n">{hasWorks ? '06' : '05'}</span></a></li>
-        <li><a href="/contacts" class:list={[{ 'is-active': page === 'contacts' }]} aria-current={page === 'contacts' ? 'page' : undefined}>Контакты <span class="n">{hasWorks ? '07' : '06'}</span></a></li>
-        <li><a href="/garantii" class:list={[{ 'is-active': page === 'garantii' }]} aria-current={page === 'garantii' ? 'page' : undefined}>Гарантии <span class="n">{hasWorks ? '08' : '07'}</span></a></li>
-        <li><a href="/voyah-free" class:list={[{ 'is-active': page === 'voyah' }]} aria-current={page === 'voyah' ? 'page' : undefined}>Voyah Free <span class="n">{hasWorks ? '09' : '08'}</span></a></li>
+        <li><a href="/news" class:list={[{ 'is-active': page === 'news' }]} aria-current={page === 'news' ? 'page' : undefined}>Полезное <span class="n">05</span></a></li>
+        <li><a href="/contacts" class:list={[{ 'is-active': page === 'contacts' }]} aria-current={page === 'contacts' ? 'page' : undefined}>Контакты <span class="n">06</span></a></li>
+        <li><a href="/garantii" class:list={[{ 'is-active': page === 'garantii' }]} aria-current={page === 'garantii' ? 'page' : undefined}>Гарантии <span class="n">07</span></a></li>
+        <li><a href="/voyah-free" class:list={[{ 'is-active': page === 'voyah' }]} aria-current={page === 'voyah' ? 'page' : undefined}>Voyah Free <span class="n">08</span></a></li>
     </ul>
   </nav>
   <div class="m-menu-contacts">

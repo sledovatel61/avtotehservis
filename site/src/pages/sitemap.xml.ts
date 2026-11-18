@@ -28,19 +28,11 @@ export const GET: APIRoute = ({ site }) => {
       for (let i = 2; i <= Math.ceil(count / per); i++) urls.push({ loc: `${categoryBase}/page/${i}` });
     }
   } catch { /* БД не мигрирована — отдаём только статику */ }
-  /* Задание 79-2: раздел «Наши работы». Файл работ не зависит от БД, поэтому отдельным
-     try — падение базы не должно выкидывать работы из карты сайта.
-     Сам листинг /raboty в карте есть всегда: статический экспорт рендерит ровно то, что
-     перечислено в sitemap, и без этой строки честная пустая страница «работ пока нет»
-     не попала бы в собранный сайт (а ссылку на раздел люди копируют руками).
-     Страницы пагинации и сами работы — только когда они реально существуют. */
+  /* круг 79: страницы кейсов. Файл не зависит от БД, поэтому отдельным try —
+     падение базы не должно выкидывать кейсы из карты сайта. Листинга /cases/ нет. */
   try {
-    const works = listSiteCaseSlugs();
-    urls.push({ loc: `${base}/raboty` });
-    const per = 24;
-    for (let i = 2; i <= Math.ceil(works.length / per); i++) urls.push({ loc: `${base}/raboty/page/${i}` });
-    for (const w of works) urls.push({ loc: `${base}/raboty/${w.slug}`, lastmod: w.published_at || undefined });
-  } catch { /* файл работ битый — листинг всё равно нужен */ urls.push({ loc: `${base}/raboty` }); }
+    for (const c of listSiteCaseSlugs()) urls.push({ loc: `${base}/cases/${c.slug}`, lastmod: c.published_at || undefined });
+  } catch { /* файл кейсов битый — просто без них */ }
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u) => `  <url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${esc(u.lastmod.slice(0, 10))}</lastmod>` : ''}</url>`).join('\n')}

@@ -4,11 +4,10 @@ import { getSettings } from '../server/settings.ts';
 import { listCatalogServices, listHomeServices } from '../server/services.ts';
 import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
 import { fmtDateRu, plural } from '../server/format.ts';
-/* круг 78: витрина работ на главной — те же фото-обложки, что и на «О компании» (карта
-   общая, см. ../server/case-covers.ts); раньше тут были шесть SVG-заглушек с бейджем
-   «до / после». Круг 79 → задание 79-2: если владелец наполнил site/content/cases.json,
-   витрина показывает реальные работы со ссылками на /raboty/<slug> и ссылкой «Все работы»,
-   а иллюстрации остаются фолбэком на пустом файле. */
+/* круг 78: кейсы на главной — те же фото-обложки, что и на «О компании» (карта общая,
+   см. ../server/case-covers.ts); раньше тут были шесть SVG-заглушек с бейджем «до / после».
+   круг 79: если владелец наполнил site/content/cases.json — витрина показывает реальные
+   кейсы со ссылками на /cases/<slug>/, а иллюстрации остаются фолбэком на пустом файле. */
 import { CASE_COVERS } from '../server/case-covers.ts';
 import { listPublishedSiteCases } from '../server/cases-store.ts';
 import CaseCard from '../components/CaseCard.astro';
@@ -20,7 +19,7 @@ import { SVC_IMG } from '../server/svc-img.ts';
 import '../styles/voyah.css';
 import VoyahMark from '../components/VoyahMark.astro';
 const cases = listPublishedCases(6);
-/* Реальные работы из файла. Пусто — витрина прежняя (сид-работы + иллюстрации). */
+/* Реальные кейсы из файла. Пусто — витрина прежняя (сид-кейсы + иллюстрации). */
 const siteCases = listPublishedSiteCases(6);
 const realCases = siteCases.length > 0;
 const reviews = listPublishedReviews(8);
@@ -386,32 +385,23 @@ const jsonLd = {
 </section>
 <section class="sec" aria-labelledby="gal-h">
   <div class="container">
-    <div class:list={['sec-head', 'reveal', realCases && 'sec-head--works']}>
+    <div class="sec-head reveal">
       <div>
         <span class="eyebrow">Галерея работ</span>
-        {/* Задание 79-2: работы есть — «Наши работы» и ссылка на раздел; работ нет —
-            прежние иллюстрации с подписью «пример работы» и заголовок «Примеры работ». */}
-        <h2 id="gal-h">{realCases ? 'Наши работы' : 'Примеры работ'}</h2>
+        {/* m10 (приёмка A9): без опубликованных кейсов в блоке стоят иллюстрации с подписью
+            «пример работы» — заголовок «Шесть кейсов из практики» обещал то, чего нет.
+            Есть кейсы — «Кейсы из практики» (без числа: годится и для одного), нет — «Примеры работ». */}
+        <h2 id="gal-h">{realCases ? 'Кейсы из практики' : 'Примеры работ'}</h2>
       </div>
-      {realCases ? (
-        <div class="sec-head-actions">
-          <a class="works-all" href="/raboty">Все работы <span class="ar" aria-hidden="true">→</span></a>
-          {/* Стрелки — только если листать есть что: при одной-двух карточках они мертвы */}
-          {siteCases.length > 2 && (
-            <div class="slider-nav">
-              <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие работы">←</button>
-              <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие работы">→</button>
-            </div>
-          )}
-        </div>
-      ) : cases.length > 2 && (
+      {/* Стрелки — только если листать есть что: при одной-двух карточках они мертвы */}
+      {((realCases ? siteCases.length : cases.length) > 2) && (
         <div class="slider-nav">
-          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие примеры работ">←</button>
-          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие примеры работ">→</button>
+          <button class="hero-arrow" type="button" data-car="prev" aria-label="Предыдущие кейсы">←</button>
+          <button class="hero-arrow" type="button" data-car="next" aria-label="Следующие кейсы">→</button>
         </div>
       )}
     </div>
-    <div class="carousel reveal" data-carousel data-live-word="Работа">
+    <div class="carousel reveal" data-carousel data-live-word="Кейс">
       <div class="carousel-win">
         <div class="carousel-track gal-track">
           {realCases
