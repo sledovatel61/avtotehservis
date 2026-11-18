@@ -112,7 +112,7 @@ if (wizEl) {
     if (backBtn) backBtn.classList.toggle('u-invisible', st.step === 1);
     if (nextBtn) nextBtn.classList.toggle('u-none', st.step === 5);
     if (submitBtn) submitBtn.classList.toggle('u-none', st.step !== 5);
-    if (st.step === 5) renderSummary();
+    if (st.step === 5) { renderSummary(); syncSubmitGate(); }
     track('step_view', { step: st.step });
     saveDraftSoon();
     try { wiz.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' }); } catch { /* ignore */ }
@@ -405,7 +405,7 @@ if (wizEl) {
   if (fPhone) attachMask(fPhone);
   fName?.addEventListener('input', () => { st.name = fName.value; setErr(fName, ''); saveDraftSoon(); });
   fPhone?.addEventListener('input', () => { st.phone = fPhone.value; setErr(fPhone, ''); saveDraftSoon(); });
-  fConsent?.addEventListener('change', () => { st.consent = fConsent.checked; setErr(fConsent, ''); saveDraftSoon(); });
+  fConsent?.addEventListener('change', () => { st.consent = fConsent.checked; setErr(fConsent, ''); syncSubmitGate(); saveDraftSoon(); });
   $$<HTMLInputElement>('input[name="channel"]', wiz).forEach((r) => {
     r.addEventListener('change', () => { if (r.checked) st.channel = r.value as 'call' | 'telegram'; saveDraftSoon(); });
   });
@@ -672,6 +672,17 @@ if (wizEl) {
     goStep(firstStep);
     if (firstEl) { try { firstEl.focus(); } catch { /* ignore */ } }
   }
+  /* Отчёт Мануса, §5.4: кнопка отправки недоступна, пока нет отметки о согласии.
+     Подсказка объясняет, почему кнопка неактивна, — чтобы это не выглядело поломкой. */
+  const consentGate = $('#consent-gate');
+  function syncSubmitGate(): void {
+    const ok = Boolean(fConsent?.checked);
+    if (submitBtn) {
+      submitBtn.disabled = !ok;
+      submitBtn.setAttribute('aria-disabled', String(!ok));
+    }
+    consentGate?.classList.toggle('u-none', ok);
+  }
   submitBtn?.addEventListener('click', () => { void submit(); });
   $('#err-retry')?.addEventListener('click', () => {
     if (retryTimer) return; // ещё идёт блокировка после 429
@@ -767,7 +778,7 @@ if (wizEl) {
     const skipV = $<HTMLInputElement>('#skip-vin'); if (skipV) skipV.checked = st.vinSkip;
     const skipM = $<HTMLInputElement>('#skip-mileage'); if (skipM) skipM.checked = st.milSkip;
     $$<HTMLInputElement>('input[name="channel"]').forEach((r) => { r.checked = r.value === st.channel; });
-    syncSkips(); restoreChips(); renderPhotos(); renderCal();
+    syncSkips(); restoreChips(); renderPhotos(); renderCal(); syncSubmitGate();
     if (st.asap) { asapBtn?.classList.add('is-on'); asapBtn?.setAttribute('aria-pressed', 'true'); }
     syncSlots();
     if (PRESELECT && !st.services.length && !st.dontknow) {
