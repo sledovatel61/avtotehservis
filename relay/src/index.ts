@@ -127,9 +127,11 @@ async function readLeadBody(req: Request): Promise<LeadBody | null> {
     let form: FormData;
     try { form = await req.formData(); } catch { return null; }
     const raw = form.get('payload');
-    if (typeof raw !== 'string') return null;
+    /* Браузер шлёт строку; curl с «payload=@file» присылает файл — читаем и его. */
+    const text = typeof raw === 'string' ? raw : raw instanceof File ? await raw.text() : '';
+    if (!text) return null;
     let payload: unknown;
-    try { payload = JSON.parse(raw); } catch { return null; }
+    try { payload = JSON.parse(text); } catch { return null; }
     const photos = form.getAll('photo').filter((f): f is File => f instanceof File && f.size > 0);
     return { payload, photos };
   }

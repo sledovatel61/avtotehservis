@@ -129,7 +129,7 @@ jobs:
           echo "POST $URL/leads (multipart: payload + photo)"
           BODY=$(curl -sS -w '\n%{http_code}' -X POST "$URL/leads" \
             -H 'origin: https://sledovatel61.github.io' \
-            -F "payload=@/tmp/payload.json;type=application/json" \
+            -F "payload=</tmp/payload.json;type=application/json" \
             -F "photo=@/tmp/test-photo.png;type=image/png")
           CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
           echo "HTTP $CODE $TEXT"
