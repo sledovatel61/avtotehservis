@@ -13,7 +13,6 @@
   .feats{grid-template-columns:1fr 1fr}
   .svc-card,.gal-card,.rev-card{flex-basis:calc((100% - 18px)/2)}
   .ftr-grid{grid-template-columns:1fr 1fr;gap:30px}
-  .news-grid{grid-template-columns:1fr}
   .slots{grid-template-columns:repeat(4,1fr)}
   .hdr-phone span{display:none}
 }
@@ -47,9 +46,6 @@
   .wiz-foot{padding:16px 18px}
   .payload-btn{padding:13px 18px}
   .payload pre{padding:0 18px 18px}
-  .news-card{flex-direction:column}
-  .news-img{flex-basis:auto;aspect-ratio:16/9}
-  .news-body{padding:0 18px 18px}
   .sum-row{flex-wrap:wrap}
   .sum-row .k{flex-basis:100%}
   .lb-arrow{width:44px;height:44px}
