@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { getSettings, getSetting } from '../server/settings.ts';
 import { listChipServices } from '../server/services.ts';
+import { SLOT_TIMES } from '../server/slots.ts';
 import { relayMode } from '../shared/leads-endpoint.ts';
 
 const S = getSettings();
@@ -136,11 +137,13 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               </div>
               <div class="field u-mt16">
                 <span class="f-label" id="slot-title">Когда вам удобно приехать?</span>
-                <div class="slots" id="slots" role="group" aria-label="Выбор времени"></div>
-                <div class="slot-legend">
-                  <span><i class="u-bar-mist2"></i>свободно</span>
-                  <span><i class="u-bar-copper"></i>выбрано</span>
-                  <span><i class="u-bar-mist1"></i>занято (недоступно)</span>
+                {/* Сетка статическая: сервис принимает в порядке живой очереди, «занятых» часов
+                    в ней нет. Разметку рендерит сервер — клиенту не нужен сетевой запрос,
+                    и на GitHub Pages форма работает без сервера. */}
+                <div class="slots" id="slots" role="group" aria-label="Выбор времени">
+                  {SLOT_TIMES.map((t) => (
+                    <button type="button" class="slot" data-slot={t} aria-pressed="false" aria-label={t}>{t}</button>
+                  ))}
                 </div>
                 <div class="asap">
                   <p>Не можете выбрать день? Подберём ближайшее окно и перезвоним для подтверждения.</p>

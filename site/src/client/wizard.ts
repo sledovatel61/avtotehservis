@@ -1,8 +1,10 @@
 /* Мастер записи из 5 экранов — перенос утверждённой логики (122 jsdom-теста) на реальное API:
-   GET слотов, POST /api/uploads (только демо), POST заявки. Адреса берутся из
-   shared/leads-endpoint.ts: свой сервер (/api/slots, /api/leads) или прослойка
-   Cloudflare Worker при PUBLIC_LEADS_ENDPOINT. Черновик в localStorage, идемпотентность,
-   ошибки под полями с фокусом на первое, состояния отправка/успех/ошибка, .ics на клиенте. */
+   POST /api/uploads (только демо), POST заявки. Адреса берутся из shared/leads-endpoint.ts:
+   свой сервер (/api/leads) или прослойка Cloudflare Worker при PUBLIC_LEADS_ENDPOINT.
+   Сервис принимает в порядке живой очереди, поэтому шаг 3 — пожелание клиента: сетку времени
+   рендерит сервер, запросов расписания нет и «занято» не бывает.
+   Черновик в localStorage, идемпотентность, ошибки под полями с фокусом на первое,
+   состояния отправка/успех/ошибка, .ics на клиенте. */
 import { $, $$, safeLS, track, attachMask, attachVin, reducedMotion } from './lib.ts';
 import { leadsUrl, leadsFetch, retryAfterSeconds, relayMode } from '../shared/leads-endpoint.ts';
 
@@ -257,7 +259,6 @@ if (wizEl) {
   /* ---------- шаг 3: дата и слоты ---------- */
   const cal = $('#cal');
   const slotsBox = $('#slots');
-  const slotTitle = $('#slot-title');
   const asapBtn = $<HTMLButtonElement>('#asap-btn');
   const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
   const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -289,46 +290,36 @@ if (wizEl) {
     asapBtn?.classList.remove('is-on');
     asapBtn?.setAttribute('aria-pressed', 'false');
     renderCal();
-    void loadSlots();
+    syncSlots();
     setErrAt('when-err-anchor', '');
     saveDraftSoon();
   });
-  async function loadSlots(): Promise<void> {
-    if (!slotsBox || !st.date) return;
-    slotsBox.innerHTML = '<p class="hint">Загружаем свободное время…</p>';
-    if (slotTitle) slotTitle.textContent = 'Время визита — выберите дату';
-    try {
-      const r = await leadsFetch(leadsUrl('slots', `date=${st.date}`));
-      const j = await r.json() as { slots?: { time: string; available: boolean; reason?: string }[] };
-      renderSlots(j.slots ?? []);
-    } catch {
-      slotsBox.innerHTML = '<p class="hint">Не удалось получить расписание. Повторите попытку или позвоните нам.</p>';
-    }
-  }
-  function renderSlots(slots: { time: string; available: boolean; reason?: string }[]): void {
+  /* Сетку времени рендерит сервер (SLOT_TIMES в src/server/slots.ts). Клиент только
+     подсвечивает выбранный час: никаких запросов расписания — шаг 3 проходится без сети. */
+  function syncSlots(): void {
     if (!slotsBox) return;
-    slotsBox.innerHTML = slots.map((s) => {
-      const on = st.slot === s.time && st.date;
-      return `<button type="button" class="slot${on ? ' is-on' : ''}" data-slot="${s.time}"${s.available ? '' : ' disabled'} aria-label="${s.time}${s.available ? '' : ` — ${s.reason ?? 'занято'}`}">${s.time}</button>`;
-    }).join('');
-    if (slotTitle) slotTitle.textContent = `Время визита на ${st.date ? st.date.split('-').reverse().join('.') : ''}`;
+    for (const b of $$<HTMLButtonElement>('.slot[data-slot]', slotsBox)) {
+      const on = !!st.date && !st.asap && st.slot === b.getAttribute('data-slot');
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', String(on));
+      b.disabled = false;
+    }
   }
   slotsBox?.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-slot]') as HTMLButtonElement | null;
-    if (!b || b.disabled) return;
+    if (!b) return;
     st.slot = b.getAttribute('data-slot');
     st.asap = false;
     asapBtn?.classList.remove('is-on');
     asapBtn?.setAttribute('aria-pressed', 'false');
-    $$('.slot', slotsBox).forEach((x) => x.classList.remove('is-on'));
-    b.classList.add('is-on');
+    syncSlots();
     setErrAt('when-err-anchor', '');
     saveDraftSoon();
   });
   asapBtn?.addEventListener('click', () => {
     st.asap = !st.asap;
-    if (st.asap) { st.date = null; st.slot = null; renderCal(); if (slotsBox) slotsBox.innerHTML = '<p class="hint">Приедем к ближайшему свободному времени — перезвоним и согласуем.</p>'; if (slotTitle) slotTitle.textContent = 'Время визита'; }
-    else { if (slotsBox) slotsBox.innerHTML = '<p class="hint">Выберите дату на ленте выше.</p>'; }
+    if (st.asap) { st.date = null; st.slot = null; renderCal(); }
+    syncSlots();
     asapBtn.classList.toggle('is-on', st.asap);
     asapBtn.setAttribute('aria-pressed', String(st.asap));
     setErrAt('when-err-anchor', '');
@@ -378,8 +369,9 @@ if (wizEl) {
     }
     if (n === 3) {
       if (!st.asap && !(st.date && st.slot)) {
-        setErrAt('when-err-anchor', 'Выберите дату и время или нажмите «Как можно скорее»');
-        if (!firstBad) firstBad = cal ?? null;
+        setErrAt('when-err-anchor', 'Выберите желаемый день и время или нажмите «Как можно скорее»');
+        /* фокус — на первый день ленты, а не в пустоту */
+        if (!firstBad) firstBad = (cal?.querySelector('button[data-date]') as HTMLElement | null) ?? cal ?? null;
       }
     }
     if (n === 4) {
@@ -552,9 +544,8 @@ if (wizEl) {
         goStep(3);
         showState('form');
         setErrAt('when-err-anchor', String((j.error as { message?: string }).message ?? 'Выбранное время занято — выберите другой слот'));
-        const slots = (j.error as { slots?: { time: string; available: boolean; reason?: string }[] }).slots;
         st.slot = null;
-        if (slots && st.date) renderSlots(slots);
+        syncSlots();
         track('submit_error', { code: 'slot_taken' });
         return;
       }
@@ -690,7 +681,7 @@ if (wizEl) {
     $$<HTMLInputElement>('input[name="channel"]').forEach((r) => { r.checked = r.value === st.channel; });
     syncSkips(); restoreChips(); renderPhotos(); renderCal();
     if (st.asap) { asapBtn?.classList.add('is-on'); asapBtn?.setAttribute('aria-pressed', 'true'); }
-    if (st.date && !st.asap) void loadSlots();
+    syncSlots();
     if (PRESELECT && !st.services.length && !st.dontknow) {
       const cb = $<HTMLInputElement>(`#svc-chips input[value="${CSS.escape(PRESELECT)}"]`);
       if (cb) { cb.checked = true; st.services.push(PRESELECT); }

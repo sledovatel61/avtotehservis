@@ -123,16 +123,18 @@ test('визард: 5 экранов до успеха с серверным т�
   $('#wiz-next', doc)?.click();
   assert.equal($('#wiz-step-label', doc)?.textContent, 'Когда удобно');
 
-  // шаг 3: календарь + слоты с сервера
+  // шаг 3: лента дат + статическая сетка времени (живая очередь, без запросов слотов)
   const days = $$('#cal .cal-day', doc);
   assert.equal(days.length, 14);
   days[2].click();
-  const slotsReady = await poll(() => $$('#slots .slot', doc).length === 10);
-  assert.ok(slotsReady, 'слоты загрузились из /api/slots');
-  const free = $$('#slots .slot', doc).find((b) => !(b as HTMLButtonElement).disabled);
-  assert.ok(free, 'есть свободный слот');
-  (free as HTMLElement).click();
-  assert.ok(free.classList.contains('is-on'));
+  const slotBtns = $$('#slots .slot', doc);
+  assert.equal(slotBtns.length, 10, 'десять кнопок времени уже в разметке');
+  assert.ok(slotBtns.every((b) => !(b as HTMLButtonElement).disabled), 'ни одной «занятой» кнопки');
+  assert.equal(slotBtns[0].getAttribute('data-slot'), '09:00');
+  assert.equal(slotBtns[9].getAttribute('data-slot'), '18:00');
+  const picked = slotBtns[3];
+  picked.click();
+  assert.ok(picked.classList.contains('is-on'), 'выбранный час подсвечен');
   $('#wiz-next', doc)?.click();
   assert.equal($('#wiz-step-label', doc)?.textContent, 'Контакты');
 
@@ -279,4 +281,32 @@ test('лайтбокс: клик по карточке открывает, Esc �
   doc.dispatchEvent(esc);
   assert.ok(!lb?.classList.contains('is-open'), 'Esc закрыл лайтбокс');
   assert.equal(doc.activeElement, first, 'фокус вернулся на карточку');
+});
+
+test('шаг 3 проходится с выключенной сетью: fetch бросает на любом адресе', async () => {
+  const { doc } = await loadWizard();
+  const realFetch = (globalThis as Record<string, unknown>).fetch as typeof fetch;
+  (globalThis as Record<string, unknown>).fetch = () => { throw new TypeError('Failed to fetch'); };
+  try {
+    setVal($('#f-brand', doc), 'Лада');
+    $('#wiz-next', doc)?.click();
+    ($$('#svc-chips input[name="svc"]', doc)[0] as HTMLInputElement).click();
+    $('#wiz-next', doc)?.click();
+    assert.equal($('#wiz-step-label', doc)?.textContent, 'Когда удобно');
+    // без даты дальше не пускает и фокусирует ленту дат
+    $('#wiz-next', doc)?.click();
+    assert.equal($('#wiz-step-label', doc)?.textContent, 'Когда удобно', 'без даты шаг не пройден');
+    assert.ok(($('#when-err-anchor', doc)?.textContent ?? '').includes('Выберите желаемый день и время'),
+      'понятная ошибка шага 3');
+    assert.ok(doc.activeElement?.closest('#cal'), 'фокус ушёл на ленту дат');
+    // с датой и временем шаг проходится, хотя сеть «мертва»
+    $$('#cal .cal-day', doc)[1].click();
+    assert.equal($$('#slots .slot', doc).length, 10, 'сетка на месте без сети');
+    $$('#slots .slot', doc)[2].click();
+    $('#wiz-next', doc)?.click();
+    assert.equal($('#wiz-step-label', doc)?.textContent, 'Контакты', 'шаг 3 пройден без сети');
+    assert.equal($('#when-err-anchor', doc)?.textContent, '', 'ошибок расписания нет');
+  } finally {
+    (globalThis as Record<string, unknown>).fetch = realFetch;
+  }
 });
