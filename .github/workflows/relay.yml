@@ -69,42 +69,49 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
+      # У нового аккаунта Cloudflare нет workers.dev-сабдомена: без него воркер
+      # собирается, но не публикуется. Регистрируем сами; если прав у токена не хватает —
+      # говорим, куда нажать руками.
+      - name: Ensure workers.dev subdomain
+        id: sub
+        run: |
+          set -e
+          API="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain"
+          get_sub() {
+            curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API" \
+              | grep -Eo '"subdomain": *"[a-z0-9-]+"' | head -1 | sed 's/.*"\([a-z0-9-]*\)"$/\1/' || true
+          }
+          SUB=$(get_sub)
+          echo "Текущий сабдомен: '${SUB:-нет}'"
+          if [ -z "$SUB" ]; then
+            for CAND in ats439 "ats439-$(echo "$CLOUDFLARE_ACCOUNT_ID" | cut -c1-6)"; do
+              echo "Пробуем зарегистрировать '$CAND'"
+              RESP=$(curl -sS -X PUT "$API" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+                -H 'content-type: application/json' -d "{\"subdomain\":\"$CAND\"}")
+              echo "Ответ: $RESP"
+              SUB=$(get_sub)
+              if [ -n "$SUB" ]; then break; fi
+            done
+          fi
+          if [ -z "$SUB" ]; then
+            echo "::error::Не удалось зарегистрировать workers.dev-сабдомен автоматически. Откройте dash.cloudflare.com → Workers & Pages и задайте сабдомен (например ats439), затем запустите workflow снова."
+            exit 1
+          fi
+          echo "Сабдомен: $SUB"
+          echo "url=https://ats-leads.${SUB}.workers.dev" >> "$GITHUB_OUTPUT"
+          echo "URL=https://ats-leads.${SUB}.workers.dev" >> "$GITHUB_ENV"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Deploy worker
         id: deploy
         run: |
           set -e
           npx wrangler deploy 2>&1 | tee /tmp/deploy.log || { echo "::error::wrangler deploy упал"; tail -40 /tmp/deploy.log; exit 1; }
-          tail -25 /tmp/deploy.log || true
-
-          # Адрес воркера: сначала пробуем достать из вывода wrangler, потом собираем
-          # из сабдомена аккаунта (GET /accounts/<id>/workers/subdomain).
-          URL=$(grep -Eo 'https://[a-z0-9-]+\.workers\.dev' /tmp/deploy.log | head -1 || true)
-          if [ -z "$URL" ]; then
-            SUB=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain" \
-              | grep -Eo '"subdomain": *"[a-z0-9-]+"' | head -1 | sed 's/.*"\([a-z0-9-]*\)"$/\1/')
-            if [ -n "$SUB" ]; then URL="https://ats-leads.${SUB}.workers.dev"; fi
-          fi
-          if [ -z "$URL" ]; then
-            echo "::error::Не удалось определить адрес воркера — смотрите лог деплоя выше"
-            exit 1
-          fi
+          tail -20 /tmp/deploy.log || true
+          URL="${{ steps.sub.outputs.url }}"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Адрес прослойки: $URL"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      # Диагностика: печатает хвост лога деплоя и ответ API про сабдомен в аннотациях,
-      # чтобы адрес воркера можно было найти даже без доступа к логам run.
-      - name: Deploy diagnostics
-        if: always()
-        run: |
-          tail -n 15 /tmp/deploy.log 2>/dev/null | while IFS= read -r line; do
-            echo "::warning::LOG ${line}"
-          done || true
-          SUBRESP=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain" || true)
-          echo "::warning::SUBDOMAIN ${SUBRESP}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
