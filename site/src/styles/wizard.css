@@ -150,6 +150,10 @@
 .consent-row label a,
 .consent-row .hint a{color:var(--brass);border-bottom:1px dashed}
 .consent-row .hint{line-height:1.5}
+/* ссылки в строке согласия не рвутся посередине на 390 — перенос только между парами
+   «ссылка + разделитель» */
+.consent-row .hint .consent-pair{display:inline-block;white-space:nowrap}
+.consent-row .hint .consent-pair + .consent-pair{margin-left:2px}
 .consent-row .req{margin-left:2px;white-space:nowrap}
 .consent-row.is-bad{border-color:var(--danger)}
 .radio-row{display:flex;gap:12px;flex-wrap:wrap}
