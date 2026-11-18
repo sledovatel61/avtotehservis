@@ -145,20 +145,31 @@ jobs:
             echo "::error::Воркер не ответил на /health. Адрес: $URL/health, последний ответ: $(cat /tmp/health.json 2>/dev/null | head -c 200)"
             exit 1
           fi
-          echo "Воркер жив и видит Telegram: $URL" 
+          echo "Воркер жив и видит Telegram: $URL"
+          echo "::notice::АДРЕС ВОРКЕРА: $URL"
 
       - name: Notify group in Telegram
         run: |
-          set -e
-          curl -sS --fail-with-body -X POST \
-            "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-            -H 'content-type: application/json' \
-            -d "{\"chat_id\":\"${TELEGRAM_CHAT_ID}\",\"text\":\"Прослойка заявок подключена. Заявки с сайта будут приходить в этот чат.\"}"
+          node --input-type=module -e '
+            const token = process.env.BOT_TOKEN || "";
+            const chat = process.env.TELEGRAM_CHAT_ID || "";
+            if (!token || !chat) { console.error("Нет BOT_TOKEN или TELEGRAM_CHAT_ID (длина токена " + token.length + ")"); process.exit(1); }
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ chat_id: chat, text: "Прослойка заявок подключена. Заявки с сайта будут приходить в этот чат." }),
+            });
+            const body = await res.text();
+            console.log("HTTP " + res.status + " " + body.slice(0, 300));
+            if (!res.ok) process.exit(1);
+          '
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
       - name: Summary
+        if: always()
         run: |
           {
             echo "### Прослойка задеплоена"
