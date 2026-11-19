@@ -2,6 +2,8 @@
 import Base from '../layouts/Base.astro';
 import { getSettings, getSetting } from '../server/settings.ts';
 import { listChipServices } from '../server/services.ts';
+import { SLOT_TIMES } from '../server/slots.ts';
+import { relayMode } from '../shared/leads-endpoint.ts';
 
 const S = getSettings();
 const chipLabels = getSetting<Record<string, string>>('chip_labels', {});
@@ -17,7 +19,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
 <Base
   page="appointment"
   title="Запись на сервис — АвтоТехСервис, Ростов-на-Дону"
-  description="Онлайн-запись в автосервис на Портовой, 439: пять шагов, марка и VIN, услуги, удобные дата и время 9:00–19:00. Стоимость — после осмотра, смета до начала работ."
+  description="Заявка в автосервис на Портовой, 439: пять шагов, марка и VIN, услуги, желаемые дата и время. Приём в порядке живой очереди, время подтверждаем звонком. Стоимость — после осмотра, смета до начала работ."
 >
 
 <nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">Запись</span></nav>
@@ -25,7 +27,7 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
   <div class="container">
     <span class="eyebrow">Запись</span>
     <h1>Запись на визит</h1>
-    <p class="lead">Пять коротких шагов: автомобиль — услуги — дата и время — контакты — проверка. Займёт пару минут, а к вашему приезду бокс и мастер будут готовы. Не хочется заполнять? Позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a>.</p>
+    <p class="lead">Пять коротких шагов: автомобиль — услуги — желаемые день и время — контакты — проверка. Займёт пару минут. Сервис принимает машины в порядке живой очереди, поэтому время визита мы согласуем звонком. Не хочется заполнять? Позвоните: <a href={`tel:${S.phone_main_tel}`} data-track="call_click" class="u-brass"><b>{S.phone_main}</b></a>.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="appt-h">
@@ -53,9 +55,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <p class="step-desc">Марка — обязательна: по ней подберём расходники и проверим, есть ли у нас нужный размер. Год, VIN и пробег — по желанию: они помогают точнее оценить работы, но не спрашиваются «для галочки».</p>
               <div class="fields">
                 <div class="field">
-                  <label for="f-brand">Марка <span class="req" aria-hidden="true">*</span></label>
+                  <label for="f-brand">Марка автомобиля <span class="req" aria-hidden="true">*</span></label>
                   <div class="combo">
-                    <input class="input" type="text" id="f-brand" name="brand" autocomplete="off" placeholder="Начните вводить: Лада, Toyota…" role="combobox" aria-expanded="false" aria-controls="brand-sugg" aria-describedby="brand-hint">
+                    <input class="input" type="text" id="f-brand" name="brand" autocomplete="off" placeholder="Например, Kia" role="combobox" aria-expanded="false" aria-controls="brand-sugg" aria-describedby="brand-hint">
                     <div class="sugg" id="brand-sugg" role="listbox" aria-label="Варианты марок"></div>
                   </div>
                   <span class="hint" id="brand-hint">В списке 20 популярных марок. Вашей нет? Впишите прямо в поле — обслуживаем любые автомобили.</span>
@@ -70,21 +72,30 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                   <input class="input" type="text" inputmode="numeric" id="f-year" name="year" maxlength="4" placeholder="Например: 2019" aria-describedby="year-hint">
                   <span class="hint" id="year-hint">Число от 1980 до 2026</span>
                   <span class="err" role="alert"></span>
-                  <button type="button" class="skip-chip" id="skip-year" aria-pressed="false">Не помню год</button>
+                  <label class="skip-chip skip-toggle" for="skip-year">
+                    <input type="checkbox" id="skip-year">
+                    <span>Не помню год</span>
+                  </label>
                 </div>
                 <div class="field">
-                  <label for="f-vin">VIN <span class="opt">необязательно</span></label>
+                  <label for="f-vin">VIN (если знаете) <span class="opt">необязательно</span></label>
                   <input class="input" type="text" id="f-vin" name="vin" data-vin maxlength="17" placeholder="17 символов" autocomplete="off" aria-describedby="vin-hint">
                   <span class="hint" id="vin-hint">17 символов · буквы I, O, Q в VIN не используются</span>
                   <span class="err" role="alert"></span>
-                  <button type="button" class="skip-chip" id="skip-vin" aria-pressed="false">Не знаю VIN</button>
+                  <label class="skip-chip skip-toggle" for="skip-vin">
+                    <input type="checkbox" id="skip-vin">
+                    <span>Не знаю VIN</span>
+                  </label>
                 </div>
                 <div class="field">
                   <label for="f-mileage">Пробег, км <span class="opt">необязательно</span></label>
                   <input class="input" type="text" inputmode="numeric" id="f-mileage" name="mileage" maxlength="7" placeholder="Например: 84000" aria-describedby="mil-hint">
                   <span class="hint" id="mil-hint">Число километров — помогает понять ресурс расходников</span>
                   <span class="err" role="alert"></span>
-                  <button type="button" class="skip-chip" id="skip-mileage" aria-pressed="false">Не знаю пробег</button>
+                  <label class="skip-chip skip-toggle" for="skip-mileage">
+                    <input type="checkbox" id="skip-mileage">
+                    <span>Не знаю пробег</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -111,31 +122,40 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               </div>
             </div>
               <div class="field" id="svc-err-anchor"><span class="err" role="alert"></span></div>
-              <div class="field u-mt26">
-                <span class="f-label">Фото автомобиля или повреждения <span class="opt">до 3 файлов, необязательно</span></span>
-                <span class="hint">Помогает оценить задачу до визита. Фото (до 3 файлов, до 15 МБ каждое) загружаются на сервер сервиса и видны только сотрудникам.</span>
-                <input type="file" id="f-photos" accept="image/*" multiple hidden>
+              <div class="field u-mt26" id="photo-field">
+                <label class="f-label" for="f-photos">Фото автомобиля или повреждения <span class="opt">до 3 файлов, необязательно</span></label>
+                <span class="hint" id="photo-hint">Помогает оценить задачу до визита. Снимок сжимается прямо в браузере (до 1600 px по длинной стороне) и уходит вместе с заявкой в Telegram сервиса — фото видят только сотрудники. Не больше 3 файлов.</span>
+                <input type="file" id="f-photos" accept="image/*" multiple class="photo-input">
+                <label class="photo-add" for="f-photos" id="photo-add">
+                  <span class="plus" aria-hidden="true">+</span>
+                  <span>Добавить фото</span>
+                </label>
                 <div class="photos" id="photos"></div>
+                <span class="err" role="alert" id="photo-err"></span>
               </div>
             </div>
 
             <div class="step" data-step="3" aria-hidden="true">
               <h2>Когда вам удобно</h2>
-              <p class="step-desc">Работаем {S.hours}. Запись — на ближайшие 14 дней, шаг один час. Занятое время видно сразу и недоступно для выбора; формат даты — ДД.ММ.ГГГГ.</p>
+              <p class="step-desc">Работаем {S.hours}. Приём — в порядке живой очереди: выберите удобные день и время, а мастер подтвердит их звонком, обычно в течение рабочего дня. Лента показывает ближайшие 14 дней, формат даты — ДД.ММ.ГГГГ.</p>
               <div class="field">
-                <span class="f-label">Дата визита</span>
+                <span class="f-label">Желаемый день визита</span>
                 <div class="cal" id="cal" role="group" aria-label="Выбор даты: ближайшие 14 дней"></div>
               </div>
               <div class="field u-mt16">
-                <span class="f-label" id="slot-title">Время визита</span>
-                <div class="slots" id="slots" role="group" aria-label="Выбор времени"></div>
-                <div class="slot-legend">
-                  <span><i class="u-bar-mist2"></i>свободно</span>
-                  <span><i class="u-bar-copper"></i>выбрано</span>
-                  <span><i class="u-bar-mist1"></i>занято (недоступно)</span>
+                <span class="f-label" id="slot-title">Желаемое время</span>
+                {/* Сетка статическая: сервис принимает в порядке живой очереди, время —
+                    пожелание, деления часов на свободные и нет. Разметку рендерит сервер —
+                    клиенту не нужен сетевой запрос, и на GitHub Pages форма работает
+                    без сервера. */}
+                <div class="slots" id="slots" role="group" aria-label="Выбор времени">
+                  {SLOT_TIMES.map((t) => (
+                    <button type="button" class="slot" data-slot={t} aria-pressed="false" aria-label={t}>{t}</button>
+                  ))}
                 </div>
+                <p class="hint u-mt10">Время — пожелание. Если в этот час будет очередь, мастер предложит ближайшее удобное.</p>
                 <div class="asap">
-                  <p>Не можете выбрать день? Подберём ближайшее окно и перезвоним для подтверждения.</p>
+                  <p>Время не принципиально? Приезжайте в рабочие часы — примем в порядке очереди.</p>
                   <button type="button" class="skip-chip" id="asap-btn" aria-pressed="false">Как можно скорее</button>
                 </div>
               </div>
@@ -152,9 +172,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
                   <span class="err" role="alert"></span>
                 </div>
                 <div class="field">
-                  <label for="f-phone">Телефон <span class="req" aria-hidden="true">*</span></label>
+                  <label for="f-phone">Ваш телефон <span class="req" aria-hidden="true">*</span></label>
                   <input class="input" type="tel" id="f-phone" name="phone" data-mask inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-hint">
-                  <span class="hint" id="phone-hint">Формат +7 (999) 999-99-99 · вставка из буфера работает</span>
+                  <span class="hint" id="phone-hint">Номер для связи · формат +7 (999) 999-99-99</span>
                   <span class="err" role="alert"></span>
                 </div>
                 <div class="field field--full">
@@ -173,12 +193,19 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <div class="consent-row" id="consent-row">
                     <input type="checkbox" id="f-consent" aria-describedby="consent-hint">
                     <div class="u-flex1">
-                      <label for="f-consent">Согласен(на) на обработку персональных данных <span class="req" aria-hidden="true">*</span></label>
+                      <label for="f-consent">Даю согласие на обработку персональных данных<span class="req" aria-hidden="true">*</span></label>
                       <span class="hint u-blk-mt4" id="consent-hint">
-                        <button type="button" class="linklike" data-modal="consent">Текст согласия</button> ·
-                        <button type="button" class="linklike" data-modal="policy">Политика конфиденциальности</button> ·
-                        галочка не проставлена заранее
+                        <span class="consent-pair"><a href="/consent">Согласие на обработку ПД</a> ·</span>
+                        <span class="consent-pair"><a href="/privacy">Политика обработки ПД</a></span>
                       </span>
+                      <span class="hint u-blk-mt4">
+                        <span class="consent-pair"><button type="button" class="linklike" data-modal="consent">Согласие — кратко</button> ·</span>
+                        <span class="consent-pair"><button type="button" class="linklike" data-modal="policy">Политика — кратко</button></span>
+                      </span>
+                      <span class="hint u-blk-mt4">
+                        Заявка передаётся через внешние сервисы Cloudflare и Telegram — это трансграничная передача данных, необходимая для доставки заявки сотрудникам (подробнее — в <a href="/privacy#transfer">политике</a>).
+                      </span>
+                      <span class="hint u-blk-mt4">Версия документа: {S.consent_version}. Отметка о согласии, её дата и время сохраняются вместе с заявкой.</span>
                       <span class="err" role="alert"></span>
                     </div>
                   </div>
@@ -190,7 +217,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <h2>Проверьте заявку</h2>
               <p class="step-desc">Всё выбранное — одним экраном. Что-то не так? Кнопка «изменить» вернёт на нужный шаг, данные не потеряются.</p>
               <div class="sum-list" id="summary"></div>
-              <p class="hint">Нажмите «Отправить заявку» — она сразу уйдёт в сервис: вы получите номер, а мастер — уведомление в Telegram и письмом. Если один канал доставки временно недоступен, заявка не потеряется: доставка повторится автоматически.</p>
+              <p class="hint">{relayMode
+                ? 'Нажмите «Отправить заявку» — она сразу уйдёт в Telegram сервиса вместе с фотографиями: вы получите номер, а мастер — уведомление с вашим телефоном и списком работ. Если канал временно недоступен, форма предложит повторить отправку или позвонить.'
+                : 'Нажмите «Отправить заявку» — она сразу уйдёт в сервис: вы получите номер, а мастер — уведомление в Telegram и письмом. Если один канал доставки временно недоступен, заявка не потеряется: доставка повторится автоматически.'}</p>
             </div>
 
           </div>
@@ -200,12 +229,9 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
               <button class="btn btn--copper" type="button" id="wiz-next">Далее</button>
               <button class="btn btn--copper u-none" type="button" id="wiz-submit">Отправить заявку</button>
             </div>
+            <p class="hint u-blk-mt4 u-none" id="consent-gate">Отправка станет доступна после отметки о согласии на обработку персональных данных (шаг 4).</p>
           </div>
           <noscript><p class="hint">Форма записи работает с включённым JavaScript. Без него запишитесь, пожалуйста, по телефону: {S.phone_main} ({S.hours}).</p></noscript>
-          <div class="payload" id="payload">
-            <button class="payload-btn" type="button" id="payload-btn" aria-expanded="false" aria-controls="payload-pre"><span class="car" aria-hidden="true">▶</span> Что уйдёт на сервер (JSON payload)</button>
-            <pre id="payload-pre"></pre>
-          </div>
         </div>
 
         <div class="wiz-state" id="state-sending" role="status" aria-live="polite">
@@ -215,15 +241,17 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
 
         <div class="wiz-state" id="state-ok" role="status" aria-live="polite">
           <div class="ticket">
-            <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg><b>Заявка принята</b></div>
+            <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg><b>Заявка отправлена</b></div>
             <div class="no"><small>Номер заявки — назовите его при звонке</small><span id="ok-no">—</span></div>
+            <p class="hint">Спасибо! Мы получили ваши данные и свяжемся с вами по указанному телефону в рабочее время. Если вопрос срочный, позвоните: {S.phone_main}.</p>
             <p class="hint" id="ok-dup" hidden>Повторная отправка: эта заявка уже принята — дубль не создан (идемпотентность по ключу).</p>
             <dl id="ok-dl"></dl>
           </div>
           <div class="next-steps">
             <h3>Что дальше</h3>
             <ul>
-              <li>Перезвоним с номера {S.phone_main} (или напишем в Telegram — как выбрали) и подтвердим визит.</li>
+              <li>Позвоним и согласуем время визита — оно пока предварительное.</li>
+              <li>Свяжемся так, как вы выбрали: звонком с номера {S.phone_main} или в Telegram.</li>
               <li>Если выбрана диагностика: мастер осмотрит автомобиль и подготовит смету до начала работ.</li>
               <li>Планы изменились? Позвоните — перенесём время без обид и уговоров.</li>
             </ul>
@@ -235,17 +263,32 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
             </ul>
           </div>
           <p class="u-actions-center">
-            <button class="btn btn--ghost" type="button" id="ok-ics">Добавить в календарь (.ics)</button>
+            <button class="btn btn--ghost" type="button" id="ok-ics">В календарь (предварительно)</button>
             <button class="btn btn--copper" type="button" id="ok-again">Создать новую заявку</button>
-            <a class="btn btn--ghost" href="/" id="ok-home">На главную</a>
+            <a class="btn btn--ghost" href="/" id="ok-home">Вернуться на главную</a>
           </p>
-          <p class="hint u-mt16">Заявка записана в базу сервиса и сразу передана в доставку: владельцу в Telegram и письмом на почту. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.</p>
+          <p class="hint u-mt16">{relayMode
+            ? 'Заявка передана в сервис: владелец получит её в Telegram. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.'
+            : 'Заявка записана в базу сервиса и сразу передана в доставку: владельцу в Telegram и письмом на почту. Если канал временно недоступен — доставка повторится автоматически, заявка не потеряется.'}</p>
+        </div>
+
+        <div class="wiz-state" id="state-demo" role="status" aria-live="polite">
+          <div class="ticket">
+            <div class="ok is-info"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.5"/></svg><b>Демо-версия: заявка не отправлена</b></div>
+            <p class="hint">Это витрина сайта: форма работает как обычно, но данные никуда не уходят — ни в базу, ни в Telegram, ни на почту. Заявку мы не получили.</p>
+            <p class="hint">Чтобы записаться на визит, позвоните: <b class="u-nowrap">{S.phone_main}</b>, {S.hours}. Скажите марку, что нужно сделать и когда удобно приехать.</p>
+          </div>
+          <p class="u-actions-center">
+            <a class="btn btn--copper" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: <span class="u-nowrap">{S.phone_main}</span></a>
+            <button class="btn btn--ghost" type="button" id="demo-again">Заполнить заново</button>
+            <a class="btn btn--ghost" href="/">На главную</a>
+          </p>
         </div>
 
         <div class="wiz-state" id="state-err" role="alert" aria-live="assertive">
           <div class="err-box">
             <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg><b>Не удалось отправить заявку</b></div>
-            <p id="err-text">Сервер не ответил или отклонил заявку. Введённые данные сохранены — заново ничего вводить не нужно. Повторите отправку или позвоните нам: {S.phone_main}.</p>
+            <p id="err-text">Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам: {S.phone_main}.</p>
             <p class="u-flex-mt18">
               <button class="btn btn--copper" type="button" id="err-retry">Повторить отправку</button>
               <a class="btn btn--ghost" href={`tel:${S.phone_main_tel}`} data-track="call_click">Позвонить: {S.phone_main}</a>
@@ -260,8 +303,8 @@ const preselect = Astro.url.searchParams.get('s') ?? '';
       <p>Форма удобна, но звонок ещё быстрее: мастер ответит, оценит задачу и запишет на визит.</p>
       <a class="svc-side-tel" href={`tel:${S.phone_main_tel}`} data-track="call_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg> {S.phone_main}</a>
       <small>{S.hours}</small>
-      <a class="svc-side-tel u-mt6" href={`${S.telegram_url}`} data-track="telegram_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 4.5 2.8 11.3c-.9.3-.9 1.6.1 1.8l4.6 1.2 1.8 5.4c.3.8 1.3 1 1.8.3l2.5-3 4.6 3.4c.7.5 1.7.1 1.9-.7l3.2-14c.2-1-.7-1.8-1.8-1.2z"/><path d="m7.5 14.3 11-7.8-8.4 9.4"/></svg> Telegram {S.telegram_phone}</a>
-      <small>для переписки и фото повреждения</small>
+      <a class="svc-side-tel u-mt6" href={`${S.telegram_url}`} aria-label={`Написать в Telegram, номер ${S.telegram_phone}`} data-track="telegram_click"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 4.5 2.8 11.3c-.9.3-.9 1.6.1 1.8l4.6 1.2 1.8 5.4c.3.8 1.3 1 1.8.3l2.5-3 4.6 3.4c.7.5 1.7.1 1.9-.7l3.2-14c.2-1-.7-1.8-1.8-1.2z"/><path d="m7.5 14.3 11-7.8-8.4 9.4"/></svg> {S.telegram_phone}</a>
+      <small>Telegram — переписка и фото повреждения</small>
       <p class="u-mt10"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {S.address_full}<br><small class="u-mist">ост. «3-й Поселковый» ~330 м · рядом база «Бум» · <a href={`${S.map_link}`} data-track="route_click" class="u-brass">схема проезда</a></small></p>
       <div class="price-note u-m6-0-0">
         <b>Гарантия и документы</b>
