@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { JSDOM } from 'jsdom';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const root = resolve(import.meta.dirname, '../pages-dist');
+const { base, cnameHost } = readPublicPath(process.env);
+const basePrefix = `${base}/`;
 let pages = 0;
 let links = 0;
 async function exists(path) {
@@ -20,13 +23,13 @@ async function walk(dir) {
       const dom = new JSDOM(await readFile(file, 'utf8'));
       assert.equal(dom.window.document.body.dataset.preview, 'true');
       /* data-img/data-cover: адреса картинок лайтбокса. Гейт не проверял их — из-за этого
-         на Pages «увеличенный» сертификат открывался пустой рамкой (путь без /avtotehservis). */
+         на Pages «увеличенный» сертификат открывался пустой рамкой (путь без базового префикса). */
       for (const el of dom.window.document.querySelectorAll('[href], [src], [poster], [data-img], [data-cover]')) {
         for (const attr of ['href', 'src', 'poster', 'data-img', 'data-cover']) {
           const value = el.getAttribute(attr);
           if (!value?.startsWith('/') || value.startsWith('//')) continue;
-          assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed URL: ${value} in ${file}`);
-          const path = join(root, decodeURIComponent(value.split(/[?#]/)[0].slice('/avtotehservis/'.length)));
+          assert.ok(value.startsWith(basePrefix), `Unprefixed URL: ${value} in ${file}`);
+          const path = join(root, decodeURIComponent(value.split(/[?#]/)[0].slice(basePrefix.length)));
           assert.ok(await exists(path) || await exists(join(path, 'index.html')), `Broken link: ${value} in ${file}`);
           links++;
         }
@@ -35,8 +38,8 @@ async function walk(dir) {
         for (const part of (el.getAttribute('srcset') || '').split(',')) {
           const value = part.trim().split(/\s+/)[0];
           if (!value.startsWith('/') || value.startsWith('//')) continue;
-          assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed srcset URL: ${value} in ${file}`);
-          const path = join(root, decodeURIComponent(value.slice('/avtotehservis/'.length)));
+          assert.ok(value.startsWith(basePrefix), `Unprefixed srcset URL: ${value} in ${file}`);
+          const path = join(root, decodeURIComponent(value.slice(basePrefix.length)));
           assert.ok(await exists(path), `Broken srcset asset: ${value} in ${file}`);
           links++;
         }
@@ -48,10 +51,10 @@ async function walk(dir) {
          рисовалась без эмблемы. Проверяем только каталоги ассетов: `/api/...` на статике
          всё равно не работает, его отсутствие — не регресс публикации. */
       const js = await readFile(file, 'utf8');
-      for (const m of js.matchAll(/(["'`])(\/(?:img|fonts|audio|video|media)\/[^"'`]*)/g)) {
+      for (const m of js.matchAll(/(["'`])(\/(?:img|fonts|audio|video|media)\/[^"'`$\s]*)/g)) {
         const value = m[2];
-        assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed JS asset: ${value} in ${file}`);
-        const path = join(root, decodeURIComponent(value.slice('/avtotehservis/'.length)));
+        assert.ok(value.startsWith(basePrefix), `Unprefixed JS asset: ${value} in ${file}`);
+        const path = join(root, decodeURIComponent(value.slice(basePrefix.length)));
         assert.ok(await exists(path), `Broken JS asset: ${value} in ${file}`);
         links++;
       }
@@ -68,8 +71,8 @@ async function walk(dir) {
       for (const value of refs) {
         const rootRelative = value.startsWith('/') && !value.startsWith('//');
         if (!rootRelative) continue;                  // data:, http(s):, относительные — не наши
-        assert.ok(value.startsWith('/avtotehservis/'), `Unprefixed CSS asset: ${value} in ${file}`);
-        const path = join(root, decodeURIComponent(value.slice('/avtotehservis/'.length)));
+        assert.ok(value.startsWith(basePrefix), `Unprefixed CSS asset: ${value} in ${file}`);
+        const path = join(root, decodeURIComponent(value.slice(basePrefix.length)));
         assert.ok(await exists(path), `Broken CSS asset: ${value} in ${file}`);
         links++;
       }
@@ -77,6 +80,14 @@ async function walk(dir) {
   }
 }
 await walk(root);
+
+const cnamePath = join(root, 'CNAME');
+if (cnameHost) {
+  assert.ok(await exists(cnamePath), `Missing pages-dist/CNAME for custom domain ${cnameHost}`);
+  assert.equal((await readFile(cnamePath, 'utf8')).trim(), cnameHost, 'CNAME content mismatch');
+} else {
+  assert.ok(!(await exists(cnamePath)), 'Unexpected pages-dist/CNAME for default github.io origin');
+}
 
 // /manage/ доступна по прямой ссылке для владельца, но не должна индексироваться.
 const manageDir = join(root, 'manage');

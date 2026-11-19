@@ -18,11 +18,12 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const HERE = resolve(fileURLToPath(import.meta.url), '../..');
 const PORT = Number(process.argv[2] ?? process.env.PORT ?? 8080);
 const ROOT = resolve(process.argv[3] ?? process.env.PAGES_DIR ?? join(HERE, 'pages-dist'));
-const BASE = '/avtotehservis';
+const { base: BASE } = readPublicPath(process.env);
 
 const TYPES = new Map(Object.entries({
   '.html': 'text/html; charset=utf-8',
@@ -72,16 +73,18 @@ async function resolveFile(urlPath) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   let path = url.pathname;
-  if (path === '/' || path === BASE) {
-    res.writeHead(302, { location: `${BASE}/` });
-    res.end();
-    return;
-  }
-  if (path.startsWith(`${BASE}/`)) path = path.slice(BASE.length);
-  else if (path !== '/404.html') {
-    res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' });
-    createReadStream(join(ROOT, '404.html')).pipe(res);
-    return;
+  if (BASE) {
+    if (path === '/' || path === BASE) {
+      res.writeHead(302, { location: `${BASE}/` });
+      res.end();
+      return;
+    }
+    if (path.startsWith(`${BASE}/`)) path = path.slice(BASE.length);
+    else if (path !== '/404.html') {
+      res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' });
+      createReadStream(join(ROOT, '404.html')).pipe(res);
+      return;
+    }
   }
 
   const hit = await resolveFile(path);
