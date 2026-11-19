@@ -2,19 +2,20 @@
 
 ---
 
-Круг 88, твоя роль прежняя — серверная часть (воркер `relay/**`). Задание: `prompts/116-task-r88-origins-domain.md` в репозитории (ветка `arena/4a0a6bfb-avtotehservis`, она же в PR #71; если файла не видно — читай его по прямой ссылке на GitHub в этой ветке).
+Круг 88, роль прежняя — серверная часть (воркер `relay/**`). Задание: `prompts/116-task-r88-origins-domain.md` в репозитории (ветка `arena/4a0a6bfb-avtotehservis`, PR #71).
 
-Коротко: владелец подключил домен **`ats-rostov.ru`**, сайт переезжает с `sledovatel61.github.io/avtotehservis/` на корень домена. В твоём PR #73 (уже в `preview/github-pages`) в `relay/src/origins.ts` остался хардкод `DEFAULT_ORIGINS` с `https://sledovatel61.github.io`. Из-за него после переезда форма отзывов получит 403 — нужен фикс одной темой, без расширения объёма.
+Коротко: владелец подключил домен **`ats-rostov.ru`**, сайт переезжает с `sledovatel61.github.io/avtotehservis/` на корень домена. В твоём коде после PR #73 остались три долга, все в `relay/**`:
 
-Сделай:
+1. `relay/src/origins.ts` — `DEFAULT_ORIGINS` с хардкодом `https://sledovatel61.github.io`. Убрать полностью: единственный источник — `env.ALLOWED_ORIGINS` (split по запятым, trim). Пустой список = ни один origin не разрешён (fail-closed), локальная разработка задаёт список в `.dev.vars`.
+2. `relay/wrangler.toml` — `ALLOWED_ORIGINS = "https://ats-rostov.ru,https://www.ats-rostov.ru,https://sledovatel61.github.io,http://localhost:4321,http://127.0.0.1:4321"` (превью оставить: старый адрес редиректит, а браузер сохраняет Origin исходной страницы).
+3. `relay/src/index.ts`, `corsHeaders()` — добавить `'access-control-expose-headers': 'retry-after'`. Без этого браузер не видит `Retry-After` на `429`, и форма показывает «Слишком часто» без секунд.
 
-1. `relay/src/origins.ts` — убрать `DEFAULT_ORIGINS`. Источник только `env.ALLOWED_ORIGINS` (split по запятым, trim). Пустой список = ни один origin не разрешён (fail-closed), локальная разработка задаёт список в `.dev.vars`.
-2. `relay/wrangler.toml` — `ALLOWED_ORIGINS = "https://ats-rostov.ru,https://www.ats-rostov.ru,https://sledovatel61.github.io,http://localhost:4321,http://127.0.0.1:4321"`.
-3. Новый `relay/tests/origins.test.ts` — 8 проверок из задания (главная: без `ALLOWED_ORIGINS` превью-адрес больше не разрешён; с доменом — `POST /reviews` проходит).
-4. `relay/README.md` — одна строка: список источников только из `ALLOWED_ORIGINS`, пустой = отказ.
+Плюс по возможности включи KV для лимитов (`npx wrangler kv namespace create ATS_KV`, id в `wrangler.toml`, `/health` → `"reviewsKv": true`). Уже подключённые к проекту Cloudflare права могут не давать доступа к KV — тогда просто напиши это в PR, не блокируйся и ничего не выдумывай.
 
-Ветка от `origin/preview/github-pages`, имя `agent/88-origins-domain`, PR туда же. В теле PR — вывод `npx tsc --noEmit`, `node --test tests/*.test.ts`, `npx wrangler deploy --dry-run`.
+Тесты: новый `relay/tests/origins.test.ts` — 9 проверок из задания (главная: без `ALLOWED_ORIGINS` превью-адрес больше не разрешён; с доменом `POST /reviews` отдаёт `201`; `OPTIONS /reviews` отдаёт `access-control-expose-headers`). Существующие `reviews.test.ts` и `leads.test.ts` должны остаться зелёными — если они полагались на хардкод, пусть задают `ALLOWED_ORIGINS` в моке `env` явно.
 
-Не менять: контракт `/reviews`, лимиты, тексты писем, `CONSENT_VERSION`; `site/**` не трогать (там Агент 5), `KV` не «чинить» — `reviewsKv: false` на превью это норма, лимиты в памяти изолята.
+Ветка от `origin/preview/github-pages`, имя `agent/88-origins-domain`, PR туда же. В теле PR — вывод `npx tsc --noEmit`, `node --test tests/*.test.ts`, `npx wrangler deploy --dry-run --outdir /tmp/relay-dry`.
 
-Деплой после мержа сделает workflow, `wrangler deploy` руками не запускай.
+Не менять: контракт `/reviews`, лимиты, тексты уведомлений, формат письма, `CONSENT_VERSION`. `site/**` не трогать — там параллельно работают Агенты 5, 7 и 10.
+
+Деплой после мержа сделает workflow «Deploy leads relay», `wrangler deploy` руками не запускай.
