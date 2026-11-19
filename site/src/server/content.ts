@@ -1,4 +1,5 @@
 import { db } from './db.ts';
+import { getPrices, fillPrices } from './prices-store.ts';
 
 export interface CaseRow {
   id: number; slug: string; title: string; description: string | null; service_slug: string | null;
@@ -13,12 +14,33 @@ export interface NewsRow {
   cover_media_id: string | null; cover_static: string | null; status: string; published_at: string | null;
 }
 
+function mapCaseRow(r: CaseRow): CaseRow {
+  const prices = getPrices();
+  return {
+    ...r,
+    title: fillPrices(r.title ?? '', prices),
+    description: r.description ? fillPrices(r.description, prices) : r.description,
+  };
+}
+
+function mapNewsRow(r: NewsRow): NewsRow {
+  const prices = getPrices();
+  return {
+    ...r,
+    title: fillPrices(r.title ?? '', prices),
+    excerpt: r.excerpt ? fillPrices(r.excerpt, prices) : r.excerpt,
+    body_md: fillPrices(r.body_md ?? '', prices),
+  };
+}
+
 export function listPublishedCases(limit = 12): CaseRow[] {
   // Новые кейсы выше старых (M1 ревью): свежая публикация сразу попадает на главную и «О компании».
-  return db().prepare(`SELECT * FROM cases WHERE status='published' ORDER BY published_at DESC, sort DESC LIMIT ?`).all(limit) as CaseRow[];
+  const rows = db().prepare(`SELECT * FROM cases WHERE status='published' ORDER BY published_at DESC, sort DESC LIMIT ?`).all(limit) as CaseRow[];
+  return rows.map(mapCaseRow);
 }
 export function getCase(slug: string): CaseRow | undefined {
-  return db().prepare(`SELECT * FROM cases WHERE slug=? AND status='published'`).get(slug) as CaseRow | undefined;
+  const row = db().prepare(`SELECT * FROM cases WHERE slug=? AND status='published'`).get(slug) as CaseRow | undefined;
+  return row ? mapCaseRow(row) : undefined;
 }
 export function listPublishedReviews(limit = 12): ReviewRow[] {
   return db().prepare(`SELECT * FROM reviews WHERE status='published' ORDER BY published_at DESC LIMIT ?`).all(limit) as ReviewRow[];
@@ -62,14 +84,16 @@ export function listNews(opts: { category?: string | null; page?: number; per?: 
   const now = nowMoscowStr();
   const items = db().prepare(`SELECT * FROM news WHERE ${where} ORDER BY (published_at > ?) ASC, published_at DESC LIMIT ? OFFSET ?`)
     .all(...params, now, per, (page - 1) * per) as NewsRow[];
-  return { items, total, pages: Math.max(1, Math.ceil(total / per)) };
+  return { items: items.map(mapNewsRow), total, pages: Math.max(1, Math.ceil(total / per)) };
 }
 export function getNews(slug: string): NewsRow | undefined {
-  return db().prepare(`SELECT * FROM news WHERE slug=? AND status='published'`).get(slug) as NewsRow | undefined;
+  const row = db().prepare(`SELECT * FROM news WHERE slug=? AND status='published'`).get(slug) as NewsRow | undefined;
+  return row ? mapNewsRow(row) : undefined;
 }
 export function otherNews(slug: string, limit = 3): NewsRow[] {
   const now = nowMoscowStr();
-  return db().prepare(`SELECT * FROM news WHERE slug != ? AND status='published' ORDER BY (published_at > ?) ASC, published_at DESC LIMIT ?`).all(slug, now, limit) as NewsRow[];
+  const rows = db().prepare(`SELECT * FROM news WHERE slug != ? AND status='published' ORDER BY (published_at > ?) ASC, published_at DESC LIMIT ?`).all(slug, now, limit) as NewsRow[];
+  return rows.map(mapNewsRow);
 }
 /** Обложка целиком: src, крупный вариант, srcset и alt (из media.alt, если владелец заполнил). */
 export interface CoverInfo { src: string; lg: string; srcset: string | null; alt: string }

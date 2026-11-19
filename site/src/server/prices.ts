@@ -3,22 +3,25 @@
  *
  * Круг 84: владелец попросил добавить на сайт пометку, что цены носят
  * информационно-справочный характер, не являются окончательными и могут
- * меняться в зависимости от объёма и дополнительных работ. Раньше такой
- * пометки не было, а у каждой страницы был свой текст — правки расползались.
- *
- * Здесь две версии текста и дата: меняете цифры в прайсе — обновите
- * PRICE_UPDATED, он печатается рядом с пометкой на /prices и /services.
- * Текст пометки менять в одном месте: он подставляется ещё и в подвал.
+ * меняться в зависимости от объёма и дополнительных работ.
+ * Круг 85: дата актуальности читается из site/content/prices.json (updated_at).
  */
 
+import { getPrices } from './prices-store.ts';
+
+export const RUB = '₽';
+export const PRICE_RANGE_EXAMPLE = `A–B ${RUB}`;
+
+export function formatPriceUpdatedRu(isoDate: string): string {
+  const [y, m, d] = String(isoDate ?? '').trim().split('-');
+  return d && m && y ? `${d}.${m}.${y}` : String(isoDate ?? '');
+}
+
 /** Дата, на которую владелец подтвердил цифры. Формат: ГГГГ-ММ-ДД. */
-export const PRICE_UPDATED = '2026-11-19';
+export const PRICE_UPDATED = getPrices().updated_at;
 
 /** «19.11.2026» */
-export const PRICE_UPDATED_RU = (() => {
-  const [y, m, d] = PRICE_UPDATED.split('-');
-  return `${d}.${m}.${y}`;
-})();
+export const PRICE_UPDATED_RU = formatPriceUpdatedRu(PRICE_UPDATED);
 
 /**
  * Полная пометка — /prices, где весь прайс целиком.
@@ -40,5 +43,5 @@ export const PRICE_DISCLAIMER_SHORT =
 export const PRICE_DISCLAIMER_FOOTER =
   'Цены на сайте носят информационно-справочный характер и не являются публичной офертой.';
 
-/** «Прайс обновлён 19.11.2026» — для /prices и /services. */
+/** «Цифры подтверждены 19.11.2026» — для /prices и /services. */
 export const PRICE_UPDATED_LABEL = `Цифры подтверждены ${PRICE_UPDATED_RU}`;
