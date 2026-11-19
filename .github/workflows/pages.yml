@@ -51,6 +51,8 @@ jobs:
         working-directory: site
       - run: node scripts/check-pages.mjs
         working-directory: site
+      - run: node scripts/check-reviews.mjs
+        working-directory: site
       # Заставка и 3D выключены (круг 74): проверяем по собранному артефакту,
       # что ни оверлея, ни canvas, ни шейдеров заставки в бандле нет.
       - run: node scripts/check-intro-3d-off.mjs

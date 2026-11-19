@@ -22,7 +22,7 @@ if (leads.error) throw new Error(`PUBLIC_LEADS_ENDPOINT: ${leads.error}`);
 const relayMode = leads.base !== '';
 if (relayMode) console.log(`[pages] заявки идут в прослойку: ${leads.base}`);
 const origin = `http://127.0.0.1:${port}`;
-const env = { ...process.env, DATA_DIR: join(temp, 'data'), MEDIA_DIR: join(temp, 'media'), PUBLIC_SITE_URL: publicOrigin, HOST: '127.0.0.1', PORT: port };
+const env = { ...process.env, DATA_DIR: join(temp, 'data'), MEDIA_DIR: join(temp, 'media'), PUBLIC_SITE_URL: publicOrigin, PUBLIC_DEMO_REVIEWS: process.env.PUBLIC_DEMO_REVIEWS ?? '1', HOST: '127.0.0.1', PORT: port };
 const run = (args) => new Promise((resolveRun, reject) => {
   const child = spawn(process.execPath, args, { cwd: root, env, stdio: 'inherit' });
   child.on('error', reject);
