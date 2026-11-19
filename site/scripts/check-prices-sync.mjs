@@ -118,7 +118,7 @@ export function checkPricesStructure(rawPrices) {
   const fLen = prices.featured.length;
 
   if (tSet < 1 || tSet > PRICE_LIMITS.maxGroupItems) {
-    errors.push(`tyres.set fuera лимитов: ${tSet} (допустимо 1..${PRICE_LIMITS.maxGroupItems})`);
+    errors.push(`tyres.set вне лимитов: ${tSet} (допустимо 1..${PRICE_LIMITS.maxGroupItems})`);
   }
   if (tRep < 1 || tRep > PRICE_LIMITS.maxGroupItems) {
     errors.push(`tyres.repair вне лимитов: ${tRep} (допустимо 1..${PRICE_LIMITS.maxGroupItems})`);
