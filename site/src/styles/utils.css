@@ -33,3 +33,5 @@
 .u-bar-copper{background:rgba(200,127,69,.65)}
 .u-bar-mist2{background:rgba(183,196,187,.25)}
 .u-bar-mist1{background:rgba(183,196,187,.16)}
+/* телефон/номер не рвётся посередине на узких экранах (80-2 §5) */
+.u-nowrap{white-space:nowrap}

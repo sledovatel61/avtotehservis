@@ -6,11 +6,15 @@ data/
 *.sqlite3-*
 .astro/
 
-# Загруженные медиа живут на сервере (MEDIA_DIR), в git не попадают.
-# Негации ниже перекрывают корневой .gitignore (*.sql, media/) — без них
+# Серверные загрузки живут в site/media (MEDIA_DIR), в git не попадают.
+# Негации ниже отменяют корневое правило *.sql для миграций сайта — без них
 # в коммит молча не попадают схема БД и маршруты выдачи медиа (блокер Б1/Б2 ревью).
-media/
+# Фото кейсов лежат в public/media; корневое правило /media/ привязано к корню репозитория.
+/media/
 !migrations/
 !migrations/*.sql
 !src/pages/media/
 !src/pages/admin/media/
+
+# Генерируемый отчёт ссылок на позиции прайса (npm run build:refs)
+public/manage/price-refs.json

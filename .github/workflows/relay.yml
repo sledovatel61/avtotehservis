@@ -1,0 +1,199 @@
+name: Deploy leads relay
+
+# Прослойка relay/ → Cloudflare Worker + проверка связи с Telegram.
+#
+# Секреты репозитория (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  — токен с шаблоном «Edit Cloudflare Workers»
+#   CLOUDFLARE_ACCOUNT_ID — Account ID из дашборда Cloudflare
+#   BOT_TOKEN             — токен бота от @BotFather
+#   TELEGRAM_CHAT_ID      — id группы заявок (отрицательное число)
+#
+# Запускается сам при изменении relay/ в ветке публикации. В логе и в Summary
+# печатается адрес воркера — его нужно положить в переменную PUBLIC_LEADS_ENDPOINT.
+
+on:
+  push:
+    branches: [preview/github-pages]
+    paths:
+      - 'relay/**'
+      - '.github/workflows/relay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: relay
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: relay
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Tests (сеть подменена, наружу ничего не уходит)
+        run: node --test test/*.test.ts
+
+      # Account ID можно не задавать: если секрета нет, определяем его по токену.
+      - name: Resolve account id
+        id: acct
+        run: |
+          set -e
+          ACC="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          if [ -z "$ACC" ]; then
+            echo "Секрет CLOUDFLARE_ACCOUNT_ID не задан — определяю по токену."
+            ACC=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              https://api.cloudflare.com/client/v4/accounts \
+              | grep -Eo '"id": *"[0-9a-f]{32}"' | head -1 | grep -Eo '[0-9a-f]{32}')
+          fi
+          if [ -z "$ACC" ]; then
+            echo "::error::Не удалось определить Account ID. Задайте секрет CLOUDFLARE_ACCOUNT_ID (дашборд → Manage account → Account home, число в адресной строке)."
+            exit 1
+          fi
+          echo "Account ID: $ACC"
+          echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> "$GITHUB_ENV"
+          echo "account=$ACC" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      # У нового аккаунта Cloudflare нет workers.dev-сабдомена: без него воркер
+      # собирается, но не публикуется. Регистрируем сами; если прав у токена не хватает —
+      # говорим, куда нажать руками.
+      - name: Ensure workers.dev subdomain
+        id: sub
+        run: |
+          set -e
+          API="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain"
+          get_sub() {
+            curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API" \
+              | grep -Eo '"subdomain": *"[a-z0-9-]+"' | head -1 | sed 's/.*"\([a-z0-9-]*\)"$/\1/' || true
+          }
+          SUB=$(get_sub)
+          echo "Текущий сабдомен: '${SUB:-нет}'"
+          if [ -z "$SUB" ]; then
+            for CAND in ats439 "ats439-$(echo "$CLOUDFLARE_ACCOUNT_ID" | cut -c1-6)"; do
+              echo "Пробуем зарегистрировать '$CAND'"
+              RESP=$(curl -sS -X PUT "$API" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+                -H 'content-type: application/json' -d "{\"subdomain\":\"$CAND\"}")
+              echo "Ответ: $RESP"
+              SUB=$(get_sub)
+              if [ -n "$SUB" ]; then break; fi
+            done
+          fi
+          if [ -z "$SUB" ]; then
+            echo "::error::Не удалось зарегистрировать workers.dev-сабдомен автоматически. Откройте dash.cloudflare.com → Workers & Pages и задайте сабдомен (например ats439), затем запустите workflow снова."
+            exit 1
+          fi
+          echo "Сабдомен: $SUB"
+          echo "url=https://ats-leads.${SUB}.workers.dev" >> "$GITHUB_OUTPUT"
+          echo "URL=https://ats-leads.${SUB}.workers.dev" >> "$GITHUB_ENV"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy worker
+        id: deploy
+        run: |
+          set -e
+          npx wrangler deploy 2>&1 | tee /tmp/deploy.log || { echo "::error::wrangler deploy упал"; tail -40 /tmp/deploy.log; exit 1; }
+          tail -20 /tmp/deploy.log || true
+          URL="${{ steps.sub.outputs.url }}"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Адрес прослойки: $URL"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Push secrets to worker
+        run: |
+          set -e
+          printf '%s' "$BOT_TOKEN" | npx wrangler secret put BOT_TOKEN
+          printf '%s' "$TELEGRAM_CHAT_ID" | npx wrangler secret put TELEGRAM_CHAT_ID
+          # Почта-дубль необязательна: без ключа заявки идут только в Telegram.
+          if [ -n "$BREVO_API_KEY" ]; then
+            printf '%s' "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY
+            echo "Почта: Brevo подключён"
+          elif [ -n "$RESEND_API_KEY" ]; then
+            printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY
+            echo "Почта: Resend подключён"
+          else
+            echo "::warning::Ключа почты нет (BREVO_API_KEY / RESEND_API_KEY) — копии заявок на почту не уходят"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+      - name: Health check
+        run: |
+          set -e
+          URL="${{ steps.deploy.outputs.url }}"
+          echo "Проверяем $URL/health"
+          OK=0
+          for i in $(seq 1 12); do
+            sleep 5
+            CODE=$(curl -sS -o /tmp/health.json -w '%{http_code}' "$URL/health" || echo 000)
+            echo "попытка $i: HTTP $CODE $(cat /tmp/health.json 2>/dev/null | head -c 300)"
+            if [ "$CODE" = "200" ] && grep -q '"telegram":true' /tmp/health.json; then OK=1; break; fi
+            if [ "$CODE" = "200" ] && grep -q '"telegram":false' /tmp/health.json && [ "$i" -ge 6 ]; then
+              echo "::error::Воркер отвечает, но не видит BOT_TOKEN/TELEGRAM_CHAT_ID (секреты не применились)"
+              exit 1
+            fi
+          done
+          if [ "$OK" != "1" ]; then
+            echo "::error::Воркер не ответил на /health. Адрес: $URL/health, последний ответ: $(cat /tmp/health.json 2>/dev/null | head -c 200)"
+            exit 1
+          fi
+          MAIL=$(grep -o '"email":[^,}]*' /tmp/health.json | head -1 || true)
+          echo "Воркер жив и видит Telegram: $URL, почта: ${MAIL:-нет данных}"
+          echo "::notice::АДРЕС ВОРКЕРА: $URL · ${MAIL:-почта не настроена}"
+
+      - name: Notify group in Telegram
+        run: |
+          node --input-type=module -e '
+            const token = process.env.BOT_TOKEN || "";
+            const chat = process.env.TELEGRAM_CHAT_ID || "";
+            if (!token || !chat) { console.error("Нет BOT_TOKEN или TELEGRAM_CHAT_ID (длина токена " + token.length + ")"); process.exit(1); }
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ chat_id: chat, text: process.env.EMAIL_ON === 'true'
+                ? "Прослойка заявок подключена. Заявки будут приходить в этот чат и копией на почту."
+                : "Прослойка заявок подключена. Заявки с сайта будут приходить в этот чат." }),
+            });
+            const body = await res.text();
+            console.log("HTTP " + res.status + " " + body.slice(0, 300));
+            if (!res.ok) process.exit(1);
+          '
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_ON: ${{ secrets.BREVO_API_KEY != '' || secrets.RESEND_API_KEY != '' }}
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Прослойка задеплоена"
+            echo ""
+            echo "Адрес: \`${{ steps.deploy.outputs.url }}\`"
+            echo ""
+            echo "Дальше: Settings → Secrets and variables → Actions → **Variables** →"
+            echo "новая переменная \`PUBLIC_LEADS_ENDPOINT\` со значением этого адреса (без слэша в конце)."
+          } >> "$GITHUB_STEP_SUMMARY"

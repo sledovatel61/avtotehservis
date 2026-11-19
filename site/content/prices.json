@@ -1,0 +1,528 @@
+{
+  "version": 1,
+  "updated_at": "2026-11-19",
+  "groups": [
+    {
+      "id": "to",
+      "title": "ТО и жидкости",
+      "service": "to-maslo",
+      "items": [
+        {
+          "id": "oil-sedan",
+          "name": "Замена масла в двигателе, седан",
+          "note": "",
+          "price": "1000–1300 ₽"
+        },
+        {
+          "id": "oil-crossover",
+          "name": "Замена масла в двигателе, кроссовер",
+          "note": "",
+          "price": "1300–1500 ₽"
+        },
+        {
+          "id": "oil-mt",
+          "name": "Замена масла в МКПП",
+          "note": "",
+          "price": "1500 ₽"
+        },
+        {
+          "id": "oil-at",
+          "name": "Замена масла в АКПП (в том числе вариатор)",
+          "note": "",
+          "price": "1500–3000 ₽"
+        },
+        {
+          "id": "brake-fluid",
+          "name": "Замена тормозной жидкости",
+          "note": "",
+          "price": "1500 ₽"
+        },
+        {
+          "id": "antifreeze",
+          "name": "Замена антифриза",
+          "note": "",
+          "price": "1500 ₽"
+        }
+      ]
+    },
+    {
+      "id": "tormoza",
+      "title": "Тормоза",
+      "service": "tormoza",
+      "items": [
+        {
+          "id": "pads-front",
+          "name": "Замена передних тормозных колодок",
+          "note": "",
+          "price": "1200 ₽"
+        },
+        {
+          "id": "disc-rear",
+          "name": "Замена заднего тормозного диска",
+          "note": "",
+          "price": "1200 ₽"
+        },
+        {
+          "id": "drum",
+          "name": "Замена барабана",
+          "note": "",
+          "price": "2000–2500 ₽"
+        },
+        {
+          "id": "discs-with-pads",
+          "name": "Замена дисков вместе с колодками",
+          "note": "",
+          "price": "2200–4000 ₽"
+        },
+        {
+          "id": "epb",
+          "name": "Электрический стояночный тормоз",
+          "note": "",
+          "price": "2500 ₽"
+        }
+      ]
+    },
+    {
+      "id": "podveska",
+      "title": "Подвеска и рулевое",
+      "service": "podveska",
+      "items": [
+        {
+          "id": "shocks-front",
+          "name": "Амортизаторы, передние",
+          "note": "",
+          "price": "1800–2501 ₽"
+        },
+        {
+          "id": "shocks-rear",
+          "name": "Амортизаторы, задние",
+          "note": "",
+          "price": "1200–2000 ₽"
+        },
+        {
+          "id": "arm-front",
+          "name": "Рычаг передний",
+          "note": "",
+          "price": "1500–2000 ₽"
+        },
+        {
+          "id": "ball-joint",
+          "name": "Шаровая опора",
+          "note": "",
+          "price": "1000–2000 ₽"
+        },
+        {
+          "id": "silent-front",
+          "name": "Сайлентблоки передних рычагов",
+          "note": "",
+          "price": "2300–2500 ₽"
+        },
+        {
+          "id": "silent-beam",
+          "name": "Сайлентблоки балки",
+          "note": "",
+          "price": "6000–7000 ₽"
+        },
+        {
+          "id": "stab-bushings",
+          "name": "Втулки стабилизатора, передние и задние",
+          "note": "",
+          "price": "1000–3500 ₽"
+        },
+        {
+          "id": "stab-links",
+          "name": "Стойки стабилизатора, передние и задние",
+          "note": "",
+          "price": "1000–1300 ₽"
+        },
+        {
+          "id": "tie-rod-end",
+          "name": "Рулевой наконечник",
+          "note": "",
+          "price": "800 ₽"
+        },
+        {
+          "id": "tie-rod",
+          "name": "Рулевая тяга",
+          "note": "",
+          "price": "1800 ₽"
+        },
+        {
+          "id": "wheel-bearing",
+          "name": "Ступичный подшипник",
+          "note": "",
+          "price": "2000–2500 ₽"
+        },
+        {
+          "id": "test",
+          "name": "ТЕСТ",
+          "price": "100"
+        }
+      ]
+    },
+    {
+      "id": "grm",
+      "title": "Двигатель, ГРМ, привод, сцепление",
+      "service": "grm-sceplenie",
+      "items": [
+        {
+          "id": "grm-vaz8",
+          "name": "Ремень ГРМ, ВАЗ 8 клапанов",
+          "note": "",
+          "price": "3500–4500 ₽"
+        },
+        {
+          "id": "grm-vaz16",
+          "name": "Ремень ГРМ, ВАЗ 16 клапанов",
+          "note": "",
+          "price": "5000–6000 ₽"
+        },
+        {
+          "id": "grm-polo",
+          "name": "Ремень ГРМ, Поло / Шкода",
+          "note": "",
+          "price": "8000 ₽"
+        },
+        {
+          "id": "grm-ford",
+          "name": "Ремень ГРМ, Форд",
+          "note": "",
+          "price": "8000–9000 ₽"
+        },
+        {
+          "id": "chain-solaris",
+          "name": "Цепь ГРМ, Солярис / Рио",
+          "note": "",
+          "price": "15 000 ₽"
+        },
+        {
+          "id": "clutch-vaz",
+          "name": "Сцепление, ВАЗ",
+          "note": "",
+          "price": "6000 ₽"
+        },
+        {
+          "id": "clutch-accent",
+          "name": "Сцепление, Акцент",
+          "note": "",
+          "price": "8000 ₽"
+        },
+        {
+          "id": "clutch-ford",
+          "name": "Сцепление, Форд / Мазда",
+          "note": "",
+          "price": "9000 ₽"
+        },
+        {
+          "id": "clutch-awd",
+          "name": "Сцепление, кроссовер, полный привод",
+          "note": "",
+          "price": "12 000–16 000 ₽"
+        },
+        {
+          "id": "aux-belt",
+          "name": "Замена обводного ремня",
+          "note": "",
+          "price": "1200–2500 ₽"
+        },
+        {
+          "id": "fuel-pump",
+          "name": "Замена бензонасоса",
+          "note": "",
+          "price": "2500–5000 ₽"
+        },
+        {
+          "id": "cv-outer",
+          "name": "ШРУС наружный",
+          "note": "",
+          "price": "2000–2500 ₽"
+        },
+        {
+          "id": "cv-inner",
+          "name": "ШРУС внутренний",
+          "note": "",
+          "price": "2500–3000 ₽"
+        }
+      ]
+    },
+    {
+      "id": "diagnostika",
+      "title": "Диагностика",
+      "service": "diagnostika",
+      "items": [
+        {
+          "id": "diag-susp",
+          "name": "Диагностика ходовой",
+          "note": "",
+          "price": "500 ₽"
+        },
+        {
+          "id": "diag-comp",
+          "name": "Компьютерная диагностика",
+          "note": "",
+          "price": "800 ₽"
+        }
+      ]
+    },
+    {
+      "id": "kondicioner",
+      "title": "Автокондиционеры",
+      "service": "diagnostika",
+      "items": [
+        {
+          "id": "ac-refill",
+          "name": "Заправка автокондиционера",
+          "note": "",
+          "price": "2000 ₽"
+        },
+        {
+          "id": "ac-leak",
+          "name": "Поиск утечки",
+          "note": "",
+          "price": "от 500 ₽"
+        },
+        {
+          "id": "ac-pipes",
+          "name": "Замена трубок высокого давления",
+          "note": "",
+          "price": "от 1500 ₽"
+        },
+        {
+          "id": "ac-compressor",
+          "name": "Замена компрессора кондиционера",
+          "note": "",
+          "price": "от 2500 ₽"
+        }
+      ]
+    },
+    {
+      "id": "svarka",
+      "title": "Сварочные работы",
+      "service": "svarka",
+      "items": [
+        {
+          "id": "weld-exhaust",
+          "name": "Сварка глушителя, резонатора, трубы выхлопной системы",
+          "note": "",
+          "price": "от 1500 ₽ за место"
+        },
+        {
+          "id": "weld-flex",
+          "name": "Переварка гофры глушителя, креплений и кронштейнов",
+          "note": "",
+          "price": "от 1500 ₽ за место"
+        }
+      ]
+    }
+  ],
+  "tyres": {
+    "set": [
+      {
+        "id": "set-r13",
+        "radius": "R13",
+        "passenger": "1800 ₽",
+        "crossover": "2000 ₽"
+      },
+      {
+        "id": "set-r14",
+        "radius": "R14",
+        "passenger": "1800 ₽",
+        "crossover": "2000 ₽"
+      },
+      {
+        "id": "set-r15",
+        "radius": "R15",
+        "passenger": "2000 ₽",
+        "crossover": "2200 ₽"
+      },
+      {
+        "id": "set-r16",
+        "radius": "R16",
+        "passenger": "2200 ₽",
+        "crossover": "2400 ₽"
+      },
+      {
+        "id": "set-r17",
+        "radius": "R17",
+        "passenger": "2400 ₽",
+        "crossover": "2600 ₽"
+      },
+      {
+        "id": "set-r18",
+        "radius": "R18",
+        "passenger": "2800 ₽",
+        "crossover": "3200 ₽"
+      },
+      {
+        "id": "set-r19",
+        "radius": "R19",
+        "passenger": "3000 ₽",
+        "crossover": "3400 ₽"
+      },
+      {
+        "id": "set-r20",
+        "radius": "R20",
+        "passenger": "3600 ₽",
+        "crossover": "4000 ₽"
+      }
+    ],
+    "repair": [
+      {
+        "id": "rep-r13",
+        "radius": "R13–R15",
+        "range": "R13–R15",
+        "price": "600 ₽"
+      },
+      {
+        "id": "rep-r16",
+        "radius": "R16–R17",
+        "range": "R16–R17",
+        "price": "800 ₽"
+      },
+      {
+        "id": "rep-r18",
+        "radius": "R18–R20",
+        "range": "R18–R20",
+        "price": "1000 ₽"
+      }
+    ],
+    "extra": [
+      {
+        "id": "extra-set",
+        "name": "Смена колёс, седан",
+        "note": "",
+        "price": "1000 ₽"
+      },
+      {
+        "id": "extra-set-suv",
+        "name": "Смена колёс, паркетник / кроссовер / джип",
+        "note": "",
+        "price": "1000 ₽"
+      },
+      {
+        "id": "extra-bal-16",
+        "name": "Балансировка колёс, R13–R16",
+        "note": "",
+        "price": "800 ₽"
+      },
+      {
+        "id": "extra-bal-20",
+        "name": "Балансировка колёс, R17–R20",
+        "note": "",
+        "price": "1000 ₽"
+      }
+    ]
+  },
+  "voyah": [
+    {
+      "id": "voyah-oil",
+      "name": "Масло в двигателе + все фильтры",
+      "note": "масляный, воздушный, салонный",
+      "price": "2000 ₽"
+    },
+    {
+      "id": "voyah-red-front",
+      "name": "Масло переднего редуктора",
+      "note": "",
+      "price": "2500 ₽"
+    },
+    {
+      "id": "voyah-red-rear",
+      "name": "Масло заднего редуктора",
+      "note": "",
+      "price": "2500 ₽"
+    },
+    {
+      "id": "voyah-gen",
+      "name": "Масло генераторной установки",
+      "note": "",
+      "price": "2500 ₽"
+    },
+    {
+      "id": "voyah-brake-fluid",
+      "name": "Тормозная жидкость",
+      "note": "с прокачкой контуров",
+      "price": "2000 ₽"
+    },
+    {
+      "id": "voyah-pads-front",
+      "name": "Колодки, передняя ось",
+      "note": "",
+      "price": "2000 ₽"
+    },
+    {
+      "id": "voyah-pads-rear",
+      "name": "Колодки, задняя ось",
+      "note": "",
+      "price": "2500 ₽"
+    },
+    {
+      "id": "voyah-discs-front",
+      "name": "Передние диски + колодки",
+      "note": "",
+      "price": "3000 ₽"
+    },
+    {
+      "id": "voyah-discs-rear",
+      "name": "Задние диски + колодки",
+      "note": "",
+      "price": "4000 ₽"
+    },
+    {
+      "id": "voyah-plugs",
+      "name": "Свечи зажигания",
+      "note": "",
+      "price": "1500 ₽"
+    },
+    {
+      "id": "voyah-valve-gasket",
+      "name": "Прокладка клапанной крышки",
+      "note": "",
+      "price": "2500 ₽"
+    },
+    {
+      "id": "voyah-tie-rod-end",
+      "name": "Рулевой наконечник",
+      "note": "",
+      "price": "1200 ₽"
+    },
+    {
+      "id": "voyah-tie-rod",
+      "name": "Рулевая тяга",
+      "note": "",
+      "price": "2500 ₽"
+    },
+    {
+      "id": "voyah-arms-front",
+      "name": "Рычаги передней подвески",
+      "note": "",
+      "price": "от 2500 ₽"
+    },
+    {
+      "id": "voyah-diag-susp",
+      "name": "Диагностика ходовой",
+      "note": "на подъёмнике",
+      "price": "1500 ₽"
+    }
+  ],
+  "featured": [
+    {
+      "id": "voyah-oil-chip",
+      "ref": "voyah-oil",
+      "title": "Масло ДВС",
+      "note": "+ все фильтры"
+    },
+    {
+      "id": "voyah-brake-chip",
+      "ref": "voyah-brake-fluid",
+      "title": "Тормозная жидкость",
+      "note": "с прокачкой контуров"
+    },
+    {
+      "id": "voyah-diag-chip",
+      "ref": "voyah-diag-susp",
+      "title": "Диагностика ходовой",
+      "note": "на подъёмнике"
+    }
+  ]
+}
