@@ -188,6 +188,73 @@ test('успешный вход → сессия, дашборд, журнал l
   assert.ok(logs.length >= 1, 'вход записан в журнал');
 });
 
+test('закрытые работы: постоянный редирект до проверки сессии', async () => {
+  for (const path of ['/admin/cases', '/admin/cases/new', '/admin/cases/123', '/admin/cases/123/edit.html']) {
+    for (const cookie of ['', sessionCookie]) {
+      const r = await fetch(`${BASE}${path}`, { headers: cookie ? { Cookie: cookie } : {}, redirect: 'manual' });
+      assert.equal(r.status, 301, `${path}: статус при ${cookie ? 'сессии' : 'без сессии'}`);
+      assert.equal(r.headers.get('location'), '/manage/#photos');
+    }
+  }
+  const unrelated = await fetch(`${BASE}/admin/cases-extra`, { redirect: 'manual' });
+  assert.equal(unrelated.status, 302);
+  assert.equal(new URL(unrelated.headers.get('location') ?? '', BASE).pathname, '/admin/login');
+});
+
+test('закрытые отзывы: постоянный редирект до проверки сессии', async () => {
+  for (const path of ['/admin/reviews', '/admin/reviews/123', '/admin/reviews/123/edit.html']) {
+    for (const cookie of ['', sessionCookie]) {
+      const r = await fetch(`${BASE}${path}`, { headers: cookie ? { Cookie: cookie } : {}, redirect: 'manual' });
+      assert.equal(r.status, 301, `${path}: статус при ${cookie ? 'сессии' : 'без сессии'}`);
+      assert.equal(r.headers.get('location'), '/manage/#reviews');
+    }
+  }
+});
+
+test('закладки с завершающим слешем доходят до мастерской через канонизацию Astro', async () => {
+  for (const [path, normalized, target] of [
+    ['/admin/cases/', '/admin/cases', '/manage/#photos'],
+    ['/admin/cases/123/', '/admin/cases/123', '/manage/#photos'],
+    ['/admin/reviews/', '/admin/reviews', '/manage/#reviews'],
+    ['/admin/reviews/123/', '/admin/reviews/123', '/manage/#reviews'],
+  ]) {
+    for (const cookie of ['', sessionCookie]) {
+      const headers: Record<string, string> = cookie ? { Cookie: cookie } : {};
+      const first = await fetch(`${BASE}${path}`, { headers, redirect: 'manual' });
+      assert.equal(first.status, 301);
+      assert.equal(first.headers.get('location'), normalized);
+      const second = await fetch(`${BASE}${normalized}`, { headers, redirect: 'manual' });
+      assert.equal(second.status, 301);
+      assert.equal(second.headers.get('location'), target);
+    }
+  }
+});
+
+test('мастерская доступна на сервере после перехода по ссылкам', async () => {
+  const r = await fetch(`${BASE}/manage/`);
+  assert.equal(r.status, 200);
+  const html = await r.text();
+  assert.match(html, /data-tab="photos"/);
+  assert.match(html, /data-tab="reviews"/);
+});
+
+test('дашборд ведёт в мастерскую, не содержит закрытых разделов', async () => {
+  const r = await fetch(`${BASE}/admin`, { headers: { Cookie: sessionCookie } });
+  assert.equal(r.status, 200);
+  const html = await r.text();
+  assert.ok(!html.includes('/admin/cases'));
+  assert.ok(!html.includes('/admin/reviews'));
+  assert.ok(html.includes('href="/manage/#photos"'));
+  assert.ok(html.includes('href="/manage/#reviews"'));
+  assert.ok(!html.includes('Черновиков кейсов'));
+  assert.ok(!html.includes('Отзывов на модерации'));
+  const nav = html.match(/<nav class="adm-nav"[\s\S]*?<\/nav>/)?.[0] ?? '';
+  assert.ok(nav, 'навигация найдена');
+  assert.doesNotMatch(nav, />\s*(?:Кейсы|Отзывы)\s*<\/a>/);
+  assert.match(nav, /Заявки/);
+  assert.match(nav, /Новости/);
+});
+
 test('заявка с сайта видна в админке; смена статуса + журнал', async () => {
   const lead = await fetch(`${BASE}/api/leads`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -283,14 +350,9 @@ test('медиа: обложка опубликованного кейса за�
   assert.equal((await dbOf(`SELECT id FROM media WHERE id=?`, mid)).length, 1, 'строка media на месте');
   assert.ok(existsSync(join(DIRS.media, mid)), 'файлы на диске на месте');
 
-  // 4) «Сделать обложкой» через карточку кейса дополнительно привязывает медиа (защита №1).
-  const cov = await fetch(`${BASE}/admin/cases/${caseId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: sessionCookie, Origin: BASE },
-    body: new URLSearchParams({ _csrf: csrfToken, action: 'cover', media_id: mid }),
-    redirect: 'manual',
-  });
-  assert.equal(cov.status, 302);
+  // 4) Привязываем медиа к кейсу напрямую: старый маршрут редактирования закрыт.
+  const attached = db().prepare(`UPDATE media SET attached_to=? WHERE id=?`).run(`case:${caseId}`, mid);
+  assert.equal(attached.changes, 1, 'привязана одна запись media');
   const attached1 = await dbOf<{ attached_to: string | null }>(`SELECT attached_to FROM media WHERE id=?`, mid);
   assert.equal(attached1[0]?.attached_to, `case:${caseId}`, 'после «Сделать обложкой» медиа привязано к кейсу');
 
