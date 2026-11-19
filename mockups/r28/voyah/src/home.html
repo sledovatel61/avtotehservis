@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voyah Free — секция для главной (мокап, круг 28)</title>
+<!-- Мокап секции главной страницы: сверху фрагмент «О компании» (тёмный),
+     сама секция-тизер «Voyah Free», снизу — «Как мы работаем» (айвори).
+     Нужен, чтобы видеть стык, а не секцию в вакууме. -->
+<style>
+/*==VOYAH_CSS==*/
+</style>
+<style>
+  body{background:#0B1410}
+  /* служебная шапка мокапа — не часть дизайна */
+  .proto-hdrbar{position:sticky;top:0;z-index:50;display:flex;gap:14px;align-items:center;
+    flex-wrap:wrap;justify-content:space-between;padding:10px 20px;
+    background:rgba(7,11,18,.94);border-bottom:1px solid rgba(224,169,109,.3);
+    font-size:12px;color:#B7C4BB}
+  .proto-hdrbar b{color:#E0A96D;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+  .proto-hdrbar a{color:#E0A96D}
+</style>
+</head>
+<body>
+
+<div class="proto-hdrbar">
+  <b>Мокап · секция главной «Voyah Free»</b>
+  <span>выше — фрагмент «О компании», ниже — «Как мы работаем»</span>
+  <a href="index.html">Страница /voyah-free →</a>
+</div>
+
+<!-- ================= Фрагмент «О компании» (тёмный, как на сайте) ================= -->
+<section class="site-dark" aria-labelledby="about-frag-h">
+  <div class="wrap">
+    <p class="kicker">О компании</p>
+    <h2 id="about-frag-h">«АвтоТехСервис» на Западном: честно, по делу, с сметой до работ</h2>
+    <p>Мы — автосервис и шиномонтаж на улице Портовой, 439: рядом с остановкой «3-й Поселковый» и базой «Бум». Принимаем легковые автомобили, кроссоверы и паркетники ежедневно, с 9:00 до 19:00.</p>
+    <div class="chip-row">
+      <span class="chip">Смета до работ</span>
+      <span class="chip">Показываем проблему на детали</span>
+      <span class="chip">Запись без живой очереди</span>
+      <span class="chip">Гарантия в заказ-наряде</span>
+    </div>
+  </div>
+</section>
+
+<div class="seam" aria-hidden="true"><span>стык 1 · тёмная → «остров»</span></div>
+
+<!-- ================= Тизер «Voyah Free» ================= -->
+<section class="v-teaser" id="voyah" aria-labelledby="v-teaser-h">
+  <div class="wrap">
+    <div class="v-teaser-grid">
+      <div>
+        <p class="v-eyebrow">Voyah Free · новое направление</p>
+        <h2 id="v-teaser-h">Обслуживаем Voyah Free: два контура за визит</h2>
+        <p class="v-lead">Гибрид требует регламента по двум контурам: масло двигателя и масло генераторной установки, передний и задний редукторы. Делаем это на Портовой, 439 — без отправки «к дилеру».</p>
+        <div class="v-teaser-cta">
+          <a class="v-btn v-btn--brass" href="index.html">Подробнее о Voyah Free</a>
+          <a class="v-btn v-btn--light" href="#">Записаться</a>
+        </div>
+        <div class="v-teaser-prices">
+          <div class="v-price-chip"><span>Масло ДВС</span><b>2000 ₽</b><small>+ все фильтры</small></div>
+          <div class="v-price-chip"><span>Тормозная жидкость</span><b>2000 ₽</b><small>с прокачкой</small></div>
+          <div class="v-price-chip"><span>Диагностика ходовой</span><b>1500 ₽</b><small>на подъёмнике</small></div>
+        </div>
+      </div>
+      <div class="v-teaser-facts">
+        <div class="v-teaser-fact"><b>Полное ТО</b><span>двигатель, генераторная установка, редукторы</span></div>
+        <div class="v-teaser-fact"><b>Цены за работу</b><span>запчасти и расходники — отдельно</span></div>
+        <div class="v-teaser-fact"><b>Смета до начала</b><span>сначала осмотр, потом сумма</span></div>
+        <div class="v-teaser-fact"><b>Один адрес</b><span>Портовая, 439 · ежедневно 9:00–19:00</span></div>
+      </div>
+    </div>
+    <p class="v-note" style="margin-top:22px">Цены — за работу, без запчастей. Точную сумму называем после осмотра, до начала работ.</p>
+  </div>
+</section>
+
+<div class="seam" aria-hidden="true" style="background:#F4EFE6"><span style="background:#F4EFE6;color:#9A5B2C">стык 2 · «остров» → айвори</span></div>
+
+<!-- ================= Фрагмент «Как мы работаем» (светлый) ================= -->
+<section class="site-ivory" aria-labelledby="est-frag-h">
+  <div class="wrap">
+    <p class="kicker">Как мы работаем</p>
+    <h2 id="est-frag-h">Смета до ремонта: четыре шага без сюрпризов</h2>
+    <p>Порядок одинаковый для любой машины и любой работы — от шиномонтажа до ТО гибрида.</p>
+    <div class="steps">
+      <div class="step"><b>1</b><h3>Заявка</h3><p>Звонок или запись: подскажем свободное время.</p></div>
+      <div class="step"><b>2</b><h3>Осмотр</h3><p>Проверяем узел, на который вы жалуетесь.</p></div>
+      <div class="step"><b>3</b><h3>Смета</h3><p>Называем стоимость до начала работ.</p></div>
+      <div class="step"><b>4</b><h3>Работы</h3><p>Выполняем согласованное и выдаём машину.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer class="v-foot">
+  <div class="wrap">
+    <div class="legal" style="margin-top:0;border-top:0;padding-top:0">
+      <span>Мокап круга 28, агент 6 · секция главной</span>
+      <span>Фрагменты соседних секций — для проверки стыка, не финальные тексты</span>
+    </div>
+  </div>
+</footer>
+
+<div class="v-demo-tag"><i></i>мокап · секция главной</div>
+
+</body>
+</html>

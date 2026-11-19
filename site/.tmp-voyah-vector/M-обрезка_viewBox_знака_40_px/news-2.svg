@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img">
+<rect width="800" height="450" fill="#14281F"/>
+<circle cx="620" cy="105" r="130" fill="#C87F45" opacity=".09"/>
+<g fill="none" stroke="#E0A96D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><rect x="300" y="140" width="180" height="120" rx="14"/><path d="M345 140v-26h40v26M415 140v-26h40v26"/><path d="M340 200h40M400 200h40" stroke="#C87F45"/><path d="M520 160l30 30-30 30" stroke="#C87F45"/></g>
+<g fill="#B7C4BB" font-family="sans-serif" font-size="22"><text x="400" y="412" text-anchor="middle">Проверка аккумулятора · заглушка</text></g>
+</svg>
