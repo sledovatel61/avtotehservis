@@ -18,6 +18,9 @@ const STATIC_REDIRECTS: Record<string, string> = {
 };
 
 function legacyRedirect(url: URL): string | null {
+  // Закрытые разделы работали с другой базой; старые закладки ведут в мастерскую.
+  if (url.pathname === '/admin/cases' || url.pathname.startsWith('/admin/cases/')) return '/manage/#photos';
+  if (url.pathname === '/admin/reviews' || url.pathname.startsWith('/admin/reviews/')) return '/manage/#reviews';
   if (!url.pathname.endsWith('.html')) return null;
   const known = STATIC_REDIRECTS[url.pathname];
   if (known) return known + (url.pathname === '/appointment.html' && url.searchParams.get('s') ? `?s=${encodeURIComponent(url.searchParams.get('s')!)}` : '');
