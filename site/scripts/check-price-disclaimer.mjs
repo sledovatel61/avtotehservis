@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DIST = join(HERE, '../pages-dist');
 const SRC = join(HERE, '../src/server/prices.ts');
+const PRICES_JSON = join(HERE, '../content/prices.json');
 const SELF = process.argv.includes('--self-test');
 
 /** страницы, где есть цены: [путь собранного файла, человеческое имя] */
@@ -53,8 +54,10 @@ for (const phrase of REQUIRED) {
   (src.includes(phrase) ? ok(`текст пометки в prices.ts содержит «${phrase}»`)
     : bad(`в prices.ts нет обязательной формулировки «${phrase}»`));
 }
-(/PRICE_UPDATED\s*=\s*'\d{4}-\d{2}-\d{2}'/.test(src) ? ok('дата актуальности задана одной константой PRICE_UPDATED')
-  : bad('в prices.ts не нашёл PRICE_UPDATED в формате ГГГГ-ММ-ДД'));
+const pricesJson = existsSync(PRICES_JSON) ? JSON.parse(readFileSync(PRICES_JSON, 'utf8')) : {};
+((/PRICE_UPDATED/.test(src) && /getPrices/.test(src) && /^\d{4}-\d{2}-\d{2}$/.test(pricesJson.updated_at ?? ''))
+  ? ok(`дата актуальности читается из content/prices.json (${pricesJson.updated_at}) через PRICE_UPDATED`)
+  : bad('в prices.ts PRICE_UPDATED должна браться из getPrices().updated_at (ГГГГ-ММ-ДД в content/prices.json)'));
 
 console.log('\nстраницы с ценами:');
 for (const [file, name] of PAGES) {

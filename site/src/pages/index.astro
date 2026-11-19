@@ -11,10 +11,13 @@ import { fmtDateRu, plural } from '../server/format.ts';
    а иллюстрации остаются фолбэком на пустом файле. */
 import { CASE_COVERS } from '../server/case-covers.ts';
 import { PRICE_DISCLAIMER_FOOTER, PRICE_DISCLAIMER_SHORT } from '../server/prices.ts';
+import { getPrices, fillPrices, priceIndexOf } from '../server/prices-store.ts';
 import { listPublishedSiteCases } from '../server/cases-store.ts';
 import CaseCard from '../components/CaseCard.astro';
 
 const S = getSettings();
+const prices = getPrices();
+const priceMap = priceIndexOf(prices);
 const services = listHomeServices();
 import { SVC_IMG } from '../server/svc-img.ts';
 /* круг 28: раздел Voyah Free живёт на своём CSS (токены --v-*) */
@@ -46,7 +49,7 @@ const jsonLd = {
 <Base
   page="home"
   title="Автосервис на Портовой: цена работы до ремонта"
-  description="Автосервис и шиномонтаж на Западном. Цены на работы до ремонта, диагностика ходовой от 500 ₽. Ежедневно 9:00–19:00."
+  description={fillPrices('Автосервис и шиномонтаж на Западном. Цены на работы до ремонта, диагностика ходовой {{price:diag-susp}}. Ежедневно 9:00–19:00.', prices)}
   jsonLd={jsonLd}
 >
 
@@ -100,7 +103,7 @@ const jsonLd = {
         </div>
         <div class="slide-in container">
           <span class="slide-eyebrow">Шиномонтаж на Портовой</span>
-          <p class="h1">Комплект R16 — 2200 ₽ за работу</p>
+          <p class="h1">{fillPrices('Комплект R16 — {{price:set-r16}} за работу', prices)}</p>
           <p class="slide-sub">Цена указана за четыре колеса. Позвоните, чтобы выбрать удобное время и уточнить детали.</p>
           <div class="slide-cta">
           <a class="btn btn--copper" href="/appointment?s=shinomontazh">Записаться на шиномонтаж</a>
@@ -172,21 +175,21 @@ const jsonLd = {
         <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-wheel-1600.avif 1600w, /img/tri-wheel-960.avif 960w, /img/tri-wheel-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-wheel-1600.webp 1600w, /img/tri-wheel-960.webp 960w, /img/tri-wheel-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-wheel-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">01</span>
         <h3>Колёса</h3>
-        <p>Шиномонтаж комплекта R13 — 1800 ₽, R16 — 2200 ₽, R20 — 3600 ₽. Это стоимость работы за четыре колеса; смена готовых колёс — 1000 ₽ за комплект, ремонт колеса — от 600 ₽ за колесо. Выполняем балансировку.</p>
+        <p>{fillPrices('Шиномонтаж комплекта R13 — {{price:set-r13}}, R16 — {{price:set-r16}}, R20 — {{price:set-r20}}. Это стоимость работы за четыре колеса; смена готовых колёс — {{price:extra-set}} за комплект, ремонт колеса — от {{price:rep-r13}} за колесо. Выполняем балансировку.', prices)}</p>
         <a class="link-more" href="/services/shinomontazh">Шиномонтаж и колёса <span class="ar" aria-hidden="true">→</span></a>
       </article>
       <article class="tri-card tri-card--accent reveal" data-d="1">
         <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-serv-1600.avif 1600w, /img/tri-serv-960.avif 960w, /img/tri-serv-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-serv-1600.webp 1600w, /img/tri-serv-960.webp 960w, /img/tri-serv-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-serv-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">02</span>
         <h3>Ремонт и ТО</h3>
-        <p>Замена масла в двигателе — от 1000 ₽ на седане и от 1300 ₽ на кроссовере. Тормозные колодки — 1200 ₽; диски с колодками — 2200–4000 ₽. Подвеска, сцепление, ГРМ, а сварочные работы по выхлопу — от 1500 ₽ за место.</p>
+        <p>{fillPrices('Замена масла в двигателе — {{price:oil-sedan}} на седане и {{price:oil-crossover}} на кроссовере. Тормозные колодки — {{price:pads-front}}; диски с колодками — {{price:discs-with-pads}}. Подвеска, сцепление, ГРМ, а сварочные работы по выхлопу — {{price:weld-exhaust}}.', prices)}</p>
         <a class="link-more" href="/services/to-maslo">Ремонт и ТО <span class="ar" aria-hidden="true">→</span></a>
       </article>
       <article class="tri-card reveal" data-d="2">
         <div class="tri-bg" aria-hidden="true"><picture><source srcset="/img/tri-diag-1600.avif 1600w, /img/tri-diag-960.avif 960w, /img/tri-diag-640.avif 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/avif"><source srcset="/img/tri-diag-1600.webp 1600w, /img/tri-diag-960.webp 960w, /img/tri-diag-640.webp 640w" sizes="(max-width:640px) 92vw, (max-width:1024px) 96vw, 375px" type="image/webp"><img src="/img/tri-diag-960.webp" width="960" height="640" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="tri-num" aria-hidden="true">03</span>
         <h3>Диагностика</h3>
-        <p>Диагностика ходовой — от 500 ₽, компьютерная — 800 ₽. Проверим, откуда стук или индикатор. Автокондиционеры: заправка — 2000 ₽, поиск утечки — от 500 ₽, делаем любой ремонт.</p>
+        <p>{fillPrices('Диагностика ходовой — {{price:diag-susp}}, компьютерная — {{price:diag-comp}}. Проверим, откуда стук или индикатор. Автокондиционеры: заправка — {{price:ac-refill}}, поиск утечки — {{price:ac-leak}}, делаем любой ремонт.', prices)}</p>
         <a class="link-more" href="/services/diagnostika">Диагностика и кондиционеры <span class="ar" aria-hidden="true">→</span></a>
       </article>
     </div>
@@ -277,9 +280,9 @@ const jsonLd = {
           <a class="v-btn v-btn--light" href="/appointment?s=to-maslo">Записаться на ТО</a>
         </div>
         <div class="v-teaser-prices">
-          <div class="v-price-chip"><span>Масло ДВС</span><b>2000 ₽</b><small>+ все фильтры</small></div>
-          <div class="v-price-chip"><span>Тормозная жидкость</span><b>2000 ₽</b><small>с прокачкой контуров</small></div>
-          <div class="v-price-chip"><span>Диагностика ходовой</span><b>1500 ₽</b><small>на подъёмнике</small></div>
+          {prices.featured.map((chip) => (
+            <div class="v-price-chip"><span>{chip.title}</span><b>{priceMap.get(chip.ref) ?? ''}</b><small>{chip.note}</small></div>
+          ))}
         </div>
         <p class="price-disclaimer price-disclaimer--compact">{PRICE_DISCLAIMER_FOOTER} Точную сумму назовём после осмотра.</p>
       </div>
@@ -376,14 +379,14 @@ const jsonLd = {
                   <img src={`/img/${k}-640.webp`} alt="" aria-hidden="true" width="800" height="600" loading="lazy" decoding="async">
                 </picture>
               </span>
-              <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{sv.short}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
+              <span class="svc-body"><span class="svc-tag">{sv.tag ?? sv.grp}</span><h3>{sv.title}</h3><p>{fillPrices(sv.short ?? '', prices)}</p><span class="link-more">Подробнее <span class="ar" aria-hidden="true">→</span></span></span>
             </a>
             );
           })}
           </div>
       </div>
     </div>
-    <p class="svc-intro container">На странице услуг собраны направления и цены на работы — без стоимости запчастей. Например, диагностика ходовой — от 500 ₽, замена масла в двигателе — от 1000 ₽. Для других позиций указан ориентир «от» или диапазон там, где цена зависит от автомобиля и крепления узла. После осмотра назовём точную стоимость до начала работ.</p>
+    <p class="svc-intro container">{fillPrices('На странице услуг собраны направления и цены на работы — без стоимости запчастей. Например, диагностика ходовой — {{price:diag-susp}}, замена масла в двигателе — {{price:oil-sedan}}. Для других позиций указан ориентир «от» или диапазон там, где цена зависит от автомобиля и крепления узла. После осмотра назовём точную стоимость до начала работ.', prices)}</p>
     <p class="u-chips-mt26 container"><a class="btn btn--ghost" href="/services">Смотреть услуги и цены</a></p>
   </div>
 </section>
