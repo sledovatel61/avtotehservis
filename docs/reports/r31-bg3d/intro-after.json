@@ -1,0 +1,543 @@
+{
+  "generatedAt": "2026-11-10T17:22:43.657Z",
+  "purpose": "«после» по заставке: стоимость кадра сцены A5 v2.1 ПОСЛЕ правки (задание №55, фаза 2). «До» — docs/reports/r31-bg3d/intro-before.json (3297,9 scalar/px, старый рейкастинг)",
+  "source": "/home/user/avtotehservis/site/src/client/voyah-intro.ts",
+  "shader": {
+    "name": "SCENE_FS",
+    "lines": 260,
+    "bytes": 11845,
+    "marchSteps": 0,
+    "loops": 1
+  },
+  "port": {
+    "file": "site/tools/intro/ref.mjs",
+    "method": "CPU-порт строка в строку; inst — гранулярность SPIR-V, scalar — компонентные операции",
+    "staleLiterals": [],
+    "allowStale": false
+  },
+  "frame": {
+    "width": 640,
+    "height": 360,
+    "pixels": 230400
+  },
+  "samples": [
+    {
+      "t": 0.1,
+      "instPerPx": 544,
+      "scalarPerPx": 956,
+      "scalarPerPxMax": 956,
+      "instPerPxMax": 544,
+      "scalarPerPxP50": 956,
+      "scalarPerPxP95": 956,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0,
+      "texPerPx": 1,
+      "railPixelsRatio": 0.11944444444444445,
+      "mirrorPixelsRatio": 0.16944444444444445,
+      "nsPerPx": 2076.8284895833335,
+      "cpuMsPerFrame": 478.50128400000006
+    },
+    {
+      "t": 0.3,
+      "instPerPx": 544,
+      "scalarPerPx": 956,
+      "scalarPerPxMax": 956,
+      "instPerPxMax": 544,
+      "scalarPerPxP50": 956,
+      "scalarPerPxP95": 956,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0,
+      "texPerPx": 1,
+      "railPixelsRatio": 0.11944444444444445,
+      "mirrorPixelsRatio": 0.16944444444444445,
+      "nsPerPx": 2199.4505555555556,
+      "cpuMsPerFrame": 506.753408
+    },
+    {
+      "t": 0.5,
+      "instPerPx": 544,
+      "scalarPerPx": 956,
+      "scalarPerPxMax": 956,
+      "instPerPxMax": 544,
+      "scalarPerPxP50": 956,
+      "scalarPerPxP95": 956,
+      "layersPerPx": 1,
+      "reflPixelsRatio": 0,
+      "texPerPx": 1,
+      "railPixelsRatio": 0.11944444444444445,
+      "mirrorPixelsRatio": 0.16944444444444445,
+      "nsPerPx": 2100.85109375,
+      "cpuMsPerFrame": 484.036092
+    },
+    {
+      "t": 0.76,
+      "instPerPx": 1022.725,
+      "scalarPerPx": 1763.3,
+      "scalarPerPxMax": 3440,
+      "instPerPxMax": 2017,
+      "scalarPerPxP50": 956,
+      "scalarPerPxP95": 3440,
+      "layersPerPx": 1.975,
+      "reflPixelsRatio": 0.325,
+      "texPerPx": 1.975,
+      "railPixelsRatio": 0.11944444444444445,
+      "mirrorPixelsRatio": 0.17222222222222222,
+      "nsPerPx": 3992.79703125,
+      "cpuMsPerFrame": 919.940436
+    },
+    {
+      "t": 0.95,
+      "instPerPx": 1022.725,
+      "scalarPerPx": 1763.3,
+      "scalarPerPxMax": 3440,
+      "instPerPxMax": 2017,
+      "scalarPerPxP50": 956,
+      "scalarPerPxP95": 3440,
+      "layersPerPx": 1.975,
+      "reflPixelsRatio": 0.325,
+      "texPerPx": 1.975,
+      "railPixelsRatio": 0.11944444444444445,
+      "mirrorPixelsRatio": 0.17222222222222222,
+      "nsPerPx": 3936.616171875,
+      "cpuMsPerFrame": 906.996366
+    }
+  ],
+  "headline": {
+    "worstTime": 0.76,
+    "worstScalarPerPx": 1763.3,
+    "worstInstPerPx": 1022.7,
+    "meanScalarPerPx": 1278.9,
+    "meanInstPerPx": 735.5,
+    "bg3dScalarPerPx": 940.9,
+    "bg3dNote": "раунд 30, вариант B «силуэт», качество 2, те же 640×360",
+    "phase1WorstScalarPerPx": 3297.9,
+    "phase1Note": "точка отсчёта фазы 1: старый рейкастинг заставки (72 шага марша), худший кадр uT=0.95",
+    "markNote": "замер снят без знака (uMarkOn=0): коробка знака на 640×360 ≈ 20×28 px (0,24 % кадра), её вклад в среднее ≤ 0,1 оп/px; выборки текстуры печатаются отдельно как tex/px"
+  },
+  "portFunctions": [
+    {
+      "name": "hash12",
+      "inst": 9,
+      "scalar": 23
+    },
+    {
+      "name": "smin",
+      "inst": 10,
+      "scalar": 12
+    },
+    {
+      "name": "sdBox",
+      "inst": 9,
+      "scalar": 16
+    },
+    {
+      "name": "sideD",
+      "inst": 8,
+      "scalar": 12
+    },
+    {
+      "name": "sdQuad",
+      "inst": 50,
+      "scalar": 74
+    },
+    {
+      "name": "sdSeg",
+      "inst": 13,
+      "scalar": 25
+    },
+    {
+      "name": "hash21",
+      "inst": 7,
+      "scalar": 13
+    },
+    {
+      "name": "vnoise",
+      "inst": 41,
+      "scalar": 77
+    },
+    {
+      "name": "halfW",
+      "inst": 55,
+      "scalar": 55
+    },
+    {
+      "name": "bodyOnly",
+      "inst": 74,
+      "scalar": 76
+    },
+    {
+      "name": "railsSd",
+      "inst": 21,
+      "scalar": 37
+    },
+    {
+      "name": "mirrorSd",
+      "inst": 76,
+      "scalar": 115
+    },
+    {
+      "name": "bgAt",
+      "inst": 30,
+      "scalar": 67
+    },
+    {
+      "name": "layers",
+      "inst": 469,
+      "scalar": 792
+    }
+  ],
+  "spirv": {
+    "executable": 1101,
+    "arithmetic": 472,
+    "transcendental": 21,
+    "memory": 590,
+    "composite": 39,
+    "texture": 1,
+    "spirvBytes": 31580,
+    "perFunction": [
+      {
+        "name": "hash12",
+        "inst": 9,
+        "scalar": 23,
+        "leaf": true,
+        "ownBody": {
+          "inst": 9,
+          "scalar": 23,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 24,
+          "arithmetic": 8,
+          "transcendental": 0,
+          "memory": 12,
+          "composite": 4
+        },
+        "spirvArithmetic": 8,
+        "delta": 1,
+        "why": "Δ +1: перестановка p3.yzx в SPIR-V уехала в композитные (OpVectorShuffle)"
+      },
+      {
+        "name": "smin",
+        "inst": 10,
+        "scalar": 12,
+        "leaf": true,
+        "ownBody": {
+          "inst": 10,
+          "scalar": 12,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 20,
+          "arithmetic": 10,
+          "transcendental": 0,
+          "memory": 10,
+          "composite": 0
+        },
+        "spirvArithmetic": 10,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "sdBox",
+        "inst": 9,
+        "scalar": 16,
+        "leaf": true,
+        "ownBody": {
+          "inst": 9,
+          "scalar": 16,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 20,
+          "arithmetic": 9,
+          "transcendental": 1,
+          "memory": 10,
+          "composite": 1
+        },
+        "spirvArithmetic": 9,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "sideD",
+        "inst": 8,
+        "scalar": 12,
+        "leaf": true,
+        "ownBody": {
+          "inst": 8,
+          "scalar": 12,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 24,
+          "arithmetic": 8,
+          "transcendental": 1,
+          "memory": 16,
+          "composite": 0
+        },
+        "spirvArithmetic": 8,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "sdQuad",
+        "inst": 50,
+        "scalar": 74,
+        "leaf": true,
+        "ownBody": {
+          "inst": 10,
+          "scalar": 14,
+          "calls": 5
+        },
+        "spirv": {
+          "executable": 56,
+          "arithmetic": 16,
+          "transcendental": 0,
+          "memory": 40,
+          "composite": 0
+        },
+        "spirvArithmetic": 16,
+        "delta": -1,
+        "why": "Δ -1: ctr = (a+b+c+d)*0.25 частично уходит в композитные"
+      },
+      {
+        "name": "sdSeg",
+        "inst": 13,
+        "scalar": 25,
+        "leaf": true,
+        "ownBody": {
+          "inst": 13,
+          "scalar": 25,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 25,
+          "arithmetic": 10,
+          "transcendental": 1,
+          "memory": 15,
+          "composite": 0
+        },
+        "spirvArithmetic": 10,
+        "delta": 3,
+        "why": "Δ +3: dot(pa,ba)/dot(ba,ba) — драйвер сворачивает и CSE"
+      },
+      {
+        "name": "hash21",
+        "inst": 7,
+        "scalar": 13,
+        "leaf": true,
+        "ownBody": {
+          "inst": 7,
+          "scalar": 13,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 19,
+          "arithmetic": 7,
+          "transcendental": 0,
+          "memory": 10,
+          "composite": 2
+        },
+        "spirvArithmetic": 7,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "vnoise",
+        "inst": 41,
+        "scalar": 77,
+        "leaf": true,
+        "ownBody": {
+          "inst": 13,
+          "scalar": 25,
+          "calls": 4
+        },
+        "spirv": {
+          "executable": 47,
+          "arithmetic": 16,
+          "transcendental": 0,
+          "memory": 30,
+          "composite": 1
+        },
+        "spirvArithmetic": 16,
+        "delta": 1,
+        "why": "Δ +1: vec2-сложения узлов уходят в память/композитные"
+      },
+      {
+        "name": "halfW",
+        "inst": 55,
+        "scalar": 55,
+        "leaf": true,
+        "ownBody": {
+          "inst": 55,
+          "scalar": 55,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 90,
+          "arithmetic": 55,
+          "transcendental": 0,
+          "memory": 35,
+          "composite": 0
+        },
+        "spirvArithmetic": 55,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "bodyOnly",
+        "inst": 74,
+        "scalar": 76,
+        "leaf": true,
+        "ownBody": {
+          "inst": 9,
+          "scalar": 9,
+          "calls": 2
+        },
+        "spirv": {
+          "executable": 29,
+          "arithmetic": 11,
+          "transcendental": 0,
+          "memory": 18,
+          "composite": 0
+        },
+        "spirvArithmetic": 11,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "railsSd",
+        "inst": 21,
+        "scalar": 37,
+        "leaf": true,
+        "ownBody": {
+          "inst": 3,
+          "scalar": 5,
+          "calls": 2
+        },
+        "spirv": {
+          "executable": 27,
+          "arithmetic": 7,
+          "transcendental": 0,
+          "memory": 18,
+          "composite": 2
+        },
+        "spirvArithmetic": 7,
+        "delta": -2,
+        "why": "Δ -2: два vec2(p.x-…, p.y-…) — композитные сборки, не арифметика"
+      },
+      {
+        "name": "mirrorSd",
+        "inst": 76,
+        "scalar": 115,
+        "leaf": true,
+        "ownBody": {
+          "inst": 3,
+          "scalar": 4,
+          "calls": 3
+        },
+        "spirv": {
+          "executable": 38,
+          "arithmetic": 5,
+          "transcendental": 0,
+          "memory": 32,
+          "composite": 1
+        },
+        "spirvArithmetic": 5,
+        "delta": 1,
+        "why": "Δ +1: vec2(abs(p.x-BX), p.y) — композитная сборка"
+      },
+      {
+        "name": "bgAt",
+        "inst": 30,
+        "scalar": 67,
+        "leaf": true,
+        "ownBody": {
+          "inst": 30,
+          "scalar": 67,
+          "calls": 0
+        },
+        "spirv": {
+          "executable": 62,
+          "arithmetic": 30,
+          "transcendental": 4,
+          "memory": 29,
+          "composite": 3
+        },
+        "spirvArithmetic": 30,
+        "delta": 0,
+        "why": "совпало"
+      },
+      {
+        "name": "layers",
+        "inst": 469,
+        "scalar": 792,
+        "leaf": false,
+        "ownBody": {
+          "inst": 298,
+          "scalar": 564,
+          "calls": 3
+        },
+        "spirv": {
+          "executable": 416,
+          "arithmetic": 208,
+          "transcendental": 13,
+          "memory": 199,
+          "composite": 9
+        },
+        "spirvArithmetic": 208,
+        "delta": 93,
+        "why": "справочно: тернарники-гейты компилятор сворачивает в OpSelect по обеим ветвям, константы (ec, eh, палитры) и CSE уходят — порт считает как написано"
+      },
+      {
+        "name": "main",
+        "inst": 2017,
+        "scalar": 3440,
+        "ownBody": {
+          "inst": 102,
+          "calls": 6
+        },
+        "spirv": {
+          "executable": 204,
+          "arithmetic": 72,
+          "transcendental": 1,
+          "memory": 116,
+          "composite": 16
+        },
+        "spirvArithmetic": 72,
+        "delta": 36,
+        "why": "режим once: каждая ветка по разу, марш одна итерация",
+        "note": "в динамике main исполняет марш до 72 раз — это учтено в scalar/px выше, а не здесь"
+      }
+    ]
+  },
+  "verify": {
+    "time": 0.5,
+    "width": 640,
+    "height": 360,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "meanAbsDelta": 0.24554108796296295,
+    "boxMeanAbsDelta": 0.23609085648148148,
+    "maxAbsDelta": 33,
+    "exactRatio": 0.9212167245370371,
+    "pixelsOver4": 10477,
+    "pixelsOver4Ratio": 0.04547309027777778,
+    "edgeZoneRatio": 0.07439236111111111,
+    "outsideOver4": 334,
+    "outsideOver4Ratio": 0.001566163368657976,
+    "outsideMaxDelta": 19,
+    "unexplained": 5570,
+    "unexplainedRatio": 0.024175347222222223,
+    "unexplainedOutside": 43,
+    "unexplainedOutsideRatio": 0.00020163181093500892,
+    "ok": true
+  },
+  "caveats": [
+    "scalar/px — модельные единицы (компонентные операции), не миллисекунды; для fps и батареи нужна модель раунда 30",
+    "нс/px — время CPU-порта на Node, не время GPU; пригодно только для сравнения заставки и фона на одной машине",
+    "2487 мс (десктоп) и 1406 мс (мобайл) из задания — время показа сцены целиком, а не стоимость кадра",
+    "замер снят ПОСЛЕ правки A5 (сцена v2.1, фронтальный силуэт): сравнивается с «до» из intro-before.json и phase1.md",
+    "тернарники-гейты (рейлинги, зеркало) исполняются в каждом пикселе: компилятор раскрывает их в OpSelect, поэтому экономия ветвления — не в операциях, а в отбрасывании результата",
+    "отражение в полу (три дополнительных вызова layers) включается с uT ≥ 0,60 и покрывает 32,5 % пикселей кадра — отсюда скачок 956 → 1763 scalar/px"
+  ]
+}

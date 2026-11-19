@@ -1,0 +1,134 @@
+{
+  "widths": [
+    480,
+    960,
+    1600
+  ],
+  "biggest": {
+    "file": "vy-art-connect-1600.webp",
+    "kb": 97,
+    "quality": 80
+  },
+  "files": [
+    {
+      "file": "vy-art-update-480.avif",
+      "kb": 12,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-update-480.webp",
+      "kb": 15,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-update-960.avif",
+      "kb": 31,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-update-960.webp",
+      "kb": 42,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-update-1600.avif",
+      "kb": 50,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-update-1600.webp",
+      "kb": 67,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-connect-480.avif",
+      "kb": 14,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-connect-480.webp",
+      "kb": 19,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-connect-960.avif",
+      "kb": 41,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-connect-960.webp",
+      "kb": 57,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-connect-1600.avif",
+      "kb": 69,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-connect-1600.webp",
+      "kb": 97,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-app-480.avif",
+      "kb": 11,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-app-480.webp",
+      "kb": 17,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-app-960.avif",
+      "kb": 26,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-app-960.webp",
+      "kb": 42,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-app-1600.avif",
+      "kb": 41,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-app-1600.webp",
+      "kb": 65,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-media-480.avif",
+      "kb": 11,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-media-480.webp",
+      "kb": 14,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-media-960.avif",
+      "kb": 30,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-media-960.webp",
+      "kb": 40,
+      "quality": 80
+    },
+    {
+      "file": "vy-art-media-1600.avif",
+      "kb": 60,
+      "quality": 58
+    },
+    {
+      "file": "vy-art-media-1600.webp",
+      "kb": 79,
+      "quality": 80
+    }
+  ]
+}

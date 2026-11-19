@@ -1,7 +1,12 @@
 /* Мастер записи из 5 экранов — перенос утверждённой логики (122 jsdom-теста) на реальное API:
-   GET /api/slots, POST /api/uploads, POST /api/leads. Черновик в localStorage, идемпотентность,
-   ошибки под полями с фокусом на первое, состояния отправка/успех/ошибка, .ics на клиенте. */
+   POST /api/uploads (только демо), POST заявки. Адреса берутся из shared/leads-endpoint.ts:
+   свой сервер (/api/leads) или прослойка Cloudflare Worker при PUBLIC_LEADS_ENDPOINT.
+   Сервис принимает в порядке живой очереди, поэтому шаг 3 — пожелание клиента: сетку времени
+   рендерит сервер, запросов расписания нет, и сервер не отклоняет заявку из-за часа.
+   Черновик в localStorage, идемпотентность, ошибки под полями с фокусом на первое,
+   состояния отправка/успех/ошибка, .ics на клиенте. */
 import { $, $$, safeLS, track, attachMask, attachVin, reducedMotion } from './lib.ts';
+import { leadsUrl, leadsFetch, retryAfterSeconds, relayMode } from '../shared/leads-endpoint.ts';
 
 const wizEl = $('#wiz');
 if (wizEl) {
@@ -18,7 +23,9 @@ if (wizEl) {
   const VIN_OK = /^[A-HJ-NPR-Z0-9]{17}$/;
   const MIN_YEAR = 1980, MAX_YEAR = 2026;
 
-  interface PhotoItem { id: string | null; url: string; name: string; state: 'uploading' | 'done' | 'error' }
+  /* Фото не «загружаются на сервер» по одному: файл сжимается в браузере и уезжает
+     вместе с заявкой одним multipart-запросом (см. submit()). blob — то, что уйдёт. */
+  interface PhotoItem { name: string; url: string; blob: Blob | null; state: 'uploading' | 'done' | 'error'; note?: string }
   interface St {
     brand: string; model: string; year: string; yearSkip: boolean;
     vin: string; vinSkip: boolean; mileage: string; milSkip: boolean;
@@ -105,7 +112,7 @@ if (wizEl) {
     if (backBtn) backBtn.classList.toggle('u-invisible', st.step === 1);
     if (nextBtn) nextBtn.classList.toggle('u-none', st.step === 5);
     if (submitBtn) submitBtn.classList.toggle('u-none', st.step !== 5);
-    if (st.step === 5) renderSummary();
+    if (st.step === 5) { renderSummary(); syncSubmitGate(); }
     track('step_view', { step: st.step });
     saveDraftSoon();
     try { wiz.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' }); } catch { /* ignore */ }
@@ -120,6 +127,8 @@ if (wizEl) {
     ];
     for (const [skip, input, hint, offText, onText] of pairs) {
       if (!skip || !input) continue;
+      /* класс на пилюле: подсветка не зависит от поддержки :has() */
+      skip.closest('label')?.classList.toggle('is-on', skip.checked);
       if (skip.checked) {
         input.disabled = true; input.value = '';
         input.setAttribute('aria-disabled', 'true');
@@ -198,66 +207,139 @@ if (wizEl) {
 
   const photosBox = $('#photos');
   const fPhotos = $<HTMLInputElement>('#f-photos');
+  const photoAdd = $('#photo-add');
+  const MAX_PHOTOS = 3;
+  /* Сжатие: телефон отдаёт 3–6 МБ, для оценки повреждения хватает 1600 px.
+     Меньше трафика у клиента, быстрее доставка в Telegram, ничего не храним. */
+  const PHOTO_MAX_SIDE = 1600;
+  const PHOTO_QUALITY = 0.82;
+  const PHOTO_RAW_MAX = 20 * 1024 * 1024;
+
+  function setPhotoErr(msg: string): void {
+    const el = $('#photo-err');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('is-on', Boolean(msg));
+  }
+
+  function compressImage(file: File): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      const done = (blob: Blob | null, err?: string): void => {
+        URL.revokeObjectURL(url);
+        if (blob) resolve(blob); else reject(new Error(err ?? 'compress'));
+      };
+      img.onload = () => {
+        try {
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          if (!w || !h) { done(null, 'no_size'); return; }
+          const k = Math.min(1, PHOTO_MAX_SIDE / Math.max(w, h));
+          const cw = Math.max(1, Math.round(w * k));
+          const ch = Math.max(1, Math.round(h * k));
+          const canvas = document.createElement('canvas');
+          canvas.width = cw; canvas.height = ch;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { done(null, 'no_canvas'); return; }
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, cw, ch);
+          ctx.drawImage(img, 0, 0, cw, ch);
+          canvas.toBlob((b) => done(b, 'no_blob'), 'image/jpeg', PHOTO_QUALITY);
+        } catch { done(null, 'canvas_error'); }
+      };
+      img.onerror = () => done(null, 'decode');
+      img.src = url;
+    });
+  }
+
   fPhotos?.addEventListener('change', () => {
     const files = Array.from(fPhotos.files ?? []);
-    for (const f of files) {
-      if (st.photos.length >= 3) break;
-      addPhoto(f);
-    }
+    const free = MAX_PHOTOS - st.photos.filter((p) => p.state !== 'error').length;
+    if (free <= 0) setPhotoErr('Уже 3 фото — лишние не добавляются.');
+    for (const f of files.slice(0, Math.max(0, free))) addPhoto(f);
+    if (files.length > free && free > 0) setPhotoErr('Можно приложить не больше 3 фото — лишние не добавлены.');
     fPhotos.value = '';
+    saveDraftSoon();
   });
+
   function renderPhotos(): void {
     if (!photosBox) return;
     photosBox.innerHTML = st.photos.map((p, i) => `
       <figure class="photo${p.state === 'error' ? ' photo--error' : ''}" data-i="${i}">
         <img src="${p.url}" alt="Фото ${i + 1}: ${p.name.replace(/"/g, '&quot;')}">
-        <figcaption>${p.state === 'uploading' ? '<span class="spinner" aria-hidden="true"></span> Загрузка…' : p.state === 'error' ? 'Ошибка — нажмите, чтобы убрать' : p.name.replace(/</g, '&lt;')}</figcaption>
+        <figcaption>${p.state === 'uploading' ? 'Готовим…' : p.state === 'error' ? (p.note ?? 'Не приняли — нажмите, чтобы убрать') : p.name.replace(/</g, '&lt;')}</figcaption>
         <button type="button" class="photo-x" aria-label="Удалить фото ${i + 1}">✕</button>
       </figure>`).join('');
-    if (fPhotos) fPhotos.parentElement?.classList.toggle('is-full', st.photos.length >= 3);
+    const used = st.photos.filter((p) => p.state !== 'error').length;
+    if (fPhotos) fPhotos.parentElement?.classList.toggle('is-full', used >= MAX_PHOTOS);
+    if (photoAdd) photoAdd.classList.toggle('u-none', used >= MAX_PHOTOS);
   }
+
   function addPhoto(file: File): void {
-    if (file.size > 15 * 1024 * 1024) {
-      st.photos.push({ id: null, url: URL.createObjectURL(file), name: `${file.name} — больше 15 МБ`, state: 'error' });
-      renderPhotos(); return;
-    }
-    if (/^image\/svg/i.test(file.type)) {
-      st.photos.push({ id: null, url: URL.createObjectURL(file), name: `${file.name} — SVG не принимается`, state: 'error' });
-      renderPhotos(); return;
-    }
-    const item: PhotoItem = { id: null, url: URL.createObjectURL(file), name: file.name, state: 'uploading' };
-    st.photos.push(item);
-    renderPhotos();
-    const fd = new FormData();
-    fd.append('file', file);
-    fetch('/api/uploads', { method: 'POST', body: fd })
-      .then((r) => r.json().then((j) => ({ ok: r.ok, j })))
-      .then(({ ok, j }) => {
-        if (!ok || !j.id) { item.state = 'error'; item.name = `${file.name} — не загрузилось`; }
-        else { item.state = 'done'; item.id = String(j.id); URL.revokeObjectURL(item.url); item.url = String(j.url); }
-      })
-      .catch(() => { item.state = 'error'; item.name = `${file.name} — нет связи`; })
-      .finally(() => { renderPhotos(); saveDraftSoon(); });
-  }
-  photosBox?.addEventListener('click', (e) => {
-    const x = (e.target as HTMLElement).closest('.photo-x');
-    const fig = (e.target as HTMLElement).closest('figure.photo');
-    if (x && fig) {
-      st.photos.splice(Number(fig.getAttribute('data-i')), 1);
-      renderPhotos(); saveDraftSoon();
-    } else if (fig && fig.classList.contains('photo--error')) {
-      st.photos.splice(Number(fig.getAttribute('data-i')), 1);
+    const drop = (note: string): void => {
+      st.photos.push({ name: file.name, url: '', blob: null, state: 'error', note });
+      setPhotoErr(note);
       renderPhotos();
+    };
+    if (!/^image\//.test(file.type)) { drop('Это не изображение — выберите фото'); return; }
+    if (/^image\/svg/i.test(file.type)) { drop('SVG не принимается — нужен JPG или PNG'); return; }
+    if (file.size > PHOTO_RAW_MAX) { drop('Файл больше 20 МБ — выберите фото поменьше'); return; }
+
+    const item: PhotoItem = { name: file.name, url: URL.createObjectURL(file), blob: null, state: 'uploading' };
+    st.photos.push(item);
+    setPhotoErr('');
+    renderPhotos();
+
+    void compressImage(file)
+      .then((blob) => {
+        URL.revokeObjectURL(item.url);
+        item.blob = blob;
+        item.url = URL.createObjectURL(blob);
+        item.state = 'done';
+        renderPhotos();
+        saveDraftSoon();
+      })
+      .catch(() => {
+        /* Canvas недоступен (старый браузер, приватный режим) — отправляем файл как есть,
+           если он не гигантский: лучше фото в большем размере, чем никакого. */
+        if (file.size <= 6 * 1024 * 1024) {
+          item.blob = file;
+          item.state = 'done';
+          renderPhotos();
+          saveDraftSoon();
+        } else {
+          item.state = 'error';
+          item.note = 'Не удалось сжать фото — попробуйте другое';
+          setPhotoErr(item.note);
+          renderPhotos();
+        }
+      });
+  }
+
+  photosBox?.addEventListener('click', (e) => {
+    const fig = (e.target as HTMLElement).closest('figure.photo');
+    if (!fig) return;
+    const i = Number(fig.getAttribute('data-i'));
+    const x = (e.target as HTMLElement).closest('.photo-x');
+    if (x || fig.classList.contains('photo--error')) {
+      const gone = st.photos.splice(i, 1)[0];
+      if (gone?.url) URL.revokeObjectURL(gone.url);
+      setPhotoErr('');
+      renderPhotos();
+      saveDraftSoon();
     }
   });
 
   /* ---------- шаг 3: дата и слоты ---------- */
   const cal = $('#cal');
   const slotsBox = $('#slots');
-  const slotTitle = $('#slot-title');
   const asapBtn = $<HTMLButtonElement>('#asap-btn');
   const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
   const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  /* круг 78: полные подписи для скринридера — без них кнопка дня читалась «вт17ноя» */
+  const WD_FULL = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+  const MON_FULL = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
   function localDay(offset: number): { iso: string; d: Date } {
     const d = new Date();
     d.setHours(12, 0, 0, 0);
@@ -270,7 +352,7 @@ if (wizEl) {
     cal.innerHTML = Array.from({ length: 14 }).map((_, i) => {
       const { iso, d } = localDay(i);
       const on = st.date === iso;
-      return `<button type="button" class="cal-day${on ? ' is-on' : ''}" data-date="${iso}" aria-pressed="${on}">
+      return `<button type="button" class="cal-day${on ? ' is-on' : ''}" data-date="${iso}" aria-label="${WD_FULL[d.getDay()]}, ${d.getDate()} ${MON_FULL[d.getMonth()]}" aria-pressed="${on}">
         <span class="wd">${WD[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="mm">${MON[d.getMonth()]}</span>
       </button>`;
     }).join('');
@@ -283,46 +365,36 @@ if (wizEl) {
     asapBtn?.classList.remove('is-on');
     asapBtn?.setAttribute('aria-pressed', 'false');
     renderCal();
-    void loadSlots();
+    syncSlots();
     setErrAt('when-err-anchor', '');
     saveDraftSoon();
   });
-  async function loadSlots(): Promise<void> {
-    if (!slotsBox || !st.date) return;
-    slotsBox.innerHTML = '<p class="hint">Загружаем свободное время…</p>';
-    if (slotTitle) slotTitle.textContent = 'Время визита — выберите дату';
-    try {
-      const r = await fetch(`/api/slots?date=${st.date}`);
-      const j = await r.json() as { slots?: { time: string; available: boolean; reason?: string }[] };
-      renderSlots(j.slots ?? []);
-    } catch {
-      slotsBox.innerHTML = '<p class="hint">Не удалось получить расписание. Повторите попытку или позвоните нам.</p>';
-    }
-  }
-  function renderSlots(slots: { time: string; available: boolean; reason?: string }[]): void {
+  /* Сетку времени рендерит сервер (SLOT_TIMES в src/server/slots.ts). Клиент только
+     подсвечивает выбранный час: никаких запросов расписания — шаг 3 проходится без сети. */
+  function syncSlots(): void {
     if (!slotsBox) return;
-    slotsBox.innerHTML = slots.map((s) => {
-      const on = st.slot === s.time && st.date;
-      return `<button type="button" class="slot${on ? ' is-on' : ''}" data-slot="${s.time}"${s.available ? '' : ' disabled'} aria-label="${s.time}${s.available ? '' : ` — ${s.reason ?? 'занято'}`}">${s.time}</button>`;
-    }).join('');
-    if (slotTitle) slotTitle.textContent = `Время визита на ${st.date ? st.date.split('-').reverse().join('.') : ''}`;
+    for (const b of $$<HTMLButtonElement>('.slot[data-slot]', slotsBox)) {
+      const on = !!st.date && !st.asap && st.slot === b.getAttribute('data-slot');
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', String(on));
+      b.disabled = false;
+    }
   }
   slotsBox?.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-slot]') as HTMLButtonElement | null;
-    if (!b || b.disabled) return;
+    if (!b) return;
     st.slot = b.getAttribute('data-slot');
     st.asap = false;
     asapBtn?.classList.remove('is-on');
     asapBtn?.setAttribute('aria-pressed', 'false');
-    $$('.slot', slotsBox).forEach((x) => x.classList.remove('is-on'));
-    b.classList.add('is-on');
+    syncSlots();
     setErrAt('when-err-anchor', '');
     saveDraftSoon();
   });
   asapBtn?.addEventListener('click', () => {
     st.asap = !st.asap;
-    if (st.asap) { st.date = null; st.slot = null; renderCal(); if (slotsBox) slotsBox.innerHTML = '<p class="hint">Приедем к ближайшему свободному времени — перезвоним и согласуем.</p>'; if (slotTitle) slotTitle.textContent = 'Время визита'; }
-    else { if (slotsBox) slotsBox.innerHTML = '<p class="hint">Выберите дату на ленте выше.</p>'; }
+    if (st.asap) { st.date = null; st.slot = null; renderCal(); }
+    syncSlots();
     asapBtn.classList.toggle('is-on', st.asap);
     asapBtn.setAttribute('aria-pressed', String(st.asap));
     setErrAt('when-err-anchor', '');
@@ -333,7 +405,7 @@ if (wizEl) {
   if (fPhone) attachMask(fPhone);
   fName?.addEventListener('input', () => { st.name = fName.value; setErr(fName, ''); saveDraftSoon(); });
   fPhone?.addEventListener('input', () => { st.phone = fPhone.value; setErr(fPhone, ''); saveDraftSoon(); });
-  fConsent?.addEventListener('change', () => { st.consent = fConsent.checked; setErr(fConsent, ''); saveDraftSoon(); });
+  fConsent?.addEventListener('change', () => { st.consent = fConsent.checked; setErr(fConsent, ''); syncSubmitGate(); saveDraftSoon(); });
   $$<HTMLInputElement>('input[name="channel"]', wiz).forEach((r) => {
     r.addEventListener('change', () => { if (r.checked) st.channel = r.value as 'call' | 'telegram'; saveDraftSoon(); });
   });
@@ -346,7 +418,7 @@ if (wizEl) {
       if (!firstBad && el) firstBad = el;
     };
     if (n === 1) {
-      if (fBrand && fBrand.value.trim().length < 2) bad(fBrand, 'Укажите марку — начните вводить или выберите из списка');
+      if (fBrand && fBrand.value.trim().length < 2) bad(fBrand, 'Заполните это поле.');
       const yearSkip = $<HTMLInputElement>('#skip-year')?.checked;
       if (fYear && !yearSkip && fYear.value) {
         const y = Number(fYear.value);
@@ -366,28 +438,30 @@ if (wizEl) {
         if (!firstBad) firstBad = chips ?? null;
       }
       if (st.photos.some((p) => p.state === 'uploading')) {
-        setErrAt('svc-err-anchor', 'Дождитесь окончания загрузки фото или удалите их');
+        setPhotoErr('Секунду — готовим фото к отправке');
         if (!firstBad) firstBad = photosBox ?? null;
       }
     }
     if (n === 3) {
       if (!st.asap && !(st.date && st.slot)) {
-        setErrAt('when-err-anchor', 'Выберите дату и время или нажмите «Как можно скорее»');
-        if (!firstBad) firstBad = cal ?? null;
+        setErrAt('when-err-anchor', 'Выберите желаемый день и время или нажмите «Как можно скорее»');
+        /* фокус — на первый день ленты, а не в пустоту */
+        if (!firstBad) firstBad = (cal?.querySelector('button[data-date]') as HTMLElement | null) ?? cal ?? null;
       }
     }
     if (n === 4) {
-      if (fName && fName.value.trim().length < 2) bad(fName, 'Укажите имя');
+      if (fName && fName.value.trim().length < 2) bad(fName, 'Заполните это поле.');
       const digits = (fPhone?.value ?? '').replace(/\D/g, '');
-      if (digits.length !== 11) bad(fPhone, 'Телефон: +7 (999) 999-99-99');
-      if (fConsent && !fConsent.checked) bad(fConsent, 'Без согласия на обработку данных отправить нельзя');
+      if (digits.length !== 11) bad(fPhone, 'Проверьте номер телефона — по нему мы свяжемся с вами.');
+      if (fConsent && !fConsent.checked) bad(fConsent, 'Чтобы отправить заявку, подтвердите согласие на обработку персональных данных.');
     }
     if (!firstBad) { if (n === 2) setErrAt('svc-err-anchor', ''); if (n === 3) setErrAt('when-err-anchor', ''); }
     return firstBad;
   }
 
   /* ---------- сводка ---------- */
-  function summaryRows(): { label: string; value: string; step: number }[] {
+  const photoTotal = (): number => st.photos.filter((p) => p.state === 'done' && p.blob).length;
+  function summaryRows(): { label: string; value: string; note?: string; step: number }[] {
     const car = [st.brand, st.model, st.year ? `${st.year} г.` : '', st.mileage && !st.milSkip ? `${Number(st.mileage).toLocaleString('ru-RU')} км` : '', st.vin && !st.vinSkip ? `VIN ${st.vin}` : ''].filter(Boolean).join(', ');
     const chipLabels = new Map($$<HTMLInputElement>('input[name="svc"]', wiz).map((i) => [i.value, i.closest('.chip')?.querySelector('span')?.textContent ?? i.value]));
     const svc = st.dontknow ? 'Не знаю — нужна диагностика' : st.services.map((s) => chipLabels.get(s) ?? s).join(', ');
@@ -395,8 +469,8 @@ if (wizEl) {
     return [
       { label: 'Автомобиль', value: car || '—', step: 1 },
       { label: 'Услуги', value: svc || '—', step: 2 },
-      { label: 'Фото', value: st.photos.length ? `${st.photos.filter((p) => p.state === 'done').length} файл(ов)` : 'не прикрепляли', step: 2 },
-      { label: 'Когда', value: when, step: 3 },
+      { label: 'Фото', value: photoTotal() ? `${photoTotal()} фото — приложены к заявке` : 'не прикрепляли', step: 2 },
+      { label: 'Желаемое время', value: when, note: 'подтвердим по телефону', step: 3 },
       { label: 'Имя и телефон', value: `${st.name}, ${st.phone}`, step: 4 },
       { label: 'Связь', value: st.channel === 'telegram' ? 'Написать в Telegram' : 'Позвонить', step: 4 },
     ];
@@ -407,7 +481,7 @@ if (wizEl) {
     box.innerHTML = summaryRows().map((r) => `
       <div class="sum-row">
         <span class="sum-label">${r.label}</span>
-        <span class="sum-value">${r.value.replace(/</g, '&lt;')}</span>
+        <span class="sum-value">${r.value.replace(/</g, '&lt;')}${r.note ? ` <span class="sum-note">${r.note}</span>` : ''}</span>
         <button type="button" class="linklike" data-gostep="${r.step}">изменить</button>
       </div>`).join('');
   }
@@ -430,7 +504,9 @@ if (wizEl) {
       },
       services: st.dontknow ? ['diagnostika'] : [...st.services],
       preferred: { date: st.asap ? null : st.date, slot: st.asap ? null : st.slot, asap: st.asap },
-      photos: st.photos.filter((p) => p.state === 'done' && p.id).map((p) => p.id),
+      /* Фото уходят отдельными частями multipart-запроса (см. submit), в JSON — только счётчик.
+         Поле оставляем в контракте, чтобы старые сборки/тесты не ломались. */
+      photos: [],
       consent: st.consent,
       consent_version: CONSENT_VERSION,
       page: 'appointment',
@@ -439,15 +515,6 @@ if (wizEl) {
       form_started_at: st.startedAt,
     };
   }
-  const payloadBtn = $('#payload-btn');
-  const payloadPre = $('#payload-pre');
-  payloadBtn?.addEventListener('click', () => {
-    const open = payloadBtn.getAttribute('aria-expanded') === 'true';
-    payloadBtn.setAttribute('aria-expanded', String(!open));
-    payloadBtn.closest('.payload')?.classList.toggle('is-open', !open);
-    if (!open && payloadPre) { payloadPre.textContent = JSON.stringify(buildPayload(), null, 2); track('payload_view'); }
-  });
-
   /* ---------- навигация ---------- */
   nextBtn?.addEventListener('click', () => {
     clearErrs();
@@ -475,14 +542,49 @@ if (wizEl) {
   const stateSending = $('#state-sending');
   const stateOk = $('#state-ok');
   const stateErr = $('#state-err');
-  function showState(which: 'form' | 'sending' | 'ok' | 'err'): void {
+  const stateDemo = $('#state-demo');
+  /* Задание 80-2 §5: в статике (Pages) <body data-demo="1"> — витрина: заявку никуда
+     не отправляем, показываем экран «Демо-версия». Если включена прослойка (relayMode),
+     она важнее: там заявка настоящая. В dev атрибута нет — поведение прежнее. */
+  const isDemo = (): boolean => document.body.dataset.demo === '1' && !relayMode;
+  function showState(which: 'form' | 'sending' | 'ok' | 'err' | 'demo'): void {
     // display переключается через CSSOM (CSP style-src 'self' это разрешает)
     if (wizStepsBox) wizStepsBox.style.display = which === 'form' ? '' : 'none';
     if (wizFoot) wizFoot.style.display = which === 'form' ? '' : 'none';
-    for (const el of [stateSending, stateOk, stateErr]) el?.classList.remove('is-on');
+    for (const el of [stateSending, stateOk, stateErr, stateDemo]) el?.classList.remove('is-on');
     if (which === 'sending') stateSending?.classList.add('is-on');
     if (which === 'ok') stateOk?.classList.add('is-on');
     if (which === 'err') stateErr?.classList.add('is-on');
+    if (which === 'demo') stateDemo?.classList.add('is-on');
+  }
+
+  /* 429: кнопку «Повторить отправку» держим заблокированной до конца Retry-After */
+  const errRetryBtn = $<HTMLButtonElement>('#err-retry');
+  const RETRY_LABEL = errRetryBtn?.textContent ?? 'Повторить отправку';
+  const ERR_TEXT_DEFAULT = $('#err-text')?.textContent ?? 'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.';
+  let retryTimer: ReturnType<typeof setInterval> | null = null;
+  function blockRetry(seconds: number): void {
+    if (!errRetryBtn) return;
+    if (retryTimer) clearInterval(retryTimer);
+    let left = Math.max(1, Math.round(seconds));
+    const tick = (): void => {
+      if (left <= 0) {
+        errRetryBtn.disabled = false;
+        errRetryBtn.textContent = RETRY_LABEL;
+        if (retryTimer) clearInterval(retryTimer);
+        retryTimer = null;
+        return;
+      }
+      errRetryBtn.disabled = true;
+      errRetryBtn.textContent = `Повторить через ${left} с`;
+      left -= 1;
+    };
+    tick();
+    retryTimer = setInterval(tick, 1000);
+  }
+  function releaseRetry(): void {
+    if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+    if (errRetryBtn) { errRetryBtn.disabled = false; errRetryBtn.textContent = RETRY_LABEL; }
   }
 
   async function submit(): Promise<void> {
@@ -490,34 +592,43 @@ if (wizEl) {
     const first = validateStep(4, true);
     if (first) { goStep(4); try { first.focus(); } catch { /* ignore */ } return; }
     track('submit_attempt');
+    releaseRetry();
+    if (isDemo()) { showState('demo'); track('submit_demo'); return; }
     showState('sending');
     try {
-      const r = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload()),
-      });
+      /* С фото — multipart: поле payload (JSON заявки) + до 3 файлов photo.
+         Без фото — прежний JSON, чтобы старый контракт остался рабочим. */
+      const files = st.photos.filter((p) => p.state === 'done' && p.blob).slice(0, 3);
+      let init: RequestInit;
+      if (files.length) {
+        const fd = new FormData();
+        fd.append('payload', JSON.stringify(buildPayload()));
+        files.forEach((p, i) => fd.append('photo', p.blob as Blob, `photo-${i + 1}.jpg`));
+        init = { method: 'POST', body: fd };
+      } else {
+        init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(buildPayload()) };
+      }
+      const r = await leadsFetch(leadsUrl('leads'), init, files.length ? 45_000 : undefined);
       const j = await r.json().catch(() => null) as Record<string, unknown> | null;
-      if (r.status === 201 && j && typeof j.ticket === 'string') {
+      /* Контракт 80-1: 201 от прослойки и 200 от Telegram-бота — одинаковый экран успеха. */
+      if ((r.status === 201 || r.status === 200) && j && typeof j.ticket === 'string') {
         st.lastTicket = j.ticket;
         const okNo = $('#ok-no'); if (okNo) okNo.textContent = `№ ${j.ticket}`;
         const dup = $('#ok-dup'); if (dup) (dup as HTMLElement).hidden = !j.duplicate;
         const dl = $('#ok-dl');
-        if (dl) dl.innerHTML = summaryRows().map((x) => `<dt>${x.label}</dt><dd>${x.value.replace(/</g, '&lt;')}</dd>`).join('');
+        if (dl) dl.innerHTML = summaryRows().map((x) => `<dt>${x.label}</dt><dd>${x.value.replace(/</g, '&lt;')}${x.note ? ` (${x.note})` : ''}</dd>`).join('');
         safeLS.del(DRAFT_KEY);
         showState('ok');
         track('submit_success', { ticket: j.ticket });
         return;
       }
-      if (r.status === 409 && j?.error) {
-        // слот заняли — возвращаем на шаг 3 и перерисовываем слоты
-        goStep(3);
-        showState('form');
-        setErrAt('when-err-anchor', String((j.error as { message?: string }).message ?? 'Выбранное время занято — выберите другой слот'));
-        const slots = (j.error as { slots?: { time: string; available: boolean; reason?: string }[] }).slots;
-        st.slot = null;
-        if (slots && st.date) renderSlots(slots);
-        track('submit_error', { code: 'slot_taken' });
+      if (r.status === 429) {
+        const wait = retryAfterSeconds(r.headers.get('retry-after')) ?? 60;
+        showState('err');
+        const p = $('#err-text');
+        if (p) p.textContent = 'Слишком много заявок с вашего адреса. Повторите позже или позвоните нам.';
+        blockRetry(wait);
+        track('submit_error', { code: 'too_many', retry_after: wait });
         return;
       }
       if (r.status === 400 && j?.error) {
@@ -537,6 +648,9 @@ if (wizEl) {
       track('submit_error', { code: 'http_' + r.status });
     } catch {
       showState('err');
+      /* круг 26 (a8/05-micro): отдельное сообщение, когда нет соединения */
+      const pe = $('#err-text');
+      if (pe) pe.textContent = !navigator.onLine ? 'Похоже, нет соединения. Проверьте интернет и повторите отправку.' : 'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.';
       track('submit_error', { code: 'network' });
     }
   }
@@ -558,8 +672,30 @@ if (wizEl) {
     goStep(firstStep);
     if (firstEl) { try { firstEl.focus(); } catch { /* ignore */ } }
   }
+  /* Отчёт Мануса, §5.4: кнопка отправки недоступна, пока нет отметки о согласии.
+     Подсказка объясняет, почему кнопка неактивна, — чтобы это не выглядело поломкой. */
+  const consentGate = $('#consent-gate');
+  function syncSubmitGate(): void {
+    const ok = Boolean(fConsent?.checked);
+    if (submitBtn) {
+      submitBtn.disabled = !ok;
+      submitBtn.setAttribute('aria-disabled', String(!ok));
+    }
+    consentGate?.classList.toggle('u-none', ok);
+  }
   submitBtn?.addEventListener('click', () => { void submit(); });
-  $('#err-retry')?.addEventListener('click', () => { showState('form'); goStep(5); });
+  $('#err-retry')?.addEventListener('click', () => {
+    if (retryTimer) return; // ещё идёт блокировка после 429
+    releaseRetry();
+    const p = $('#err-text');
+    if (p) p.textContent = ERR_TEXT_DEFAULT;
+    showState('form');
+    goStep(5);
+  });
+  $('#demo-again')?.addEventListener('click', () => {
+    showState('form');
+    goStep(1);
+  });
   $('#ok-again')?.addEventListener('click', () => {
     st = freshSt();
     if (fBrand) fBrand.value = ''; if (fModel) fModel.value = '';
@@ -591,9 +727,9 @@ if (wizEl) {
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//avtotehservis//ru', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
       `UID:${st.idem}@avtotehservis`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
       `DTSTART:${start}`, `DTEND:${end}`,
-      `SUMMARY:Визит в АвтоТехСервис (заявка ${st.lastTicket ?? ''})`,
+      'SUMMARY:Предварительно: АвтоТехСервис, визит',
       'LOCATION:Ростов-на-Дону, ул. Портовая, 439',
-      `DESCRIPTION:Номер заявки: ${st.lastTicket ?? ''}. Возьмите СТС и ключи; для переобувки — второй комплект колёс.`,
+      `DESCRIPTION:Время предварительное, подтвердим по телефону. Номер заявки: ${st.lastTicket ?? ''}. Возьмите СТС и ключи; для переобувки — второй комплект колёс.`,
       'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:Через 2 часа — визит в автосервис', 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR',
     ].join('\r\n');
@@ -611,7 +747,9 @@ if (wizEl) {
   function saveDraftSoon(): void {
     if (draftTimer) clearTimeout(draftTimer);
     draftTimer = setTimeout(() => {
-      const light = { ...st, photos: st.photos.filter((p) => p.state === 'done') };
+      /* Фото в черновик не пишем: object URL умирает вместе со страницей,
+         а blob в localStorage не сериализуется. Человек приложит заново. */
+      const light = { ...st, photos: [] };
       safeLS.set(DRAFT_KEY, JSON.stringify(light));
       const note = $('#draft-note');
       if (note && !note.classList.contains('is-on') && st.step === 1) { /* не показываем на свежей форме */ }
@@ -623,7 +761,7 @@ if (wizEl) {
     try {
       const d = JSON.parse(raw) as Partial<St>;
       if (!d || typeof d !== 'object' || !d.idem) return false;
-      st = { ...freshSt(), ...d, photos: (d.photos ?? []).filter((p) => p.state === 'done') } as St;
+      st = { ...freshSt(), ...d, photos: [] } as St;
       return true;
     } catch { return false; }
   }
@@ -640,9 +778,9 @@ if (wizEl) {
     const skipV = $<HTMLInputElement>('#skip-vin'); if (skipV) skipV.checked = st.vinSkip;
     const skipM = $<HTMLInputElement>('#skip-mileage'); if (skipM) skipM.checked = st.milSkip;
     $$<HTMLInputElement>('input[name="channel"]').forEach((r) => { r.checked = r.value === st.channel; });
-    syncSkips(); restoreChips(); renderPhotos(); renderCal();
+    syncSkips(); restoreChips(); renderPhotos(); renderCal(); syncSubmitGate();
     if (st.asap) { asapBtn?.classList.add('is-on'); asapBtn?.setAttribute('aria-pressed', 'true'); }
-    if (st.date && !st.asap) void loadSlots();
+    syncSlots();
     if (PRESELECT && !st.services.length && !st.dontknow) {
       const cb = $<HTMLInputElement>(`#svc-chips input[value="${CSS.escape(PRESELECT)}"]`);
       if (cb) { cb.checked = true; st.services.push(PRESELECT); }

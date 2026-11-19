@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "updated_at": "2026-11-18T11:24:50.387Z",
+  "cases": [
+    {
+      "slug": "remont-stupitsy",
+      "title": "Ремонт ступицы",
+      "description": "Отремонтировали ступицу, тест",
+      "service_slug": "podveska",
+      "mode": "single",
+      "status": "published",
+      "published_at": "2026-11-18",
+      "sort": 10,
+      "cover": {
+        "base": "7qhrqc-single",
+        "alt": "Ступица",
+        "w": 960,
+        "h": 720,
+        "ext": "webp"
+      },
+      "before": [],
+      "after": [],
+      "photos": [
+        {
+          "base": "7qhrqc-single",
+          "alt": "Ступица",
+          "w": 960,
+          "h": 720,
+          "ext": "webp"
+        }
+      ]
+    },
+    {
+      "slug": "zamena-rychaga",
+      "title": "Замена рычага",
+      "description": "Замена рычага тест",
+      "service_slug": "podveska",
+      "mode": "before_after",
+      "status": "published",
+      "published_at": "2026-11-19",
+      "sort": 20,
+      "cover": {
+        "base": "7q5bz3-before",
+        "alt": "старый рычаг",
+        "w": 356,
+        "h": 267,
+        "ext": "webp"
+      },
+      "before": [
+        {
+          "base": "7q5bz3-before",
+          "alt": "старый рычаг",
+          "w": 356,
+          "h": 267,
+          "ext": "webp"
+        }
+      ],
+      "after": [
+        {
+          "base": "khqe1k-after",
+          "alt": "новый рычаг",
+          "w": 356,
+          "h": 267,
+          "ext": "webp"
+        }
+      ],
+      "photos": []
+    }
+  ]
+}

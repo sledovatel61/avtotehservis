@@ -1,0 +1,171 @@
+# Версию согласия смоук больше не хранит у себя: он читает её из relay/wrangler.toml
+# и берёт фактическую из /health воркера. Раньше рассинхрон давал ложный красный
+# прогон с 400 consent_version сразу после смены версии на сайте.
+name: Проверка прослойки заявок (smoke)
+
+# Ручная проверка «живого» пути: POST на воркер с тем же Origin, что у сайта.
+# Заявка приходит в группу «АвтоТехСервис» в Telegram — так видно, что цепочка
+# сайт → Cloudflare Worker → Telegram работает целиком, а не только /health.
+
+on:
+  # Кнопка в Actions доступна, когда файл есть в основной ветке; пока правим
+  # в preview — запускаем правкой самого файла.
+  push:
+    paths:
+      - '.github/workflows/relay-smoke.yml'
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: 'Адрес прослойки (без слэша в конце)'
+        required: false
+        default: 'https://ats-leads.ats439.workers.dev'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Версия из репозитория и версия, на которой реально стоит воркер.
+      - name: Версия согласия
+        id: cv
+        run: |
+          set -e
+          CV_REPO=$(grep -E '^CONSENT_VERSION' relay/wrangler.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
+          CV_WORKER=$(curl -sS "$URL/health" | grep -o '"consentVersion":"[^"]*"' | head -1 | sed -E 's/.*:"([^"]*)"/\1/')
+          [ -n "$CV_REPO" ] || { echo "::error::Не нашёл CONSENT_VERSION в relay/wrangler.toml"; exit 1; }
+          echo "В репозитории: $CV_REPO, у воркера: ${CV_WORKER:-не отдаёт}"
+          if [ -n "$CV_WORKER" ] && [ "$CV_WORKER" != "$CV_REPO" ]; then
+            echo "::warning::Воркер ещё на версии $CV_WORKER, в репозитории $CV_REPO — деплой не доехал. Проверяем на версии воркера."
+          fi
+          echo "value=${CV_WORKER:-$CV_REPO}" >> "$GITHUB_OUTPUT"
+
+      - name: Health
+        run: |
+          set -e
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
+          echo "GET $URL/health"
+          BODY=$(curl -sS -w '\n%{http_code}' "$URL/health")
+          CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
+          echo "HTTP $CODE $TEXT"
+          echo "::notice::health: HTTP $CODE $TEXT"
+          if echo "$TEXT" | grep -q '"email":"'; then
+            echo "::notice::Почта включена: $TEXT"
+          else
+            echo "::warning::Почта не настроена: копии заявок на почту не уходят"
+          fi
+          [ "$CODE" = "200" ] || { echo "::error::/health ответил $CODE"; exit 1; }
+
+      - name: Send test lead
+        run: |
+          set -e
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
+          KEY=$(node -e 'console.log(require("crypto").randomUUID())')
+          NOW=$(date +%s%3N)
+          START=$((NOW - 12000))
+          cat > /tmp/lead.json <<JSON
+          {
+            "kind": "booking",
+            "name": "Проверка формы",
+            "phone": "+79518269839",
+            "contact_method": "call",
+            "consent": true,
+            "consent_version": "${{ steps.cv.outputs.value }}",
+            "page": "/appointment",
+            "idempotency_key": "$KEY",
+            "honeypot": "",
+            "form_started_at": $START,
+            "car": { "brand": "Лада (LADA)", "model": "Vesta", "year": 2019, "vin": null, "mileage": 74000 },
+            "services": ["diagnostika"],
+            "preferred": { "asap": true, "date": null, "slot": null },
+            "photos": []
+          }
+          JSON
+          echo "POST $URL/leads (Origin: https://sledovatel61.github.io)"
+          BODY=$(curl -sS -w '\n%{http_code}' -X POST "$URL/leads" \
+            -H 'content-type: application/json' \
+            -H 'origin: https://sledovatel61.github.io' \
+            --data @/tmp/lead.json)
+          CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
+          echo "HTTP $CODE $TEXT"
+          echo "::notice::POST /leads: HTTP $CODE $TEXT"
+          [ "$CODE" = "201" ] || { echo "::error::Заявка не принята: HTTP $CODE $TEXT"; exit 1; }
+
+      - name: Заявка с фото (multipart)
+        run: |
+          set -e
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
+          # Тестовая картинка: маленький PNG, чтобы не тащить бинарь в репозиторий.
+          node -e '
+            const zlib = require("zlib");
+            const w = 64, h = 64;
+            const raw = Buffer.alloc((w * 3 + 1) * h);
+            for (let y = 0; y < h; y++) {
+              raw[y * (w * 3 + 1)] = 0;
+              for (let x = 0; x < w; x++) {
+                const o = y * (w * 3 + 1) + 1 + x * 3;
+                raw[o] = 200; raw[o + 1] = 40; raw[o + 2] = 40;
+              }
+            }
+            const chunk = (type, data) => {
+              const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+              const td = Buffer.concat([Buffer.from(type), data]);
+              const crcTable = [...Array(256)].map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+              let crc = 0xffffffff;
+              for (const b of td) crc = crcTable[(crc ^ b) & 0xff] ^ (crc >>> 8);
+              const c = Buffer.alloc(4); c.writeUInt32BE((crc ^ 0xffffffff) >>> 0);
+              return Buffer.concat([len, td, c]);
+            };
+            const ihdr = Buffer.alloc(13);
+            ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4);
+            ihdr[8] = 8; ihdr[9] = 2;
+            const png = Buffer.concat([
+              Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+              chunk("IHDR", ihdr),
+              chunk("IDAT", zlib.deflateSync(raw)),
+              chunk("IEND", Buffer.alloc(0)),
+            ]);
+            require("fs").writeFileSync("/tmp/test-photo.png", png);
+          '
+          KEY=$(node -e 'console.log(require("crypto").randomUUID())')
+          NOW=$(date +%s%3N)
+          START=$((NOW - 15000))
+          cat > /tmp/payload.json <<JSON
+          {
+            "kind": "booking",
+            "name": "Проверка фото",
+            "phone": "+79518269839",
+            "contact_method": "call",
+            "consent": true,
+            "consent_version": "${{ steps.cv.outputs.value }}",
+            "page": "/appointment",
+            "idempotency_key": "$KEY",
+            "honeypot": "",
+            "form_started_at": $START,
+            "car": { "brand": "Лада (LADA)", "model": "Vesta", "year": 2019, "vin": null, "mileage": 74000 },
+            "services": ["diagnostika"],
+            "preferred": { "asap": true, "date": null, "slot": null },
+            "photos": []
+          }
+          JSON
+          echo "POST $URL/leads (multipart: payload + photo)"
+          BODY=$(curl -sS -w '\n%{http_code}' -X POST "$URL/leads" \
+            -H 'origin: https://sledovatel61.github.io' \
+            -F "payload=</tmp/payload.json;type=application/json" \
+            -F "photo=@/tmp/test-photo.png;type=image/png")
+          CODE=$(echo "$BODY" | tail -1); TEXT=$(echo "$BODY" | sed '$d')
+          echo "HTTP $CODE $TEXT"
+          echo "::notice::POST /leads с фото: HTTP $CODE $TEXT"
+          [ "$CODE" = "201" ] || { echo "::error::Заявка с фото не принята: HTTP $CODE $TEXT"; exit 1; }
+
+      - name: Проверка чужого Origin
+        run: |
+          set -e
+          URL="${{ inputs.endpoint || 'https://ats-leads.ats439.workers.dev' }}"
+          CODE=$(curl -sS -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/leads" \
+            -H 'origin: https://evil.example' -H 'access-control-request-method: POST')
+          HDR=$(curl -sSI -X OPTIONS "$URL/leads" -H 'origin: https://evil.example' \
+            -H 'access-control-request-method: POST' | tr -d '\r' | grep -i '^access-control-allow-origin' || true)
+          echo "OPTIONS с чужого Origin: HTTP $CODE, $HDR"
+          echo "::notice::CORS чужой Origin: HTTP $CODE, $HDR"
