@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-19T17:19:42.899Z",
+  "updated_at": "2026-11-19T17:21:17.373Z",
   "cases": [
     {
       "slug": "remont-stupitsy",
@@ -70,7 +70,7 @@
       "slug": "zamena-tsepi-grm-i-masl-nasosa-wv-passat-cc-1-8-t",
       "title": "Замена цепи ГРМ и масл. насоса WV Passat CC 1.8 т",
       "description": "Замена комплекта грм, цепи 3шт., натяжители, успокоители.",
-      "service_slug": "shinomontazh",
+      "service_slug": "grm-sceplenie",
       "mode": "single",
       "status": "published",
       "published_at": "2026-11-19",
