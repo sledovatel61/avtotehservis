@@ -9,6 +9,7 @@ import '../styles/voyah.css';
 import VoyahMark from '../components/VoyahMark.astro';
 import Bg3dLayer from '../components/Bg3dLayer.astro';
 import { bg3dFor, bg3dDemo } from '../server/bg3d-config.ts';
+import { PRICE_DISCLAIMER_FOOTER } from '../server/prices.ts';
 
 const S = getSettings();
 /* 3D-фон (задание №44). По умолчанию off — страница не меняется ни на байт.
@@ -420,6 +421,7 @@ const jsonLd = [
         </aside>
       </div>
       <p class="v-note" style="margin-top:22px">Стоимость работ подтвердим до начала. Исполнение и применимость материалов уточняем по VIN. <a class="u-brass" href="/prices">Полный прайс сервиса →</a></p>
+      <p class="price-disclaimer price-disclaimer--compact">{PRICE_DISCLAIMER_FOOTER} Итоговая сумма зависит от объёма и дополнительных работ; назовём её после осмотра.</p>
     </div>
   </section>
 

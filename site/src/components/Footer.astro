@@ -1,6 +1,7 @@
 ---
 import { getSettings } from '../server/settings.ts';
 import { listPublishedSiteCases } from '../server/cases-store.ts';
+import { PRICE_DISCLAIMER_FOOTER } from '../server/prices.ts';
 const S = getSettings();
 /* Пункт «Наши работы» — только когда работы есть (то же условие, что в шапке) */
 const hasWorks = listPublishedSiteCases(1).length > 0;
@@ -45,6 +46,7 @@ const E1 = S.phones_extra[1];
     </div>
   </div>
   <div class="container ftr-legal">
+    <span class="ftr-prices">{PRICE_DISCLAIMER_FOOTER} Итог зависит от объёма и дополнительных работ; точную сумму называем после осмотра.</span>
     <span>{S.legal.name} · ИНН {S.legal.inn} · ОГРНИП {S.legal.ogrnip}</span>
     <span>
       <button type="button" data-modal="policy">Политика конфиденциальности</button> ·

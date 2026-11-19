@@ -10,6 +10,7 @@ import { fmtDateRu, plural } from '../server/format.ts';
    витрина показывает реальные работы со ссылками на /raboty/<slug> и ссылкой «Все работы»,
    а иллюстрации остаются фолбэком на пустом файле. */
 import { CASE_COVERS } from '../server/case-covers.ts';
+import { PRICE_DISCLAIMER_FOOTER, PRICE_DISCLAIMER_SHORT } from '../server/prices.ts';
 import { listPublishedSiteCases } from '../server/cases-store.ts';
 import CaseCard from '../components/CaseCard.astro';
 
@@ -190,6 +191,7 @@ const jsonLd = {
       </article>
     </div>
     <p class="tri-note">Цены указаны за работу, без запчастей. Стоимость зависит от автомобиля и объёма работ; точную сумму согласуем до начала.</p>
+    <p class="price-disclaimer price-disclaimer--compact">{PRICE_DISCLAIMER_SHORT}</p>
   </div>
 </section>
 <section class="sec sec--narrow about" aria-labelledby="about-h">
@@ -279,6 +281,7 @@ const jsonLd = {
           <div class="v-price-chip"><span>Тормозная жидкость</span><b>2000 ₽</b><small>с прокачкой контуров</small></div>
           <div class="v-price-chip"><span>Диагностика ходовой</span><b>1500 ₽</b><small>на подъёмнике</small></div>
         </div>
+        <p class="price-disclaimer price-disclaimer--compact">{PRICE_DISCLAIMER_FOOTER} Точную сумму назовём после осмотра.</p>
       </div>
       <div class="v-teaser-facts reveal" data-d="1">
         <div class="v-teaser-fact"><b>Опыт более трёх лет</b><span>Обслуживаем Voyah Free в Ростове-на-Дону; знаем регламент по маслам, редукторам и тормозам.</span></div>

@@ -339,6 +339,13 @@
   border-bottom:1px dashed rgba(183,196,187,.4);
 }
 .ftr-legal button:hover{color:var(--brass);border-color:var(--brass)}
+/* Круг 84: строка про справочные цены в подвале — отдельной полосой над реквизитами,
+   чтобы не ломать 4-колоночную сетку .ftr-grid */
+.ftr-legal .ftr-prices{
+  flex:1 1 100%;max-width:82ch;font-size:12.5px;line-height:1.5;
+  border-left:2px solid rgba(224,169,109,.45);padding-left:12px;
+}
+@media (max-width:640px){.ftr-legal .ftr-prices{font-size:12px;padding-left:10px}}
 
 
 /* ---------- Полоса фото после героя (три кропа одного снимка) ---------- */
