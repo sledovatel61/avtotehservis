@@ -23,6 +23,7 @@ mkdirSync(process.env.MEDIA_DIR, { recursive: true });
 
 const { runMigrations } = await import('../scripts/migrate.ts');
 const { runSeed } = await import('../scripts/seed.ts');
+const { SEED } = await import('../src/server/seed-data.ts');
 const { db: getDb, closeDb } = await import('../src/server/db.ts');
 const db = getDb();
 
@@ -39,8 +40,13 @@ const HIDDEN: [string, string | null][] = [
   ['remont-kolesa', 'от 600 ₽'], ['sceplenie', 'от 6000 ₽'], ['diagnostika-hodovaya', 'от 500 ₽'],
   /* круг 27: у кондиционера появилась подтверждённая владельцем цена — поиск утечки от 500 ₽ */
   ['kondicioner', 'от 500 ₽']];
-const NEWS = ['remen-grm-kogda-menat', 'stuk-v-podveske', 'sezonnaya-smena-shin',
-  'diagnostika-pered-pokupkoy', 'zapravka-kondicionera'];
+const NEWS_A9: [string, string][] = [
+  ['remen-grm-kogda-menat', '2026-10-27 09:00'],
+  ['stuk-v-podveske', '2026-10-14 09:00'],
+  ['sezonnaya-smena-shin', '2026-11-05 09:00'],
+  ['diagnostika-pered-pokupkoy', '2026-09-29 09:00'],
+  ['zapravka-kondicionera', '2026-06-15 09:00'],
+];
 
 type Row = { slug: string; hidden: number; price_from: string | null; sort: number };
 
@@ -93,8 +99,13 @@ test('S4 кейсы назначены новым услугам', () => {
 
 test('S5 пять статей a9, слаги и даты не менялись', () => {
   const rows = db.prepare('SELECT slug, published_at FROM news ORDER BY published_at DESC').all() as { slug: string; published_at: string }[];
-  assert.equal(rows.length, 5, 'статей 5');
-  for (const s of NEWS) assert.ok(rows.some((r) => r.slug === s), `статья ${s} на месте`);
+  assert.ok(rows.length >= NEWS_A9.length, `статей не меньше ${NEWS_A9.length} (сейчас ${rows.length})`);
+  assert.equal(rows.length, SEED.news.length, 'число статей в БД совпадает с SEED.news');
+  const bySlug = new Map(rows.map((r) => [r.slug, r.published_at]));
+  for (const [slug, publishedAt] of NEWS_A9) {
+    assert.ok(bySlug.has(slug), `статья ${slug} на месте`);
+    assert.equal(bySlug.get(slug), publishedAt, `дата статьи ${slug} не менялась (${publishedAt})`);
+  }
 });
 
 test('S6 марки: легковые, кроссоверы и паркетники; ГАЗ и УАЗ остались', () => {
