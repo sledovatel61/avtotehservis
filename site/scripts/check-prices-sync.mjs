@@ -1,22 +1,28 @@
 /**
- * Круг 85: гейт синхронизации единого прайс-хранилища site/content/prices.json
+ * Круг 85–86: гейт синхронизации единого прайс-хранилища site/content/prices.json
  * со всеми страницами сайта (site/pages-dist/) и исходниками витрины
  * (src/pages, src/components, src/layouts, src/server).
  *
  * Исключения из правила «зашитые суммы»: src/pages/admin/**, src/client/admin*,
  * public/manage/** и src/server/prices-admin-store.ts — в админке примеры формата цены — это не витрина.
  *
- * Запуск: node scripts/check-prices-sync.mjs [--self-test]
+ * Запуск:
+ *   node scripts/check-prices-sync.mjs
+ *   node scripts/check-prices-sync.mjs --self-test
+ *   node scripts/check-prices-sync.mjs --refs-only
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  PRICE_LIMITS,
   validatePrices,
   fillPrices,
   missingPriceRefs,
+  removePriceItem,
 } from '../src/shared/prices-schema.ts';
 import { SEED } from '../src/server/seed-data.ts';
+import { isAdminPath } from './lib/price-refs.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE_ROOT = join(HERE, '..');
@@ -28,7 +34,12 @@ const SOURCE_DIRS = [
   join(SITE_ROOT, 'src/layouts'),
   join(SITE_ROOT, 'src/server'),
 ];
+const REFS_ROOTS = [
+  join(SITE_ROOT, 'src'),
+  join(SITE_ROOT, 'content'),
+];
 const SELF = process.argv.includes('--self-test');
+const REFS_ONLY = process.argv.includes('--self-test') ? false : process.argv.includes('--refs-only');
 
 let fail = 0;
 const bad = (m) => { fail = 1; console.error('FAIL ' + m); };
@@ -45,14 +56,14 @@ function walkFiles(dir, predicate) {
   return out.sort();
 }
 
-const EXPECTED_GROUP_COUNTS = [
-  ['to', 6],
-  ['tormoza', 5],
-  ['podveska', 11],
-  ['grm', 13],
-  ['diagnostika', 2],
-  ['kondicioner', 4],
-  ['svarka', 2],
+const EXPECTED_GROUP_IDS = [
+  'to',
+  'tormoza',
+  'podveska',
+  'grm',
+  'diagnostika',
+  'kondicioner',
+  'svarka',
 ];
 
 const KEY_CROSS_PAGE_CHECKS = [
@@ -72,15 +83,103 @@ const KEY_CROSS_PAGE_CHECKS = [
 
 const BARE_RUB_RE = /\d\s*₽/;
 
-export function isAdminPath(relPath) {
-  const norm = String(relPath ?? '').replace(/\\/g, '/').replace(/^\/+/, '');
-  return (
-    norm.startsWith('src/pages/admin/') ||
-    norm.startsWith('src/client/admin') ||
-    norm.startsWith('public/manage/') ||
-    norm.startsWith('site/public/manage/') ||
-    norm === 'src/server/prices-admin-store.ts'
-  );
+export { isAdminPath };
+
+export function checkPricesStructure(rawPrices) {
+  const errors = [];
+  const validation = validatePrices(rawPrices);
+  if (!validation.ok) {
+    errors.push('validatePrices вернула ошибки: ' + JSON.stringify(validation.errors));
+    return { ok: false, errors };
+  }
+  const prices = validation.value;
+
+  const actualGroupIds = prices.groups.map((g) => g.id);
+  if (actualGroupIds.join(',') !== EXPECTED_GROUP_IDS.join(',')) {
+    errors.push(
+      `набор и порядок групп прайса (${actualGroupIds.join(', ')}) не совпадают с ожидаемыми (${EXPECTED_GROUP_IDS.join(', ')})`,
+    );
+  }
+
+  for (const g of prices.groups) {
+    if (g.items.length < 1) {
+      errors.push(`В категории «${g.title}» не осталось ни одной работы`);
+    } else if (g.items.length > PRICE_LIMITS.maxGroupItems) {
+      errors.push(
+        `В категории «${g.title}» превышен лимит позиций (${g.items.length} > ${PRICE_LIMITS.maxGroupItems})`,
+      );
+    }
+  }
+
+  const tSet = prices.tyres.set.length;
+  const tRep = prices.tyres.repair.length;
+  const tExt = prices.tyres.extra.length;
+  const vLen = prices.voyah.length;
+  const fLen = prices.featured.length;
+
+  if (tSet < 1 || tSet > PRICE_LIMITS.maxGroupItems) {
+    errors.push(`tyres.set fuera лимитов: ${tSet} (допустимо 1..${PRICE_LIMITS.maxGroupItems})`);
+  }
+  if (tRep < 1 || tRep > PRICE_LIMITS.maxGroupItems) {
+    errors.push(`tyres.repair вне лимитов: ${tRep} (допустимо 1..${PRICE_LIMITS.maxGroupItems})`);
+  }
+  if (tExt < 1 || tExt > PRICE_LIMITS.maxGroupItems) {
+    errors.push(`tyres.extra вне лимитов: ${tExt} (допустимо 1..${PRICE_LIMITS.maxGroupItems})`);
+  }
+  if (vLen < 1 || vLen > PRICE_LIMITS.maxVoyahItems) {
+    errors.push(`voyah вне лимитов: ${vLen} (допустимо 1..${PRICE_LIMITS.maxVoyahItems})`);
+  }
+  if (fLen < 1 || fLen > PRICE_LIMITS.maxGroupItems) {
+    errors.push(`featured вне лимитов: ${fLen} (допустимо 1..${PRICE_LIMITS.maxGroupItems})`);
+  }
+
+  const totalCount =
+    prices.groups.reduce((s, g) => s + g.items.length, 0) + tSet + tRep + tExt + vLen;
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    prices,
+    totalCount,
+    summary: prices.groups.map((g) => `${g.id}:${g.items.length}`).join(', '),
+  };
+}
+
+export function collectRefsSourceEntries() {
+  const entries = [];
+  for (const absFile of walkFiles(REFS_ROOTS[0], (f) => /\.(?:astro|ts|tsx|js|md|mdx)$/i.test(f))) {
+    const rel = relative(SITE_ROOT, absFile).replace(/\\/g, '/');
+    if (isAdminPath(rel)) continue;
+    entries.push({ rel, text: readFileSync(absFile, 'utf8') });
+  }
+  for (const absFile of walkFiles(REFS_ROOTS[1], (f) => /\.(?:json|md)$/i.test(f))) {
+    const rel = relative(SITE_ROOT, absFile).replace(/\\/g, '/');
+    if (rel === 'content/prices.json' || isAdminPath(rel)) continue;
+    entries.push({ rel, text: readFileSync(absFile, 'utf8') });
+  }
+  return entries;
+}
+
+export function checkRefsOnly({ prices, htmlByRelPath, sourceEntries }) {
+  const errors = [];
+  if (!htmlByRelPath || htmlByRelPath.size === 0) {
+    errors.push('в pages-dist нет собранных HTML-страниц');
+  } else {
+    for (const [rel, html] of htmlByRelPath.entries()) {
+      if (html.includes('{{')) {
+        const tokens = html.match(/\{\{[^}\r\n]*\}\}|\{\{[^\s<]{0,40}/g) ?? ['{{…}}'];
+        errors.push(`${rel}: нераскрытый токен ${tokens.join(', ')}`);
+      }
+    }
+  }
+
+  for (const { rel, text } of sourceEntries ?? []) {
+    const miss = missingPriceRefs(text, prices);
+    if (miss.length > 0) {
+      errors.push(`${rel}: неизвестные ссылки на прайс: ${miss.join(', ')}`);
+    }
+  }
+  return errors;
 }
 
 export function checkCrossPageSync(prices, htmlByRelPath) {
@@ -166,58 +265,63 @@ export function detectBareRubleInSource(sourceText, relPath = '') {
   return BARE_RUB_RE.test(sourceText);
 }
 
-/* 1. Проверка content/prices.json и количества позиций (73) */
-console.log('1. Проверка схемы и полноты site/content/prices.json:');
 if (!existsSync(PRICES_PATH)) {
   bad('нет файла site/content/prices.json');
   process.exit(1);
 }
 const rawPrices = JSON.parse(readFileSync(PRICES_PATH, 'utf8'));
-const validation = validatePrices(rawPrices);
-if (!validation.ok) {
-  bad('validatePrices вернула ошибки: ' + JSON.stringify(validation.errors));
+const structRes = checkPricesStructure(rawPrices);
+if (!structRes.ok) {
+  for (const e of structRes.errors) bad(e);
   process.exit(1);
 }
-const prices = validation.value;
-ok('validatePrices(json) === ok: true');
+const prices = structRes.prices;
 
-const actualGroupSummary = prices.groups.map((g) => `${g.id}:${g.items.length}`).join(', ');
-const expectedGroupSummary = EXPECTED_GROUP_COUNTS.map(([id, n]) => `${id}:${n}`).join(', ');
-if (actualGroupSummary === expectedGroupSummary) {
-  ok(`группы прайса (${actualGroupSummary})`);
-} else {
-  bad(`состав групп прайса (${actualGroupSummary}) не совпадает с ожидаемым (${expectedGroupSummary})`);
+const htmlFiles = walkFiles(DIST_DIR, (f) => f.endsWith('.html'));
+const htmlByRelPath = new Map();
+for (const file of htmlFiles) {
+  htmlByRelPath.set(relative(DIST_DIR, file).replace(/\\/g, '/'), readFileSync(file, 'utf8'));
 }
+const refsSourceEntries = collectRefsSourceEntries();
 
-const tSet = prices.tyres.set.length;
-const tRep = prices.tyres.repair.length;
-const tExt = prices.tyres.extra.length;
-const vLen = prices.voyah.length;
-const fLen = prices.featured.length;
-const totalCount =
-  prices.groups.reduce((s, g) => s + g.items.length, 0) + tSet + tRep + tExt + vLen;
-
-if (tSet === 8 && tRep === 3 && tExt === 4 && vLen === 15 && fLen === 3 && totalCount === 73) {
-  ok(`tyres=${tSet}/${tRep}/${tExt}, voyah=${vLen}, featured=${fLen}, всего позиций прайса=${totalCount}`);
-} else {
-  bad(`ожидалось tyres 8/3/4, voyah 15, featured 3, всего позиций 73; получено tyres ${tSet}/${tRep}/${tExt}, voyah ${vLen}, featured ${fLen}, всего ${totalCount}`);
-}
-
-/* 2. Проверка отсутствия нераскрытых {{price|from|span|between|pair|sum|tyre:...}} в pages-dist/index.html */
-console.log('\n2. Проверка собранных HTML на нераскрытые подстановки:');
-const htmlFiles = walkFiles(DIST_DIR, (f) => f.endsWith('/index.html') || f === join(DIST_DIR, 'index.html'));
-if (htmlFiles.length === 0) {
-  bad('в pages-dist нет собранных index.html — сначала выполните экспорт страниц');
-} else {
-  let leaked = 0;
-  for (const file of htmlFiles) {
-    const html = readFileSync(file, 'utf8');
-    if (/\{\{(price|from|From|span|between|pair|sum|tyre):/.test(html) || /\{\{[^}]*\}\}/.test(html)) {
-      leaked++;
-      bad(`нераскрытый плейсхолдер в ${relative(DIST_DIR, file)}`);
-    }
+/* Режим --refs-only для CI */
+if (REFS_ONLY) {
+  const refErrors = checkRefsOnly({
+    prices,
+    htmlByRelPath,
+    sourceEntries: refsSourceEntries,
+  });
+  if (refErrors.length > 0) {
+    for (const err of refErrors) bad(err);
+    process.exit(1);
   }
-  if (leaked === 0) ok(`во всех ${htmlFiles.length} HTML-файлах нет нераскрытых {{price|from|span|between|pair|sum|tyre:…}}`);
+  console.log(
+    `PASS [--refs-only]: проверено ${htmlFiles.length} HTML и ${refsSourceEntries.length} исходников — нераскрытых токенов и битых ссылок нет`,
+  );
+  process.exit(0);
+}
+
+/* 1. Проверка content/prices.json */
+console.log('1. Проверка схемы и структуры site/content/prices.json:');
+ok('validatePrices(json) === ok: true');
+ok(`группы прайса (${structRes.summary})`);
+ok(
+  `updated_at=${prices.updated_at}, tyres=${prices.tyres.set.length}/${prices.tyres.repair.length}/${prices.tyres.extra.length}, voyah=${prices.voyah.length}, featured=${prices.featured.length}, всего позиций прайса=${structRes.totalCount}`,
+);
+
+// 2. Проверка отсутствия нераскрытых {{price|from|span|between|pair|sum|tyre:...}} в pages-dist/**/*.html
+console.log('\n2. Проверка собранных HTML и исходников на нераскрытые подстановки:');
+const refErrors = checkRefsOnly({
+  prices,
+  htmlByRelPath,
+  sourceEntries: refsSourceEntries,
+});
+if (refErrors.length === 0) {
+  ok(
+    `во всех ${htmlFiles.length} HTML-файлах и ${refsSourceEntries.length} исходниках нет нераскрытых {{…}} и битых ссылок`,
+  );
+} else {
+  for (const err of refErrors) bad(err);
 }
 
 /* 3. Все не-скрытые позиции присутствуют на /prices и /voyah-free */
@@ -276,10 +380,6 @@ if (!existsSync(pricesHtmlPath) || !existsSync(voyahHtmlPath)) {
 
 /* 4. Ключевые сквозные позиции и бейджи карточек услуг */
 console.log('\n4. Сквозная сверка ключевых позиций и бейджей карточек услуг:');
-const htmlByRelPath = new Map();
-for (const file of htmlFiles) {
-  htmlByRelPath.set(relative(DIST_DIR, file), readFileSync(file, 'utf8'));
-}
 const crossMismatches = checkCrossPageSync(prices, htmlByRelPath);
 if (crossMismatches.length === 0) {
   ok(`все ${KEY_CROSS_PAGE_CHECKS.length} сквозных проверок цен совпадают во всех целевых HTML`);
@@ -382,6 +482,35 @@ if (SELF) {
   expectCaught(
     '(д) разъезд бейджа .svc-price (от 600 ₽) с price_from и <title> (от 1000 ₽) ловится гейтом',
     badgeMutantIssues.length > 0,
+  );
+
+  // (е) круг 86: удалена одна позиция из группы — гейт структуры прайса остаётся зелёным
+  const removedOne = removePriceItem(prices, 'group', 'podveska', prices.groups[2].items.at(-1).id);
+  const structAfterRemove = removedOne.ok ? checkPricesStructure(removedOne.value) : { ok: false };
+  expectCaught('(е) удаление одной позиции из группы оставляет гейт зелёным', structAfterRemove.ok === true);
+
+  // (ж) круг 86: в группе ноль позиций — гейт структуры прайса красный с понятным текстом
+  const emptyGroupPrices = structuredClone(prices);
+  emptyGroupPrices.groups[1].items = [];
+  const emptyGroupRes = checkPricesStructure(emptyGroupPrices);
+  expectCaught(
+    '(ж) пустая категория («Тормоза») отвергается гейтом с понятным текстом',
+    emptyGroupRes.ok === false &&
+      emptyGroupRes.errors.some((e) => e.includes('В категории «Тормоза» не осталось ни одной работы')),
+  );
+
+  // (з) круг 86: в тексте остался нераскрытый токен — режим --refs-only красный
+  const leakedHtmlMap = new Map(htmlByRelPath);
+  leakedHtmlMap.set('prices/index.html', (htmlByRelPath.get('prices/index.html') ?? '') + '<p>{{price:pads-front}}</p>');
+  const leakedRefsErrors = checkRefsOnly({
+    prices,
+    htmlByRelPath: leakedHtmlMap,
+    sourceEntries: [...refsSourceEntries, { rel: 'src/pages/prices.astro', text: '{{price:deleted-work}}' }],
+  });
+  expectCaught(
+    '(з) нераскрытый токен в HTML и битая ссылка в исходнике ловятся в режиме --refs-only',
+    leakedRefsErrors.some((e) => e.includes('prices/index.html')) &&
+      leakedRefsErrors.some((e) => e.includes('deleted-work')),
   );
 
   if (!selfOk) fail = 1;
