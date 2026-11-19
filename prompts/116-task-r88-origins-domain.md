@@ -1,50 +1,68 @@
-# Круг 88 · Агент 11 «серверная часть» — убрать хардкод origin и прописать домен
+# Круг 88 · Агент 11 «серверная часть» — убрать хардкод origin, домен, `Retry-After`
 
 **Ветка:** от `origin/preview/github-pages`, имя `agent/88-origins-domain`. PR — в `preview/github-pages`.
-**Роль прежняя:** ты делал `POST /reviews` (PR #73 уже в `preview/github-pages`).
-**Объём:** только `relay/**`. Сайт (`site/**`) не трогать — там работа Агента 5 и 10.
+**Что уже сделано тобой:** `POST /reviews` (PR #73) и `/leads`, `/slots` — всё в `preview/github-pages`.
+**Объём:** только `relay/**`. Сайт (`site/**`) не трогать — там работа Агентов 5, 7 и 10.
 
 ## Зачем
 
-Владелец подключил домен **`ats-rostov.ru`** (DNS: A на `185.199.108–111.153`, `www` → CNAME `sledovatel61.github.io`).
-Сайт переезжает с `https://sledovatel61.github.io/avtotehservis/` на `https://ats-rostov.ru/`.
+Владелец купил и настроил домен **`ats-rostov.ru`** (A → `185.199.108–111.153`, `www` → CNAME `sledovatel61.github.io`). Сайт переезжает с `https://sledovatel61.github.io/avtotehservis/` на корень `https://ats-rostov.ru/`.
 
-После приёмки PR #73 остался долг: в `relay/src/origins.ts` захардкожен список
+При приёмке PR #73 остались три долга, все внутри `relay/**`:
 
-```ts
-const DEFAULT_ORIGINS = ['https://sledovatel61.github.io', 'http://localhost:4321', 'http://127.0.0.1:4321'];
-```
+1. **Хардкод источников.** В `relay/src/origins.ts` есть `DEFAULT_ORIGINS = ['https://sledovatel61.github.io', …]`, и `allowedOrigins()` падает на него, если `ALLOWED_ORIGINS` пуст. После переезда форма отзывов получит `403 {"error":"origin"}`, пока кто-то не вспомнит про этот файл. По заданию было: «список — только из `ALLOWED_ORIGINS`, хардкода не должно быть».
+2. **`wrangler.toml` без домена.** `ALLOWED_ORIGINS` содержит только превью и localhost.
+3. **`Retry-After` не читается из браузера.** Воркер отдаёт заголовок `retry-after` на `429`, но без `access-control-expose-headers` кросс-доменный JS его не видит (заголовок не safelisted), поэтому форма показывает «Слишком часто» без числа секунд. Это одна строка в `corsHeaders()`.
 
-Из-за него при переезде на домен форма отзывов получит **403 `{"error":"origin"}`**, пока кто-то не вспомнит про этот файл. Хардкода быть не должно: единственный источник — `env.ALLOWED_ORIGINS` (плюс локальные адреса для `wrangler dev`, если они нужны, — но только когда переменная пуста и `ENVIRONMENT` не production; иначе fail-closed).
+## Задача 1 — `relay/src/origins.ts`: убрать `DEFAULT_ORIGINS`
 
-## Задача 1 — `relay/src/origins.ts`
+1. `DEFAULT_ORIGINS` **удалить** полностью; единственный источник — `env.ALLOWED_ORIGINS`, split по запятым, `trim`, без пустых элементов.
+2. Пустой/отсутствующий `ALLOWED_ORIGINS` → **ни один origin не разрешён** (fail-closed). Локальная разработка задаёт список в `.dev.vars` / `wrangler dev --var`, а не дефолтом в коде.
+3. Сравнение — точное совпадение строки, без `www`-эвристик, без нормализации схемы/порта. `Origin` отсутствует → `false` (как сейчас).
+4. Обновить комментарий в файле: список задаётся только в `wrangler.toml`, здесь дефолтов нет.
+5. `relay/README.md`, раздел про CORS — одна строка: «Список источников — только `ALLOWED_ORIGINS`; пустой список = все запросы из браузера отклоняются (fail-closed)».
 
-1. `DEFAULT_ORIGINS` **удалить**. Источник — только `env.ALLOWED_ORIGINS`, разбитый по запятым, с trim, без пустых элементов.
-2. Пустой/отсутствующий `ALLOWED_ORIGINS` → **никакой origin не разрешён** (403 на всё). Локальная разработка задаёт список в `.dev.vars` / `wrangler dev --var`, а не дефолтом в коде.
-3. Сравнение origin: точное совпадение строки, без `www`-эвристик и без подстановок; `Origin` отсутствует → 403 (как сейчас).
-4. Если `Origin` разбирается в другой регистр/схему/порт — не считать совпадением.
-5. В `README` (`relay/README.md`) в разделе про CORS добавить одну строку: «Список источников — только `ALLOWED_ORIGINS`; пустой список = все запросы из браузера отклоняются».
-
-## Задача 2 — `relay/wrangler.toml`
+## Задача 2 — `relay/wrangler.toml`: домен в списке
 
 ```
 ALLOWED_ORIGINS = "https://ats-rostov.ru,https://www.ats-rostov.ru,https://sledovatel61.github.io,http://localhost:4321,http://127.0.0.1:4321"
 ```
 
-`https://sledovatel61.github.io` оставить: старый адрес ещё живёт и редиректит, а браузер при редиректе сохраняет `Origin` исходной страницы. Комментарий над строкой обновить: домен `ats-rostov.ru` — боевой, `sledovatel61.github.io` — превью.
+`sledovatel61.github.io` оставить: старый адрес ещё живёт и редиректит, а при редиректе браузер сохраняет `Origin` исходной страницы. Комментарий над строкой переписать: `ats-rostov.ru` — боевой домен, `sledovatel61.github.io` — превью.
 
-## Задача 3 — тесты `relay/tests/origins.test.ts` (новый файл)
+## Задача 3 — `relay/src/index.ts`: `Retry-After` наружу
+
+В `corsHeaders()` добавить:
+
+```ts
+'access-control-expose-headers': 'retry-after',
+```
+
+Ничего больше в CORS не менять. Существующий тест на заголовки (если есть) дополнить этой строкой.
+
+## Задача 4 — тесты `relay/tests/origins.test.ts` (новый файл)
 
 `node --test`, без сети:
 
 1. `ALLOWED_ORIGINS` из трёх адресов → каждый разрешён, чужой — нет.
-2. `ALLOWED_ORIGINS` не задан → `https://sledovatel61.github.io` **не** разрешён (раньше разрешался хардкодом).
-3. `ALLOWED_ORIGINS = ''` и `' , '` → ничего не разрешено.
-4. Пробелы вокруг адресов в переменной не мешают (`" https://a.ru , https://b.ru "`).
+2. `ALLOWED_ORIGINS` не задан → `https://sledovatel61.github.io` **не** разрешён (до фикса разрешался хардкодом).
+3. `ALLOWED_ORIGINS = ''` и `= ' , '` → не разрешено ничего.
+4. Пробелы вокруг адресов не мешают: `" https://a.ru , https://b.ru "`.
 5. `http://ats-rostov.ru` при списке с `https://ats-rostov.ru` → отказ.
 6. `Origin` отсутствует → отказ.
-7. `POST /reviews` с `Origin: https://ats-rostov.ru` проходит проверку origin (остальные поля — валидные, доставка замокана) → `201`.
-8. Существующие `relay/tests/reviews.test.ts` и `relay/tests/leads.test.ts` не ломаются: если они полагались на хардкод, переписать их так, чтобы они задавали `ALLOWED_ORIGINS` в моке `env` явно.
+7. `POST /reviews` с `Origin: https://ats-rostov.ru` (остальные поля валидные, доставка замокана) → `201`.
+8. `OPTIONS /reviews` с разрешённым origin → `204` и `access-control-expose-headers: retry-after`.
+9. Существующие `relay/tests/reviews.test.ts` и `leads.test.ts` не ломаются: если они полагались на хардкод, пусть задают `ALLOWED_ORIGINS` в моке `env` явно.
+
+## Задача 5 — KV для лимитов (по возможности, не блокер)
+
+Сейчас `/health` отдаёт `"reviewsKv": false`: лимит «3 отзыва за 10 минут» живёт в памяти изолята и на нескольких изолятах не общий. Попробуй включить:
+
+```
+npx wrangler kv namespace create ATS_KV
+```
+
+Полученный `id` вписать в закомментированный блок `[[kv_namespaces]]` в `wrangler.toml`, раскомментировать, задеплоить через PR (деплой сделает workflow). В теле PR написать, включилось ли (`/health` → `"reviewsKv": true`) или токен не даёт прав на KV — тогда просто оставить как есть и отметить в PR. **Ничего не выдумывать и id не подделывать.**
 
 ## Проверка перед PR
 
@@ -54,14 +72,13 @@ npm ci
 npx tsc --noEmit
 node --test tests/*.test.ts
 npx wrangler deploy --dry-run --outdir /tmp/relay-dry
-grep -rn "sledovatel61.github.io" src/     # только в комментариях/README, не в коде
+grep -rn "sledovatel61.github.io" src/     # только в комментариях, не в коде
 ```
 
-В теле PR — вывод всех четырёх команд. После мержа workflow «Deploy leads relay» выкатит воркер сам (push в `preview/github-pages` при изменении `relay/**`), `wrangler deploy` руками не запускать.
+В теле PR — вывод всех пяти команд. Deploy после мержа сделает workflow «Deploy leads relay», руками `wrangler deploy` не запускать.
 
 ## Чего не делать
 
-- Не менять контракт `/reviews`, лимиты, тексты уведомлений, `CONSENT_VERSION`.
+- Не менять контракт `/reviews`, лимиты, тексты уведомлений, `CONSENT_VERSION`, формат письма.
 - Не трогать `site/**`, `docs/**`, `prompts/**`.
-- Не добавлять новые секреты и не перевыпускать токен бота.
-- Не «чинить» заодно `KV` — `reviewsKv: false` на превью ожидаемо (KV не создан, лимиты живут в памяти изолята).
+- Не добавлять секретов и не перевыпускать токен бота.
