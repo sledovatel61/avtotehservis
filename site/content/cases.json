@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-19T16:57:30.810Z",
+  "updated_at": "2026-11-19T17:09:14.166Z",
   "cases": [
     {
       "slug": "remont-stupitsy",
@@ -65,6 +65,76 @@
         }
       ],
       "photos": []
+    },
+    {
+      "slug": "zamena-tsepi-grm-i-masl-nasosa-wv-passat-cc-1-8-t",
+      "title": "Замена цепи ГРМ и масл. насоса WV Passat CC 1.8 т",
+      "description": "Замена комплекта грм, цепи 3шт., натяжители, успокоители.",
+      "service_slug": "shinomontazh",
+      "mode": "single",
+      "status": "draft",
+      "published_at": "2026-11-19",
+      "sort": 30,
+      "cover": {
+        "base": "suhodf-single",
+        "alt": "грм",
+        "w": 1600,
+        "h": 1200,
+        "ext": "webp"
+      },
+      "before": [],
+      "after": [],
+      "photos": [
+        {
+          "base": "m2cgnk-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        },
+        {
+          "base": "irgti3-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        },
+        {
+          "base": "zjeqj8-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        },
+        {
+          "base": "ncz9ne-single",
+          "alt": "грм",
+          "w": 1600,
+          "h": 1200,
+          "ext": "webp"
+        },
+        {
+          "base": "e1wlab-single",
+          "alt": "грм",
+          "w": 1600,
+          "h": 1200,
+          "ext": "webp"
+        },
+        {
+          "base": "suhodf-single",
+          "alt": "грм",
+          "w": 1600,
+          "h": 1200,
+          "ext": "webp"
+        },
+        {
+          "base": "slk48w-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        }
+      ]
     }
   ]
 }
