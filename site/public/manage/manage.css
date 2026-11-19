@@ -56,3 +56,20 @@ input[hidden]{display:none}
  .review-card-head { align-items: flex-start; }
  .review-card-head > div { min-width: 0; }
 }
+/* Редактор статей */
+.news-editor { margin: 16px 0; }
+.news-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin: 14px 0; }
+.news-field { min-width: 0; overflow-wrap: anywhere; }
+.news-field .hint, .news-field .field-error { display: block; }
+.news-editor textarea { min-height: 180px; resize: vertical; }
+.news-grid textarea { min-height: 90px; }
+.news-writing { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; align-items: start; }
+.news-preview-column { min-width: 0; }
+.news-preview { margin: 10px 0 20px; overflow-wrap: anywhere; white-space: normal; }
+.news-preview p, .news-preview h1, .news-preview h2, .news-preview h3, .news-preview ul, .news-preview blockquote { margin: 10px 0; }
+.news-preview h1 { font-size: 1.7rem; }
+.news-cover { margin: 18px 0; }
+.news-cover-preview { display: flex; flex-wrap: wrap; gap: 12px; }
+.news-cover-preview figure { margin: 10px 0; flex: 1 1 280px; min-width: 0; }
+.news-cover-preview img { display: block; width: 100%; height: auto; }
+@media (max-width: 700px) { .news-grid, .news-writing { grid-template-columns: 1fr; } }
