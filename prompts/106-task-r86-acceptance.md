@@ -116,7 +116,7 @@ read-only проверка опубликованного артефакта; с
 
 ```
 https://sledovatel61.github.io/avtotehservis/prices/?v=<N>
-https://sledovatel61.github.io/avtotehservis/services/podveska-i-rulevoe/?v=<N>
+https://sledovatel61.github.io/avtotehservis/services/podveska/?v=<N>
 https://sledovatel61.github.io/avtotehservis/manage/?v=<N>
 https://sledovatel61.github.io/avtotehservis/manage/price-refs.json
 ```
