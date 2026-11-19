@@ -10,7 +10,7 @@ import VoyahMark from '../components/VoyahMark.astro';
 import Bg3dLayer from '../components/Bg3dLayer.astro';
 import { bg3dFor, bg3dDemo } from '../server/bg3d-config.ts';
 import { PRICE_DISCLAIMER_FOOTER } from '../server/prices.ts';
-import { getPrices, fillPrices, minPrice } from '../server/prices-store.ts';
+import { getPrices, fillPrices } from '../server/prices-store.ts';
 
 const S = getSettings();
 const prices = getPrices();
@@ -407,7 +407,7 @@ const jsonLd = [
         <aside class="v-price-aside reveal" data-d="1" aria-label="Условия по цене">
           <div class="v-glass">
             <VoyahMark class="v-aside-mark" height={42} />
-            <span class="sum">{minPrice(prices, 'voyah')}</span>
+            <span class="sum">{fillPrices('{{from:voyah-oil}}', prices)}</span>
             <p class="v-note" style="margin-top:6px">полное ТО с маслом и фильтрами — цена за работу</p>
             <ul>
               <li>Точную сумму называем после осмотра и до начала работ.</li>

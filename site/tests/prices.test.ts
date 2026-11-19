@@ -116,21 +116,27 @@ describe('prices-schema & prices-store (круг 85)', () => {
     assert.equal(minPrice(copy, 'podveska'), 'от 1000 ₽');
   });
 
-  it('раскрывает плейсхолдеры через fillPrices (включая -pass / -cross) и находит missingPriceRefs', () => {
+  it('раскрывает плейсхолдеры {{price}}, {{from}}, {{span}}, {{tyre}} и находит missingPriceRefs', () => {
     const prices = readPricesFile();
     const sample =
-      'Масло седан — {{price:oil-sedan}}, R16 легковая — {{price:set-r16-pass}}, R16 кроссовер — {{price:set-r16-cross}}, Voyah — {{price:voyah-oil}}.';
+      'Масло седан — {{price:oil-sedan}} ({{from:oil-sedan}}), R16 легковая — {{price:set-r16-pass}}, R20 — {{tyre:set-r20}}, балансировка — {{span:extra-bal-16..extra-bal-20}}, Voyah — {{price:voyah-oil}}.';
     assert.equal(
       fillPrices(sample, prices),
-      'Масло седан — 1000–1300 ₽, R16 легковая — 2200 ₽, R16 кроссовер — 2400 ₽, Voyah — 2000 ₽.',
+      'Масло седан — 1000–1300 ₽ (от 1000 ₽), R16 легковая — 2200 ₽, R20 — 3600–4000 ₽, балансировка — 800–1000 ₽, Voyah — 2000 ₽.',
     );
     assert.deepEqual(missingPriceRefs(sample, prices), []);
 
-    const broken = 'Тест {{price:oil-sedan}} и {{price:unknown-work}} + {{price:missing-2}}';
-    assert.deepEqual(missingPriceRefs(broken, prices), ['unknown-work', 'missing-2']);
+    // Заглавная «От» после точки в предложении
+    assert.equal(
+      fillPrices('Антифриз. {{from:oil-sedan}} за работу.', prices),
+      'Антифриз. От 1000 ₽ за работу.',
+    );
+
+    const broken = 'Тест {{price:oil-sedan}}, {{price:unknown-work}}, {{from:missing-from}} и {{span:oil-sedan..missing-span}}';
+    assert.deepEqual(missingPriceRefs(broken, prices), ['unknown-work', 'missing-from', 'missing-span']);
     assert.equal(
       fillPrices(broken, prices),
-      'Тест 1000–1300 ₽ и {{price:unknown-work}} + {{price:missing-2}}',
+      'Тест 1000–1300 ₽, {{price:unknown-work}}, {{from:missing-from}} и {{span:oil-sedan..missing-span}}',
     );
   });
 

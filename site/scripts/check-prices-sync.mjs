@@ -9,9 +9,10 @@ import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   validatePrices,
-  priceIndexOf,
+  fillPrices,
   missingPriceRefs,
 } from '../src/shared/prices-schema.ts';
+import { SEED } from '../src/server/seed-data.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE_ROOT = join(HERE, '..');
@@ -46,27 +47,29 @@ const EXPECTED_GROUP_COUNTS = [
   ['svarka', 2],
 ];
 
-const KEY_CROSS_PAGE_ITEMS = [
-  ['oil-sedan', ['index.html', 'prices/index.html', 'about/index.html', 'services/to-maslo/index.html']],
-  ['oil-crossover', ['index.html', 'prices/index.html', 'about/index.html', 'services/to-maslo/index.html']],
-  ['diag-susp', ['index.html', 'prices/index.html', 'about/index.html', 'services/diagnostika/index.html']],
-  ['diag-comp', ['index.html', 'prices/index.html', 'about/index.html', 'services/diagnostika/index.html']],
-  ['set-r16', ['index.html', 'prices/index.html', 'about/index.html', 'services/shinomontazh/index.html']],
-  ['ac-refill', ['index.html', 'prices/index.html', 'about/index.html', 'services/diagnostika/index.html']],
-  ['weld-exhaust', ['index.html', 'prices/index.html', 'about/index.html', 'services/svarka/index.html']],
-  ['voyah-oil', ['index.html', 'voyah-free/index.html']],
-  ['voyah-diag-susp', ['index.html', 'voyah-free/index.html']],
+const KEY_CROSS_PAGE_CHECKS = [
+  ['oil-sedan (table)', '{{price:oil-sedan}}', ['prices/index.html', 'services/to-maslo/index.html']],
+  ['oil-sedan (from)', '{{from:oil-sedan}}', ['index.html', 'prices/index.html', 'about/index.html', 'services/to-maslo/index.html']],
+  ['oil-crossover (table)', '{{price:oil-crossover}}', ['prices/index.html', 'services/to-maslo/index.html']],
+  ['oil-crossover (from)', '{{from:oil-crossover}}', ['index.html', 'prices/index.html', 'about/index.html']],
+  ['diag-susp', '{{price:diag-susp}}', ['prices/index.html', 'about/index.html', 'services/diagnostika/index.html']],
+  ['diag-susp (from)', '{{from:diag-susp}}', ['index.html', 'services/diagnostika/index.html']],
+  ['diag-comp', '{{price:diag-comp}}', ['index.html', 'prices/index.html', 'about/index.html', 'services/diagnostika/index.html']],
+  ['set-r16', '{{price:set-r16}}', ['index.html', 'prices/index.html', 'about/index.html', 'services/shinomontazh/index.html']],
+  ['ac-refill', '{{price:ac-refill}}', ['index.html', 'prices/index.html', 'about/index.html', 'services/diagnostika/index.html']],
+  ['weld-exhaust', '{{price:weld-exhaust}}', ['index.html', 'prices/index.html', 'about/index.html', 'services/svarka/index.html']],
+  ['voyah-oil', '{{price:voyah-oil}}', ['index.html', 'voyah-free/index.html']],
+  ['voyah-diag-susp', '{{price:voyah-diag-susp}}', ['index.html', 'voyah-free/index.html']],
 ];
 
 const BARE_RUB_RE = /\d\s*₽/;
 
 export function checkCrossPageSync(prices, htmlByRelPath) {
-  const idx = priceIndexOf(prices);
   const mismatches = [];
-  for (const [id, relPages] of KEY_CROSS_PAGE_ITEMS) {
-    const expectedPrice = idx.get(id);
-    if (!expectedPrice) {
-      mismatches.push(`нет позиции ${id} в прайсе`);
+  for (const [label, token, relPages] of KEY_CROSS_PAGE_CHECKS) {
+    const expectedText = fillPrices(token, prices);
+    if (!expectedText || expectedText.includes('{{')) {
+      mismatches.push(`не удалось раскрыть ${token} (${label})`);
       continue;
     }
     for (const rel of relPages) {
@@ -75,12 +78,68 @@ export function checkCrossPageSync(prices, htmlByRelPath) {
         mismatches.push(`нет страницы ${rel}`);
         continue;
       }
-      if (!html.includes(expectedPrice)) {
-        mismatches.push(`${id} (${expectedPrice}) не найден на странице ${rel}`);
+      if (!html.includes(expectedText)) {
+        mismatches.push(`${label} (${expectedText}) не найден на странице ${rel}`);
       }
     }
   }
   return mismatches;
+}
+
+export function checkServiceBadgesAndTitles(catalogServices, htmlByRelPath) {
+  const issues = [];
+  const servicesHtml = htmlByRelPath.get('services/index.html') ?? '';
+  if (!servicesHtml) {
+    issues.push('нет страницы services/index.html');
+    return issues;
+  }
+
+  for (const svc of catalogServices) {
+    const expectedBadge = svc.price_from;
+    if (!expectedBadge) continue;
+
+    // 1. Бейдж .svc-price в карточке на /services
+    const cardRe = new RegExp(
+      `<a class="svc-card" href="[^"]*\\/services\\/${svc.slug}">[\\s\\S]*?<span class="svc-price">([^<]+)<\\/span>[\\s\\S]*?<\\/a>`,
+    );
+    const cardMatch = servicesHtml.match(cardRe);
+    if (!cardMatch) {
+      issues.push(`/services: не найден бейдж .svc-price для карточки ${svc.slug}`);
+    } else if (cardMatch[1].trim() !== expectedBadge) {
+      issues.push(
+        `/services: бейдж .svc-price у ${svc.slug} равен «${cardMatch[1].trim()}», а price_from в базе — «${expectedBadge}»`,
+      );
+    }
+
+    // 2. Бейдж #svc-price и <title> на странице услуги /services/<slug>
+    const detailRel = `services/${svc.slug}/index.html`;
+    const detailHtml = htmlByRelPath.get(detailRel);
+    if (!detailHtml) {
+      issues.push(`нет страницы ${detailRel}`);
+      continue;
+    }
+    const headBadgeMatch = detailHtml.match(/id="svc-price">([^<]+)<\/p>/);
+    const expectedHeadBadge = `${expectedBadge} — за работу`;
+    if (!headBadgeMatch) {
+      issues.push(`${detailRel}: не найден #svc-price`);
+    } else if (headBadgeMatch[1].trim() !== expectedHeadBadge) {
+      issues.push(
+        `${detailRel}: #svc-price равен «${headBadgeMatch[1].trim()}», ожидалось «${expectedHeadBadge}»`,
+      );
+    }
+
+    const titleMatch = detailHtml.match(/<title>([^<]+)<\/title>/);
+    if (titleMatch) {
+      const titleText = titleMatch[1];
+      const fromInTitle = titleText.match(/от\s+\d[\d\s]*₽/i);
+      if (fromInTitle && !titleText.includes(expectedBadge)) {
+        issues.push(
+          `${detailRel}: в <title> («${titleText}») указано «${fromInTitle[0]}», а бейдж услуги — «${expectedBadge}»`,
+        );
+      }
+    }
+  }
+  return issues;
 }
 
 export function detectBareRubleInSource(sourceText) {
@@ -124,7 +183,7 @@ if (tSet === 8 && tRep === 3 && tExt === 4 && vLen === 15 && fLen === 3 && total
   bad(`ожидалось tyres 8/3/4, voyah 15, featured 3, всего позиций 73; получено tyres ${tSet}/${tRep}/${tExt}, voyah ${vLen}, featured ${fLen}, всего ${totalCount}`);
 }
 
-/* 2. Проверка отсутствия нераскрытых {{price:...}} в pages-dist/index.html */
+/* 2. Проверка отсутствия нераскрытых {{price:...}} / {{from:...}} / {{span:...}} в pages-dist/index.html */
 console.log('\n2. Проверка собранных HTML на нераскрытые подстановки:');
 const htmlFiles = walkFiles(DIST_DIR, (f) => f.endsWith('/index.html') || f === join(DIST_DIR, 'index.html'));
 if (htmlFiles.length === 0) {
@@ -133,15 +192,15 @@ if (htmlFiles.length === 0) {
   let leaked = 0;
   for (const file of htmlFiles) {
     const html = readFileSync(file, 'utf8');
-    if (html.includes('{{price:') || /\{\{[^}]*\}\}/.test(html)) {
+    if (/\{\{(price|from|From|span|tyre):/.test(html) || /\{\{[^}]*\}\}/.test(html)) {
       leaked++;
       bad(`нераскрытый плейсхолдер в ${relative(DIST_DIR, file)}`);
     }
   }
-  if (leaked === 0) ok(`во всех ${htmlFiles.length} HTML-файлах нет нераскрытых {{price:…}}`);
+  if (leaked === 0) ok(`во всех ${htmlFiles.length} HTML-файлах нет нераскрытых {{price|from|span|tyre:…}}`);
 }
 
-/* 3. Все не-скрытые позиции присутствуют на /prices или /voyah-free */
+/* 3. Все не-скрытые позиции присутствуют на /prices и /voyah-free */
 console.log('\n3. Полнота таблиц на /prices и /voyah-free:');
 const pricesHtmlPath = join(DIST_DIR, 'prices/index.html');
 const voyahHtmlPath = join(DIST_DIR, 'voyah-free/index.html');
@@ -195,17 +254,25 @@ if (!existsSync(pricesHtmlPath) || !existsSync(voyahHtmlPath)) {
   }
 }
 
-/* 4. Ключевые сквозные позиции на всех целевых страницах */
-console.log('\n4. Сквозная сверка ключевых позиций по страницам:');
+/* 4. Ключевые сквозные позиции и бейджи карточек услуг */
+console.log('\n4. Сквозная сверка ключевых позиций и бейджей карточек услуг:');
 const htmlByRelPath = new Map();
 for (const file of htmlFiles) {
   htmlByRelPath.set(relative(DIST_DIR, file), readFileSync(file, 'utf8'));
 }
 const crossMismatches = checkCrossPageSync(prices, htmlByRelPath);
 if (crossMismatches.length === 0) {
-  ok(`все ${KEY_CROSS_PAGE_ITEMS.length} сквозных позиций совпадают во всех целевых HTML`);
+  ok(`все ${KEY_CROSS_PAGE_CHECKS.length} сквозных проверок цен совпадают во всех целевых HTML`);
 } else {
   for (const m of crossMismatches) bad(m);
+}
+
+const catalogServices = SEED.services.filter((s) => s.hidden === 0);
+const badgeIssues = checkServiceBadgesAndTitles(catalogServices, htmlByRelPath);
+if (badgeIssues.length === 0) {
+  ok(`бейджи .svc-price, #svc-price и <title> всех ${catalogServices.length} услуг совпадают с price_from`);
+} else {
+  for (const issue of badgeIssues) bad(issue);
 }
 
 /* 5. В исходниках .astro и seed-data.ts нет «голых» рублёвых сумм /\d\s*₽/ */
@@ -222,16 +289,16 @@ for (const file of sourceFiles) {
   const miss = missingPriceRefs(txt, prices);
   if (miss.length > 0) {
     bareFound++;
-    bad(`в ${relative(SITE_ROOT, file)} неизвестные ссылки {{price:…}}: ${miss.join(', ')}`);
+    bad(`в ${relative(SITE_ROOT, file)} неизвестные ссылки {{price|from|span|tyre:…}}: ${miss.join(', ')}`);
   }
 }
 if (bareFound === 0) {
   ok(`проверено ${sourceFiles.length} исходных файлов — зашитых сумм и битых ссылок нет`);
 }
 
-/* 6. Самопроверка --self-test на 4 мутантах */
+/* 6. Самопроверка --self-test на мутантах */
 if (SELF) {
-  console.log('\n6. Самопроверка (--self-test, 4 мутанта):');
+  console.log('\n6. Самопроверка (--self-test):');
   let selfOk = true;
   const expectCaught = (label, caught) => {
     if (caught) console.log('  ok   ' + label);
@@ -244,9 +311,15 @@ if (SELF) {
   const mismatchesA = checkCrossPageSync(mutantPricesA, htmlByRelPath);
   expectCaught('(а) подмена oil-sedan в прайсе ловится при сверке со старым HTML', mismatchesA.length > 0);
 
-  // (б) мутант 2: вставляем {{price:no-such-id}} -> missingPriceRefs возвращает ['no-such-id']
-  const missB = missingPriceRefs('Стоимость работы — {{price:no-such-id}}.', prices);
-  expectCaught('(б) битая ссылка {{price:no-such-id}} ловится через missingPriceRefs', missB.includes('no-such-id'));
+  // (б) мутант 2: битые ссылки {{price:no-such-id}}, {{from:bad-from}}, {{span:oil-sedan..bad-span}} ловятся missingPriceRefs
+  const missB = missingPriceRefs(
+    'Тест {{price:no-such-id}}, {{from:bad-from}}, {{span:oil-sedan..bad-span}}.',
+    prices,
+  );
+  expectCaught(
+    '(б) битые ссылки {{price:…}}, {{from:…}}, {{span:…}} ловятся через missingPriceRefs',
+    missB.includes('no-such-id') && missB.includes('bad-from') && missB.includes('bad-span'),
+  );
 
   // (в) мутант 3: портим price: "бесплатно" -> validatePrices отвергает
   const mutantPricesC = structuredClone(rawPrices);
@@ -256,6 +329,22 @@ if (SELF) {
 
   // (г) мутант 4: строка "замена — 9999 ₽" в .astro-исходнике ловится детектором
   expectCaught('(г) зашитая сумма "замена — 9999 ₽" в .astro ловится детектором', detectBareRubleInSource('<p>замена — 9999 ₽</p>'));
+
+  // (д) мутант 5: подмена бейджа .svc-price у shinomontazh на минимум группы (от 600 ₽ вместо от 1000 ₽) ловится
+  const mutantHtmlMap = new Map(htmlByRelPath);
+  const origServicesHtml = htmlByRelPath.get('services/index.html') ?? '';
+  mutantHtmlMap.set(
+    'services/index.html',
+    origServicesHtml.replace(
+      /(href="[^"]*\/services\/shinomontazh">[\s\S]*?<span class="svc-price">)от 1000 ₽(<\/span>)/,
+      '$1от 600 ₽$2',
+    ),
+  );
+  const badgeMutantIssues = checkServiceBadgesAndTitles(catalogServices, mutantHtmlMap);
+  expectCaught(
+    '(д) разъезд бейджа .svc-price (от 600 ₽) с price_from и <title> (от 1000 ₽) ловится гейтом',
+    badgeMutantIssues.length > 0,
+  );
 
   if (!selfOk) fail = 1;
 }

@@ -403,11 +403,13 @@ export function validatePrices(
   };
 }
 
-function formatMinRub(n: number): string {
+function formatNumRub(n: number): string {
   const rounded = Math.round(n);
-  const formatted =
-    rounded >= 10000 ? String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : String(rounded);
-  return `от ${formatted} \u20bd`;
+  return rounded >= 10000 ? String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : String(rounded);
+}
+
+function formatMinRub(n: number): string {
+  return `от ${formatNumRub(n)} \u20bd`;
 }
 
 export function minPrice(prices: PricesFile, groupId: string): string | null {
@@ -483,6 +485,8 @@ export function priceIndexOf(prices: PricesFile): Map<string, string> {
       map.set(r.id, r.passenger);
       map.set(`${r.id}-pass`, r.passenger);
       map.set(`${r.id}-cross`, r.crossover);
+      map.set(`${r.id}a`, r.passenger);
+      map.set(`${r.id}b`, r.crossover);
     }
   }
   for (const r of prices.tyres?.repair ?? []) {
@@ -515,25 +519,76 @@ export function priceIndexOf(prices: PricesFile): Map<string, string> {
   return map;
 }
 
-const PLACEHOLDER_RE = /\{\{price:([^{}\s]+)\}\}/g;
+const TOKEN_RE = /\{\{(price|from|From|span|tyre):([^{}\s]+)\}\}/g;
 
 export function fillPrices(text: string, prices: PricesFile): string {
-  if (!text || !text.includes('{{price:')) return text ?? '';
+  if (!text || !text.includes('{{')) return text ?? '';
   const idx = priceIndexOf(prices);
-  return text.replace(PLACEHOLDER_RE, (full, id: string) => {
-    const val = idx.get(id);
-    return val !== undefined ? val : full;
+  return text.replace(TOKEN_RE, (full, kind: string, arg: string, offset: number, src: string) => {
+    if (kind === 'price') {
+      const val = idx.get(arg);
+      return val !== undefined ? val : full;
+    }
+    if (kind === 'from' || kind === 'From') {
+      const raw = idx.get(arg);
+      if (raw === undefined) return full;
+      const nums = extractPriceNumbers(raw).filter((n) => n > 0);
+      if (nums.length === 0) return full;
+      const min = Math.min(...nums);
+      const before = src.slice(Math.max(0, offset - 4), offset);
+      const cap = kind === 'From' || /[.!?]\s+$/.test(before);
+      return `${cap ? 'От' : 'от'} ${formatNumRub(min)} \u20bd`;
+    }
+    if (kind === 'span') {
+      const parts = arg.split('..');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) return full;
+      const rawA = idx.get(parts[0]);
+      const rawB = idx.get(parts[1]);
+      if (rawA === undefined || rawB === undefined) return full;
+      const numsA = extractPriceNumbers(rawA).filter((n) => n > 0);
+      const numsB = extractPriceNumbers(rawB).filter((n) => n > 0);
+      if (numsA.length === 0 || numsB.length === 0) return full;
+      const a = Math.min(...numsA);
+      const b = Math.max(...numsB);
+      return `${formatNumRub(a)}–${formatNumRub(b)} \u20bd`;
+    }
+    if (kind === 'tyre') {
+      const rawPass = idx.get(`${arg}-pass`);
+      const rawCross = idx.get(`${arg}-cross`);
+      if (rawPass === undefined || rawCross === undefined) return full;
+      const numsA = extractPriceNumbers(rawPass).filter((n) => n > 0);
+      const numsB = extractPriceNumbers(rawCross).filter((n) => n > 0);
+      if (numsA.length === 0 || numsB.length === 0) return full;
+      const a = Math.min(...numsA);
+      const b = Math.max(...numsB);
+      return `${formatNumRub(a)}–${formatNumRub(b)} \u20bd`;
+    }
+    return full;
   });
 }
 
 export function missingPriceRefs(text: string, prices: PricesFile): string[] {
-  if (!text || !text.includes('{{price:')) return [];
+  if (!text || !text.includes('{{')) return [];
   const idx = priceIndexOf(prices);
   const missing: string[] = [];
-  for (const m of text.matchAll(PLACEHOLDER_RE)) {
-    const id = m[1];
-    if (!idx.has(id) && !missing.includes(id)) {
-      missing.push(id);
+  const addMissing = (id: string) => {
+    if (!missing.includes(id)) missing.push(id);
+  };
+  for (const m of text.matchAll(TOKEN_RE)) {
+    const kind = m[1];
+    const arg = m[2];
+    if (kind === 'price' || kind === 'from' || kind === 'From') {
+      if (!idx.has(arg)) addMissing(arg);
+    } else if (kind === 'span') {
+      const parts = arg.split('..');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        addMissing(arg);
+      } else {
+        if (!idx.has(parts[0])) addMissing(parts[0]);
+        if (!idx.has(parts[1])) addMissing(parts[1]);
+      }
+    } else if (kind === 'tyre') {
+      if (!idx.has(`${arg}-pass`) || !idx.has(`${arg}-cross`)) addMissing(arg);
     }
   }
   return missing;

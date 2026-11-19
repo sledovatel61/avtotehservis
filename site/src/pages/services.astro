@@ -4,9 +4,8 @@ import { getSettings } from '../server/settings.ts';
 import { listCatalogServices } from '../server/services.ts';
 import { fmtDateRu, plural } from '../server/format.ts';
 import { svcImgKey } from '../server/svc-img.ts';
-import { PRICE_ANCHOR } from '../server/svc-aliases.ts';
 import { PRICE_DISCLAIMER_SHORT } from '../server/prices.ts';
-import { getPrices, fillPrices, minPrice } from '../server/prices-store.ts';
+import { getPrices, fillPrices } from '../server/prices-store.ts';
 
 const S = getSettings();
 const prices = getPrices();
@@ -49,8 +48,7 @@ const jsonLd = [
     <h2 id="sv-grid-h" class="u-sr">Каталог услуг</h2>
     <div class="svc-grid">
           {services.map((sv) => {
-            const grpId = prices.groups.find((g) => g.service === sv.slug)?.id ?? PRICE_ANCHOR[sv.slug] ?? sv.slug;
-            const priceFrom = minPrice(prices, grpId) ?? (sv.price_from ? fillPrices(sv.price_from, prices) : null);
+            const priceFrom = sv.price_from ? fillPrices(sv.price_from, prices) : null;
             const shortText = fillPrices(sv.short ?? '', prices);
             return (
               <a class="svc-card" href={`/services/${sv.slug}`}>

@@ -8,7 +8,7 @@ import { mdToHtml } from '../../server/markdown.ts';
 import { svcImgKey } from '../../server/svc-img.ts';
 import { SVC_ALIASES, PRICE_ANCHOR } from '../../server/svc-aliases.ts';
 import { PRICE_DISCLAIMER_SHORT } from '../../server/prices.ts';
-import { getPrices, fillPrices, minPrice } from '../../server/prices-store.ts';
+import { getPrices, fillPrices } from '../../server/prices-store.ts';
 
 const S = getSettings();
 const prices = getPrices();
@@ -18,8 +18,7 @@ if (slug && SVC_ALIASES[slug]) return Astro.redirect('/services/' + SVC_ALIASES[
 const svc = slug ? getService(slug) : undefined;
 if (!svc) Astro.response.status = 404;
 const others = svc ? otherServices(svc.slug, 3) : [];
-const grpId = svc ? (prices.groups.find((g) => g.service === svc.slug)?.id ?? PRICE_ANCHOR[svc.slug] ?? svc.slug) : '';
-const priceFrom = svc ? (minPrice(prices, grpId) ?? (svc.price_from ? fillPrices(svc.price_from, prices) : null)) : null;
+const priceFrom = svc?.price_from ? fillPrices(svc.price_from, prices) : null;
 const shortText = svc ? fillPrices(svc.short ?? '', prices) : '';
 const descText = svc ? fillPrices(svc.description ?? '', prices) : '';
 const seoTitle = svc ? (svc.seo_title ? fillPrices(svc.seo_title, prices) : `${svc.title} — АвтоТехСервис, Ростов-на-Дону`) : '';
