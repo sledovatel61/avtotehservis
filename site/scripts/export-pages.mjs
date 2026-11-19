@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { parseLeadsEndpoint } from '../src/shared/leads-endpoint.ts';
+import { writePriceRefs } from './lib/price-refs.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const output = join(root, 'pages-dist');
@@ -169,6 +170,7 @@ try {
 
   await writeFile(join(output, '.nojekyll'), '');
   await writeFile(join(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
+  await writePriceRefs({ siteRoot: root, outFile: join(output, 'manage/price-refs.json') });
   console.log(`Exported ${routes.length} public pages + 404 to ${output}`);
 } finally {
   if (server) {

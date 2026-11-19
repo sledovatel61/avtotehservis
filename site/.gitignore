@@ -15,3 +15,6 @@ data/
 !migrations/*.sql
 !src/pages/media/
 !src/pages/admin/media/
+
+# Генерируемый отчёт ссылок на позиции прайса (npm run build:refs)
+public/manage/price-refs.json

@@ -2,6 +2,9 @@ import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSyn
 import { dirname, resolve } from 'node:path';
 import {
   type PricesFile,
+  type PriceKind,
+  type AnyPriceItem,
+  type PriceItemPatch,
   validatePrices,
   fillPrices,
   minPrice,
@@ -9,10 +12,17 @@ import {
   priceIndexOf,
   slugifyRu,
   PRICE_LIMITS,
+  TOKEN_RE,
+  findPriceItem as schemaFindPriceItem,
+  removePriceItem as schemaRemovePriceItem,
+  renamePriceItem as schemaRenamePriceItem,
 } from '../shared/prices-schema.ts';
 
 export {
   type PricesFile,
+  type PriceKind,
+  type AnyPriceItem,
+  type PriceItemPatch,
   validatePrices,
   fillPrices,
   minPrice,
@@ -20,6 +30,7 @@ export {
   priceIndexOf,
   slugifyRu,
   PRICE_LIMITS,
+  TOKEN_RE,
 };
 
 export function pricesFilePath(): string {
@@ -96,4 +107,50 @@ export function writePricesFile(next: PricesFile): PricesFile {
   cachedSize = st.size;
   cachedFile = checked.value;
   return checked.value;
+}
+
+export function findPriceItem(kind: PriceKind, catId: string, id: string): AnyPriceItem | undefined;
+export function findPriceItem(
+  prices: PricesFile,
+  kind: PriceKind,
+  catId: string,
+  id: string,
+): AnyPriceItem | undefined;
+export function findPriceItem(
+  a: PricesFile | PriceKind,
+  b: PriceKind | string,
+  c: string,
+  d?: string,
+): AnyPriceItem | undefined {
+  if (typeof a === 'string') {
+    return schemaFindPriceItem(getPrices(), a, b as string, c);
+  }
+  return schemaFindPriceItem(a, b as PriceKind, c, d ?? '');
+}
+
+export function removePriceItem(kind: PriceKind, catId: string, id: string): PricesFile {
+  const current = getPrices();
+  const res = schemaRemovePriceItem(current, kind, catId, id);
+  if (!res.ok) {
+    const err = new Error(res.errors.join('; ')) as Error & { errors?: string[] };
+    err.errors = res.errors;
+    throw err;
+  }
+  return writePricesFile(res.value);
+}
+
+export function renamePriceItem(
+  kind: PriceKind,
+  catId: string,
+  id: string,
+  patch: PriceItemPatch,
+): PricesFile {
+  const current = getPrices();
+  const res = schemaRenamePriceItem(current, kind, catId, id, patch);
+  if (!res.ok) {
+    const err = new Error(res.errors.join('; ')) as Error & { errors?: string[] };
+    err.errors = res.errors;
+    throw err;
+  }
+  return writePricesFile(res.value);
 }

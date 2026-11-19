@@ -45,6 +45,10 @@ jobs:
         working-directory: site
         env:
           PUBLIC_LEADS_ENDPOINT: ${{ vars.PUBLIC_LEADS_ENDPOINT || 'https://ats-leads.ats439.workers.dev' }}
+      # Круг 86: если владелец удалил позицию, на которую ссылаются тексты, сборка
+      # падает и сайт остаётся на предыдущей версии — лучше так, чем сырой {{price:…}} в прайсе.
+      - run: node scripts/check-prices-sync.mjs --refs-only
+        working-directory: site
       - run: node scripts/check-pages.mjs
         working-directory: site
       # Заставка и 3D выключены (круг 74): проверяем по собранному артефакту,

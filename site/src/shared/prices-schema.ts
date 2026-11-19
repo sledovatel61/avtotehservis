@@ -519,7 +519,234 @@ export function priceIndexOf(prices: PricesFile): Map<string, string> {
   return map;
 }
 
-const TOKEN_RE = /\{\{(price|from|From|span|between|pair|sum|tyre):([^{}\s]+)\}\}/g;
+export type PriceKind = 'group' | 'set' | 'repair' | 'extra' | 'voyah';
+
+export type AnyPriceItem = PriceItem | TyreSetRow | TyreRepairRow | TyreExtraRow | VoyahItem;
+
+export interface PriceItemPatch {
+  name?: string;
+  note?: string;
+  price?: string;
+  radius?: string;
+  range?: string;
+  passenger?: string;
+  crossover?: string;
+  hidden?: boolean;
+  [key: string]: unknown;
+}
+
+export const TOKEN_RE = /\{\{(price|from|From|span|between|pair|sum|tyre):([^{}\s]+)\}\}/g;
+
+function checkSinglePriceValue(raw: unknown, errors: string[]): string {
+  const price = str(raw);
+  if (!inRange(price, PRICE_LIMITS.price)) {
+    errors.push(`Цена должна быть от ${PRICE_LIMITS.price[0]} до ${PRICE_LIMITS.price[1]} символов`);
+    return price;
+  }
+  const nums = extractPriceNumbers(price);
+  if (nums.length === 0) {
+    errors.push('Цена должна содержать хотя бы одну цифру');
+    return price;
+  }
+  if (/(?:^|[^а-яёa-z])(?:руб\.?|rub)(?:$|[^а-яёa-z])/i.test(price)) {
+    errors.push('Используйте символ \u20bd вместо «руб.» или «RUB»');
+    return price;
+  }
+  const hasPositive = nums.some((n) => n > 0);
+  if (!hasPositive && !/(?:^|\s)от(?:\s|$)/i.test(price)) {
+    errors.push('Нулевая цена без пометки «от» не допускается');
+    return price;
+  }
+  return price;
+}
+
+export function findPriceItem(
+  prices: PricesFile,
+  kind: PriceKind,
+  catId: string,
+  id: string,
+): AnyPriceItem | undefined {
+  if (!isRecord(prices)) return undefined;
+  const targetId = str(id);
+  if (!targetId) return undefined;
+  const normCat = str(catId).replace(/^group:/, '');
+
+  if (kind === 'group') {
+    const groups = Array.isArray(prices.groups) ? prices.groups : [];
+    const grp = groups.find((g) => isRecord(g) && str(g.id) === normCat);
+    if (!grp || !Array.isArray(grp.items)) return undefined;
+    return grp.items.find((it) => isRecord(it) && str(it.id) === targetId);
+  }
+  if (kind === 'set') {
+    const list = isRecord(prices.tyres) && Array.isArray(prices.tyres.set) ? prices.tyres.set : [];
+    return list.find((r) => isRecord(r) && str(r.id) === targetId);
+  }
+  if (kind === 'repair') {
+    const list = isRecord(prices.tyres) && Array.isArray(prices.tyres.repair) ? prices.tyres.repair : [];
+    return list.find((r) => isRecord(r) && str(r.id) === targetId);
+  }
+  if (kind === 'extra') {
+    const list = isRecord(prices.tyres) && Array.isArray(prices.tyres.extra) ? prices.tyres.extra : [];
+    return list.find((r) => isRecord(r) && str(r.id) === targetId);
+  }
+  if (kind === 'voyah') {
+    const list = Array.isArray(prices.voyah) ? prices.voyah : [];
+    return list.find((it) => isRecord(it) && str(it.id) === targetId);
+  }
+  return undefined;
+}
+
+export function removePriceItem(
+  prices: PricesFile,
+  kind: PriceKind,
+  catId: string,
+  id: string,
+): { ok: true; value: PricesFile } | { ok: false; errors: string[] } {
+  if (!isRecord(prices)) {
+    return { ok: false, errors: ['Файл прайса должен быть объектом'] };
+  }
+  const targetId = str(id);
+  if (!targetId) {
+    return { ok: false, errors: ['Не указан идентификатор позиции'] };
+  }
+  const normCat = str(catId).replace(/^group:/, '');
+
+  if (kind !== 'group' && kind !== 'set' && kind !== 'repair' && kind !== 'extra' && kind !== 'voyah') {
+    return { ok: false, errors: [`Неизвестный раздел прайса «${String(kind)}»`] };
+  }
+  if (kind === 'group') {
+    const groups = Array.isArray(prices.groups) ? prices.groups : [];
+    const grp = groups.find((g) => isRecord(g) && str(g.id) === normCat);
+    if (!grp) {
+      return { ok: false, errors: [`Категория «${normCat}» не найдена`] };
+    }
+  }
+
+  const existing = findPriceItem(prices, kind, catId, targetId);
+  if (!existing) {
+    return { ok: false, errors: [`Позиция «${targetId}» не найдена`] };
+  }
+
+  const featured = Array.isArray(prices.featured) ? prices.featured : [];
+  const blocking = featured.filter((ch) => isRecord(ch) && str(ch.ref) === targetId);
+  if (blocking.length > 0) {
+    return {
+      ok: false,
+      errors: blocking.map((ch) => `Сначала уберите плашку «${str(ch.title) || str(ch.id)}» на главной`),
+    };
+  }
+
+  const next = structuredClone(prices);
+  if (kind === 'group') {
+    const grp = next.groups.find((g) => str(g.id) === normCat)!;
+    grp.items = grp.items.filter((it) => str(it.id) !== targetId);
+  } else if (kind === 'set') {
+    next.tyres.set = next.tyres.set.filter((r) => str(r.id) !== targetId);
+  } else if (kind === 'repair') {
+    next.tyres.repair = next.tyres.repair.filter((r) => str(r.id) !== targetId);
+  } else if (kind === 'extra') {
+    next.tyres.extra = next.tyres.extra.filter((r) => str(r.id) !== targetId);
+  } else if (kind === 'voyah') {
+    next.voyah = next.voyah.filter((it) => str(it.id) !== targetId);
+  }
+
+  return { ok: true, value: next };
+}
+
+export function renamePriceItem(
+  prices: PricesFile,
+  kind: PriceKind,
+  catId: string,
+  id: string,
+  patch: PriceItemPatch,
+): { ok: true; value: PricesFile } | { ok: false; errors: string[] } {
+  if (!isRecord(prices)) {
+    return { ok: false, errors: ['Файл прайса должен быть объектом'] };
+  }
+  if (!isRecord(patch)) {
+    return { ok: false, errors: ['Изменения позиции должны быть объектом'] };
+  }
+  const targetId = str(id);
+  if (!targetId) {
+    return { ok: false, errors: ['Не указан идентификатор позиции'] };
+  }
+  const normCat = str(catId).replace(/^group:/, '');
+
+  if (kind !== 'group' && kind !== 'set' && kind !== 'repair' && kind !== 'extra' && kind !== 'voyah') {
+    return { ok: false, errors: [`Неизвестный раздел прайса «${String(kind)}»`] };
+  }
+  if (kind === 'group') {
+    const groups = Array.isArray(prices.groups) ? prices.groups : [];
+    const grp = groups.find((g) => isRecord(g) && str(g.id) === normCat);
+    if (!grp) {
+      return { ok: false, errors: [`Категория «${normCat}» не найдена`] };
+    }
+  }
+
+  const next = structuredClone(prices);
+  const target = findPriceItem(next, kind, catId, targetId);
+  if (!target) {
+    return { ok: false, errors: [`Позиция «${targetId}» не найдена`] };
+  }
+
+  const errors: string[] = [];
+
+  if (kind === 'group' || kind === 'extra' || kind === 'voyah') {
+    const item = target as PriceItem;
+    if (patch.name !== undefined) item.name = str(patch.name);
+    if (patch.note !== undefined) item.note = patch.note === null ? '' : str(patch.note);
+    if (patch.price !== undefined) item.price = str(patch.price);
+    if (typeof patch.hidden === 'boolean') item.hidden = patch.hidden;
+
+    const nameVal = str(item.name);
+    if (!inRange(nameVal, PRICE_LIMITS.name)) {
+      errors.push(`Название работы: ${PRICE_LIMITS.name[0]}–${PRICE_LIMITS.name[1]} символов`);
+    }
+    const noteVal = item.note === undefined || item.note === null ? '' : str(item.note);
+    if (!inRange(noteVal, PRICE_LIMITS.note)) {
+      errors.push(`Примечание: до ${PRICE_LIMITS.note[1]} символов`);
+    }
+    item.price = checkSinglePriceValue(item.price, errors);
+  } else if (kind === 'set') {
+    const row = target as TyreSetRow;
+    if (patch.radius !== undefined) row.radius = str(patch.radius);
+    if (patch.passenger !== undefined) row.passenger = str(patch.passenger);
+    if (patch.crossover !== undefined) row.crossover = str(patch.crossover);
+    if (patch.price !== undefined && patch.passenger === undefined && patch.crossover === undefined) {
+      row.passenger = str(patch.price);
+    }
+    if (typeof patch.hidden === 'boolean') row.hidden = patch.hidden;
+
+    const radVal = str(row.radius);
+    if (!inRange(radVal, PRICE_LIMITS.radius)) {
+      errors.push(`Радиус: ${PRICE_LIMITS.radius[0]}–${PRICE_LIMITS.radius[1]} символов`);
+    }
+    row.passenger = checkSinglePriceValue(row.passenger, errors);
+    row.crossover = checkSinglePriceValue(row.crossover, errors);
+  } else if (kind === 'repair') {
+    const row = target as TyreRepairRow;
+    if (patch.range !== undefined || patch.radius !== undefined) {
+      const nextRad = str(patch.range !== undefined ? patch.range : patch.radius);
+      row.radius = nextRad;
+      row.range = nextRad;
+    }
+    if (patch.price !== undefined) row.price = str(patch.price);
+    if (typeof patch.hidden === 'boolean') row.hidden = patch.hidden;
+
+    const radVal = str(row.radius !== undefined ? row.radius : row.range);
+    if (!inRange(radVal, PRICE_LIMITS.radius)) {
+      errors.push(`Радиус: ${PRICE_LIMITS.radius[0]}–${PRICE_LIMITS.radius[1]} символов`);
+    }
+    row.price = checkSinglePriceValue(row.price, errors);
+  }
+
+  target.id = targetId;
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+  return { ok: true, value: next };
+}
 
 export function fillPrices(text: string, prices: PricesFile): string {
   if (!text || !text.includes('{{')) return text ?? '';
