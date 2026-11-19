@@ -519,7 +519,7 @@ export function priceIndexOf(prices: PricesFile): Map<string, string> {
   return map;
 }
 
-const TOKEN_RE = /\{\{(price|from|From|span|tyre):([^{}\s]+)\}\}/g;
+const TOKEN_RE = /\{\{(price|from|From|span|between|pair|sum|tyre):([^{}\s]+)\}\}/g;
 
 export function fillPrices(text: string, prices: PricesFile): string {
   if (!text || !text.includes('{{')) return text ?? '';
@@ -539,7 +539,7 @@ export function fillPrices(text: string, prices: PricesFile): string {
       const cap = kind === 'From' || /[.!?]\s+$/.test(before);
       return `${cap ? 'От' : 'от'} ${formatNumRub(min)} \u20bd`;
     }
-    if (kind === 'span') {
+    if (kind === 'span' || kind === 'between' || kind === 'pair') {
       const parts = arg.split('..');
       if (parts.length !== 2 || !parts[0] || !parts[1]) return full;
       const rawA = idx.get(parts[0]);
@@ -550,7 +550,22 @@ export function fillPrices(text: string, prices: PricesFile): string {
       if (numsA.length === 0 || numsB.length === 0) return full;
       const a = Math.min(...numsA);
       const b = Math.max(...numsB);
+      if (kind === 'between') return `от ${formatNumRub(a)} до ${formatNumRub(b)} \u20bd`;
+      if (kind === 'pair') return `${formatNumRub(a)} и ${formatNumRub(b)} \u20bd`;
       return `${formatNumRub(a)}–${formatNumRub(b)} \u20bd`;
+    }
+    if (kind === 'sum') {
+      const parts = arg.split('+');
+      if (parts.length < 2 || parts.some((p) => !p)) return full;
+      let total = 0;
+      for (const p of parts) {
+        const raw = idx.get(p);
+        if (raw === undefined) return full;
+        const nums = extractPriceNumbers(raw).filter((n) => n > 0);
+        if (nums.length === 0) return full;
+        total += Math.min(...nums);
+      }
+      return `${formatNumRub(total)} \u20bd`;
     }
     if (kind === 'tyre') {
       const rawPass = idx.get(`${arg}-pass`);
@@ -579,13 +594,22 @@ export function missingPriceRefs(text: string, prices: PricesFile): string[] {
     const arg = m[2];
     if (kind === 'price' || kind === 'from' || kind === 'From') {
       if (!idx.has(arg)) addMissing(arg);
-    } else if (kind === 'span') {
+    } else if (kind === 'span' || kind === 'between' || kind === 'pair') {
       const parts = arg.split('..');
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         addMissing(arg);
       } else {
         if (!idx.has(parts[0])) addMissing(parts[0]);
         if (!idx.has(parts[1])) addMissing(parts[1]);
+      }
+    } else if (kind === 'sum') {
+      const parts = arg.split('+');
+      if (parts.length < 2 || parts.some((p) => !p)) {
+        addMissing(arg);
+      } else {
+        for (const p of parts) {
+          if (!idx.has(p)) addMissing(p);
+        }
       }
     } else if (kind === 'tyre') {
       if (!idx.has(`${arg}-pass`) || !idx.has(`${arg}-cross`)) addMissing(arg);

@@ -1,6 +1,10 @@
 /**
  * Круг 85: гейт синхронизации единого прайс-хранилища site/content/prices.json
- * со всеми страницами сайта (site/pages-dist/) и исходниками (.astro, seed-data.ts).
+ * со всеми страницами сайта (site/pages-dist/) и исходниками витрины
+ * (src/pages, src/components, src/layouts, src/server).
+ *
+ * Исключения из правила «зашитые суммы»: src/pages/admin/**, src/client/admin*,
+ * public/manage/** и src/server/prices-admin-store.ts — в админке примеры формата цены — это не витрина.
  *
  * Запуск: node scripts/check-prices-sync.mjs [--self-test]
  */
@@ -18,8 +22,12 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE_ROOT = join(HERE, '..');
 const PRICES_PATH = join(SITE_ROOT, 'content/prices.json');
 const DIST_DIR = join(SITE_ROOT, 'pages-dist');
-const PAGES_SRC_DIR = join(SITE_ROOT, 'src/pages');
-const SEED_DATA_PATH = join(SITE_ROOT, 'src/server/seed-data.ts');
+const SOURCE_DIRS = [
+  join(SITE_ROOT, 'src/pages'),
+  join(SITE_ROOT, 'src/components'),
+  join(SITE_ROOT, 'src/layouts'),
+  join(SITE_ROOT, 'src/server'),
+];
 const SELF = process.argv.includes('--self-test');
 
 let fail = 0;
@@ -63,6 +71,17 @@ const KEY_CROSS_PAGE_CHECKS = [
 ];
 
 const BARE_RUB_RE = /\d\s*₽/;
+
+export function isAdminPath(relPath) {
+  const norm = String(relPath ?? '').replace(/\\/g, '/').replace(/^\/+/, '');
+  return (
+    norm.startsWith('src/pages/admin/') ||
+    norm.startsWith('src/client/admin') ||
+    norm.startsWith('public/manage/') ||
+    norm.startsWith('site/public/manage/') ||
+    norm === 'src/server/prices-admin-store.ts'
+  );
+}
 
 export function checkCrossPageSync(prices, htmlByRelPath) {
   const mismatches = [];
@@ -142,7 +161,8 @@ export function checkServiceBadgesAndTitles(catalogServices, htmlByRelPath) {
   return issues;
 }
 
-export function detectBareRubleInSource(sourceText) {
+export function detectBareRubleInSource(sourceText, relPath = '') {
+  if (relPath && isAdminPath(relPath)) return false;
   return BARE_RUB_RE.test(sourceText);
 }
 
@@ -183,7 +203,7 @@ if (tSet === 8 && tRep === 3 && tExt === 4 && vLen === 15 && fLen === 3 && total
   bad(`ожидалось tyres 8/3/4, voyah 15, featured 3, всего позиций 73; получено tyres ${tSet}/${tRep}/${tExt}, voyah ${vLen}, featured ${fLen}, всего ${totalCount}`);
 }
 
-/* 2. Проверка отсутствия нераскрытых {{price:...}} / {{from:...}} / {{span:...}} в pages-dist/index.html */
+/* 2. Проверка отсутствия нераскрытых {{price|from|span|between|pair|sum|tyre:...}} в pages-dist/index.html */
 console.log('\n2. Проверка собранных HTML на нераскрытые подстановки:');
 const htmlFiles = walkFiles(DIST_DIR, (f) => f.endsWith('/index.html') || f === join(DIST_DIR, 'index.html'));
 if (htmlFiles.length === 0) {
@@ -192,12 +212,12 @@ if (htmlFiles.length === 0) {
   let leaked = 0;
   for (const file of htmlFiles) {
     const html = readFileSync(file, 'utf8');
-    if (/\{\{(price|from|From|span|tyre):/.test(html) || /\{\{[^}]*\}\}/.test(html)) {
+    if (/\{\{(price|from|From|span|between|pair|sum|tyre):/.test(html) || /\{\{[^}]*\}\}/.test(html)) {
       leaked++;
       bad(`нераскрытый плейсхолдер в ${relative(DIST_DIR, file)}`);
     }
   }
-  if (leaked === 0) ok(`во всех ${htmlFiles.length} HTML-файлах нет нераскрытых {{price|from|span|tyre:…}}`);
+  if (leaked === 0) ok(`во всех ${htmlFiles.length} HTML-файлах нет нераскрытых {{price|from|span|between|pair|sum|tyre:…}}`);
 }
 
 /* 3. Все не-скрытые позиции присутствуют на /prices и /voyah-free */
@@ -275,25 +295,32 @@ if (badgeIssues.length === 0) {
   for (const issue of badgeIssues) bad(issue);
 }
 
-/* 5. В исходниках .astro и seed-data.ts нет «голых» рублёвых сумм /\d\s*₽/ */
-console.log('\n5. Проверка исходников .astro и seed-data.ts на зашитые рублёвые суммы:');
-const astroFiles = walkFiles(PAGES_SRC_DIR, (f) => f.endsWith('.astro'));
-const sourceFiles = [...astroFiles, SEED_DATA_PATH];
+/* 5. В исходниках витрины (pages, components, layouts, server; кроме админки) нет «голых» рублёвых сумм /\d\s*₽/ */
+console.log('\n5. Проверка исходников витрины (pages, components, layouts, server; кроме админки) на зашитые рублёвые суммы:');
+const sourceFiles = SOURCE_DIRS.flatMap((dir) =>
+  walkFiles(dir, (f) => f.endsWith('.astro') || f.endsWith('.ts')),
+);
 let bareFound = 0;
+let checkedShowcaseCount = 0;
 for (const file of sourceFiles) {
+  const rel = relative(SITE_ROOT, file);
+  if (isAdminPath(rel)) continue;
+  checkedShowcaseCount++;
   const txt = readFileSync(file, 'utf8');
-  if (detectBareRubleInSource(txt)) {
+  if (detectBareRubleInSource(txt, rel)) {
     bareFound++;
-    bad(`в ${relative(SITE_ROOT, file)} найдена зашитая рублёвая сумма (/\\d\\s*₽/)`);
+    bad(
+      `в ${rel} найдена зашитая рублёвая сумма (/\\d\\s*₽/); на витрине используйте токены прайса (в админке примеры формата цены — это не витрина)`,
+    );
   }
   const miss = missingPriceRefs(txt, prices);
   if (miss.length > 0) {
     bareFound++;
-    bad(`в ${relative(SITE_ROOT, file)} неизвестные ссылки {{price|from|span|tyre:…}}: ${miss.join(', ')}`);
+    bad(`в ${rel} неизвестные ссылки {{price|from|span|between|pair|sum|tyre:…}}: ${miss.join(', ')}`);
   }
 }
 if (bareFound === 0) {
-  ok(`проверено ${sourceFiles.length} исходных файлов — зашитых сумм и битых ссылок нет`);
+  ok(`проверено ${checkedShowcaseCount} файлов витрины — зашитых сумм и битых ссылок нет (в админке примеры формата цены — это не витрина)`);
 }
 
 /* 6. Самопроверка --self-test на мутантах */
@@ -311,14 +338,19 @@ if (SELF) {
   const mismatchesA = checkCrossPageSync(mutantPricesA, htmlByRelPath);
   expectCaught('(а) подмена oil-sedan в прайсе ловится при сверке со старым HTML', mismatchesA.length > 0);
 
-  // (б) мутант 2: битые ссылки {{price:no-such-id}}, {{from:bad-from}}, {{span:oil-sedan..bad-span}} ловятся missingPriceRefs
+  // (б) мутант 2: битые ссылки во всех видах токенов ловятся missingPriceRefs
   const missB = missingPriceRefs(
-    'Тест {{price:no-such-id}}, {{from:bad-from}}, {{span:oil-sedan..bad-span}}.',
+    'Тест {{price:no-such-id}}, {{from:bad-from}}, {{span:oil-sedan..bad-span}}, {{between:oil-mt..bad-between}}, {{pair:set-r13-pass..bad-pair}}, {{sum:diag-susp+bad-sum}}.',
     prices,
   );
   expectCaught(
-    '(б) битые ссылки {{price:…}}, {{from:…}}, {{span:…}} ловятся через missingPriceRefs',
-    missB.includes('no-such-id') && missB.includes('bad-from') && missB.includes('bad-span'),
+    '(б) битые ссылки {{price:…}}, {{from:…}}, {{span:…}}, {{between:…}}, {{pair:…}}, {{sum:…}} ловятся через missingPriceRefs',
+    missB.includes('no-such-id') &&
+      missB.includes('bad-from') &&
+      missB.includes('bad-span') &&
+      missB.includes('bad-between') &&
+      missB.includes('bad-pair') &&
+      missB.includes('bad-sum'),
   );
 
   // (в) мутант 3: портим price: "бесплатно" -> validatePrices отвергает
@@ -327,8 +359,14 @@ if (SELF) {
   const resC = validatePrices(mutantPricesC);
   expectCaught('(в) невалидная цена "бесплатно" отвергается validatePrices', resC.ok === false);
 
-  // (г) мутант 4: строка "замена — 9999 ₽" в .astro-исходнике ловится детектором
-  expectCaught('(г) зашитая сумма "замена — 9999 ₽" в .astro ловится детектором', detectBareRubleInSource('<p>замена — 9999 ₽</p>'));
+  // (г) мутант 4: зашитая сумма в src/pages/prices.astro ловится, а в src/pages/admin/prices/index.astro — нет
+  expectCaught(
+    '(г) сумма в src/pages/prices.astro ловится, а в src/pages/admin/prices/index.astro — нет (в админке примеры формата цены — это не витрина)',
+    detectBareRubleInSource('<p>замена — 9999 ₽</p>', 'src/pages/prices.astro') === true &&
+      detectBareRubleInSource('<p>замена — 9999 ₽</p>', 'src/pages/admin/prices/index.astro') === false &&
+      detectBareRubleInSource('placeholder="1500 ₽"', 'src/client/admin-prices.ts') === false &&
+      detectBareRubleInSource('placeholder="1500 ₽"', 'public/manage/index.html') === false,
+  );
 
   // (д) мутант 5: подмена бейджа .svc-price у shinomontazh на минимум группы (от 600 ₽ вместо от 1000 ₽) ловится
   const mutantHtmlMap = new Map(htmlByRelPath);

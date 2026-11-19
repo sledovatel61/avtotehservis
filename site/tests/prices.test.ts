@@ -140,6 +140,48 @@ describe('prices-schema & prices-store (круг 85)', () => {
     );
   });
 
+  it('раскрывает токен {{between:idA..idB}} («от A до B ₽») и ловит битую ссылку', () => {
+    const prices = readPricesFile();
+    assert.equal(
+      fillPrices('С АКПП и вариаторами разброс шире — {{between:oil-mt..oil-at}}.', prices),
+      'С АКПП и вариаторами разброс шире — от 1500 до 3000 ₽.',
+    );
+    assert.deepEqual(missingPriceRefs('{{between:oil-mt..oil-at}}', prices), []);
+
+    const broken = 'Разброс {{between:oil-mt..no-such-at}}';
+    assert.deepEqual(missingPriceRefs(broken, prices), ['no-such-at']);
+    assert.equal(fillPrices(broken, prices), broken);
+  });
+
+  it('раскрывает токен {{pair:idA..idB}} («A и B ₽») и ловит битую ссылку', () => {
+    const prices = readPricesFile();
+    assert.equal(
+      fillPrices('R13 и R14 — {{pair:set-r13-pass..set-r13-cross}}; R20 — {{pair:set-r20-pass..set-r20-cross}}.', prices),
+      'R13 и R14 — 1800 и 2000 ₽; R20 — 3600 и 4000 ₽.',
+    );
+    assert.deepEqual(missingPriceRefs('{{pair:set-r13-pass..set-r13-cross}}', prices), []);
+
+    const broken = 'R21 — {{pair:set-r13-pass..missing-pair-id}}';
+    assert.deepEqual(missingPriceRefs(broken, prices), ['missing-pair-id']);
+    assert.equal(fillPrices(broken, prices), broken);
+  });
+
+  it('раскрывает токен {{sum:idA+idB}} («A+B ₽») и ловит битую ссылку', () => {
+    const prices = readPricesFile();
+    assert.equal(
+      fillPrices(
+        'Проверка в сервисе стоит {{sum:diag-susp+diag-comp}} (ходовая {{price:diag-susp}} плюс компьютерная диагностика {{price:diag-comp}}).',
+        prices,
+      ),
+      'Проверка в сервисе стоит 1300 ₽ (ходовая 500 ₽ плюс компьютерная диагностика 800 ₽).',
+    );
+    assert.deepEqual(missingPriceRefs('{{sum:diag-susp+diag-comp}}', prices), []);
+
+    const broken = 'Сумма {{sum:diag-susp+missing-sum-id}}';
+    assert.deepEqual(missingPriceRefs(broken, prices), ['missing-sum-id']);
+    assert.equal(fillPrices(broken, prices), broken);
+  });
+
   it('сохраняет незнакомые поля и флаг hidden при валидации и записи (round-trip)', () => {
     const base = structuredClone(readPricesFile());
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prices-rt-'));
