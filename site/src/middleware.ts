@@ -3,6 +3,7 @@ import { defineMiddleware, sequence } from 'astro:middleware';
 import type { APIContext } from 'astro';
 import { ensureWorkers } from './server/outbox.ts';
 import { resolveSession, SESSION_COOKIE } from './server/auth.ts';
+import { LEADS_BASE } from './shared/leads-endpoint.ts';
 
 /* 301 со старых адресов мокапа на ЧПУ (требование задания §6.4). */
 const STATIC_REDIRECTS: Record<string, string> = {
@@ -78,7 +79,9 @@ const securityHeaders = defineMiddleware(async (context: APIContext, next) => {
     "style-src 'self'",
     "img-src 'self' data:",
     "font-src 'self'",
-    "connect-src 'self'",
+    /* круг 87: форма отзыва шлёт POST в прослойку (Cloudflare Worker) — без её адреса
+       connect-src блокирует запрос. Демо-режим (адреса нет) остаётся со 'self'. */
+    `connect-src 'self'${LEADS_BASE ? ` ${LEADS_BASE}` : ''}`,
     "media-src 'self'",
     "object-src 'none'",
     process.env.ALLOW_FRAME_PREVIEW === '1' ? '' : "frame-ancestors 'none'",
