@@ -442,7 +442,9 @@ test('originAllowed не пускает пустой Origin и не расшир
   assert.equal(originAllowed(mk('https://sledovatel61.github.io'), e), true);
   assert.equal(originAllowed(mk('http://localhost:4321'), e), false, 'список не расширяется сам');
   assert.equal(originAllowed(mk(), e), false);
-  assert.equal(originAllowed(mk('https://sledovatel61.github.io'), {}), true, 'без конфига — дефолтный список');
+  /* Дефолтного списка больше нет: без ALLOWED_ORIGINS не разрешён никто
+     (fail-closed), иначе после переезда хардкод пускал бы старый адрес. */
+  assert.equal(originAllowed(mk('https://sledovatel61.github.io'), {}), false, 'без конфига — отказ');
 });
 
 test('hashIp одинаков для одного адреса и разный для разных, без самого адреса', async () => {

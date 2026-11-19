@@ -67,9 +67,14 @@ function corsHeaders(req: Request, env: Env): Record<string, string> {
   const origin = req.headers.get('origin') ?? '';
   const ok = allowed.includes(origin) || allowed.includes('*');
   return {
-    'access-control-allow-origin': ok ? origin : allowed[0] ?? 'null',
+    /* Не разрешено (в том числе пустой список) — отдаём `null`: браузер такой
+       ответ заблокирует, и подставлять чужой адрес из конфига не нужно. */
+    'access-control-allow-origin': ok ? origin : 'null',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
     'access-control-allow-headers': 'content-type',
+    /* `retry-after` на 429 не входит в safelist, поэтому без этого заголовка
+       кросс-доменный JS не видит, через сколько секунд повторять. */
+    'access-control-expose-headers': 'retry-after',
     'access-control-max-age': '86400',
     vary: 'origin',
   };

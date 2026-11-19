@@ -116,8 +116,10 @@ npx wrangler deploy
 
 Пока переменная не задана, сайт остаётся в демо-режиме — это нормальное состояние.
 
-Когда появится домен, добавить его origin в `ALLOWED_ORIGINS` в `wrangler.toml` и передеплоить:
-без этого браузер заблокирует запрос (CORS).
+Список источников — **только** `ALLOWED_ORIGINS` в `wrangler.toml` (`https://ats-rostov.ru`,
+`https://www.ats-rostov.ru`, превью `https://sledovatel61.github.io` и `localhost`); пустой
+список = все запросы из браузера отклоняются (fail-closed). Дефолтов в коде нет: новый домен
+дописывается в `wrangler.toml`, иначе сайт получит `403 {"error":"origin"}`.
 
 ## Отзывы
 
@@ -184,7 +186,9 @@ npx wrangler deploy
 - `Origin` проверяется до чтения тела: чужой сайт не тратит наш лимит.
 - CORS — только по списку `ALLOWED_ORIGINS`. Новый домен дописывает владелец
   в `wrangler.toml` при переезде; хардкода адресов в коде нет.
-- `OPTIONS /reviews` → `204` с теми же заголовками.
+- `OPTIONS /reviews` → `204` с теми же заголовками. В них есть
+  `access-control-expose-headers: retry-after` — без него кросс-доменный JS не видит
+  `Retry-After` на `429` и форма не может показать, через сколько секунд повторять.
 - В логах только `id`, длина текста и результат доставки. Ни текста отзыва,
   ни имени там нет — они уходят только в Telegram и на почту владельца.
 - `/health` отдаёт `"reviews": true` и `"reviewsKv": false|true` рядом с прежними
@@ -233,7 +237,12 @@ npx wrangler dev  # локальный запуск, секреты берутс
 ```
 BOT_TOKEN=…
 TELEGRAM_CHAT_ID=…
+# Своего списка источников в коде нет: локально его задаёт эта строка,
+# иначе браузер с http://localhost:4321 получит 403.
+ALLOWED_ORIGINS=http://localhost:4321,http://127.0.0.1:4321
 ```
+
+Вместо файла можно разово передать значение: `npx wrangler dev --var ALLOWED_ORIGINS=http://localhost:4321`.
 
 ## Что важно помнить
 

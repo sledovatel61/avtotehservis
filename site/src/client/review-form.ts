@@ -6,6 +6,13 @@
  * своего маршрута /api/reviews у Astro-сервера нет.
  *
  * Отзыв всегда уходит на модерацию — автопубликации нет.
+ *
+ * Круг 88: разбор ошибок воркера. `POST /reviews` отвечает ПЛОСКО —
+ * `{error:'validation', fields:{text:'too_short'}}`, `{error:'consent_version'}`,
+ * `{error:'origin'}`, `{error:'too_large'}`, `{error:'rate_limit', retryAfter}`,
+ * `{error:'delivery_failed'}`, — а заявки отвечают ВЛОЖЕННО, как у `/leads`:
+ * `{error:{code, message, fields}}`. Понимаем оба формата: коды полей
+ * переводим в русские тексты, неизвестный код или поле — общее сообщение.
  */
 import { LEADS_BASE, leadsFetch, retryAfterSeconds } from '../shared/leads-endpoint.ts';
 
@@ -15,6 +22,94 @@ export const REVIEW_FORM_LIMITS = Object.freeze({
 });
 
 const LINK_RE = /(https?:\/\/|www\.)/i;
+
+/** Коды полей воркера → тексты под полем. Ключи — как в `relay/src/validate.ts`
+ *  (`consentVersion`), плюс `consent` на случай будущей смены ключа. */
+const FIELD_TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = Object.freeze({
+  author: Object.freeze({
+    required: 'Укажите имя',
+    too_short: 'Имя — от 2 до 40 символов',
+    too_long: 'Имя — до 40 символов',
+    link_not_allowed: 'Ссылки в имени не нужны — уберите адрес',
+  }),
+  text: Object.freeze({
+    required: 'Напишите текст отзыва',
+    too_short: 'Текст — от 20 знаков: что делали и как приняли',
+    too_long: 'Текст — до 1500 знаков',
+    repeated_lines: 'Похоже на повтор одного и того же — напишите своими словами',
+    link_not_allowed: 'Ссылки в отзыве не нужны — уберите http, www, t.me',
+  }),
+  rating: Object.freeze({
+    required: 'Поставьте оценку от 1 до 5',
+    out_of_range: 'Поставьте оценку от 1 до 5',
+  }),
+  consent: Object.freeze({ required: 'Поставьте галочку согласия' }),
+  consentVersion: Object.freeze({ required: 'Поставьте галочку согласия' }),
+});
+
+/** Код ошибки уровня запроса, разобранный из ответа (плоского или вложенного). */
+interface ApiFailure {
+  code: string;
+  message: string;
+  fields: Record<string, string>;
+}
+
+function asObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+/** `{…:'code'}` или `{…:['code']}` → `{…:'code'}`; прочее игнорируем. */
+function normalizeFields(value: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  const obj = asObject(value);
+  if (!obj) return out;
+  for (const [key, raw] of Object.entries(obj)) {
+    if (typeof raw === 'string' && raw) out[key] = raw;
+    else if (Array.isArray(raw) && typeof raw[0] === 'string' && raw[0]) out[key] = raw[0];
+  }
+  return out;
+}
+
+/**
+ * Плоский `{error:'code', message?, fields?}` и вложенный
+ * `{error:{code?,message?,fields?}}` → один вид. Всё остальное — `null`.
+ */
+export function parseApiFailure(payload: unknown): ApiFailure | null {
+  const obj = asObject(payload);
+  if (!obj) return null;
+  const message = typeof obj.message === 'string' ? obj.message : '';
+  const fields = normalizeFields(obj.fields);
+  const error = obj.error;
+  if (typeof error === 'string') {
+    return { code: error, message, fields };
+  }
+  const inner = asObject(error);
+  if (inner) {
+    const code = typeof inner.code === 'string' ? inner.code : '';
+    const innerMessage = typeof inner.message === 'string' ? inner.message : message;
+    return { code, message: innerMessage, fields: normalizeFields(inner.fields ?? obj.fields) };
+  }
+  if (message) return { code: '', message, fields };
+  return null;
+}
+
+/**
+ * Секунды до следующей попытки: сначала `retry-after`, если его нет — `retryAfter`
+ * из тела (прокси иногда срезает заголовок). Разумный диапазон 1–3600, иначе null.
+ */
+export function parseRetrySeconds(header: string | null, payload: unknown): number | null {
+  const sane = (n: number): number | null =>
+    Number.isFinite(n) && n >= 1 && n <= 3600 ? Math.round(n) : null;
+  const fromHeader = retryAfterSeconds(header);
+  if (fromHeader !== null) {
+    const ok = sane(fromHeader);
+    if (ok !== null) return ok;
+  }
+  const obj = asObject(payload);
+  const flat = obj ? Number(obj.retryAfter) : Number.NaN;
+  const nested = asObject(obj?.error) ? Number((obj?.error as Record<string, unknown>).retryAfter) : Number.NaN;
+  return sane(flat) ?? sane(nested);
+}
 
 const form = document.getElementById('rev-form') as HTMLFormElement | null;
 if (form) setup(form);
@@ -144,6 +239,36 @@ function setup(root: HTMLFormElement): void {
     setStatus('error', message);
   }
 
+  /** Тексты, которым нужны контакты страницы: почта (data-email) и телефон (data-phone). */
+  function originRejectedText(): string {
+    const email = (root.getAttribute('data-email') ?? '').trim();
+    if (email && phone) return `Отправка с этого адреса недоступна. Напишите нам на ${email} или позвоните: ${phone}.`;
+    if (phone) return `Отправка с этого адреса недоступна. Позвоните нам: ${phone}.`;
+    if (email) return `Отправка с этого адреса недоступна. Напишите нам на ${email}.`;
+    return 'Отправка с этого адреса недоступна. Попробуйте позже.';
+  }
+
+  /** Подсветка полей по кодам воркера; null — ни одного понятного кода. */
+  function showFieldErrors(fields: Record<string, string>): HTMLElement | null {
+    const byKey: Record<string, HTMLElement | null> = {
+      author: nameEl,
+      text: textEl,
+      rating: stars[0] ?? null,
+      consent: consentEl,
+      consentVersion: consentEl,
+    };
+    let first: HTMLElement | null = null;
+    for (const [key, code] of Object.entries(fields)) {
+      const el = byKey[key];
+      if (!el) continue;
+      const text = FIELD_TEXTS[key]?.[code];
+      if (!text) continue;
+      setErr(el, text);
+      if (!first) first = el;
+    }
+    return first;
+  }
+
   async function submit(): Promise<void> {
     if (busy || !endpoint) return;
     if (done) done.hidden = true;
@@ -181,28 +306,44 @@ function setup(root: HTMLFormElement): void {
         succeed('Спасибо! Отзыв ушёл на проверку — опубликуем в течение дня.');
         return;
       }
+
+      /* Дальше — только ошибки. Тело может быть любым (прокси, HTML, пусто):
+         читаем один раз и работаем с тем, что разобралось. */
+      const payload: unknown = await res.json().catch(() => null);
+      const failure = parseApiFailure(payload);
+
       if (res.status === 429) {
-        const wait = retryAfterSeconds(res.headers.get('retry-after'));
+        const wait = parseRetrySeconds(res.headers.get('retry-after'), payload);
         fail(wait ? `Слишком часто. Попробуйте через ${wait} с.` : 'Слишком часто. Попробуйте через несколько минут.');
         return;
       }
-      if (res.status === 400) {
-        const j = await res.json().catch(() => null) as { error?: { message?: string; fields?: Record<string, string> } } | null;
-        const fields = j?.error?.fields ?? {};
-        const byKey: Record<string, HTMLElement | null> = { author: nameEl, text: textEl, rating: stars[0] ?? null, consent: consentEl };
-        let first: HTMLElement | null = null;
-        for (const [key, msg] of Object.entries(fields)) {
-          const el = byKey[key] ?? null;
-          if (!el) continue;
-          setErr(el, String(msg));
-          if (!first) first = el;
-        }
-        if (first) {
-          setStatus('error', 'Проверьте, пожалуйста, выделенные поля.');
-          try { first.focus(); } catch { /* ignore */ }
-        } else {
-          fail(j?.error?.message ? String(j.error.message) : 'Отзыв не принят — проверьте текст и оценку.');
-        }
+      if (failure?.code === 'consent_version') {
+        fail('Документ согласия обновился. Обновите страницу и подтвердите согласие ещё раз.');
+        return;
+      }
+      if (res.status === 403 || failure?.code === 'origin') {
+        fail(originRejectedText());
+        return;
+      }
+      if (res.status === 413 || failure?.code === 'too_large') {
+        fail(`Отзыв слишком длинный — сократите до ${REVIEW_FORM_LIMITS.text.max} знаков.`);
+        return;
+      }
+      if (failure?.code === 'delivery_failed') {
+        fail(`Не получилось передать отзыв. Попробуйте через минуту${phone ? ` или позвоните: ${phone}` : ''}.`);
+        return;
+      }
+
+      /* Ошибки полей: код → русский текст. Неизвестное поле или код не
+         выдумываем — тогда ниже покажем общее сообщение. */
+      const firstBad = failure ? showFieldErrors(failure.fields) : null;
+      if (firstBad) {
+        setStatus('error', 'Проверьте, пожалуйста, выделенные поля.');
+        try { firstBad.focus(); } catch { /* ignore */ }
+        return;
+      }
+      if (failure?.message) {
+        fail(failure.message);
         return;
       }
       fail(`Не удалось отправить, попробуйте позже${phone ? ` или позвоните: ${phone}` : ''}.`);
