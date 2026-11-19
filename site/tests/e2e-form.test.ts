@@ -2,7 +2,7 @@
    Проверяет 5 экранов, ошибки под полями, черновик, успех с серверным талоном. */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,14 @@ const SITE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = mkdtempSync(join(tmpdir(), 'ats-e2e-'));
 const DIRS = { data: join(TMP, 'data'), media: join(TMP, 'media'), mail: join(TMP, 'mail') };
 mkdirSync(DIRS.mail, { recursive: true });
+
+/* Витрина работ читает site/content/cases.json (круг 79). Если файл непустой,
+   главная показывает ссылки на /raboty/<slug> и лайтбокса там нет — он живёт в
+   режиме «файла работ ещё нет» (сид-работы + иллюстрации CASE_COVERS) и в
+   одиночном просмотре документов. Лайтбокс проверяем именно в этом штатном
+   режиме: подменяем путь пустым файлом работ. */
+const EMPTY_CASES = join(TMP, 'empty-cases.json');
+writeFileSync(EMPTY_CASES, JSON.stringify({ version: 1, updated_at: '', cases: [] }));
 
 function freePort(): Promise<number> {
   return new Promise((r, e) => {
@@ -34,7 +42,8 @@ before(async () => {
   srv = spawn(process.execPath, [join(SITE_ROOT, 'dist/server/entry.mjs')], {
     cwd: SITE_ROOT,
     env: { ...process.env, HOST: '127.0.0.1', PORT: String(port), SMTP_JSON_DIR: DIRS.mail,
-           SESSION_SECRET: 'e2e', RATE_LIMIT_LEADS: '1000', RATE_LIMIT_UPLOADS: '1000' },
+           SESSION_SECRET: 'e2e', RATE_LIMIT_LEADS: '1000', RATE_LIMIT_UPLOADS: '1000',
+           CASES_FILE: EMPTY_CASES },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   srv.stderr?.on('data', (d) => { if (process.env.TEST_DEBUG) console.error('[e2e-srv]', String(d)); });
@@ -259,8 +268,13 @@ test('лайтбокс: клик по карточке открывает, Esc �
   assert.equal(lb?.getAttribute('aria-modal'), 'true');
   assert.ok(!lb?.classList.contains('is-open'), 'скрыт по умолчанию');
 
-  const cards = $$('[data-gal]', doc);
-  assert.ok(cards.length >= 2, 'карточки кейсов на месте');
+  /* Карточки ищем по смыслу: кнопки галереи внутри секции работ, а не по всему
+     документу. `data-gal` — контракт лайтбокса (client/lightbox.ts читает по нему
+     data-img/data-title/data-sub), а не класс оформления. */
+  const worksSection = $('#gal-h', doc)?.closest('section');
+  assert.ok(worksSection, 'секция работ найдена по заголовку');
+  const cards = Array.from((worksSection as HTMLElement).querySelectorAll('[data-gal]')) as HTMLElement[];
+  assert.ok(cards.length >= 2, 'карточки галереи работ на месте');
   const first = cards[0] as HTMLElement;
   const wantTitle = first.getAttribute('data-title') ?? '';
   first.focus(); // в браузере клик фокусирует кнопку — воспроизводим

@@ -1,7 +1,7 @@
 /* Админка: вход, блокировка, CSRF, сессия, видимость черновиков, статусы и журнал. */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,14 @@ const SITE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = mkdtempSync(join(tmpdir(), 'ats-adm-'));
 const DIRS = { data: join(TMP, 'data'), media: join(TMP, 'media'), mail: join(TMP, 'mail') };
 mkdirSync(DIRS.mail, { recursive: true });
+
+/* Режим «файла работ ещё нет». Витрина работ читает site/content/cases.json
+   (круг 79); если там есть опубликованные работы, публичные страницы рисуют их
+   и таблица `cases` на главную не влияет. Админский тест проверяет публикацию
+   через `cases` — это штатный режим совместимости (файла работ нет), поэтому
+   подменяем путь пустым файлом и не зависим от содержимого репозитория. */
+const EMPTY_CASES = join(TMP, 'empty-cases.json');
+writeFileSync(EMPTY_CASES, JSON.stringify({ version: 1, updated_at: '', cases: [] }));
 
 let port = 0, srv: ChildProcess | null = null, BASE = '';
 const ADMIN_LOGIN = 'owner';
@@ -45,7 +53,7 @@ before(async () => {
   BASE = `http://127.0.0.1:${port}`;
   srv = spawn(process.execPath, [join(SITE_ROOT, 'dist/server/entry.mjs')], {
     cwd: SITE_ROOT,
-    env: { ...process.env, HOST: '127.0.0.1', PORT: String(port), SMTP_JSON_DIR: DIRS.mail, SESSION_SECRET: 'adm-test', RATE_LIMIT_LEADS: '1000' },
+    env: { ...process.env, HOST: '127.0.0.1', PORT: String(port), SMTP_JSON_DIR: DIRS.mail, SESSION_SECRET: 'adm-test', RATE_LIMIT_LEADS: '1000', CASES_FILE: EMPTY_CASES },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   srv.stderr?.on('data', (d) => { if (process.env.TEST_DEBUG) console.error('[adm-srv]', String(d)); });
