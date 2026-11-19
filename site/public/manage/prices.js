@@ -1,7 +1,8 @@
-import {validate, slugifyRu} from './prices-schema.js';
+import {LIMITS, validate, slugifyRu, isValidPrice} from './prices-schema.js';
 import {escapeHTML as esc} from './store.js';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const PRICE_ERROR='Похоже, это не цена. Напишите, например: 1200 ₽';
+const CATEGORY_LIMIT_ERROR='В одной категории не больше 40 работ. Заведите новую категорию через разработчика.';
 const VERSION_ERROR='Файл цен от другой версии сайта, сообщите разработчику';
 const readError=result=>result.errors.includes(VERSION_ERROR)?VERSION_ERROR:'Не удалось прочитать цены. Обратитесь к разработчику.';
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
@@ -11,7 +12,7 @@ const findCategory=(doc,key)=>{
  return key==='voyah'?doc.voyah:undefined;
 };
 const allIds=doc=>new Set([...doc.groups.flatMap(g=>[g.id,...g.items.map(p=>p.id)]),...['set','repair','extra'].flatMap(k=>doc.tyres[k].map(p=>p.id)),...doc.voyah.map(p=>p.id),...doc.featured.map(p=>p.id)]);
-const nextId=(name,used)=>{const base=slugifyRu(name)||'rabota';let id=base,n=2;while(used.has(id))id=`${base}-${n++}`;used.add(id);return id;};
+const nextId=(name,used)=>{let base=slugifyRu(name);if(base.length<LIMITS.id[0])base='poziciya';let id=base,n=2;while(used.has(id)){const suffix=`-${n++}`;id=base.slice(0,LIMITS.id[1]-suffix.length).replace(/-+$/,'')+suffix;}used.add(id);return id;};
 const categories=doc=>[
  ...doc.groups.map(g=>({key:`group:${g.id}`,title:g.title,kind:'group',items:g.items})),
  {key:'tyres:set',title:'Шиномонтаж — комплект',kind:'set',items:doc.tyres.set},
@@ -19,7 +20,7 @@ const categories=doc=>[
  {key:'tyres:extra',title:'Дополнительные работы с колёсами',kind:'extra',items:doc.tyres.extra},
  {key:'voyah',title:'Voyah Free',kind:'voyah',items:doc.voyah}
 ];
-const nameOf=(p,kind)=>kind==='set'?p.radius:kind==='repair'?p.range:p.name;
+const nameOf=(p,kind)=>kind==='set'?p.radius:kind==='repair'?(p.radius??p.range):p.name;
 const priceFields=kind=>kind==='set'?[['passenger','Легковой автомобиль'],['crossover','Кроссовер']]:[['price','Цена']];
 function errorText(e){if(e?.status===401)return 'Ключ доступа не принят. Проверьте его срок.';if(e?.status===403)return 'Нет доступа к ценам. Проверьте права ключа.';if(e?.status===404)return 'Список цен пока недоступен. Обратитесь к разработчику.';if(e?.status===409||e?.status===422)return e.message?.startsWith('Кто-то')?e.message:'Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз — мы повторим.';return e?.message||'Не удалось сохранить: нет связи. Попробуйте ещё раз.';}
 export function createPrices(root){
@@ -34,7 +35,7 @@ export function createPrices(root){
  function rowHTML(cat,p,kind){const change=changed(cat,p.id),value=change?{...p,...change.fields}:p,hidden=!!value.hidden,isNew=!!change?.isNew;
   return `<article class="price-row ${hidden?'price-hidden':''}" data-row="${esc(keyOf(cat,p.id))}"><div class="price-row-title"><strong>${esc(nameOf(value,kind))}</strong>${hidden?'<span class="badge draft">Скрыто</span>':''}${isNew?'<span class="badge ok">Новая</span>':''}</div>${priceFields(kind).map(([field,label])=>`<label>${esc(label)}<span class="hint field-hint">Сейчас: ${esc(isNew?'новая работа':p[field])}</span><input type="text" maxlength="40" data-price-field="${field}" value="${esc(value[field]??'')}" aria-label="Новая цена: ${esc(nameOf(value,kind))}, ${esc(label)}" placeholder="Новая цена"><span class="field-error" data-price-error="${field}" role="alert"></span></label>`).join('')}<div class="price-actions"><button class="button small" data-save-row>Сохранить</button><button class="button small ${hidden?'':'danger'}" data-hide-row>${hidden?'Показать обратно':'Скрыть'}</button></div></article>`;
  }
- function addForm(cat){const first=cat.kind==='set'?'Радиус':cat.kind==='repair'?'Радиус или диапазон':'Название работы';return `<form class="price-add" data-add="${esc(cat.key)}"><h3>Добавить работу</h3><label>${first}<input name="name" maxlength="160" required placeholder="${cat.kind==='set'?'Например, R17':cat.kind==='repair'?'Например, R13–R15':'Название работы'}"></label><label>${cat.kind==='set'?'Легковой автомобиль':'Цена'}<input name="price" maxlength="40" required placeholder="Например, 1500 ₽"></label>${cat.kind==='set'?'<label>Кроссовер<input name="crossover" maxlength="40" required placeholder="Например, 2000 ₽"></label>':''}<button class="button" type="submit">Добавить</button><span class="field-error" data-add-error role="alert"></span></form>`;}
+ function addForm(cat){const first=cat.kind==='set'?'Радиус':cat.kind==='repair'?'Радиус или диапазон':'Название работы';return `<form class="price-add" data-add="${esc(cat.key)}"><h3>Добавить работу</h3><label>${first}<input name="name" minlength="2" maxlength="${cat.kind==='set'||cat.kind==='repair'?LIMITS.radius[1]:LIMITS.name[1]}" required placeholder="${cat.kind==='set'?'Например, R17':cat.kind==='repair'?'Например, R13–R15':'Название работы'}"></label><label>${cat.kind==='set'?'Легковой автомобиль':'Цена'}<input name="price" maxlength="40" required placeholder="Например, 1500 ₽"></label>${cat.kind==='set'?'<label>Кроссовер<input name="crossover" maxlength="40" required placeholder="Например, 2000 ₽"></label>':''}<button class="button" type="submit">Добавить</button><span class="field-error" data-add-error role="alert"></span></form>`;}
  function render(){
   if(!api){root.innerHTML='<div class="empty">Нет подключения — введите ключ доступа в разделе выше.</div>';return;}
   if(!snapshot){root.innerHTML='<div class="notice" data-price-message role="status" aria-live="polite"></div>';return;}
@@ -45,10 +46,10 @@ export function createPrices(root){
    row.querySelector('[data-hide-row]').onclick=()=>{const current=changed(cat,id),hidden=!!(current?.fields.hidden??item.hidden);if(!hidden&&!confirm('Скрыть эту работу на сайте после обновления?'))return;updateExisting(cat,item,'hidden',!hidden);render();};
    row.querySelector('[data-save-row]').onclick=()=>save([keyOf(cat,id)]);
   });
-  root.querySelectorAll('[data-add]').forEach(form=>form.onsubmit=e=>{e.preventDefault();const cat=cats.find(x=>x.key===form.dataset.add),name=form.elements.name.value.trim(),price=form.elements.price.value.trim(),other=form.elements.crossover?.value.trim();const out=form.querySelector('[data-add-error]');if(!name||name.length>160){out.textContent='Укажите название работы.';return;}if(!validPrice(price)||(cat.kind==='set'&&!validPrice(other))){out.textContent=PRICE_ERROR;return;}const used=allIds(doc);for(const change of changes.values())if(change.isNew)used.add(change.id);const id=nextId(name,used);const fields={id,...(cat.kind==='set'?{radius:name,passenger:price,crossover:other}:cat.kind==='repair'?{range:name,price}:cat.kind==='voyah'?{name,note:'',price}:{name,price})};changes.set(keyOf(cat.key,id),{cat:cat.key,id,fields,original:null,isNew:true});render();message('Работа добавлена. Сохраните изменения.');});
+  root.querySelectorAll('[data-add]').forEach(form=>form.onsubmit=e=>{e.preventDefault();const cat=cats.find(x=>x.key===form.dataset.add),name=form.elements.name.value.trim(),price=form.elements.price.value.trim(),other=form.elements.crossover?.value.trim();const out=form.querySelector('[data-add-error]');const limit=cat.kind==='set'||cat.kind==='repair'?LIMITS.radius:LIMITS.name;const max=cat.kind==='voyah'?LIMITS.maxVoyahItems:LIMITS.maxGroupItems;const pending=[...changes.values()].filter(x=>x.cat===cat.key&&x.isNew).length;if(cat.items.length+pending>=max){out.textContent=CATEGORY_LIMIT_ERROR;return;}if(name.length<limit[0]||name.length>limit[1]){out.textContent=`Название должно содержать от ${limit[0]} до ${limit[1]} символов.`;return;}if(!validPrice(price)||(cat.kind==='set'&&!validPrice(other))){out.textContent=PRICE_ERROR;return;}const used=allIds(doc);for(const change of changes.values())if(change.isNew)used.add(change.id);const id=nextId(name,used);const fields={id,...(cat.kind==='set'?{radius:name,passenger:price,crossover:other}:cat.kind==='repair'?{range:name,price}:cat.kind==='voyah'?{name,note:'',price}:{name,price})};changes.set(keyOf(cat.key,id),{cat:cat.key,id,fields,original:null,isNew:true});render();message('Работа добавлена. Сохраните изменения.');});
   root.querySelector('[data-save-all]').onclick=()=>save([...changes.keys()]);root.querySelectorAll('[data-save-category]').forEach(b=>b.onclick=()=>save([...changes].filter(([,c])=>c.cat===b.dataset.saveCategory).map(([key])=>key)));
  }
- function validPrice(value){return typeof value==='string'&&value.trim().length>=1&&value.trim().length<=40&&/\d/.test(value);}
+ const validPrice=isValidPrice;
  function validateSelected(selected){for(const change of selected){const cat=categories(snapshot.json).find(x=>x.key===change.cat);if(!cat)throw Error('Раздел больше не найден. Обновите страницу.');for(const [field] of priceFields(cat.kind)){const value=change.fields[field]??change.original?.[field];if(!validPrice(value)){const row=[...root.querySelectorAll('[data-row]')].find(el=>el.dataset.row===keyOf(change.cat,change.id));const out=row?.querySelector(`[data-price-error="${field}"]`);if(out)out.textContent=PRICE_ERROR;throw Error(PRICE_ERROR);}}}}
  async function save(keys){if(saving||!api)return;const selected=keys.map(k=>changes.get(k)).filter(Boolean);if(!selected.length){message('Нет изменений для сохранения.');return;}try{validateSelected(selected);}catch(e){message(e.message,true);return;}
   saving=true;root.querySelectorAll('button,input').forEach(x=>x.disabled=true);message('Сохраняем изменения…');
@@ -58,7 +59,7 @@ export function createPrices(root){
     const next=clone(latest),used=allIds(next),missing=[],conflicts=[];
     const selectedKeys=new Set(keys);for(const [key,change] of changes)if(change.isNew&&!selectedKeys.has(key))used.add(change.id);
     for(const change of selected){const rows=findCategory(next,change.cat);if(!Array.isArray(rows)){missing.push(nameOf(change.fields,change.cat==='tyres:set'?'set':change.cat==='tyres:repair'?'repair':'group')||change.id);continue;}
-     if(change.isNew){const added=clone(change.fields);if(used.has(added.id))added.id=nextId(added.name||added.radius||added.range,used);else used.add(added.id);rows.push(added);continue;}
+     if(change.isNew){const max=change.cat==='voyah'?LIMITS.maxVoyahItems:LIMITS.maxGroupItems;if(rows.length>=max)throw Error(CATEGORY_LIMIT_ERROR);const added=clone(change.fields);if(used.has(added.id))added.id=nextId(added.name||added.radius||added.range,used);else used.add(added.id);rows.push(added);continue;}
      const item=rows.find(p=>p.id===change.id);if(!item){missing.push(change.original.name||change.original.radius||change.original.range||change.id);continue;}
      for(const [field,value] of Object.entries(change.fields)){const prior=change.original[field],current=item[field];if(current!==prior&&current!==value&&!(field==='hidden'&&!current&&!prior))conflicts.push(change.original.name||change.original.radius||change.original.range||change.id);}
      Object.assign(item,change.fields);
