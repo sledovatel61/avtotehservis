@@ -134,7 +134,7 @@ docs/backlog.md           состояние проекта: владельцу 
 | `scripts/check-prices-sync.mjs --refs-only` | нет зашитых сумм и битых `{{price:…}}` |
 | `scripts/check-reviews.mjs` / `check-reviews-artifact.mjs` | схема отзывов и отсутствие демо на домене |
 | `scripts/check-cases.mjs` | записи работ и файлы фото согласованы |
-| `scripts/check-news.mjs` (+`--strict`) | схема статей, черновики не попадают в артефакт — **появляется в круге 89**, задание `prompts/130` |
+| `scripts/check-news.mjs` (+`--strict`) | схема `site/content/news.json`, черновики не попадают в артефакт |
 | `scripts/check-media-budget.mjs` | бюджет веса фото |
 | `scripts/check-analytics.mjs` | без ID счётчиков в HTML нет; с ID — есть — **появляется в круге 89**, задание `prompts/133` |
 | `scripts/check-intro-3d-off.mjs` | заставка и 3D остаются выключенными |
