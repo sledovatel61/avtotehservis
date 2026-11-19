@@ -4,6 +4,7 @@ import { getSettings } from '../server/settings.ts';
 import { listCatalogServices } from '../server/services.ts';
 import { fmtDateRu, plural } from '../server/format.ts';
 import { svcImgKey } from '../server/svc-img.ts';
+import { PRICE_DISCLAIMER_SHORT } from '../server/prices.ts';
 
 const S = getSettings();
 const services = listCatalogServices();
@@ -37,6 +38,7 @@ const jsonLd = [
     <span class="eyebrow">Услуги</span>
     <h1>Услуги и цены: что делаем на Портовой, 439</h1>
     <p class="lead">Восемь направлений: шины, ТО, тормоза, подвеска, ГРМ и сцепление, сварочные работы, диагностика и автокондиционеры. У каждой услуги — цена «от» по прайсу сервиса; точную сумму называем после осмотра, до начала работ.</p>
+    <p class="price-disclaimer price-disclaimer--compact">{PRICE_DISCLAIMER_SHORT}</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="sv-grid-h">

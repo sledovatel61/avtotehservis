@@ -7,6 +7,7 @@ import { getService, otherServices } from '../../server/services.ts';
 import { mdToHtml } from '../../server/markdown.ts';
 import { svcImgKey } from '../../server/svc-img.ts';
 import { SVC_ALIASES, PRICE_ANCHOR } from '../../server/svc-aliases.ts';
+import { PRICE_DISCLAIMER_SHORT } from '../../server/prices.ts';
 
 const S = getSettings();
 const { slug } = Astro.params;
@@ -73,6 +74,7 @@ const jsonLd = svc ? [
         <div class="price-note">
           <b>Цены — за работу</b>
           <p>Запчасти и расходники в стоимость не входят. Диапазон означает разную сложность и крепление на разных машинах: точную сумму называем до начала работ, после осмотра. Полный прайс — в разделе <a href={`/prices#${PRICE_ANCHOR[svc.slug] ?? 'to'}`} class="u-brass">«Прайс»</a>.</p>
+          <p class="price-disclaimer price-disclaimer--inline">{PRICE_DISCLAIMER_SHORT}</p>
         </div>
       </div>
       <aside class="svc-side reveal" data-d="1">
