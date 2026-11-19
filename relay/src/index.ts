@@ -4,6 +4,11 @@
  * Контракт (задание 80-1, менять нельзя):
  *   GET  /health              → { ok, service:'ats-leads', time, telegram, email, emailTo, consentVersion, kv }
  *   GET  /slots?date=…        → { date, slots:[{time, available, reason?}] }
+ *   POST /reviews             → 201 { ok:true, status:'pending', id }  (отзыв, только модерация)
+ *                               400 { error:'validation'|'consent_version'|'link_not_allowed' }
+ *                               403 { error:'origin' }, 413 { error:'too_large' }
+ *                               429 { error:'rate_limit', retryAfter } + Retry-After
+ *                               503 { error:'delivery_failed' }
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
  *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
  *                               400 { error:{ code:'validation'|'bad_json'|'consent_version', message, fields? } }
@@ -18,6 +23,8 @@ import { validateLead, MIN_FILL_MS, type LeadPayload } from './validate.ts';
 import { getSlots, isValidSlotDate } from './slots.ts';
 import { composeTelegram, sendTelegram, sendPhotos } from './telegram.ts';
 import { emailProvider, sendEmail, DEFAULT_EMAIL_TO } from './email.ts';
+import { handleReview, reviewsHealth, type ReviewsStore } from './reviews.ts';
+import { allowedOrigins } from './origins.ts';
 
 export interface Env {
   BOT_TOKEN?: string;
@@ -41,8 +48,6 @@ interface KVNamespace {
   put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
 }
 
-const DEFAULT_ORIGINS = ['https://sledovatel61.github.io', 'http://localhost:4321', 'http://127.0.0.1:4321'];
-
 const json = (data: unknown, status = 200, extra: Record<string, string> = {}): Response =>
   new Response(JSON.stringify(data), {
     status,
@@ -58,8 +63,7 @@ const err = (
 ): Response => json({ error: { code, message, ...(fields ? { fields } : {}) } }, status, extra);
 
 function corsHeaders(req: Request, env: Env): Record<string, string> {
-  const allowed = (env.ALLOWED_ORIGINS ?? DEFAULT_ORIGINS.join(','))
-    .split(',').map((s) => s.trim()).filter(Boolean);
+  const allowed = allowedOrigins(env);
   const origin = req.headers.get('origin') ?? '';
   const ok = allowed.includes(origin) || allowed.includes('*');
   return {
@@ -97,6 +101,13 @@ const kvPut = async (env: Env, k: string, v: string, ttl: number): Promise<void>
   if (env.ATS_KV) await env.ATS_KV.put(k, v, { expirationTtl: ttl });
   else memPut(k, v, ttl);
 };
+
+/* Приём отзывов живёт в ./reviews.ts, но лимиты и идемпотентность у него общие
+   с заявками: тот же KV, та же память изолята, только другие ключи. */
+const reviewStore = (env: Env): ReviewsStore => ({
+  get: (k) => kvGet(env, k),
+  put: (k, v, ttl) => kvPut(env, k, v, ttl),
+});
 
 /** Простой счётчик: N заявок с одного адреса за 10 минут. */
 export const LEAD_LIMIT = { max: 5, windowSec: 600 };
@@ -303,10 +314,16 @@ export default {
              здесь и не гадают, почему форма получает 400 consent_version. */
           consentVersion: env.CONSENT_VERSION ?? null,
           kv: Boolean(env.ATS_KV),
+          /* Приём отзывов: по `reviews` смоук понимает, что сборка доехала,
+             по `reviewsKv` — что дубли и лимиты переживают перезапуск изолята. */
+          ...reviewsHealth(env),
         }));
       }
       if (req.method === 'GET' && url.pathname === '/slots') return withCors(handleSlots(url));
       if (req.method === 'POST' && url.pathname === '/leads') return withCors(await handleLead(req, env));
+      if (req.method === 'POST' && url.pathname === '/reviews') {
+        return withCors(await handleReview(req, env, { hashIp, store: reviewStore(env) }));
+      }
       return withCors(err(404, 'not_found', 'Неизвестный адрес'));
     } catch (e) {
       console.error('[relay] unhandled', String((e as Error)?.stack ?? e).slice(0, 400));

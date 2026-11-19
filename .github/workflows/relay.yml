@@ -45,7 +45,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Tests (сеть подменена, наружу ничего не уходит)
-        run: node --test test/*.test.ts
+        run: node --test test/*.test.ts tests/*.test.ts
 
       # Account ID можно не задавать: если секрета нет, определяем его по токену.
       - name: Resolve account id
