@@ -22,18 +22,21 @@ const allIds=doc=>new Set([...doc.groups.flatMap(g=>[g.id,...g.items.map(p=>p.id
 const nextId=(name,used)=>{let base=slugifyRu(name);if(base.length<LIMITS.id[0])base='poziciya';let id=base,n=2;while(used.has(id)){const suffix=`-${n++}`;id=base.slice(0,LIMITS.id[1]-suffix.length).replace(/-+$/,'')+suffix;}used.add(id);return id;};
 function words(n){const last=n%10,hundred=n%100;return `${n} ${hundred>=11&&hundred<=14?'работ':last===1?'работа':last>=2&&last<=4?'работы':'работ'}`;}
 function errorText(e){if(e?.status===401)return 'Ключ доступа не принят. Проверьте его срок.';if(e?.status===403)return 'Нет доступа к ценам. Проверьте права ключа.';if(e?.status===404)return 'Список цен пока недоступен. Обратитесь к разработчику.';if(e?.status===409||e?.status===422)return e.message?.startsWith('Кто-то')?e.message:'Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз — мы повторим.';return e?.message||'Не удалось сохранить: нет связи. Попробуйте ещё раз.';}
-function pageName(file){return file.replace(/^src\/pages\/index\.astro$/,'/').replace(/^src\/pages\//,'/').replace(/\.astro$/,'/');}
+function pageName(file){if(file==='src/server/seed-data.ts')return 'служебный файл seed-data.ts';return file.replace(/^src\/pages\/index\.astro$/,'/').replace(/^src\/pages\//,'/').replace(/\.astro$/,'/');}
 async function loadRefs(){try{const response=await fetch('./price-refs.json',{cache:'no-store'});if(!response.ok)throw Error();const data=await response.json();if(!data||!data.refs||typeof data.refs!=='object'||!data.featured||typeof data.featured!=='object')throw Error();return data;}catch{return null;}}
+const refHits=(refs,id)=>refs&&Array.isArray(refs.refs[id])?refs.refs[id]:[];
+const refPages=hits=>[...new Set(hits.map(r=>pageName(String(r.file||''))).filter(Boolean))].join(', ');
 function refProblem(refs,doc,id,action){
  const chips=(doc.featured||[]).filter(f=>f.ref===id);
  if(action==='delete'&&chips.length)return `На эту работу ссылается плашка на главной: ${chips.map(c=>c.title).join(', ')}. Удалить сможет разработчик. Пока нажмите «Скрыть».`;
- const hits=refs&&Array.isArray(refs.refs[id])?refs.refs[id]:[];
- if(hits.length){const pages=[...new Set(hits.map(r=>pageName(String(r.file||''))) .filter(Boolean))].join(', ');return `${action==='rename'?'Это название упоминается в текстах':'На эту работу ссылаются страницы'}: ${pages}. ${action==='rename'?'Переименовать':'Удалить'} сможет разработчик после правки текстов. Пока нажмите «Скрыть» — цена исчезнет с сайта, а тексты останутся целыми.`;}
+ const hits=refHits(refs,id).filter(r=>action==='delete'||r.matched==='alias');
+ if(hits.length){const pages=refPages(hits);return `${action==='rename'?'Это название упоминается в текстах':'На эту работу ссылаются страницы'}: ${pages}. ${action==='rename'?'Переименовать':'Удалить'} сможет разработчик после правки текстов. Пока нажмите «Скрыть» — цена исчезнет с сайта, а тексты останутся целыми.`;}
  return '';
 }
+function renameWarning(refs,id){const hits=refHits(refs,id).filter(r=>r.matched==='id');return hits.length?`Название поменяется в прайсе. В текстах этих страниц останется прежняя формулировка: ${refPages(hits)}. Если это важно — попросите разработчика обновить текст.`:'';}
 export function createPrices(root){
  let api=null,snapshot=null,saving=false,lastCommit=null,notice='',noticeError=false,success=false;
- const changes=new Map(),edits=new Map(),confirmations=new Map(),addDrafts=new Map();
+ const changes=new Map(),edits=new Map(),confirmations=new Map(),addDrafts=new Map(),warnings=new Map();
  let open=new Set();
  try{const stored=JSON.parse(localStorage.getItem('atsPricesOpen')||'[]');if(Array.isArray(stored))open=new Set(stored.filter(x=>typeof x==='string'));}catch{}
  const persistOpen=()=>{try{localStorage.setItem('atsPricesOpen',JSON.stringify([...open]));}catch{}};
@@ -58,9 +61,9 @@ export function createPrices(root){
   if(edit){
    const field=nameField(cat.kind),limit=field==='name'?LIMITS.name:LIMITS.radius,label=field==='name'?'Название':'Радиус';
    const input=(field,label,limits)=>`<label>${label}<input data-edit-field="${field}" data-focus="${esc(`edit:${key}:${field}`)}" maxlength="${limits[1]}" value="${esc(edit.fields[field]??'')}"><span class="field-error" role="alert" data-edit-error="${field}">${esc(edit.errors[field]||'')}</span></label>`;
-   return `<article class="price-row price-edit ${ch?'price-changed':''}" data-row="${esc(key)}"><div class="price-row-title"><strong>${esc(name)}</strong> ${badge}</div><div class="price-edit-fields">${input(field,label,limit)}${cat.kind==='voyah'?input('note','Примечание',LIMITS.note):''}${priceFields(cat.kind).map(([f,l])=>input(f,l,LIMITS.price)).join('')}</div>${edit.warning?`<p role="status">${esc(edit.warning)}</p>`:''}<div class="price-actions">${button('Готово','data-done',`done:${key}`,'primary')}${button('Отмена','data-cancel-edit',`cancel-edit:${key}`)}</div></article>`;
+   return `<article class="price-row price-edit ${ch?'price-changed':''}" data-row="${esc(key)}"><div class="price-row-title"><strong>${esc(name)}</strong> ${badge}</div><div class="price-edit-fields">${input(field,label,limit)}${cat.kind==='voyah'?input('note','Примечание',LIMITS.note):''}${priceFields(cat.kind).map(([f,l])=>input(f,l,LIMITS.price)).join('')}</div>${edit.warning?`<p role="status" data-rename-warning>${esc(edit.warning)}</p>`:''}<div class="price-actions">${button('Готово','data-done',`done:${key}`,'primary')}${button('Отмена','data-cancel-edit',`cancel-edit:${key}`)}</div></article>`;
   }
-  return `<article class="price-row price-view ${ch?'price-changed':''} ${hidden?'price-hidden':''}" data-row="${esc(key)}"><div class="price-row-title"><strong>${esc(name)}</strong>${hidden?'<span class="badge draft">Скрыто</span>':''}${badge}</div><div class="price-value">${priceFields(cat.kind).map(([f,l])=>`<span>${cat.kind==='set'?`${esc(l)}: `:''}${esc(value[f])}</span>`).join('')}</div><div class="price-actions">${button('Изменить','data-edit',`edit-button:${key}`)}${button(hidden?'Показать обратно':'Скрыть','data-hide-row',`hide:${key}`)}${button('Удалить','data-delete',`delete:${key}`,'danger')}</div></article>`;
+  return `<article class="price-row price-view ${ch?'price-changed':''} ${hidden?'price-hidden':''}" data-row="${esc(key)}"><div class="price-row-title"><strong>${esc(name)}</strong>${hidden?'<span class="badge draft">Скрыто</span>':''}${badge}</div><div class="price-value">${priceFields(cat.kind).map(([f,l])=>`<span>${cat.kind==='set'?`${esc(l)}: `:''}${esc(value[f])}</span>`).join('')}</div><div class="price-actions">${button('Изменить','data-edit',`edit-button:${key}`)}${button(hidden?'Показать обратно':'Скрыть','data-hide-row',`hide:${key}`)}${button('Удалить','data-delete',`delete:${key}`,'danger')}</div>${warnings.has(key)?`<p class="price-rename-warning" role="status" data-rename-warning>${esc(warnings.get(key))}</p>`:''}</article>`;
  }
  function addForm(cat){const radius=cat.kind==='set'||cat.kind==='repair',first=radius?'Радиус или диапазон':'Название работы',draft=addDrafts.get(cat.key)||{};return `<form class="price-add" data-add="${esc(cat.key)}" novalidate><h3>Добавить работу</h3><label>${first}<input name="name" data-focus="${esc(`add:${cat.key}:name`)}" value="${esc(draft.name||'')}" maxlength="${radius?LIMITS.radius[1]:LIMITS.name[1]}" placeholder="${radius?'Например, R17':'Название работы'}"></label><label>${cat.kind==='set'?'Легковой':'Цена'}<input name="price" data-focus="${esc(`add:${cat.key}:price`)}" value="${esc(draft.price||'')}" maxlength="${LIMITS.price[1]}" placeholder="Например, 1500 ₽"></label>${cat.kind==='set'?`<label>Кроссовер<input name="crossover" data-focus="${esc(`add:${cat.key}:crossover`)}" value="${esc(draft.crossover||'')}" maxlength="${LIMITS.price[1]}" placeholder="Например, 2000 ₽"></label>`:''}<button class="button" type="submit">Добавить в список</button><span class="field-error" data-add-error role="alert"></span></form>`;}
  function render(focusOverride){
@@ -76,7 +79,7 @@ export function createPrices(root){
   root.querySelectorAll('[data-row]').forEach(row=>{
    const [catKey,id]=row.dataset.row.split('|'),cat=cats.find(c=>c.key===catKey),ch=changes.get(row.dataset.row),item=cat.items.find(p=>p.id===id)||(ch?.isNew?ch.fields:null);if(!item)return;
    const key=row.dataset.row;
-   row.querySelector('[data-edit]')?.addEventListener('click',()=>{const val=current(cat,item),field=nameField(cat.kind),fields={[field]:nameOf(val,cat.kind)||''};for(const [f] of priceFields(cat.kind))fields[f]=val[f]||'';if(cat.kind==='voyah')fields.note=val.note||'';edits.set(key,{fields,initial:clone(fields),errors:{},warning:''});render(`edit:${key}:${field}`);});
+   row.querySelector('[data-edit]')?.addEventListener('click',()=>{const val=current(cat,item),field=nameField(cat.kind),fields={[field]:nameOf(val,cat.kind)||''};for(const [f] of priceFields(cat.kind))fields[f]=val[f]||'';if(cat.kind==='voyah')fields.note=val.note||'';edits.set(key,{fields,initial:clone(fields),errors:{},warning:warnings.get(key)||''});render(`edit:${key}:${field}`);});
    row.querySelectorAll('[data-edit-field]').forEach(input=>input.addEventListener('input',()=>{const e=edits.get(key);e.fields[input.dataset.editField]=input.value;e.errors[input.dataset.editField]='';row.querySelector(`[data-edit-error="${input.dataset.editField}"]`).textContent='';}));
    row.querySelector('[data-cancel-edit]')?.addEventListener('click',()=>{edits.delete(key);render(`edit-button:${key}`);});
    row.querySelector('[data-done]')?.addEventListener('click',async()=>{
@@ -85,8 +88,10 @@ export function createPrices(root){
     for(const [f] of priceFields(cat.kind))if(!isValidPrice(fields[f]))e.errors[f]=PRICE_ERROR;
     if(cat.kind==='voyah'&&fields.note.length>LIMITS.note[1])e.errors.note=`Не больше ${LIMITS.note[1]} символов.`;
     if(Object.keys(e.errors).length){render(`edit:${key}:${Object.keys(e.errors)[0]}`);return;}
-    if(fields[field]!==nameOf(current(cat,item),cat.kind)&&!ch?.isNew){const refs=await loadRefs(),problem=refProblem(refs,snapshot.json,id,'rename');if(problem){e.errors[field]=problem;render(`edit:${key}:${field}`);return;}if(!refs){e.warning=REFS_WARNING;tell(REFS_WARNING);}}
-    updateExisting(cat,item,fields);edits.delete(key);render(`edit-button:${key}`);
+    let warning=warnings.get(key)||'';
+    if(fields[field]!==nameOf(current(cat,item),cat.kind)&&!ch?.isNew){const refs=await loadRefs(),problem=refProblem(refs,snapshot.json,id,'rename');if(problem){e.errors[field]=problem;render(`edit:${key}:${field}`);return;}warning=refs?renameWarning(refs,id):REFS_WARNING;}
+    updateExisting(cat,item,fields);const pending=changes.get(key);if(pending&&!pending.isNew&&Object.hasOwn(pending.fields,field)&&warning)warnings.set(key,warning);else if(!pending||pending.isNew||!Object.hasOwn(pending.fields,field)||!warning)warnings.delete(key);
+    edits.delete(key);render(`edit-button:${key}`);
    });
    row.querySelector('[data-hide-row]')?.addEventListener('click',()=>{const hidden=!!current(cat,item).hidden;if(!hidden&&!window.confirm('Скрыть эту работу на сайте после обновления?'))return;updateExisting(cat,item,{hidden:!hidden});render(`hide:${key}`);});
    row.querySelector('[data-delete]')?.addEventListener('click',async()=>{const refs=ch?.isNew?{refs:{},featured:{}}:await loadRefs();confirmations.set(key,{problem:refProblem(refs,snapshot.json,id,'delete'),warning:refs?'':REFS_WARNING});render(`cancel-delete:${key}`);});
@@ -119,12 +124,12 @@ export function createPrices(root){
     for(const c of selected.filter(c=>!c.isNew&&c.deleted)){const cat=categories(next).find(x=>x.key===c.cat);if(!cat||!findPriceItem(next,cat.kind,cat.key,c.id))continue;const result=removePriceItem(next,cat.kind,cat.key,c.id);if(!result.ok)throw Error(result.errors.join('. '));next=result.value;}
     const valid=validate(next);if(!valid.ok)throw Error('Проверьте цены и названия. Если ошибка повторяется, обратитесь к разработчику.');next.updated_at=today();return next;
    },selected.length,text=>tell(text));
-   snapshot={json:result.json,sha:result.sha};for(const c of selected)changes.delete(keyOf(c.cat,c.id));lastCommit=result.commit;success=true;saving=false;notice=refs?'Сохранено. Сайт обновится через 1–2 минуты':`Сохранено. Сайт обновится через 1–2 минуты. ${REFS_WARNING}`;noticeError=false;render(`summary:${catKey}`);
+   snapshot={json:result.json,sha:result.sha};for(const c of selected){const key=keyOf(c.cat,c.id);changes.delete(key);warnings.delete(key);}lastCommit=result.commit;success=true;saving=false;notice=refs?'Сохранено. Сайт обновится через 1–2 минуты':`Сохранено. Сайт обновится через 1–2 минуты. ${REFS_WARNING}`;noticeError=false;render(`summary:${catKey}`);
   }catch(e){saving=false;render();tell(errorText(e),true);}
  }
  render();return {
-  async connect(client){api=client;snapshot=null;changes.clear();edits.clear();confirmations.clear();addDrafts.clear();success=false;tell('Загружаем цены…');render();try{const read=await api.readPrices(),result=validate(read.json);if(!result.ok)throw Error(readError(result));snapshot=read;notice='';render();}catch(e){tell(errorText(e),true);}},
+  async connect(client){api=client;snapshot=null;changes.clear();edits.clear();confirmations.clear();addDrafts.clear();warnings.clear();success=false;tell('Загружаем цены…');render();try{const read=await api.readPrices(),result=validate(read.json);if(!result.ok)throw Error(readError(result));snapshot=read;notice='';render();}catch(e){tell(errorText(e),true);}},
   mayDisconnect(){return !dirty()||window.confirm('Есть несохранённые изменения цен. Отменить их?');},
-  disconnect(){api=null;snapshot=null;changes.clear();edits.clear();confirmations.clear();addDrafts.clear();success=false;notice='';render();}
+  disconnect(){api=null;snapshot=null;changes.clear();edits.clear();confirmations.clear();addDrafts.clear();warnings.clear();success=false;notice='';render();}
  };
 }

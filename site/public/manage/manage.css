@@ -27,3 +27,4 @@ input[hidden]{display:none}
  .price-actions .button { flex: 1 1 auto; }
  .price-category-save { flex-wrap: wrap; }
 }
+.price-rename-warning { flex: 1 1 100%; color: #75571f; overflow-wrap: anywhere; }

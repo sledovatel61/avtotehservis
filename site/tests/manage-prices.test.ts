@@ -117,13 +117,16 @@ test('интерфейс цен: аккордеоны, редактирован�
    assert.match(query(row('other')).textContent||'',/не сохранено/);assert.equal((query(`${section} [data-save-category]`) as HTMLButtonElement).disabled,false);
    await click(`${row('other')} [data-edit]`);input(`${row('other')} [data-edit-field="name"]`,'Отменённое');await click(`${row('other')} [data-cancel-edit]`);assert.match(query(row('other')).textContent||'',/Новое название/);
   });
-  await t.test('ссылки по id и alias запрещают удаление и переименование, featured защищён',async()=>{
+  await t.test('удаление запрещено при ссылках по id и alias, featured защищён',async()=>{
    for(const matched of ['id','alias']){
     refs={refs:{'oil-sedan':[{file:'src/pages/prices.astro',line:1,token:'x',matched}]},featured:{}};
     await click(`${row('oil-sedan')} [data-delete]`);assert.match(query(row('oil-sedan')).textContent||'',/\/prices\/.*Скрыть/);assert.equal(root.querySelector(`${row('oil-sedan')} [data-confirm-delete]`),null);await click(`${row('oil-sedan')} [data-cancel-delete]`);
-    await click(`${row('oil-sedan')} [data-edit]`);input(`${row('oil-sedan')} [data-edit-field="name"]`,'Новое имя');await click(`${row('oil-sedan')} [data-done]`);assert.match(query(`${row('oil-sedan')} [data-edit-error="name"]`).textContent||'',/\/prices\/.*Скрыть/);await click(`${row('oil-sedan')} [data-cancel-edit]`);
    }
    refs={refs:{},featured:{}};await click('[data-row="voyah|voyah-oil"] [data-delete]');assert.match(query('[data-row="voyah|voyah-oil"]').textContent||'',/плашка на главной/);assert.equal(root.querySelector('[data-row="voyah|voyah-oil"] [data-confirm-delete]'),null);await click('[data-row="voyah|voyah-oil"] [data-cancel-delete]');
+  });
+  await t.test('alias блокирует переименование даже вместе со ссылкой по id',async()=>{
+   refs={refs:{'oil-sedan':[{file:'src/pages/prices.astro',line:1,token:'x',matched:'id'},{file:'src/pages/about.astro',line:2,token:'y',matched:'alias'}]},featured:{}};
+   await click(`${row('oil-sedan')} [data-edit]`);input(`${row('oil-sedan')} [data-edit-field="name"]`,'Новое имя');await click(`${row('oil-sedan')} [data-done]`);assert.match(query(`${row('oil-sedan')} [data-edit-error="name"]`).textContent||'',/Это название упоминается в текстах: \/about\/.*Переименовать.*Скрыть/);await click(`${row('oil-sedan')} [data-cancel-edit]`);
   });
   await t.test('404 карты: предупреждение, вернуть, добавление и удаление одним сохранением',async()=>{
    refs=null;await click(`${row('test')} [data-delete]`);assert.match(query(row('test')).textContent||'',/Проверить ссылки в текстах не удалось/);await click(`${row('test')} [data-confirm-delete]`);assert.match(query(row('test')).textContent||'',/Будет удалено/);await click(`${row('test')} [data-restore]`);assert.match(query(row('test')).textContent||'',/ТЕСТ/);
@@ -131,12 +134,21 @@ test('интерфейс цен: аккордеоны, редактирован�
    const form=query('[data-add="group:to"]') as HTMLFormElement;(form.querySelector('[name=name]') as HTMLInputElement).value='Новая услуга';(form.querySelector('[name=price]') as HTMLInputElement).value='1500 ₽';form.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
    await click(`${section} [data-save-category]`);assert.equal(commits,1);assert.equal(doc.groups[0].items.some((p:any)=>p.id==='test'),false);assert.equal(doc.groups[0].items.find((p:any)=>p.id==='other').name,'Новое название');assert.equal(doc.groups[0].items.find((p:any)=>p.id==='other').price,'1300 ₽');assert.ok(doc.groups[0].items.some((p:any)=>p.name==='Новая услуга'));assert.equal((query(section) as HTMLDetailsElement).open,true);assert.match(query(section).textContent||'',/Изменений: 0/);
   });
+  await t.test('ссылки по id: предупреждение видно в строке, имя сохраняется без смены id',async()=>{
+   refs={refs:{'oil-sedan':[{file:'src/pages/prices.astro',line:1,token:'x',matched:'id'},{file:'src/server/seed-data.ts',line:2,token:'y',matched:'id'}]},featured:{}};
+   await click(`${row('oil-sedan')} [data-edit]`);input(`${row('oil-sedan')} [data-edit-field="name"]`,'Замена масла, седан');await click(`${row('oil-sedan')} [data-done]`);
+   assert.match(query(`${row('oil-sedan')} [data-rename-warning]`).textContent||'',/Название поменяется в прайсе.*прежняя формулировка.*\/prices\/.*служебный файл seed-data\.ts/);
+   assert.match(query(row('oil-sedan')).textContent||'',/не сохранено/);assert.equal((query(`${section} [data-save-category]`) as HTMLButtonElement).disabled,false);
+   await click(`${row('oil-sedan')} [data-edit]`);assert.ok(query(`${row('oil-sedan')} [data-rename-warning]`));await click(`${row('oil-sedan')} [data-cancel-edit]`);
+   const idRefs=refs;refs={refs:{'oil-sedan':[{file:'src/pages/about.astro',matched:'alias'}]},featured:{}};await click(`${section} [data-save-category]`);assert.match(query('[data-price-message]').textContent||'',/Это название упоминается в текстах/);assert.equal(commits,1);
+   refs=idRefs;await click(`${section} [data-save-category]`);assert.equal(commits,2);const renamed=doc.groups[0].items.find((p:any)=>p.id==='oil-sedan');assert.equal(renamed.name,'Замена масла, седан');assert.equal(renamed.id,'oil-sedan');
+  });
   await t.test('конфликт цены не перезаписывается; параллельное удаление идемпотентно',async()=>{
    refs={refs:{},featured:{}};await click(`${row('other')} [data-edit]`);input(`${row('other')} [data-edit-field="price"]`,'1400 ₽');await click(`${row('other')} [data-done]`);
    doc.groups[0].items.find((p:any)=>p.id==='other').price='1600 ₽';await click(`${section} [data-save-category]`);
-   assert.match(query('[data-price-message]').textContent||'',/Кто-то изменил эти цены одновременно/);assert.equal(doc.groups[0].items.find((p:any)=>p.id==='other').price,'1600 ₽');assert.equal(commits,1);
+   assert.match(query('[data-price-message]').textContent||'',/Кто-то изменил эти цены одновременно/);assert.equal(doc.groups[0].items.find((p:any)=>p.id==='other').price,'1600 ₽');assert.equal(commits,2);
    await ui.connect(client);await click(`${row('other')} [data-delete]`);await click(`${row('other')} [data-confirm-delete]`);doc.groups[0].items=doc.groups[0].items.filter((p:any)=>p.id!=='other');await click(`${section} [data-save-category]`);
-   assert.match(query('[data-price-message]').textContent||'',/Сохранено/);assert.equal(commits,2);
+   assert.match(query('[data-price-message]').textContent||'',/Сохранено/);assert.equal(commits,3);
   });
   await t.test('без localStorage интерфейс не падает',async()=>{
    Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem(){throw Error('blocked');},setItem(){throw Error('blocked');}}});const el=dom.window.document.createElement('div');dom.window.document.body.append(el);const second=createPrices(el);await second.connect(client);const details=el.querySelector('details') as HTMLDetailsElement;details.open=true;details.dispatchEvent(new dom.window.Event('toggle'));assert.equal(details.open,true);
