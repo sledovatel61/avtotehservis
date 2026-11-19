@@ -209,3 +209,120 @@ function collectBooking(body: Record<string, unknown>, fields: FieldErrors): Par
     photos,
   };
 }
+
+/* ------------------------------------------------------------------ *
+ *  Отзывы (POST /reviews)
+ *
+ *  Отзыв — не заявка: телефона нет, зато есть оценка. Правила те же по духу
+ *  (ничего не пропускаем в разметку и не даём утащить человека по ссылке),
+ *  поэтому и живут они рядом с валидацией заявок, а не в обработчике.
+ * ------------------------------------------------------------------ */
+
+export interface ReviewPayload {
+  author: string;
+  text: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  consent: true;
+  consentVersion: string;
+  honeypot: string;
+  page: string;
+}
+
+export const REVIEW_AUTHOR_MIN = 2;
+export const REVIEW_AUTHOR_MAX = 40;
+export const REVIEW_TEXT_MIN = 20;
+export const REVIEW_TEXT_MAX = 1500;
+export const REVIEW_PAGE_MAX = 40;
+export const REVIEW_PAGE_DEFAULT = '/otzyvy';
+/** Сколько одинаковых строк подряд считаем накруткой. */
+export const REVIEW_REPEAT_LIMIT = 3;
+
+export type ReviewValidated =
+  | { ok: true; value: ReviewPayload }
+  | { ok: false; error: 'bad_json' | 'validation'; fields: FieldErrors }
+  | { ok: false; error: 'link_not_allowed'; fields: FieldErrors };
+
+/** `<` и `>` не переносим никогда: воркер не рендерит отзыв, но дальше его читают руками. */
+const stripTags = (s: string): string => s.replace(/[<>]/g, '');
+
+/** Ссылки в отзыве не нужны: это площадка для впечатлений, а не для рекламы. */
+export function looksLikeLink(s: string): boolean {
+  return /https?:\/\//i.test(s)
+    || /(^|[\s(«"'])www\./i.test(s)
+    || /(^|[\s(«"'])t\.me\//i.test(s)
+    /* Домен без схемы: «example.com/price», «магазин.рф». Смотрим только слова
+       с точкой и настоящим TLD — иначе обычная фраза «5 тыс. км» стала бы ссылкой. */
+    || /(^|[\s(«"'])[\p{L}\p{N}_-]+\.(ru|su|com|net|org|io|me|рф|xn--p1ai)(\/|$|[\s.,;:!?)\]»"'])/iu.test(s);
+}
+
+/** Есть ли 4 одинаковые непустые строки подряд. */
+function hasRepeatedLines(text: string): boolean {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  let run = 0;
+  let prev: string | null = null;
+  for (const line of lines) {
+    run = line === prev ? run + 1 : 1;
+    if (run > REVIEW_REPEAT_LIMIT) return true;
+    prev = line;
+  }
+  return false;
+}
+
+export function validateReview(body: unknown): ReviewValidated {
+  if (!isObj(body)) return { ok: false, error: 'bad_json', fields: {} };
+  const fields: FieldErrors = {};
+  const bad = (k: string, code: string): void => { if (!(k in fields)) fields[k] = code; };
+
+  const authorRaw = str(body.author).trim();
+  const author = stripTags(authorRaw).trim();
+  if (!author) bad('author', 'required');
+  else if (author.length < REVIEW_AUTHOR_MIN) bad('author', 'too_short');
+  else if (author.length > REVIEW_AUTHOR_MAX) bad('author', 'too_long');
+
+  const textRaw = str(body.text).trim();
+  const text = stripTags(textRaw).trim();
+  if (!text) bad('text', 'required');
+  else if (text.length < REVIEW_TEXT_MIN) bad('text', 'too_short');
+  else if (text.length > REVIEW_TEXT_MAX) bad('text', 'too_long');
+  else if (hasRepeatedLines(text)) bad('text', 'repeated_lines');
+
+  /* Оценка обязательна: значение по умолчанию превратило бы пропуск поля
+     в «пять звёзд», а этого отзыва не было. */
+  if (body.rating === undefined || body.rating === null) {
+    bad('rating', 'required');
+  } else {
+    const r = int(body.rating);
+    if (r === null || r < 1 || r > 5) bad('rating', 'out_of_range');
+  }
+
+  if (body.consent !== true) bad('consent', 'required');
+
+  const consentVersion = str(body.consentVersion ?? body.consent_version).trim();
+  if (!consentVersion) bad('consentVersion', 'required');
+
+  const honeypot = str(body.honeypot);
+
+  const pageRaw = str(body.page).trim();
+  const page = pageRaw ? stripTags(pageRaw) : REVIEW_PAGE_DEFAULT;
+  if (page.length > REVIEW_PAGE_MAX) bad('page', 'too_long');
+
+  if (fields_has(fields)) return { ok: false, error: 'validation', fields };
+
+  /* Ссылки проверяем после длины: короткий текст со ссылкой — всё равно текст,
+     но ответ должен быть один и понятный. */
+  if (looksLikeLink(author)) return { ok: false, error: 'link_not_allowed', fields: { author: 'link_not_allowed' } };
+  if (looksLikeLink(text)) return { ok: false, error: 'link_not_allowed', fields: { text: 'link_not_allowed' } };
+
+  return {
+    ok: true,
+    value: {
+      author,
+      text,
+      rating: int(body.rating) as 1 | 2 | 3 | 4 | 5,
+      consent: true,
+      consentVersion,
+      honeypot,
+      page,
+    },
+  };
+}

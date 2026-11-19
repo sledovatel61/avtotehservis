@@ -3,7 +3,7 @@
  * `composeLeadTelegram()` в `site/src/server/telegram.ts`: мастер видит
  * в чате ровно то, что видел бы на VPS. Поля не переименовываем.
  */
-import type { LeadPayload } from './validate.ts';
+import type { LeadPayload, ReviewPayload } from './validate.ts';
 
 const esc = (s: string): string =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -160,4 +160,26 @@ export async function sendPhotos(files: File[], ticket: string, opts: SendOpts):
     }
     if (lastErr) throw new Error(`telegram_photos_${lastErr}`);
   }
+}
+
+/**
+ * Уведомление о новом отзыве. Отзыв НЕ публикуется: воркер не имеет доступа к
+ * репозиторию, поэтому сообщение — это задача модератору, а не готовый пост.
+ * Разметку экранируем так же, как в заявках: текст пишет человек с улицы.
+ */
+export function composeReviewTelegram(
+  review: ReviewPayload,
+  opts: ComposeOpts,
+): string {
+  const at = opts.at ?? new Date();
+  const stars = '⭐'.repeat(review.rating);
+  return [
+    '⭐ <b>Новый отзыв с сайта (на модерации)</b>',
+    `\nОценка: <b>${review.rating}/5</b> ${stars}`,
+    `\nИмя: <b>${esc(review.author)}</b>`,
+    `\nОтзыв:\n${esc(review.text)}`,
+    `\nИсточник: ${esc(review.page)}`,
+    `\nСогласие на обработку ПД: версия <b>${esc(review.consentVersion)}</b>, отметка ${esc(fmtStamp(at))} МСК`,
+    '\n<i>Опубликовать: админка → Отзывы</i>',
+  ].join('');
 }
