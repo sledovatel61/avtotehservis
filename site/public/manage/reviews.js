@@ -19,7 +19,30 @@ export function reviewErrors(item){
 }
 function validateDocument(doc){if(!doc||typeof doc!=='object'||!Array.isArray(doc.items))return false;const ids=new Set();return doc.items.every(item=>{if(!item||typeof item!=='object'||Object.keys(reviewErrors(item)).length||ids.has(item.id.trim()))return false;ids.add(item.id.trim());return true;});}
 function nextId(items,date){const used=new Set(items.map(r=>r.id));for(let n=1;n<=999;n++){const id=`r-${date}-${String(n).padStart(3,'0')}`;if(!used.has(id))return id;}throw Error('На эту дату уже добавлено слишком много отзывов. Выберите другую дату.');}
-export function parseTelegram(value){let author='',rating=null;const lines=[];for(const line of String(value).replace(/\r\n?/g,'\n').split('\n')){const score=line.match(/^\s*Оценка\s*:\s*([1-5])\s*\/\s*5\s*$/i),name=line.match(/^\s*Имя\s*:\s*(.*)$/i);if(score)rating=Number(score[1]);else if(name)author=name[1].trim();else lines.push(line);}return {author,rating,text:lines.join('\n').trim()};}
+export function parseTelegram(value){
+ let author='',rating=null;const lines=String(value).replace(/\r\n?/g,'\n').split('\n');
+ // Разметку снимаем при распознавании полей, не меняя остальной текст клиента.
+ const plain=line=>line.replace(/<[^>]*>/g,'').replace(/[*_]/g,'');
+ const service=line=>/^\s*(?:Источник\s*:|Согласие\s+на\s+обработку|Опубликовать\s*:)/i.test(line);
+ const header=line=>/Новый отзыв с сайта/i.test(line);
+ const marker=line=>/^\s*Отзыв\s*:/i.test(line);
+ const reviewIndex=lines.findIndex(line=>marker(plain(line)));
+ const text=[];let ended=false;
+ for(let i=0;i<lines.length;i++){
+  const line=lines[i],clean=plain(line);
+  if(header(clean))continue;
+  if(service(clean)){if(reviewIndex>=0&&i>reviewIndex)ended=true;continue;}
+  if(reviewIndex>=0&&i>reviewIndex){if(!ended)text.push(line);continue;}
+  if(reviewIndex===i){const colon=line.indexOf(':');const remainder=colon<0?'':line.slice(colon+1).replace(/^\s*(?:<\/[^>]+>|[*_])+\s*/, '');if(remainder.trim())text.push(remainder);continue;}
+  const score=clean.match(/Оценка\s*:\s*([1-5])\s*\/\s*5(?!\d)/i);
+  const name=clean.match(/^\s*Имя\s*:\s*(.+)$/i);
+  if(score)rating=Number(score[1]);
+  if(name)author=name[1].trim();
+  if(score||name||/^\s*(?:Оценка|Имя)\s*:/i.test(clean))continue;
+  if(reviewIndex<0)text.push(line);
+ }
+ return {author,rating,text:text.join('\n').trim().replace(/^(?:⭐\s*)+/, '').trim()};
+}
 function displayError(error){if(error?.status===401)return 'Ключ доступа не принят. Проверьте его срок.';if(error?.status===403)return 'Нет доступа к отзывам. Проверьте права ключа.';if(error?.status===404)return 'Отзывы пока недоступны. Обратитесь к разработчику.';if(error?.status===409||error?.status===422)return 'Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз.';return error?.message||'Не удалось сохранить: нет связи. Попробуйте ещё раз.';}
 function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node;}
 function button(text,attribute,value,className='button'){const node=element('button',className,text);node.type='button';node.setAttribute(attribute,value);return node;}
@@ -39,9 +62,9 @@ export function createReviews(root){
  function renderEditor(parent){
   if(!editor)return;const item=editor.item,box=element('section','panel review-editor');box.dataset.reviewEditor='';add(box,element('h3','',editor.isNew?'Добавить отзыв':'Изменить отзыв'));
   const fields=element('div','review-form-grid');
-  add(fields,labelInput('Имя','author',item.author,{max:40}),labelInput('Оценка','rating',String(item.rating),{choices:[['1','1 из 5'],['2','2 из 5'],['3','3 из 5'],['4','4 из 5'],['5','5 из 5']]}),labelInput('Текст отзыва','text',item.text,{textarea:true,max:1500}),labelInput('Источник','source',item.source,{choices:[['site','Сайт'],['yandex','Яндекс Карты'],['2gis','2ГИС'],...(item.source==='demo'?[['demo','Пример']]:[])]}),labelInput('Ссылка на источник (необязательно)','source_url',item.source_url||'',{type:'url'}),labelInput('Дата','published_at',item.published_at,{type:'date'}));box.append(fields);
+  add(fields,labelInput('Имя','author',item.author,{max:40}),labelInput('Оценка','rating',item.rating==null?'':String(item.rating),{choices:[['','— выберите оценку —'],['1','1 из 5'],['2','2 из 5'],['3','3 из 5'],['4','4 из 5'],['5','5 из 5']]}),labelInput('Текст отзыва','text',item.text,{textarea:true,max:1500}),labelInput('Источник','source',item.source,{choices:[['site','Сайт'],['yandex','Яндекс Карты'],['2gis','2ГИС'],...(item.source==='demo'?[['demo','Пример']]:[])]}),labelInput('Ссылка на источник (необязательно)','source_url',item.source_url||'',{type:'url'}),labelInput('Дата','published_at',item.published_at,{type:'date'}));box.append(fields);
   const actions=element('div','review-actions');const done=button(editor.isNew?'Добавить в список':'Готово','data-review-done','', 'button primary');const cancel=button('Отмена','data-review-cancel','');add(actions,done,cancel);box.append(actions);parent.append(box);
-  for(const field of fields.querySelectorAll('[data-review-field]'))field.addEventListener('input',()=>{const name=field.dataset.reviewField;editor.item[name]=name==='rating'?Number(field.value):name==='source_url'?(field.value||null):field.value;refreshEditorErrors();});
+  for(const field of fields.querySelectorAll('[data-review-field]'))field.addEventListener('input',()=>{const name=field.dataset.reviewField;editor.item[name]=name==='rating'?(field.value===''?null:Number(field.value)):name==='source_url'?(field.value||null):field.value;refreshEditorErrors();});
   done.addEventListener('click',()=>{if(Object.keys(reviewErrors(editor.item)).length)return;const clean={...editor.item,author:editor.item.author.trim(),text:editor.item.text.trim(),source_url:editor.item.source_url?.trim()||null};if(editor.isNew){try{clean.id=nextId(draft.items,clean.published_at);}catch(e){say(e.message,true);return;}draft.items.push(clean);}else{const index=draft.items.findIndex(r=>r.id===clean.id);if(index<0){say('Отзыв больше не найден. Обновите страницу.',true);return;}draft.items[index]=clean;}editor=null;say('Изменения в списке. Нажмите «Сохранить» внизу.');render();});
   cancel.addEventListener('click',()=>{editor=null;render();});refreshEditorErrors();
  }
@@ -53,10 +76,10 @@ export function createReviews(root){
   const notice=element('div','notice'+(error?' error':''),message);notice.dataset.reviewsMessage='';notice.hidden=!message;notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');root.append(notice);
   if(success){const done=element('div','success');done.setAttribute('role','status');done.setAttribute('aria-live','polite');done.append(element('b','','Отправлено. GitHub собирает сайт — 1–2 минуты'));const links=element('div','review-actions');const site=element('a','','Открыть /otzyvy на сайте ↗');site.href='../otzyvy/';const actions=element('a','','Ход сборки ↗');actions.href='https://github.com/sledovatel61/avtotehservis/actions';actions.target='_blank';actions.rel='noopener noreferrer';add(links,site,actions);done.append(links);root.append(done);}
   const moderation=element('section','panel review-moderation');add(moderation,element('h3','','Отзыв из Telegram'),element('p','hint','Вставьте сообщение, проверьте поля и добавьте отзыв в список.'));const telegramLabel=element('label','','Вставить текст из Telegram');const text=element('textarea');text.rows=5;text.value=telegram;text.dataset.telegram='';telegramLabel.append(text);moderation.append(telegramLabel);const parse=button('Разобрать','data-parse-telegram','');moderation.append(parse);root.append(moderation);
-  text.addEventListener('input',()=>{telegram=text.value;});parse.addEventListener('click',()=>{const parsed=parseTelegram(telegram);const item={id:nextId(draft.items,today()),author:parsed.author,text:parsed.text,rating:parsed.rating??5,source:'site',source_url:null,published_at:today(),status:'hidden',demo:false};startEditor(item);});
+  text.addEventListener('input',()=>{telegram=text.value;});parse.addEventListener('click',()=>{const parsed=parseTelegram(telegram);const item={id:nextId(draft.items,today()),author:parsed.author,text:parsed.text,rating:parsed.rating,source:'site',source_url:null,published_at:today(),status:'hidden',demo:false};startEditor(item);});
   const toolbar=element('div','review-toolbar');const filterGroup=element('div','review-filters');filterGroup.setAttribute('role','group');filterGroup.setAttribute('aria-label','Фильтр отзывов');const counts={all:draft.items.length,published:draft.items.filter(r=>r.status==='published').length,hidden:draft.items.filter(r=>r.status==='hidden').length};for(const [key,title] of [['all','Все'],['published','Опубликованные'],['hidden','Скрытые']]){const b=button(`${title} ${counts[key]}`,'data-review-filter',key,'button small');b.setAttribute('aria-pressed',String(filter===key));b.addEventListener('click',()=>{filter=key;render();});filterGroup.append(b);}toolbar.append(filterGroup);
   const actions=element('div','review-actions');const create=button('+ Добавить отзыв','data-review-add','', 'button primary');const clear=button('Удалить все примеры','data-review-clear-demo','', 'button danger');clear.disabled=!draft.items.some(r=>r.demo===true)||saving;add(actions,create,clear);toolbar.append(actions);root.append(toolbar);
-  create.addEventListener('click',()=>{try{startEditor({id:nextId(draft.items,today()),author:'',text:'',rating:5,source:'site',source_url:null,published_at:today(),status:'hidden',demo:false});}catch(e){say(e.message,true);}});
+  create.addEventListener('click',()=>{try{startEditor({id:nextId(draft.items,today()),author:'',text:'',rating:null,source:'site',source_url:null,published_at:today(),status:'hidden',demo:false});}catch(e){say(e.message,true);}});
   clear.addEventListener('click',()=>{const demos=draft.items.filter(r=>r.demo===true);if(!demos.length||!confirmDelete(demos,true))return;success=false;draft.items=draft.items.filter(r=>r.demo!==true);if(editor&&demos.some(r=>r.id===editor.item.id))editor=null;say('Примеры удалены из списка. Нажмите «Сохранить».');render();});
   renderEditor(root);
   const list=element('div','review-list');list.dataset.reviewList='';const sorted=[...draft.items].sort((a,b)=>b.published_at.localeCompare(a.published_at)||b.id.localeCompare(a.id));const visible=filter==='all'?sorted:sorted.filter(item=>item.status===filter);
