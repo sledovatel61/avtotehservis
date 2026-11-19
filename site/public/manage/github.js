@@ -41,6 +41,31 @@ export class GitHub {
   }
   const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0)); let json; try {json=JSON.parse(new TextDecoder().decode(bytes));} catch {throw new GitHubError('Не удалось прочитать список работ: неверный формат. Обратитесь к разработчику.',0);} if(json.version!==1 || !Array.isArray(json.cases)) throw new GitHubError('Неизвестный формат списка работ. Обратитесь к разработчику.',0); return {json,sha:data.sha};
  }
+ async readPrices(){
+  const {data}=await this.request(`${REPO}/contents/site/content/prices.json?ref=${REF}`);
+  if(typeof data.content!=='string') throw new GitHubError('Не удалось прочитать цены. Обратитесь к разработчику.',0);
+  try {const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0));return {json:JSON.parse(new TextDecoder().decode(bytes)),sha:data.sha};}
+  catch {throw new GitHubError('Не удалось прочитать цены. Обратитесь к разработчику.',0);}
+ }
+ async savePrices(apply, count, progress=()=>{}){
+  for(let attempt=0;attempt<2;attempt++){
+   progress(attempt?'Проверяем одновременные изменения…':'Проверяем цены перед сохранением…');
+   const latest=await this.readPrices();
+   const next=apply(latest.json);
+   const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`);
+   const parent=ref.object.sha;
+   const {data:commit}=await this.request(`${REPO}/git/commits/${parent}`);
+   const check=await this.readPrices();
+   if(check.sha!==latest.sha){if(attempt===0)continue;throw new GitHubError('Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз — мы повторим.',409);}
+   const bytes=new TextEncoder().encode(JSON.stringify(next,null,2)+'\n');let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+   const {data:blob}=await this.request(`${REPO}/git/blobs`,{method:'POST',body:JSON.stringify({content:btoa(binary),encoding:'base64'})});
+   const {data:tree}=await this.request(`${REPO}/git/trees`,{method:'POST',body:JSON.stringify({base_tree:commit.tree.sha,tree:[{path:'site/content/prices.json',mode:'100644',type:'blob',sha:blob.sha}]})});
+   const {data:saved}=await this.request(`${REPO}/git/commits`,{method:'POST',body:JSON.stringify({message:`Цены: правка из админки (${count} позиций)`,tree:tree.sha,parents:[parent]})});
+   try {await this.request(`${REPO}/git/refs/heads/${REF}`,{method:'PATCH',body:JSON.stringify({sha:saved.sha,force:false})});return {json:next,sha:blob.sha,commit:saved.sha};}
+   catch(e){if((e.status===409||e.status===422)&&attempt===0)continue;if(e.status===409||e.status===422)throw new GitHubError('Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз — мы повторим.',409);throw e;}
+  }
+  throw new GitHubError('Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз — мы повторим.',409);
+ }
  async image(path) { const {data}=await this.request(`${REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${REF}`); const content=data.content || (await this.request(`${REPO}/git/blobs/${data.sha}`)).data.content; if(!content) throw new GitHubError('Не удалось загрузить исходную фотографию из GitHub.',0); return new Blob([Uint8Array.from(atob(content.replace(/\s/g,'')),c=>c.charCodeAt(0))]); }
  async budget(){ const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`); const {data:commit}=await this.request(`${REPO}/git/commits/${ref.object.sha}`); const {data}=await this.request(`${REPO}/git/trees/${commit.tree.sha}?recursive=1`); const files=data.tree.filter(x=>x.type==='blob' && x.path.startsWith('site/public/media/cases/')); return {bytes:files.reduce((s,x)=>s+(x.size||0),0), count:files.length/3, truncated:data.truncated}; }
  async save(initial, apply, buildFiles, progress=()=>{}) {
