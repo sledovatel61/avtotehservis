@@ -12,14 +12,16 @@ import { join, dirname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'site', 'pages-dist');
 const ZF = join(ROOT, 'docs', 'photos-source', 'r19-about', 'zones.json');
+const { base } = readPublicPath(process.env);
 
 const server = createServer(async (req, res) => {
   let p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
-  if (p.startsWith('/avtotehservis')) p = p.slice('/avtotehservis'.length) || '/';
+  if (base && p.startsWith(base)) p = p.slice(base.length) || '/';
   const file = join(DIST, p === '/' ? 'index.html' : p.replace(/^\//, ''));
   try { const b = await readFile(file); res.setHeader('content-type', file.endsWith('.html') ? 'text/html' : file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : 'application/octet-stream'); res.end(b); }
   catch { res.statusCode = 404; res.end('nf'); }

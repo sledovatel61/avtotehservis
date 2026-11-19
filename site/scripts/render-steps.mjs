@@ -14,24 +14,26 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname, extname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DIST = join(HERE, '../pages-dist');
 const OUT = join(HERE, '../../evaluation/assets/r20-steps');
 const GEOM_OUT = join(HERE, '../data/steps-geom.json');
+const { base } = readPublicPath(process.env);
 mkdirSync(OUT, { recursive: true }); mkdirSync(dirname(GEOM_OUT), { recursive: true });
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.avif': 'image/avif', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
-  if (p.startsWith('/avtotehservis')) p = p.slice('/avtotehservis'.length) || '/';
+  if (base && p.startsWith(base)) p = p.slice(base.length) || '/';
   let f = join(DIST, normalize(p).replace(/^([/\\])+/, ''));
   if (p.endsWith('/')) f = join(f, 'index.html');
   try { const b = readFileSync(f); res.writeHead(200, { 'content-type': MIME[extname(f)] || 'application/octet-stream' }); res.end(b); }
   catch { try { const b = readFileSync(join(f, 'index.html')); res.writeHead(200, { 'content-type': 'text/html' }); res.end(b); } catch { res.writeHead(404); res.end('nf'); } }
 });
 await new Promise(r => server.listen(4321, '127.0.0.1', r));
-const BASE = 'http://127.0.0.1:4321/avtotehservis';
+const BASE = `http://127.0.0.1:4321${base}`;
 
 const puppeteer = (await import('puppeteer-core')).default;
 const chromium = (await import('@sparticuz/chromium')).default;

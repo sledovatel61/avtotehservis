@@ -17,10 +17,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DIST = join(HERE, '../pages-dist');
 const SELF = process.argv.includes('--self-test');
+const { base } = readPublicPath(process.env);
 
 if (!existsSync(join(DIST, 'news/index.html'))) {
   console.error('FAIL нет pages-dist/news/index.html — сначала npm run build:pages');
@@ -30,8 +32,9 @@ if (!existsSync(join(DIST, 'news/index.html'))) {
 /* ---------- собираем CSS ровно в том порядке, в котором его увидит браузер ---------- */
 const html = readFileSync(join(DIST, 'news/index.html'), 'utf8');
 const hrefs = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map((m) => m[1]);
+const stripBaseRe = base ? new RegExp(`^${base}/`) : /^\/+/;
 const sheets = hrefs.map((href) => {
-  const file = join(DIST, href.replace(/^\/avtotehservis\//, '').replace(/^\//, ''));
+  const file = join(DIST, href.replace(stripBaseRe, '').replace(/^\//, ''));
   if (!existsSync(file)) {
     console.error(`FAIL не найден собранный CSS: ${href}`);
     process.exit(1);

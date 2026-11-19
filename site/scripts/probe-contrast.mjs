@@ -9,14 +9,16 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import sharp from 'sharp';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'site', 'pages-dist');
 const WIDTHS = (process.argv[2] || '1440,1024,390').split(',').map(Number);
+const { base } = readPublicPath(process.env);
 
 const server = createServer(async (req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  if (p.startsWith('/avtotehservis')) p = p.slice('/avtotehservis'.length) || '/';
+  if (base && p.startsWith(base)) p = p.slice(base.length) || '/';
   let file = join(DIST, p === '/' ? 'index.html' : p.replace(/^\//, ''));
   if (file.endsWith('/') || !file.includes('.')) file = join(file, 'index.html');
   try { const b = await readFile(file);

@@ -336,4 +336,34 @@ describe('reviews-schema, reviews-store и check-reviews (круг 87)', () => {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it('10. без переменной PUBLIC_DEMO_REVIEWS (дефолт export-pages.mjs ? "") → listPublishedSiteReviews() не отдаёт демо', () => {
+    delete process.env.REVIEWS_FILE;
+    delete process.env.PUBLIC_DEMO_REVIEWS;
+    resetReviewsCache();
+
+    // На штатном reviews.json (6 демо-записей) без PUBLIC_DEMO_REVIEWS выдача пуста
+    assert.deepEqual(listPublishedSiteReviews(), []);
+
+    // И при пустой строке PUBLIC_DEMO_REVIEWS="" (как подставляет export-pages.mjs по умолчанию) — тоже пуста
+    process.env.PUBLIC_DEMO_REVIEWS = process.env.PUBLIC_DEMO_REVIEWS ?? '';
+    assert.deepEqual(listPublishedSiteReviews(), []);
+
+    // Проверим также, что в export-pages.mjs прописан дефолт ?? '' (а не ?? '1')
+    const exportPagesSrc = fs.readFileSync(
+      path.resolve(import.meta.dirname, '../scripts/export-pages.mjs'),
+      'utf8',
+    );
+    assert.match(exportPagesSrc, /PUBLIC_DEMO_REVIEWS:\s*process\.env\.PUBLIC_DEMO_REVIEWS\s*\?\?\s*''/);
+  });
+
+  it('11. с PUBLIC_DEMO_REVIEWS=1 → listPublishedSiteReviews() отдаёт демо-отзывы', () => {
+    delete process.env.REVIEWS_FILE;
+    process.env.PUBLIC_DEMO_REVIEWS = '1';
+    resetReviewsCache();
+
+    const published = listPublishedSiteReviews();
+    assert.equal(published.length, 6);
+    assert.ok(published.every((r) => r.demo === true && r.status === 'published'));
+  });
 });

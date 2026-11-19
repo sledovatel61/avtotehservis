@@ -22,11 +22,13 @@ import { join, dirname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'site', 'pages-dist');
 const SITE = join(ROOT, 'site');
 const PORT = 4327;
+const { base } = readPublicPath(process.env);
 
 const ANCHORS = ['to', 'tormoza', 'podveska', 'grm', 'diagnostika', 'kondicioner', 'svarka', 'shiny'];
 /* выборочные цифры a7/02, сверенные с фотографиями прайсов владельца (круг 26) */
@@ -37,7 +39,7 @@ const PRICES_SPOT = ['15 000', '3500–4500', '5000–6000', '6000–7000', '12 
 
 const server = createServer(async (req, res) => {
   let p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
-  if (p.startsWith('/avtotehservis')) p = p.slice('/avtotehservis'.length) || '/';
+  if (base && p.startsWith(base)) p = p.slice(base.length) || '/';
   const file = join(DIST, p === '/' ? 'index.html' : /\.[a-z0-9]+$/i.test(p) ? p : join(p, 'index.html'));
   try {
     const b = await readFile(file);

@@ -39,10 +39,11 @@ import { join, dirname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'pages-dist');
-const BASE = '/avtotehservis';
+const { base: BASE } = readPublicPath(process.env);
 const PORT = 4338;
 const PAGE = `${BASE}/voyah-free/`;
 
@@ -64,7 +65,7 @@ let server;
 async function startServer() {
   server = createServer(async (req, res) => {
     let p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
-    if (p.startsWith(BASE)) p = p.slice(BASE.length) || '/';
+    if (BASE && p.startsWith(BASE)) p = p.slice(BASE.length) || '/';
     const file = join(DIST, p === '/' ? 'index.html' : /\.[a-z0-9]+$/i.test(p) ? p : join(p, 'index.html'));
     try {
       const b = await readFile(file);

@@ -6,12 +6,12 @@ import { join, resolve, dirname } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { parseLeadsEndpoint } from '../src/shared/leads-endpoint.ts';
 import { writePriceRefs } from './lib/price-refs.mjs';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const output = join(root, 'pages-dist');
 const temp = await mkdtemp(join(tmpdir(), 'ats-pages-'));
-const base = '/avtotehservis';
-const publicOrigin = 'https://sledovatel61.github.io';
+const { base, publicOrigin, cnameHost } = readPublicPath(process.env);
 const port = process.env.PREVIEW_PORT || '4337';
 /* Круг 80 / 80-1: одна переменная решает, куда уходят заявки.
    Без PUBLIC_LEADS_ENDPOINT — демо-сборка со своим сервером и плашкой «не отправляются».
@@ -22,7 +22,7 @@ if (leads.error) throw new Error(`PUBLIC_LEADS_ENDPOINT: ${leads.error}`);
 const relayMode = leads.base !== '';
 if (relayMode) console.log(`[pages] заявки идут в прослойку: ${leads.base}`);
 const origin = `http://127.0.0.1:${port}`;
-const env = { ...process.env, DATA_DIR: join(temp, 'data'), MEDIA_DIR: join(temp, 'media'), PUBLIC_SITE_URL: publicOrigin, PUBLIC_DEMO_REVIEWS: process.env.PUBLIC_DEMO_REVIEWS ?? '1', HOST: '127.0.0.1', PORT: port };
+const env = { ...process.env, DATA_DIR: join(temp, 'data'), MEDIA_DIR: join(temp, 'media'), PUBLIC_SITE_URL: publicOrigin, PUBLIC_DEMO_REVIEWS: process.env.PUBLIC_DEMO_REVIEWS ?? '', HOST: '127.0.0.1', PORT: port };
 const run = (args) => new Promise((resolveRun, reject) => {
   const child = spawn(process.execPath, args, { cwd: root, env, stdio: 'inherit' });
   child.on('error', reject);
@@ -170,6 +170,7 @@ try {
 
   await writeFile(join(output, '.nojekyll'), '');
   await writeFile(join(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
+  if (cnameHost) await writeFile(join(output, 'CNAME'), `${cnameHost}\n`);
   await writePriceRefs({ siteRoot: root, outFile: join(output, 'manage/price-refs.json') });
   console.log(`Exported ${routes.length} public pages + 404 to ${output}`);
 } finally {

@@ -6,14 +6,16 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { join, normalize } from 'node:path';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const DIST = join(process.cwd(), 'pages-dist');
 const OUT = join(process.cwd(), '..', 'evaluation', 'assets', 'r70');
+const { base } = readPublicPath(process.env);
 await mkdir(OUT, { recursive: true });
 
 const server = createServer(async (req, res) => {
   let p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
-  if (p.startsWith('/avtotehservis')) p = p.slice('/avtotehservis'.length) || '/';
+  if (base && p.startsWith(base)) p = p.slice(base.length) || '/';
   const file = join(DIST, p === '/' ? 'index.html' : /\.[a-z0-9]+$/i.test(p) ? p : join(p, 'index.html'));
   try {
     const b = await readFile(file);

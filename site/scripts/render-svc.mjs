@@ -17,15 +17,17 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 import sharp from 'sharp';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'site', 'pages-dist');
 const ASSETS = join(ROOT, 'evaluation', 'assets', 'r21-svc');
+const { base } = readPublicPath(process.env);
 if (!existsSync(ASSETS)) await mkdir(ASSETS, { recursive: true });
 
 const server = createServer(async (req, res) => {
   let p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
-  if (p.startsWith('/avtotehservis')) p = p.slice('/avtotehservis'.length) || '/';
+  if (base && p.startsWith(base)) p = p.slice(base.length) || '/';
   const file = join(DIST, p === '/' ? 'index.html' : p.replace(/^\//, ''));
   try { const b = await readFile(file);
     res.setHeader('content-type', file.endsWith('.html') ? 'text/html' : file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : file.endsWith('.avif') ? 'image/avif' : file.endsWith('.webp') ? 'image/webp' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream');

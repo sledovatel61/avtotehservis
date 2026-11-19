@@ -13,10 +13,12 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readPublicPath } from './lib/public-path.mjs';
 
 const SITE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(SITE, 'pages-dist');
 const MOBILE_W = 390;
+const { base } = readPublicPath(process.env);
 
 /* контейнеры с текстом, у которых на десктопе больше одной колонки */
 const GUARDED = ['.svc-grid', '.news-grid', '.feats', '.facts', '.rates', '.ftr-grid',
@@ -25,7 +27,8 @@ const GUARDED = ['.svc-grid', '.news-grid', '.feats', '.facts', '.rates', '.ftr-
 /* какой странице какие CSS принадлежат и в каком порядке — берём из собранного HTML */
 function cssOrderFor(page) {
   const html = readFileSync(join(DIST, page), 'utf8');
-  return [...html.matchAll(/<link[^>]+href="\/avtotehservis\/(_astro\/[^"]+\.css)"[^>]*>/g)].map((m) => m[1]);
+  const re = new RegExp(`<link[^>]+href="${base}/(_astro/[^"]+\\.css)"[^>]*>`, 'g');
+  return [...html.matchAll(re)].map((m) => m[1]);
 }
 function findPage() {
   const guess = 'services/index.html';
