@@ -3,5 +3,5 @@
 <g stroke="#B7C4BB" stroke-opacity=".07"><path d="M0 100h800M0 200h800M0 300h800M0 400h800M0 500h800M100 0v600M200 0v600M300 0v600M400 0v600M500 0v600M600 0v600M700 0v600"/></g>
 <circle cx="400" cy="278" r="150" fill="#C87F45" opacity=".08"/>
 <g fill="none" stroke="#E0A96D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><circle cx="400" cy="270" r="96"/><path d="M340 210q40 60 120 50" stroke="#C87F45" stroke-width="8"/><path d="M330 330l40-30 24 22" stroke="#4E9E74"/></g>
-<g fill="#B7C4BB" font-family="sans-serif" font-size="24"><text x="400" y="536" text-anchor="middle">Ремонт шин · фото появится после съёмки</text></g>
+<g fill="#B7C4BB" font-family="sans-serif" font-size="24"></g>
 </svg>

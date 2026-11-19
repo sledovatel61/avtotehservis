@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img">
+<rect width="800" height="600" fill="#14281F"/>
+<path d="M0 0h400v600H0z" fill="#0B1410" opacity=".72"/>
+<path d="M400 0l120 600" stroke="#C87F45" stroke-width="4" fill="none"/>
+<g fill="none" stroke="#B7C4BB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" transform="translate(0,0)"><circle cx="190" cy="320" r="105"/><ellipse cx="255" cy="285" rx="42" ry="30" stroke="#C87F45" stroke-width="9"/></g>
+<g fill="none" stroke="#4E9E74" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><circle cx="580" cy="320" r="105"/><circle cx="580" cy="320" r="44" stroke="#E0A96D"/></g>
+<g font-family="sans-serif" font-size="26" fill="#B7C4BB"><text x="60" y="80">ДО</text></g>
+<g font-family="sans-serif" font-size="26" fill="#E0A96D"><text x="640" y="80">ПОСЛЕ</text></g>
+<g fill="#B7C4BB" font-family="sans-serif" font-size="23"><text x="400" y="562" text-anchor="middle">Грыжа боковины — восстановлена · заглушка</text></g>
+</svg>
