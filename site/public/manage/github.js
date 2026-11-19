@@ -47,6 +47,30 @@ export class GitHub {
   try {const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0));return {json:JSON.parse(new TextDecoder().decode(bytes)),sha:data.sha};}
   catch {throw new GitHubError('Не удалось прочитать цены. Обратитесь к разработчику.',0);}
  }
+ async readReviews(){
+  const {data}=await this.request(`${REPO}/contents/site/content/reviews.json?ref=${REF}`);
+  if(typeof data.content!=='string')throw new GitHubError('Не удалось прочитать отзывы. Обратитесь к разработчику.',0);
+  try{const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0));return {json:JSON.parse(new TextDecoder().decode(bytes)),sha:data.sha};}
+  catch{throw new GitHubError('Не удалось прочитать отзывы. Обратитесь к разработчику.',0);}
+ }
+ async saveReviews(apply,count,deletedOnly=false,progress=()=>{}){
+  for(let attempt=0;attempt<2;attempt++){
+   progress(attempt?'Проверяем одновременные изменения…':'Проверяем отзывы перед сохранением…');
+   const latest=await this.readReviews();const next=apply(latest.json);
+   const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`);const parent=ref.object.sha;
+   const {data:commit}=await this.request(`${REPO}/git/commits/${parent}`);
+   const check=await this.readReviews();
+   if(check.sha!==latest.sha){if(attempt===0)continue;throw new GitHubError('Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз.',409);}
+   const bytes=new TextEncoder().encode(JSON.stringify(next,null,2)+'\n');let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+   const {data:blob}=await this.request(`${REPO}/git/blobs`,{method:'POST',body:JSON.stringify({content:btoa(binary),encoding:'base64'})});
+   const {data:tree}=await this.request(`${REPO}/git/trees`,{method:'POST',body:JSON.stringify({base_tree:commit.tree.sha,tree:[{path:'site/content/reviews.json',mode:'100644',type:'blob',sha:blob.sha}]})});
+   const message=deletedOnly?`Отзывы: удалено ${count}`:`Отзывы: правка из админки (${count} изменений)`;
+   const {data:saved}=await this.request(`${REPO}/git/commits`,{method:'POST',body:JSON.stringify({message,tree:tree.sha,parents:[parent]})});
+   try{await this.request(`${REPO}/git/refs/heads/${REF}`,{method:'PATCH',body:JSON.stringify({sha:saved.sha,force:false})});return {json:next,sha:blob.sha,commit:saved.sha};}
+   catch(e){if((e.status===409||e.status===422)&&attempt===0)continue;if(e.status===409||e.status===422)throw new GitHubError('Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз.',409);throw e;}
+  }
+  throw new GitHubError('Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз.',409);
+ }
  async savePrices(apply, count, progress=()=>{}){
   for(let attempt=0;attempt<2;attempt++){
    progress(attempt?'Проверяем одновременные изменения…':'Проверяем цены перед сохранением…');
