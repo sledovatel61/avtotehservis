@@ -297,7 +297,7 @@ const lastSaved = prices ? dateRu(prices.updated_at) : '';
                       </td>
                       <td class="pr-hide">
                         <button type="submit" name="hideRow" value={it.id} class="pr-hide-btn"
-                                onclick={`return confirm('Скрыть «${it.name.replace(/'/g, '’')}»? Строка исчезнет со страницы прайса, но останется в разделе «Скрытые строки».')`}>
+                                data-confirm={`Скрыть «${it.name.replace(/"/g, '”')}»? Строка исчезнет со страницы прайса, но останется в разделе «Скрытые строки».`}>
                           Скрыть
                         </button>
                       </td>
@@ -433,7 +433,7 @@ const lastSaved = prices ? dateRu(prices.updated_at) : '';
                   </td>
                   <td class="pr-hide">
                     <button type="submit" name="hideRow" value={it.id} class="pr-hide-btn"
-                            onclick={`return confirm('Скрыть «${it.name.replace(/'/g, '’')}»? Строка исчезнет со страницы прайса, но останется в разделе «Скрытые строки».')`}>
+                            data-confirm={`Скрыть «${it.name.replace(/"/g, '”')}»? Строка исчезнет со страницы прайса, но останется в разделе «Скрытые строки».`}>
                       Скрыть
                     </button>
                   </td>
@@ -547,9 +547,10 @@ const lastSaved = prices ? dateRu(prices.updated_at) : '';
       </details>
 
       <!-- Счётчик изменений и сборка полей для «Сохранить всё» — отдельным файлом
-           (/admin/prices/app.js): политика безопасности сайта запрещает встроенные
-           скрипты, и ослаблять её ради счётчика нельзя. -->
-      <script src="/admin/prices/app.js" defer></script>
+           (/js/admin-prices.js): политика безопасности сайта запрещает встроенные
+           скрипты, и ослаблять её ради счётчика нельзя. Путь без «admin» — экспортёр
+           копирует static целиком, а гейт публикации не пускает каталог admin на Pages. -->
+      <script src="/js/admin-prices.js" defer></script>
     </>
   )}
 

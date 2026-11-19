@@ -361,6 +361,33 @@ test('в интерфейсе нет технических слов', async () 
   assert.match(visible, /после публикации/i, 'честно сказано, когда изменения попадут на сайт');
 });
 
+/* ---------- 8а. публикация на GitHub Pages и подтверждение скрытия ---------- */
+
+test('скрипт раздела лежит вне каталога admin и отдаётся страницей', async () => {
+  /* Экспортёр копирует статику целиком, а гейт публикации не пускает каталог admin
+     на GitHub Pages («Private directory: pages-dist/admin»). Поэтому путь — /js/… */
+  const fs = await import('node:fs');
+  assert.ok(fs.existsSync(join(SITE_ROOT, 'public/js/admin-prices.js')), 'скрипт в public/js');
+  assert.ok(!fs.existsSync(join(SITE_ROOT, 'public/admin')), 'каталога public/admin нет');
+
+  const html = await (await fetch(`${BASE}/admin/prices`, { headers: { Cookie: sessionCookie } })).text();
+  assert.match(html, /<script src="\/js\/admin-prices\.js" defer><\/script>/, 'страница подключает скрипт по новому пути');
+  assert.ok(!/src="\/admin\//.test(html), 'на странице нет ссылок на /admin/ как на статику');
+
+  const js = await fetch(`${BASE}/js/admin-prices.js`);
+  assert.equal(js.status, 200, 'скрипт отдаётся клиенту');
+  const body = await js.text();
+  assert.match(body, /data-confirm/, 'подтверждение обрабатывается в скрипте');
+  assert.ok(!/onclick\s*=/.test(html), 'встроенных обработчиков onclick нет: CSP их блокирует');
+});
+
+test('кнопка «Скрыть» спрашивает подтверждение атрибутом data-confirm', async () => {
+  const html = await (await fetch(`${BASE}/admin/prices`, { headers: { Cookie: sessionCookie } })).text();
+  const btn = html.match(/<button[^>]*name="hideRow"[^>]*>/);
+  assert.ok(btn, 'кнопка скрытия есть');
+  assert.match(btn![0], /data-confirm="Скрыть «[^"]+»\? Строка исчезнет со страницы прайса/, 'текст вопроса в data-confirm');
+});
+
 /* ---------- 9. скачивание ---------- */
 
 test('«Скачать файл цен»: отдаёт валидный файл как вложение, без кеша', async () => {
