@@ -1,0 +1,42 @@
+{
+  "source": "docs/brand/voyah/refs/r31/side-black.webp",
+  "profileSource": "scripts/bg3d-side-ruler.mjs MANUAL_TOP (74 точки по side-white-1456.jpg)",
+  "srcSize": [
+    1200,
+    900
+  ],
+  "crop": {
+    "x0": 75,
+    "y0": 300,
+    "w": 1077,
+    "h": 411,
+    "padPx": 8
+  },
+  "scaled": {
+    "w": 1077,
+    "h": 389,
+    "scaleY": 0.9455,
+    "passportHL": 0.335
+  },
+  "car": {
+    "noseX": 1143,
+    "tailX": 83,
+    "roofY": 308,
+    "groundY": 702,
+    "lenPx": 1061,
+    "hPx": 395,
+    "hOverL": 0.3723
+  },
+  "frac": {
+    "nose": 0.991643,
+    "tail": 0.007428,
+    "roof": 0.019465,
+    "ground": 0.978102,
+    "groundByAlpha": 0.980969
+  },
+  "tone": {
+    "bodyMeanL": 37.3,
+    "bodySigmaL": 40.6
+  },
+  "featherPx": 1
+}

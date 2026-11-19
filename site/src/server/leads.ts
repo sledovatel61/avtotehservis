@@ -1,19 +1,9 @@
 import { db } from './db.ts';
 import { generateTicket } from './tickets.ts';
-import { getSlots, isSlotAvailable, type SlotInfo } from './slots.ts';
 import { sha256 } from './auth.ts';
 import type { BookingPayload, MessagePayload } from './validation.ts';
 
 export interface LeadResult { ticket: string; lead_id: number; status: 'accepted'; duplicate: boolean }
-
-export class SlotTakenError extends Error {
-  slots: SlotInfo[];
-  constructor(slots: SlotInfo[]) {
-    super('Выбранное время занято');
-    this.name = 'SlotTakenError';
-    this.slots = slots;
-  }
-}
 
 /** IP — только хешем (152-ФЗ, минимум данных). Соль — SESSION_SECRET, если задан
  *  (|| , а не ??: пустая строка из EnvironmentFile считается незаданным — §2 ревью round5). */
@@ -48,10 +38,8 @@ export function createBooking(p: BookingPayload, ctx: { ip?: string | null; ua?:
   const tx = dbx.transaction((): LeadResult => {
     const existing = dbx.prepare('SELECT id, ticket FROM leads WHERE idempotency_key=?').get(p.idempotency_key) as { id: number; ticket: string } | undefined;
     if (existing) return { ticket: existing.ticket, lead_id: existing.id, status: 'accepted', duplicate: true };
-    if (!p.preferred.asap) {
-      const date = p.preferred.date as string, slot = p.preferred.slot as string;
-      if (!isSlotAvailable(date, slot)) throw new SlotTakenError(getSlots(date));
-    }
+    /* Живая очередь: час не «занимаем». Время из заявки — пожелание, мастер согласует
+       его звонком, поэтому приём заявки от выбранного часа не зависит (80-4, B1). */
     const ticket = generateTicket(dbx, 'booking');
     const info = dbx.prepare(`INSERT INTO leads(
         ticket, kind, name, phone, contact_method, brand, model, year, vin, mileage,

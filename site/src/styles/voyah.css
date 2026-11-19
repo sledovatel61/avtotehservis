@@ -1,0 +1,532 @@
+/* ==========================================================================
+   Voyah Free — марочный раздел сайта «АвтоТехСервис» (круг 28).
+
+   Источник: принятый мокап A6 (mockups/r28/voyah), перенесён в Astro.
+   Правила:
+     • все токены раздела префиксованы `--v-*`, чтобы не спорить с токенами сайта;
+     • все классы раздела — `.v-*` и `.vy-*`, поэтому файл можно грузить и на главной
+       (там живёт остров `.voyah-isl`), не боясь пересечений;
+     • шапка/мобильное меню из мокапа НЕ перенесены: на сайте свои Header/Dock.
+   ========================================================================== */
+
+/* ---------- Токены ---------- */
+:root{
+  /* палитра «марочного острова»: 6 цветов + 2 нейтрали */
+  --v-ink:#070B12;          /* 1. ночь — фон острова */
+  --v-panel:#0E1622;        /* 2. панель — карточки, полосы */
+  --v-graphite:#2A3442;     /* 3. графит — линии, второстепенные заливки */
+  --v-silver:#C9D3DE;       /* 4. серебро — текст-подпись, кант */
+  --v-cold:#EAF2FF;         /* 5. холодный свет — линии света, акценты */
+  --v-green:#16402F;        /* 6. отражение кузова — только акцент, не фон */
+  --ivory:#F4EFE6;        /* нейтраль 1 — основной текст на тёмном */
+  --brass:#E0A96D;        /* нейтраль 2 — кнопки сайта, из общей палитры */
+
+  /* шкала: 6 размеров */
+  --v-fs-1:12.5px;          /* метки, надзаголовки, номера */
+  --v-fs-2:15px;            /* пояснения, примечания */
+  --v-fs-3:17px;            /* основной текст */
+  --v-fs-4:21px;            /* лид, H3, суммы в прайсе */
+  --v-fs-5:clamp(26px,3vw,34px);      /* H2 */
+  --v-fs-6:clamp(31px,4.4vw,56px);    /* H1, дисплей */
+
+  --font-display:'Unbounded',system-ui,'Segoe UI',sans-serif;
+  --font-text:'Golos Text',system-ui,'Segoe UI',sans-serif;
+
+  --v-wrap:1200px;
+  --v-gap:24px;
+  --r:16px;
+  --r-sm:10px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --t-fast:150ms;
+  --t-mid:250ms;
+  --v-hdr:74px;
+}
+
+/* ---------- Контейнер и типографика раздела ----------
+   .wrap из мокапа переименован в .vy-wrap (на сайте уже есть .container);
+   заголовки раздела наследуют шрифты сайта, но размеры берём из токенов
+   раздела — иначе H1 страницы спорит с H1 главной. */
+.vy-wrap { max-width: var(--v-wrap); margin: 0 auto; padding: 0 20px; }
+.v-hero h1,
+.v-sec h2,
+.v-teaser h2,
+.v-cta h2 { font-family: var(--font-display); font-weight: 600; line-height: 1.12; letter-spacing: -.02em; margin: 0 0 .5em; }
+.v-hero h1 { font-size: var(--v-fs-6); text-wrap: balance; }
+.v-sec h2,
+.v-teaser h2,
+.v-cta h2 { font-size: var(--v-fs-5); text-wrap: balance; }
+.v-sec h3,
+.v-teaser-fact b { font-family: var(--font-display); font-weight: 600; }
+.v-hero p, .v-sec p, .v-teaser p, .v-cta p { margin: 0 0 1em; }
+.v-hero p:last-child, .v-sec p:last-child, .v-teaser p:last-child, .v-cta p:last-child { margin-bottom: 0; }
+.v-hero, .v-sec, .v-teaser { color: var(--ivory); font-family: var(--font-text); font-size: var(--v-fs-3); line-height: 1.62; }
+.v-hero a, .v-sec a, .v-teaser a { color: var(--v-cold); text-decoration: none; }
+.v-hero a:hover, .v-sec a:hover, .v-teaser a:hover { color: #fff; }
+
+/* ---------- Общие элементы «острова» ---------- */
+/* тонкая световая линия — главный декоративный приём раздела */
+.v-rule{height:1px;border:0;margin:0;background:linear-gradient(90deg,transparent,rgba(201,211,222,.42) 18%,rgba(234,242,255,.9) 50%,rgba(201,211,222,.42) 82%,transparent)}
+.v-eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:var(--v-fs-1);font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--v-silver);margin-bottom:14px;
+}
+.v-eyebrow::before{content:"";width:28px;height:1px;background:var(--v-cold);box-shadow:0 0 8px rgba(234,242,255,.8)}
+/* круг 29 (требование «F»): логотип марки вернулся на страницу. Знак стоит там,
+   где раньше была служебная линия надзаголовка, поэтому высота строки не растёт
+   и первый экран не съезжает (S1). */
+.v-eyebrow--brand::before{display:none}
+/* Знак — инлайновый SVG, поэтому красится currentColor и наследует цвет
+   надзаголовка. Ширина считается из пропорции 0.7122 (viewBox 441.6×620.1):
+   при height 26px это 18.5px. Раньше ширина не задавалась вовсе, и знак
+   тянулся по PNG-фолбэку 24×34 (пропорция 0.706) — отсюда был сдвиг строки. */
+.v-eyebrow--brand .v-mark{flex:0 0 auto;width:18.5px;height:26px;margin:-5px 0;filter:drop-shadow(0 1px 6px rgba(234,242,255,.35))}
+.v-aside-mark{display:block;width:29.9px;height:42px;margin:0 0 10px;opacity:.92;
+  filter:drop-shadow(0 1px 8px rgba(234,242,255,.28))}
+.v-lead{color:var(--v-silver);font-size:var(--v-fs-4);line-height:1.5;max-width:62ch}
+.v-note{color:rgba(201,211,222,.72);font-size:var(--v-fs-2)}
+.v-sec{padding:clamp(56px,7vw,88px) 0;position:relative}
+.v-sec--v-panel{background:var(--v-panel)}
+.v-sec--flush{padding-top:0}
+
+/* ---------- Фоны секций (круг 29, требование владельца «Д») ----------
+   Раньше страница шла ровными тёмными полосами: --v-ink / --v-panel и всё.
+   Теперь у каждого блока свой световой слой — глубина, световая сетка,
+   марочное зелёное или латунное свечение. Слои — только CSS-градиенты и
+   один инлайновый SVG-шум (data-URI), поэтому внешних запросов остаётся 0,
+   а вес CSS растёт на ~0,9 КБ. Слой живёт на ::before секции, контент — выше. */
+.v-sec > .vy-wrap{position:relative;z-index:1}
+.v-sec::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none}
+/* световая сетка 1 px: «чертёж» под тёмными блоками */
+.v-sec--grid::before{
+  background-image:
+    linear-gradient(90deg,rgba(201,211,222,.055) 1px,transparent 1px),
+    linear-gradient(180deg,rgba(201,211,222,.045) 1px,transparent 1px);
+  background-size:96px 96px,96px 96px;
+  background-position:center top;
+  mask-image:radial-gradient(120% 70% at 50% 0%,#000 0%,rgba(0,0,0,.35) 62%,transparent 100%);
+  -webkit-mask-image:radial-gradient(120% 70% at 50% 0%,#000 0%,rgba(0,0,0,.35) 62%,transparent 100%);
+}
+/* шум: убирает «пластиковую» ровность градиентов */
+.v-sec--noise::after{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* 1. «Почему это не обычное ТО» — холодное свечение сверху справа + световая линия */
+.v-sec--why{background:
+  radial-gradient(90% 80% at 88% -10%,rgba(234,242,255,.13),rgba(7,11,18,0) 62%),
+  radial-gradient(70% 60% at 6% 8%,rgba(22,64,47,.5),rgba(7,11,18,0) 60%),
+  linear-gradient(180deg,#070B12 0%,#0A111B 62%,#070B12 100%)}
+.v-sec--why::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat right 6% top 16%/clamp(120px,18vw,240px),
+    linear-gradient(90deg,transparent,rgba(234,242,255,.7) 42%,rgba(234,242,255,.9) 52%,transparent 88%) top/100% 1px no-repeat,
+    radial-gradient(60% 40% at 76% 0%,rgba(224,169,109,.12),transparent 70%)}
+/* знак марки как фон: у каждого второго блока свой отсвет и своё место знака,
+   чтобы страница не читалась ровными тёмными полосами */
+.v-sec--incl::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat left 4% bottom 8%/clamp(140px,20vw,280px),
+    linear-gradient(180deg,rgba(234,242,255,.08) 0,rgba(234,242,255,0) 22%) top/100% 1px no-repeat}
+.v-sec--steps::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat right 8% bottom 12%/clamp(110px,16vw,210px),
+    linear-gradient(90deg,transparent,rgba(234,242,255,.55),transparent) top/100% 1px no-repeat}
+.v-sec--check::before{
+  background:
+    url("/img/vy-mark-ghost.svg") no-repeat right 5% top 10%/clamp(100px,14vw,180px),
+    linear-gradient(90deg,rgba(201,211,222,.055) 1px,transparent 1px),
+    linear-gradient(180deg,rgba(201,211,222,.045) 1px,transparent 1px);
+  background-size:auto,96px 96px,96px 96px}
+/* 2. «Что входит» — панель с зелёным отсветом кузова и латунной каймой */
+.v-sec--incl{background:
+  radial-gradient(120% 110% at 12% 0%,rgba(22,64,47,.6),rgba(14,22,34,0) 58%),
+  radial-gradient(80% 90% at 96% 100%,rgba(224,169,109,.1),rgba(14,22,34,0) 62%),
+  linear-gradient(180deg,#0E1622 0%,#0B131E 58%,#0E1622 100%)}
+/* 3. «Узел крупно» — свет из левого кадра уходит в текст */
+.v-sec--node{background:
+  radial-gradient(60% 90% at -6% 46%,rgba(234,242,255,.12),rgba(7,11,18,0) 60%),
+  radial-gradient(70% 80% at 100% 6%,rgba(22,64,47,.55),rgba(7,11,18,0) 58%),
+  linear-gradient(180deg,#070B12 0%,#090F18 100%)}
+/* 4. Прайс — латунное свечение под цифрами */
+.v-sec--price{background:
+  radial-gradient(70% 70% at 4% 96%,rgba(224,169,109,.16),rgba(11,18,28,0) 60%),
+  radial-gradient(90% 80% at 88% -12%,rgba(234,242,255,.1),rgba(11,18,28,0) 62%),
+  linear-gradient(180deg,#0C141F 0%,#0E1622 46%,#0A121C 100%)}
+/* 5. «Что проверим» — центральное холодное пятно, края в ночь */
+.v-sec--check{background:
+  radial-gradient(70% 80% at 50% -20%,rgba(201,211,222,.14),rgba(7,11,18,0) 60%),
+  linear-gradient(180deg,#080E16 0%,#070B12 100%)}
+/* 6. «Расходники и VIN» — тёмно-зелёный низ и диагональная тень */
+.v-sec--parts{background:
+  linear-gradient(115deg,rgba(7,11,18,0) 42%,rgba(22,64,47,.42) 100%),
+  radial-gradient(80% 90% at 78% 108%,rgba(224,169,109,.12),rgba(11,18,28,0) 64%),
+  linear-gradient(180deg,#0D1520 0%,#0B131D 100%)}
+/* 7. «Как проходит визит» — наклонный световой луч, как от лампы бокса */
+.v-sec--steps{background:
+  linear-gradient(112deg,rgba(234,242,255,.075) 0%,rgba(234,242,255,0) 34%,rgba(234,242,255,0) 66%,rgba(22,64,47,.42) 100%),
+  linear-gradient(180deg,#080D15 0%,#070B12 70%,#080D15 100%)}
+/* 8. «Вечером» — подложка под кадр, чтобы кадр не висел в пустоте */
+.v-sec--evening{background:
+  radial-gradient(80% 120% at 50% 120%,rgba(224,169,109,.14),rgba(7,11,18,0) 62%),
+  linear-gradient(180deg,#080D15 0%,#070B12 100%)}
+/* 9. FAQ — тихая виньетка, чтобы блок вопросов читался как отдельная комната */
+.v-sec--faq{background:
+  radial-gradient(90% 70% at 50% 0%,rgba(201,211,222,.08),rgba(7,11,18,0) 58%),
+  linear-gradient(180deg,#070B12 0%,#05080E 100%)}
+
+/* кнопки: латунь сайта остаётся только в CTA, чтобы остров не спорил с шапкой */
+.v-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:50px;padding:12px 26px;border-radius:999px;border:1.5px solid transparent;
+  font-size:var(--v-fs-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  cursor:pointer;text-align:center;
+  transition:transform var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
+}
+.v-btn:active{transform:translateY(1px)}
+.v-btn--brass{background:var(--brass);color:var(--v-ink);box-shadow:0 8px 26px rgba(224,169,109,.22)}
+.v-btn--brass:hover{background:#EEC08C;color:var(--v-ink);transform:translateY(-2px)}
+/* круг 29 (блокер B1): `.v-hero a` (0,1,1) бил `.v-btn--brass` (0,1,0), и надпись на
+   латуни становилась холодной — #EAF2FF на #E0A96D = 1,85:1. Поднимаем специфичность
+   до (0,2,0) в тех же контекстах, где живут кнопки; тёмный --v-ink на латуни = 10,6:1. */
+.v-hero .v-btn--brass,
+.v-sec .v-btn--brass,
+.v-teaser .v-btn--brass { color: var(--v-ink); }
+.v-hero .v-btn--brass:hover,
+.v-sec .v-btn--brass:hover,
+.v-teaser .v-btn--brass:hover { color: var(--v-ink); }
+.v-hero .v-btn--light,
+.v-sec .v-btn--light,
+.v-teaser .v-btn--light { color: var(--v-cold); }
+.v-hero .v-btn--light:hover,
+.v-sec .v-btn--light:hover,
+.v-teaser .v-btn--light:hover { color: #fff; }
+.v-btn--light{border-color:rgba(234,242,255,.42);color:var(--v-cold);background:rgba(234,242,255,.04)}
+.v-btn--light:hover{border-color:var(--v-cold);background:rgba(234,242,255,.1);color:#fff;transform:translateY(-2px)}
+.v-btnrow{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+
+/* стеклянная панель */
+.v-glass{
+  position:relative;border:1px solid rgba(201,211,222,.16);border-radius:var(--r);
+  background:linear-gradient(180deg,rgba(20,32,48,.72) 0%,rgba(14,22,34,.82) 100%);
+}
+.v-glass::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(120deg,rgba(234,242,255,.14),transparent 34%);
+  opacity:.7;
+}
+
+/* ---------- Первый экран ---------- */
+/* круг 29 (S1): высота героя считается от окна, но публичный билд добавляет над
+   шапкой демо-плашку (export-pages.mjs), и первый экран уезжал на её высоту.
+   Плашка есть только там, где у body стоит data-preview — учитываем её в --demo-h. */
+body[data-preview="true"]{--demo-h:40px}
+.v-hero{position:relative;
+  /* высота героя = окно минус всё, что стоит НАД ним: шапка (--v-hdr), хлебные
+     крошки (--v-crumbs) и демо-плашка публичного билда (--demo-h). Раньше из
+     формулы выпадали крошки — 39,6 px, ровно та разница, на которую первый
+     экран не влезал в 768/800. */
+  min-height:min(760px,calc(100vh - var(--v-hdr) - var(--v-crumbs,40px) - var(--demo-h,0px)));
+  display:flex;align-items:flex-end;
+  padding:clamp(48px,7vw,96px) 0 clamp(40px,5vw,64px);overflow:hidden;isolation:isolate}
+.v-hero-bg{position:absolute;inset:0;z-index:-2;overflow:hidden}
+.v-hero-bg img{width:100%;height:100%;object-fit:cover;object-position:64% 58%}
+.v-hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(7,11,18,.92) 0%,rgba(7,11,18,.62) 26%,rgba(7,11,18,.34) 52%,rgba(7,11,18,.86) 100%),
+    linear-gradient(94deg,rgba(7,11,18,.94) 0%,rgba(7,11,18,.8) 42%,rgba(7,11,18,.12) 72%,rgba(7,11,18,.5) 100%)}
+.v-hero .vy-wrap{width:100%}
+.v-hero-h{max-width:19ch}
+.v-hero-h em{font-style:normal;color:var(--v-cold);text-shadow:0 0 26px rgba(234,242,255,.35)}
+.v-hero .v-lead{margin:18px 0 0;max-width:54ch;color:#D6DEE8}
+.v-hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:30px;padding-top:20px;
+  border-top:1px solid rgba(201,211,222,.2);max-width:720px}
+.v-hero-meta div{font-size:var(--v-fs-2);color:var(--v-silver)}
+.v-hero-meta b{display:block;font-size:var(--v-fs-1);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);font-weight:500;margin-bottom:2px}
+/* световая линия у заголовка — «фара» из интро, оставленная в статике */
+.v-hero-line{width:120px;height:2px;margin:0 0 22px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(234,242,255,0),var(--v-cold) 42%,#fff 60%,rgba(234,242,255,0));
+  box-shadow:0 0 22px rgba(234,242,255,.65)}
+.v-scroll{position:absolute;right:20px;bottom:18px;z-index:2;display:flex;align-items:center;gap:8px;
+  font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(201,211,222,.6)}
+.v-scroll i{display:block;width:1px;height:34px;background:linear-gradient(180deg,var(--v-cold),transparent)}
+@media (max-width:700px){
+  .v-scroll{display:none}
+  /* кнопка «Позвонить: +7 …» на 320–390 переносилась в две строки */
+  .v-hero .v-btn{white-space:nowrap}
+  .v-hero{min-height:0;padding-top:34px}
+  .v-hero .v-lead{font-size:16px}
+  .v-hero-meta{gap:8px 20px;margin-top:22px;padding-top:16px}
+}
+/* круг 29 (S1): на ноутбучных 1366×768 и 1280×800 контент героя выше окна на
+   57/20 px. Ужимаем вертикальные интервалы и сам H1 — не «на глаз», а по замеру
+   (scripts/check-voyah-layout.mjs держит запас ≥16 px на всех размерах). */
+@media (min-width:1024px) and (max-height:830px){
+  .v-hero{padding-top:clamp(20px,2.6vw,38px);padding-bottom:clamp(22px,2.6vw,34px)}
+  .v-hero h1.v-hero-h{font-size:clamp(38px,3.5vw,46px)}
+  .v-hero .v-lead{margin-top:8px;font-size:17px;line-height:1.44}
+  .v-btnrow{margin-top:14px}
+  .v-hero-meta{margin-top:12px;padding-top:10px;gap:6px 20px}
+  .v-hero-meta div{font-size:14px}
+  .v-hero-line{margin-bottom:14px}
+  .v-btn{min-height:44px;padding:10px 22px}
+}
+/* M4 (круг 29): на 320×640 мета-строка уходила под сгиб целиком. Переводим её
+   в две колонки и сжимаем интервалы — адрес и часы остаются в первом экране. */
+@media (max-width:400px){
+  .v-hero{padding-top:26px;padding-bottom:32px}
+  .v-hero .v-lead{margin-top:12px;font-size:15px;line-height:1.5}
+  .v-btnrow{margin-top:18px;gap:8px}
+  .v-btn{min-height:44px;padding:10px 18px;font-size:14px}
+  .v-hero-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:16px;padding-top:12px}
+  .v-hero-meta div{font-size:12.5px;line-height:1.35}
+  .v-hero-meta b{font-size:10.5px;letter-spacing:.12em;margin-bottom:1px}
+}
+@media (max-width:360px){
+  /* M4 (круг 29): самый узкий экран. Надзаголовок уходил в две строки, лид — в
+     восемь; ужимаем их и кнопки, чтобы адрес и часы попали в первый экран. */
+  .v-hero .v-eyebrow{font-size:10.5px;letter-spacing:.1em;white-space:nowrap;gap:8px}
+  .v-hero .v-eyebrow .v-mark{width:14.2px;height:20px}
+  .v-hero .v-lead{font-size:14px;line-height:1.4;margin-top:8px}
+  .v-hero .v-btn{font-size:13px;padding:10px 14px}
+  .v-btnrow{gap:6px;margin-top:12px}
+  .v-hero .v-eyebrow{margin-bottom:10px}
+  .v-hero-meta{gap:5px 12px;margin-top:10px;padding-top:8px}
+}
+
+/* ---------- «Почему это не обычное ТО» ---------- */
+.v-why{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
+.v-why-card{padding:24px 22px 26px;border-radius:var(--r);border:1px solid rgba(201,211,222,.14);
+  background:linear-gradient(180deg,rgba(22,35,52,.6),rgba(14,22,34,.72));
+  display:flex;flex-direction:column;gap:10px;transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease)}
+.v-why-card:hover{transform:translateY(-3px);border-color:rgba(234,242,255,.34)}
+.v-why-card .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  border:1px solid rgba(234,242,255,.26);background:rgba(234,242,255,.05)}
+.v-why-card .ic svg{width:20px;height:20px;stroke:var(--v-cold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.v-why-card h3{font-size:18px;margin:6px 0 0}
+.v-why-card p{font-size:var(--v-fs-2);color:rgba(201,211,222,.86);margin:0}
+.v-why-card span.n{position:absolute;display:none}
+@media (max-width:1024px){.v-why{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.v-why{grid-template-columns:1fr}}
+
+/* ---------- Кадры: второй и третий — самостоятельные блоки ---------- */
+.v-frame{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid rgba(201,211,222,.16);
+  background:var(--v-panel);margin:0}
+.v-frame img{width:100%;height:100%;object-fit:cover}
+.v-frame figcaption{display:flex;gap:14px;align-items:baseline;justify-content:space-between;
+  padding:13px 18px;border-top:1px solid rgba(201,211,222,.14);
+  font-size:var(--v-fs-1);letter-spacing:.06em;text-transform:uppercase;color:rgba(201,211,222,.66)}
+.v-frame figcaption b{color:var(--v-silver);font-weight:500;letter-spacing:.14em}
+/* блок «один узел крупно»: кадр слева, текст справа */
+.v-split{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(24px,4vw,56px);align-items:center}
+.v-split figure{margin:0}
+.v-split .v-frame img{aspect-ratio:16/9}
+.v-split h2{margin-bottom:.4em}
+.v-media-full{position:relative;border-radius:var(--r);overflow:hidden;margin-top:26px}
+.v-media-full img{width:100%;aspect-ratio:21/9;object-fit:cover;object-position:50% 58%}
+.v-media-full .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 22px 18px;
+  /* круг 29 (S3): прежний градиент 0 → .9 по всей высоте оставлял под заголовком
+     альфу ≈0, и на светлом окне бокса текст давал 1,14:1. Теперь подпись лежит на
+     плотной подложке: к первому пикселю текста альфа уже .88, внизу .96. */
+  background:linear-gradient(180deg,rgba(7,11,18,.72) 0%,rgba(7,11,18,.9) 26%,rgba(7,11,18,.96) 100%);
+  font-size:var(--v-fs-2);color:var(--v-silver);display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;align-items:end}
+.v-media-full .cap b{display:block;font-family:var(--font-display);font-weight:600;font-size:var(--v-fs-4);color:var(--ivory);margin-bottom:4px}
+@media (max-width:900px){.v-split{grid-template-columns:1fr}}
+@media (max-width:700px){.v-media-full img{aspect-ratio:4/3}}
+
+/* ---------- «Что входит»: 5 групп ---------- */
+.v-incl{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:34px;counter-reset:incl}
+.v-incl-item{position:relative;padding:20px 18px 22px;border-radius:var(--r-sm);
+  border:1px solid rgba(201,211,222,.14);background:rgba(14,22,34,.66);
+  display:flex;flex-direction:column;gap:8px}
+.v-incl-item::before{counter-increment:incl;content:"0" counter(incl);
+  font-family:var(--font-display);font-size:var(--v-fs-1);letter-spacing:.18em;color:var(--brass);
+  order:-1}
+.v-incl-item h3{font-size:17px;line-height:1.3;margin:0}
+.v-incl-item p{font-size:14px;color:rgba(201,211,222,.84);margin:0}
+@media (max-width:1100px){.v-incl{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:700px){.v-incl{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.v-incl{grid-template-columns:1fr}}
+
+/* ---------- Заголовок первого экрана: три жёсткие строки ---------- */
+.v-h1-l{display:block}
+.v-hero-h{max-width:19ch}
+@media (max-width:700px){
+  /* «в Ростове-на-Дону» должно влезать в строку при 320–390 px.
+     Селектор с той же силой, что и `.v-hero h1` выше, иначе размер не переопределяется. */
+  .v-hero h1.v-hero-h{font-size:clamp(19px,6vw,28px)}
+}
+
+/* ---------- «Что проверим на осмотре»: сетка 2 колонки ---------- */
+.v-check{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin-top:34px;
+  border:1px solid rgba(201,211,222,.16);border-radius:var(--r);overflow:hidden;
+  background:rgba(201,211,222,.16)}
+.v-check-i{padding:22px 22px 24px;background:rgba(11,18,28,.94)}
+.v-check-i h3{font-family:var(--font-display);font-weight:600;font-size:18px;line-height:1.28;
+  letter-spacing:-.01em;margin:0;color:var(--ivory)}
+.v-check-i p{margin:8px 0 0;font-size:15px;line-height:1.6;color:rgba(201,211,222,.86)}
+.v-check-i--sum{background:radial-gradient(120% 140% at 0% 0%,rgba(22,64,47,.55),rgba(10,16,26,.96) 64%)}
+@media (max-width:760px){.v-check{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- «Расходники и подбор по VIN»: три карточки ---------- */
+.v-parts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:34px}
+.v-part{padding:24px 22px 26px;border-radius:var(--r);border:1px solid rgba(201,211,222,.16);
+  background:linear-gradient(160deg,rgba(22,35,52,.55),rgba(7,11,18,.7))}
+.v-part h3{font-family:var(--font-display);font-weight:600;font-size:18px;line-height:1.28;margin:0;color:var(--ivory)}
+.v-part p{margin:10px 0 0;font-size:15px;line-height:1.6;color:rgba(201,211,222,.86)}
+@media (max-width:1024px){.v-parts{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- Прайс: 15 строк ---------- */
+.v-price{display:grid;grid-template-columns:1.45fr .55fr;gap:clamp(24px,4vw,52px);align-items:start}
+.v-price-head{display:flex;align-items:end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.v-tbl{width:100%;border-collapse:collapse;font-size:var(--v-fs-3)}
+.v-tbl caption{text-align:left;font-size:var(--v-fs-1);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,211,222,.6);padding-bottom:10px}
+.v-tbl th{text-align:left;font-weight:500;font-size:var(--v-fs-1);letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);padding:0 0 10px;border-bottom:1px solid rgba(201,211,222,.24)}
+.v-tbl th:last-child,.v-tbl td:last-child{text-align:right;white-space:nowrap}
+.v-tbl td{padding:14px 0;border-bottom:1px solid rgba(201,211,222,.1);vertical-align:baseline}
+.v-tbl td b{font-family:var(--font-display);font-weight:600;font-size:var(--v-fs-4);letter-spacing:-.01em;color:var(--v-cold)}
+.v-tbl tr:hover td{background:rgba(234,242,255,.03)}
+.v-tbl .sub{display:block;font-size:13px;color:rgba(201,211,222,.6);margin-top:2px}
+.v-price-aside{position:sticky;top:calc(var(--v-hdr) + 16px)}
+.v-price-aside .v-glass{padding:24px 22px}
+.v-price-aside h3{font-size:19px;margin-bottom:.5em}
+.v-price-aside ul{display:grid;gap:10px;margin:14px 0 18px}
+.v-price-aside li{display:flex;gap:10px;font-size:var(--v-fs-2);color:rgba(201,211,222,.88)}
+.v-price-aside li::before{content:"";flex:0 0 auto;width:6px;height:6px;margin-top:9px;border-radius:50%;
+  background:var(--v-cold);box-shadow:0 0 8px rgba(234,242,255,.8)}
+.v-price-aside .sum{font-family:var(--font-display);font-size:26px;color:var(--ivory);display:block;margin-bottom:2px}
+@media (max-width:980px){
+  .v-price{grid-template-columns:1fr}
+  .v-price-aside{position:static}
+}
+/* мобильный прайс — карточки (никакого горизонтального скролла) */
+@media (max-width:700px){
+  .v-tbl thead{display:none}
+  .v-tbl caption{display:none}
+  .v-tbl,.v-tbl tbody,.v-tbl tr,.v-tbl td{display:block;width:100%}
+  .v-tbl tr{padding:14px 16px;margin-bottom:10px;border:1px solid rgba(201,211,222,.14);
+    border-radius:var(--r-sm);background:rgba(14,22,34,.7)}
+  .v-tbl td{padding:0;border:0;text-align:left !important}
+  .v-tbl td:first-child{font-weight:500;font-size:var(--v-fs-3)}
+  .v-tbl td:last-child{margin-top:6px}
+  .v-tbl td b{font-size:22px}
+  .v-tbl .sub{display:block;font-size:12.5px;margin-top:2px}
+}
+
+/* ---------- «Как проходит визит»: 4 шага ---------- */
+.v-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px;counter-reset:st}
+.v-step{padding:24px 20px;border-radius:var(--r);border:1px solid rgba(201,211,222,.14);
+  background:linear-gradient(160deg,rgba(22,35,52,.55),rgba(7,11,18,.7))}
+.v-step::before{counter-increment:st;content:counter(st);display:block;font-family:var(--font-display);
+  font-size:34px;line-height:1;color:transparent;-webkit-text-stroke:1px var(--v-cold);margin-bottom:14px}
+.v-step h3{font-size:17px;margin-bottom:.4em}
+.v-step p{font-size:14px;color:rgba(201,211,222,.84);margin:0}
+@media (max-width:1024px){.v-steps{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.v-steps{grid-template-columns:1fr}}
+
+/* ---------- FAQ ---------- */
+.v-faq{display:grid;gap:10px;margin-top:30px;max-width:880px}
+.v-faq details{border:1px solid rgba(201,211,222,.16);border-radius:var(--r-sm);
+  background:rgba(14,22,34,.6);padding:0 18px}
+.v-faq details[open]{border-color:rgba(234,242,255,.32);background:rgba(20,32,48,.7)}
+.v-faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:18px;
+  align-items:center;padding:16px 0;font-family:var(--font-display);font-weight:600;font-size:16.5px;color:var(--ivory)}
+.v-faq summary::-webkit-details-marker{display:none}
+.v-faq summary::after{content:"+";font-family:var(--font-text);font-size:20px;color:var(--v-cold);
+  transition:transform var(--t-mid) var(--ease)}
+.v-faq details[open] summary::after{transform:rotate(45deg)}
+.v-faq .ans{padding:0 0 18px;color:rgba(201,211,222,.88);font-size:var(--v-fs-2);max-width:74ch}
+
+/* ---------- Финальный CTA ---------- */
+.v-cta{position:relative;overflow:hidden;border-radius:var(--r);border:1px solid rgba(201,211,222,.18);
+  background:radial-gradient(120% 140% at 12% 0%,rgba(22,64,47,.55),rgba(7,11,18,.9) 62%);padding:clamp(28px,4vw,52px)}
+.v-cta::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--v-cold),transparent);opacity:.7}
+/* знак марки как крупный водяной знак в финальном блоке — «дорогая» деталь,
+   декор, из дерева доступности убран (aria-hidden на разметке не нужен: это ::before) */
+.v-cta::before{content:"";position:absolute;right:-3%;top:-28%;width:min(42%,340px);aspect-ratio:1;
+  background:url("/img/vy-mark-ghost.svg") center/contain no-repeat;opacity:.55;pointer-events:none}
+.v-cta-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:28px;align-items:center}
+.v-cta h2{margin-bottom:.35em}
+.v-cta .v-btnrow{margin-top:0}
+@media (max-width:860px){.v-cta-grid{grid-template-columns:1fr}}
+
+/* ---------- Служебный слой: фото-пометки ---------- */
+.v-photonote{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(201,211,222,.55)}
+.v-photonote::before{content:"";width:18px;height:1px;background:rgba(201,211,222,.4)}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important}
+}
+
+/* ==========================================================================
+   Тизер для главной + соседние секции сайта (home-section.html).
+   Классы `site-*` повторяют ритм реальных секций: тёмная «О компании»
+   (about) и светлая «Как мы работаем» (est-sec) — чтобы видеть стык.
+   ========================================================================== */
+
+/* ---------- Тизер «Voyah Free» между «О компании» и «Как мы работаем» ---------- */
+.v-teaser{
+  position:relative;overflow:hidden;
+  padding:clamp(56px,7vw,92px) 0;
+  background:
+    radial-gradient(120% 90% at 84% 8%,rgba(22,64,47,.34),rgba(7,11,18,0) 58%),
+    linear-gradient(180deg,#080D15 0%,#070B12 62%,#080D15 100%);
+  border-top:1px solid rgba(201,211,222,.12);border-bottom:1px solid rgba(201,211,222,.12);
+}
+.v-teaser::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(234,242,255,.75),transparent);opacity:.8}
+.v-teaser::after{content:"";position:absolute;right:-8%;top:-30%;width:52%;height:150%;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(234,242,255,.09),rgba(7,11,18,0) 70%);
+  pointer-events:none}
+.v-teaser .vy-wrap{position:relative;z-index:1}
+.v-teaser-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:center}
+.v-teaser h2{max-width:16ch}
+.v-teaser .v-lead{margin-top:14px}
+.v-teaser-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;align-items:center}
+.v-teaser-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.v-teaser-fact{padding:16px 16px 14px;border-radius:var(--r-sm);border:1px solid rgba(201,211,222,.16);
+  background:rgba(14,22,34,.66)}
+.v-teaser-fact b{display:block;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--ivory);margin-bottom:4px}
+.v-teaser-fact span{font-size:13px;color:rgba(201,211,222,.78)}
+.v-teaser-prices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px}
+.v-price-chip{position:relative;padding:18px 16px;border-radius:var(--r-sm);
+  border:1px solid rgba(201,211,222,.16);background:linear-gradient(180deg,rgba(20,32,48,.8),rgba(10,16,26,.8))}
+.v-price-chip span{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(201,211,222,.62);margin-bottom:6px}
+.v-price-chip b{display:block;font-family:var(--font-display);font-weight:600;font-size:24px;color:var(--v-cold);line-height:1}
+.v-price-chip small{display:block;margin-top:6px;font-size:12.5px;color:rgba(201,211,222,.7)}
+@media (max-width:980px){
+  .v-teaser-grid{grid-template-columns:1fr}
+  .v-teaser-facts{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:560px){
+  .v-teaser-prices{grid-template-columns:1fr}
+  .v-teaser-facts{grid-template-columns:1fr}
+}
+
+/* @intro-start */
+.vy-intro{--vy-scene:1950ms;--vy-panel:300ms;position:fixed;inset:0;z-index:200;
+  background:#05080d;cursor:pointer;isolation:isolate;contain:strict}
+.vy-intro.is-quick{--vy-scene:1000ms;--vy-panel:240ms}
+.vy-intro-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:1;transition:opacity 120ms linear}
+.vy-intro.is-wait .vy-intro-canvas{opacity:0}
+.vy-intro-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vy-intro-tag{position:absolute;right:22px;bottom:20px;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(201,211,222,.5)}
+.vy-intro-tag i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brass);margin-right:8px}
+.vy-intro.is-open{animation:vyIntroOut var(--vy-panel) ease-in forwards;pointer-events:none}
+.vy-intro.is-open.is-still{animation:none;opacity:0;visibility:hidden}
+.vy-intro.is-skip{opacity:0;transition:opacity 150ms ease}
+@keyframes vyIntroOut{to{opacity:0;visibility:hidden}}
+body.vy-lock{overflow:hidden}
+@media (prefers-reduced-motion:reduce){.vy-intro{display:none!important}}
+@media print{.vy-intro{display:none!important}}
+/* @intro-end */
