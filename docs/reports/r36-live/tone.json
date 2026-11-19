@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-11-12T06:53:36.523Z",
+  "thresholds": {
+    "contrastL": 8.1,
+    "sigmaL": 12,
+    "meanRgb": 24.3
+  },
+  "pass": {
+    "contrast": true,
+    "sigma": true,
+    "mean": false
+  },
+  "rows": [
+    {
+      "id": "1440-dpr1",
+      "canvas": [
+        1425,
+        767
+      ],
+      "bodyL": 77.3,
+      "bodySigmaL": 56,
+      "bodyPx": 34220,
+      "bodyLowerL": 44.2,
+      "floorL": 9.4,
+      "contrastL": 67.9,
+      "lowerContrastL": 34.8,
+      "frameMeanRgb": 12.91,
+      "frameMeanL": 13.76,
+      "bodyBox": [
+        601,
+        333,
+        407,
+        144
+      ],
+      "carPx": 34229
+    },
+    {
+      "id": "1440-dpr2",
+      "canvas": [
+        2850,
+        1534
+      ],
+      "bodyL": 76.4,
+      "bodySigmaL": 58.3,
+      "bodyPx": 138216,
+      "bodyLowerL": 43.5,
+      "floorL": 8.8,
+      "contrastL": 67.6,
+      "lowerContrastL": 34.7,
+      "frameMeanRgb": 12.9,
+      "frameMeanL": 13.75,
+      "bodyBox": [
+        1202,
+        666,
+        814,
+        288
+      ],
+      "carPx": 138217
+    },
+    {
+      "id": "390-dpr1",
+      "canvas": [
+        375,
+        565
+      ],
+      "bodyL": 74.4,
+      "bodySigmaL": 50,
+      "bodyPx": 12722,
+      "bodyLowerL": 42.5,
+      "floorL": 6,
+      "contrastL": 68.4,
+      "lowerContrastL": 36.5,
+      "frameMeanRgb": 16.74,
+      "frameMeanL": 17.67,
+      "bodyBox": [
+        89,
+        473,
+        255,
+        90
+      ],
+      "carPx": 12722
+    },
+    {
+      "id": "390-dpr2",
+      "canvas": [
+        750,
+        1130
+      ],
+      "bodyL": 74,
+      "bodySigmaL": 52.2,
+      "bodyPx": 51340,
+      "bodyLowerL": 42.3,
+      "floorL": 6,
+      "contrastL": 68.1,
+      "lowerContrastL": 36.3,
+      "frameMeanRgb": 16.74,
+      "frameMeanL": 17.66,
+      "bodyBox": [
+        178,
+        946,
+        510,
+        181
+      ],
+      "carPx": 51347
+    }
+  ]
+}
