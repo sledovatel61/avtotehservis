@@ -3,11 +3,35 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, mkdir, cp, readFile, writeFile, rm, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { parseLeadsEndpoint } from '../src/shared/leads-endpoint.ts';
 import { writePriceRefs } from './lib/price-refs.mjs';
-import { readPublicPath } from './lib/public-path.mjs';
+import { DEFAULT_PUBLIC_ORIGIN, readPublicPath } from './lib/public-path.mjs';
 
+/**
+ * Генерирует содержимое robots.txt по режиму сборки:
+ * - Превью (publicOrigin дефолтный или base !== '/' и не корень ''): Disallow: /
+ * - Боевой (publicOrigin задан и не дефолтный и base === '/' | ''): Allow: /, Disallow: /manage, Sitemap
+ *
+ * @param {{ publicOrigin?: string; base?: string }} [opts]
+ * @returns {string}
+ */
+export function robotsTxt({ publicOrigin, base } = {}) {
+  const origin = typeof publicOrigin === 'string' ? publicOrigin.trim().replace(/\/+$/, '') : '';
+  const isCustomOrigin = origin !== '' && origin !== DEFAULT_PUBLIC_ORIGIN;
+  const isRootBase = base === '/' || base === '';
+  if (!isCustomOrigin || !isRootBase) {
+    return 'User-agent: *\nDisallow: /\n';
+  }
+  return `User-agent: *\nAllow: /\nDisallow: /manage\n\nSitemap: ${origin}/sitemap.xml\n`;
+}
+
+const isMain =
+  Boolean(process.argv[1]) &&
+  fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+
+if (isMain) {
 const root = resolve(import.meta.dirname, '..');
 const output = join(root, 'pages-dist');
 const temp = await mkdtemp(join(tmpdir(), 'ats-pages-'));
@@ -169,7 +193,7 @@ try {
   await writeFile(join(output, 'sitemap.xml'), sitemapPublic);
 
   await writeFile(join(output, '.nojekyll'), '');
-  await writeFile(join(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
+  await writeFile(join(output, 'robots.txt'), robotsTxt({ publicOrigin, base }));
   if (cnameHost) await writeFile(join(output, 'CNAME'), `${cnameHost}\n`);
   await writePriceRefs({ siteRoot: root, outFile: join(output, 'manage/price-refs.json') });
   console.log(`Exported ${routes.length} public pages + 404 to ${output}`);
@@ -179,4 +203,5 @@ try {
     await new Promise((r) => server.once('exit', r));
   }
   await rm(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+}
 }
