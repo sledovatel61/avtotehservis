@@ -3,3 +3,28 @@ input[hidden]{display:none}
 .field-hint,.field-error{display:block}.field-error{color:#a23c36;font-size:.8rem;font-weight:650;margin-top:4px}.field-error:empty{display:none}[aria-invalid="true"]{border-color:#a23c36}
 /* Раздел цен */
 .manage-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:30px;border-bottom:1px solid #cfdcd2}.manage-tabs a{display:inline-flex;align-items:center;min-height:48px;padding:10px 18px;text-decoration:none;font-weight:750;color:#51695a;border-bottom:3px solid transparent}.manage-tabs a[aria-current=page]{color:#205d43;border-bottom-color:#205d43}.manage-tabs a:focus-visible{outline:3px solid #a4ce76;outline-offset:2px}.price-sticky{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;margin:16px 0;background:#e8f3dc;border:1px solid #cadfbd;border-radius:10px;box-shadow:0 6px 18px #254b3518}.price-category{margin-top:14px}.price-category>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:1.08rem}.price-category>summary:before{display:none}.price-category>summary span:first-child:before{content:'＋';color:#498267;margin-right:10px}.price-category[open]>summary span:first-child:before{content:'−'}.price-row{display:grid;grid-template-columns:minmax(180px,1.2fr) repeat(2,minmax(130px,1fr)) auto;align-items:end;gap:12px;border-top:1px solid #e2ebe4;padding:16px 0}.price-row-title{align-self:center;display:flex;flex-wrap:wrap;gap:8px}.price-row label{min-width:0}.price-row .hint{font-weight:400}.price-row .price-actions{display:flex;gap:7px;flex-wrap:wrap}.price-hidden{opacity:.75}.price-add{display:flex;align-items:end;gap:10px;flex-wrap:wrap;background:#f6f9f5;padding:14px;border-radius:8px;margin:12px 0}.price-add h3{width:100%}.price-add label{flex:1;min-width:160px}.price-add .field-error{width:100%}.price-featured{border-top:1px solid #e2ebe4;padding:14px 0}.price-featured>span{margin-left:10px;color:#687b70;font-size:.85rem}#prices-panel .notice{margin:14px 0}#prices-panel .success{margin:14px 0}@media(max-width:700px){.manage-tabs{margin-top:22px}.manage-tabs a{flex:1;justify-content:center;padding:10px 8px}.price-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.price-row-title{grid-column:1/-1}.price-row label{grid-column:1/-1}.price-actions{grid-column:1/-1}.price-actions button{flex:1}.price-add{display:grid;grid-template-columns:1fr}.price-add label{min-width:0}.price-add h3,.price-add .field-error{width:auto}.price-sticky{top:0}}
+/* Компактные категории и безопасное редактирование цен. */
+.price-category { min-width: 0; }
+.price-category > summary { min-height: 52px; flex-wrap: wrap; }
+.price-category > summary > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.price-summary-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .8rem; font-weight: 500; }
+.price-unsaved { background: #fff1ce; color: #775014; }
+.price-row.price-view, .price-row.price-edit, .price-row.price-confirm, .price-row.price-row-deleted { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
+.price-view .price-row-title { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.price-value { display: flex; flex: 0 1 auto; flex-wrap: wrap; gap: 8px; color: #52665a; overflow-wrap: anywhere; }
+.price-actions .button { min-height: 44px; }
+.price-row.price-changed, .price-row.price-row-deleted { padding: 16px 10px; background: #fff9e9; border-radius: 8px; }
+.price-row-deleted p, .price-confirm p { color: #75571f; overflow-wrap: anywhere; }
+.price-edit .price-row-title, .price-confirm > strong, .price-confirm > p, .price-edit > p { flex-basis: 100%; overflow-wrap: anywhere; }
+.price-edit-fields { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.price-edit-fields label { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+.price-category-save { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; }
+@media (max-width: 700px) {
+ .price-category > summary { justify-content: flex-start; }
+ .price-summary-meta { flex-basis: 100%; }
+ .price-view .price-row-title, .price-view .price-value { flex-basis: 100%; }
+ .price-view .price-actions, .price-edit .price-actions, .price-confirm .price-actions { flex: 1 1 100%; }
+ .price-actions .button { flex: 1 1 auto; }
+ .price-category-save { flex-wrap: wrap; }
+}
+.price-rename-warning { flex: 1 1 100%; color: #75571f; overflow-wrap: anywhere; }
