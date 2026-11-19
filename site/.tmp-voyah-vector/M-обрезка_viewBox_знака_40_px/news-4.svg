@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img">
+<rect width="800" height="450" fill="#14281F"/>
+<circle cx="620" cy="105" r="130" fill="#C87F45" opacity=".09"/>
+<g fill="none" stroke="#E0A96D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M310 250l80-80 30 30-80 80-40 10z"/><path d="M430 140q40-40 80 0t-30 70" stroke="#C87F45"/><path d="M295 265l40 40" stroke="#C87F45"/></g>
+<g fill="#B7C4BB" font-family="sans-serif" font-size="22"><text x="400" y="412" text-anchor="middle">Диагностика и ремонт · заглушка</text></g>
+</svg>

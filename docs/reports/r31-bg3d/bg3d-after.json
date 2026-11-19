@@ -1,0 +1,526 @@
+{
+  "generatedAt": "2026-11-10T19:43:32.633Z",
+  "purpose": "3D-фон: стоимость кадра в двух моделях — статическая (принятая, PROFILE_COST=145/130) и динамическая (построчный порт профиля), задание №55 §1.2",
+  "frame": {
+    "width": 640,
+    "height": 360,
+    "pixels": 230400,
+    "window": {
+      "time": 4,
+      "scroll": 0.15,
+      "pointer": [
+        0.18,
+        -0.08
+      ]
+    }
+  },
+  "forkCheck": {
+    "bytes": 43200,
+    "differingBytes": 0,
+    "geometry": {
+      "samples": 20000,
+      "dTop": 0,
+      "dBottom": 0,
+      "dArch": 8.881784197001252e-16,
+      "dProfile": 2.220446049250313e-16
+    }
+  },
+  "windowNote": "то же окно, что в принятом scripts/bg3d-measure.mjs §3: 640×360, t=4.0, scroll=0.15, pointer=(0.18,−0.08)",
+  "baseline": {
+    "opsPerPx": 941,
+    "tolerance": 1.1,
+    "limit": 1035.1,
+    "a11": {
+      "low": 779.9,
+      "mid": 821,
+      "high": 954.1
+    }
+  },
+  "rows": [
+    {
+      "variant": "A",
+      "quality": "low",
+      "staticScalarPerPx": 373.9,
+      "dynamicScalarPerPx": 373.9,
+      "staticInstPerPx": 221.1,
+      "dynamicInstPerPx": 221.1,
+      "scalarMaxPerPx": 450,
+      "deltaPct": 0,
+      "a11ScalarPerPx": null,
+      "nsPerPx": 390,
+      "budget": 60
+    },
+    {
+      "variant": "A",
+      "quality": "mid",
+      "staticScalarPerPx": 415,
+      "dynamicScalarPerPx": 415,
+      "staticInstPerPx": 249.9,
+      "dynamicInstPerPx": 249.9,
+      "scalarMaxPerPx": 527,
+      "deltaPct": 0,
+      "a11ScalarPerPx": null,
+      "nsPerPx": 430,
+      "budget": 25
+    },
+    {
+      "variant": "A",
+      "quality": "high",
+      "staticScalarPerPx": 460.3,
+      "dynamicScalarPerPx": 460.3,
+      "staticInstPerPx": 278.7,
+      "dynamicInstPerPx": 278.7,
+      "scalarMaxPerPx": 612,
+      "deltaPct": 0,
+      "a11ScalarPerPx": null,
+      "nsPerPx": 546,
+      "budget": 10
+    },
+    {
+      "variant": "B",
+      "quality": "low",
+      "staticScalarPerPx": 779.9,
+      "dynamicScalarPerPx": 702.6,
+      "staticInstPerPx": 494.1,
+      "dynamicInstPerPx": 394.8,
+      "scalarMaxPerPx": 793,
+      "deltaPct": -9.9,
+      "a11ScalarPerPx": 779.9,
+      "nsPerPx": 1063,
+      "budget": 60
+    },
+    {
+      "variant": "B",
+      "quality": "mid",
+      "staticScalarPerPx": 821,
+      "dynamicScalarPerPx": 743.7,
+      "staticInstPerPx": 522.9,
+      "dynamicInstPerPx": 423.6,
+      "scalarMaxPerPx": 870,
+      "deltaPct": -9.4,
+      "a11ScalarPerPx": 821,
+      "nsPerPx": 1121,
+      "budget": 25
+    },
+    {
+      "variant": "B",
+      "quality": "high",
+      "staticScalarPerPx": 954.1,
+      "dynamicScalarPerPx": 852.3,
+      "staticInstPerPx": 625.9,
+      "dynamicInstPerPx": 495.1,
+      "scalarMaxPerPx": 1167,
+      "deltaPct": -10.7,
+      "a11ScalarPerPx": 954.1,
+      "nsPerPx": 1337,
+      "budget": 10
+    }
+  ],
+  "worst": {
+    "dynamic": {
+      "variant": "B",
+      "quality": "high",
+      "staticScalarPerPx": 954.1,
+      "dynamicScalarPerPx": 852.3,
+      "staticInstPerPx": 625.9,
+      "dynamicInstPerPx": 495.1,
+      "scalarMaxPerPx": 1167,
+      "deltaPct": -10.7,
+      "a11ScalarPerPx": 954.1,
+      "nsPerPx": 1337,
+      "budget": 10
+    },
+    "static": {
+      "variant": "B",
+      "quality": "high",
+      "staticScalarPerPx": 954.1,
+      "dynamicScalarPerPx": 852.3,
+      "staticInstPerPx": 625.9,
+      "dynamicInstPerPx": 495.1,
+      "scalarMaxPerPx": 1167,
+      "deltaPct": -10.7,
+      "a11ScalarPerPx": 954.1,
+      "nsPerPx": 1337,
+      "budget": 10
+    }
+  },
+  "profileCost": {
+    "dynamicAverage": {
+      "inst": 54.03125,
+      "scalar": 62.03125
+    },
+    "dynamicRangePerX": {
+      "min": 50,
+      "max": 59
+    },
+    "static": {
+      "inst": 131,
+      "scalar": 139
+    },
+    "staticWithCarSdfWrapper": {
+      "inst": 135,
+      "scalar": 143
+    },
+    "acceptedConstant": {
+      "inst": 145,
+      "scalar": 130
+    },
+    "a11Breakdown": "pTop 101 + pBottom 17 + pArch×2 10 + carProfile 12 + carSdf 5 = 145",
+    "perX": [
+      {
+        "x": -2.4142,
+        "instPerCall": 50,
+        "scalarPerCall": 58
+      },
+      {
+        "x": -2.3375,
+        "instPerCall": 50,
+        "scalarPerCall": 58
+      },
+      {
+        "x": -2.2609,
+        "instPerCall": 50,
+        "scalarPerCall": 58
+      },
+      {
+        "x": -2.1843,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -2.1076,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -2.031,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -1.9543,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -1.8777,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -1.8011,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -1.7244,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -1.6478,
+        "instPerCall": 51,
+        "scalarPerCall": 59
+      },
+      {
+        "x": -1.5711,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -1.4945,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -1.4179,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -1.3412,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -1.2646,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -1.1879,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -1.1113,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -1.0346,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -0.958,
+        "instPerCall": 52,
+        "scalarPerCall": 60
+      },
+      {
+        "x": -0.8814,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.8047,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.7281,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.6514,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.5748,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.4982,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.4215,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.3449,
+        "instPerCall": 53,
+        "scalarPerCall": 61
+      },
+      {
+        "x": -0.2682,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": -0.1916,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": -0.115,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": -0.0383,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": 0.0383,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": 0.115,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": 0.1916,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": 0.2682,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": 0.3449,
+        "instPerCall": 54,
+        "scalarPerCall": 62
+      },
+      {
+        "x": 0.4215,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 0.4982,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 0.5748,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 0.6514,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 0.7281,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 0.8047,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 0.8814,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 0.958,
+        "instPerCall": 55,
+        "scalarPerCall": 63
+      },
+      {
+        "x": 1.0346,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.1113,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.1879,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.2646,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.3412,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.4179,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.4945,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.5711,
+        "instPerCall": 56,
+        "scalarPerCall": 64
+      },
+      {
+        "x": 1.6478,
+        "instPerCall": 57,
+        "scalarPerCall": 65
+      },
+      {
+        "x": 1.7244,
+        "instPerCall": 57,
+        "scalarPerCall": 65
+      },
+      {
+        "x": 1.8011,
+        "instPerCall": 57,
+        "scalarPerCall": 65
+      },
+      {
+        "x": 1.8777,
+        "instPerCall": 57,
+        "scalarPerCall": 65
+      },
+      {
+        "x": 1.9543,
+        "instPerCall": 57,
+        "scalarPerCall": 65
+      },
+      {
+        "x": 2.031,
+        "instPerCall": 57,
+        "scalarPerCall": 65
+      },
+      {
+        "x": 2.1076,
+        "instPerCall": 58,
+        "scalarPerCall": 66
+      },
+      {
+        "x": 2.1843,
+        "instPerCall": 58,
+        "scalarPerCall": 66
+      },
+      {
+        "x": 2.2609,
+        "instPerCall": 58,
+        "scalarPerCall": 66
+      },
+      {
+        "x": 2.3375,
+        "instPerCall": 59,
+        "scalarPerCall": 67
+      },
+      {
+        "x": 2.4142,
+        "instPerCall": 59,
+        "scalarPerCall": 67
+      }
+    ]
+  },
+  "geometrySelfCheck": {
+    "dBottom": 0,
+    "dBelt": 0.0000724900061233047,
+    "dTop": 0,
+    "dArch": 8.881784197001252e-16,
+    "dProfile": 2.220446049250313e-16,
+    "samples": 5000
+  },
+  "reflection": [
+    {
+      "quality": "low",
+      "callsPerPx": 1,
+      "reflectionPixelRatio": 0,
+      "secondPassCalls": 0,
+      "expected": "0",
+      "ok": true
+    },
+    {
+      "quality": "mid",
+      "callsPerPx": 1,
+      "reflectionPixelRatio": 0,
+      "secondPassCalls": 0,
+      "expected": "0",
+      "ok": true
+    },
+    {
+      "quality": "high",
+      "callsPerPx": 1.3167,
+      "reflectionPixelRatio": 0.3167,
+      "secondPassCalls": 72960,
+      "expected": "> 0",
+      "ok": true
+    }
+  ]
+}

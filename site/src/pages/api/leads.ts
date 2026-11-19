@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { randomInt } from 'node:crypto';
 import { bookingSchema, messageSchema, toErrorFields, consentVersionOk, MIN_FILL_MS, type BookingPayload, type MessagePayload } from '../../server/validation.ts';
-import { createBooking, createMessage, hashIp, SlotTakenError } from '../../server/leads.ts';
+import { createBooking, createMessage, hashIp } from '../../server/leads.ts';
 import { getSettings, DEFAULTS } from '../../server/settings.ts';
 import { checkLimit, peekLimit, consumeLimit, limitFromEnv, LIMITS } from '../../server/ratelimit.ts';
 import { ddmm } from '../../server/tickets.ts';
@@ -49,7 +49,8 @@ export const POST: APIRoute = async (ctx) => {
     return err(400, 'consent_version', 'Версия согласия устарела. Обновите страницу и отправьте заявку снова.');
   }
   // Квоты заявок проверяются перед созданием, но РАСХОДУЮТСЯ только после успешного
-  // создания (не дубль): ошибки валидации, занятый слот и боты квоту не тратят.
+  // создания (не дубль): ошибки валидации и боты квоту не тратят.
+  // Живая очередь (80-4, B1): выбранный час заявку не отклоняет — 409 по слоту больше нет.
   // Обе должны разрешить: жёсткая по IP и мягкая по IP+cookie.
   const maxLeadsIp = limitFromEnv('RATE_LIMIT_LEADS_IP', LIMITS.leadsIp.max);
   const maxLeads = limitFromEnv('RATE_LIMIT_LEADS', LIMITS.leads.max);
@@ -70,9 +71,6 @@ export const POST: APIRoute = async (ctx) => {
     void runOutboxOnce().catch((e) => console.error('[outbox] immediate:', maskPhone(String((e as Error)?.message ?? e))));
     return json({ ticket: res.ticket, lead_id: res.lead_id, status: 'accepted', duplicate: res.duplicate }, 201);
   } catch (e) {
-    if (e instanceof SlotTakenError) {
-      return err(409, 'slot_taken', 'Выбранное время только что заняли. Выберите, пожалуйста, другой слот.', { slots: e.slots });
-    }
     console.error('[leads]', maskPhone(String((e as Error)?.message ?? e)).slice(0, 300));
     // Телефон — из настроек; если БД сама лежит, остаётся единый дефолт (тот же, что в 500.astro).
     let phone = DEFAULTS.phone_main;
