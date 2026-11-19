@@ -71,6 +71,31 @@ export class GitHub {
   }
   throw new GitHubError('Кто-то сохранил изменения одновременно. Нажмите «Сохранить» ещё раз.',409);
  }
+ async readNews(){
+  let data;try{({data}=await this.request(`${REPO}/contents/site/content/news.json?ref=${REF}`));}catch(e){if(e.status===404)throw new GitHubError('Не удалось прочитать статьи. Обратитесь к разработчику.',404);throw e;}
+  try{if(typeof data.content!=='string')throw Error();const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0));return {json:JSON.parse(new TextDecoder().decode(bytes)),sha:data.sha};}catch{throw new GitHubError('Не удалось прочитать статьи. Обратитесь к разработчику.',0);}
+ }
+ async saveNews(apply,message,files,deleteDirectories=[]){
+  for(let attempt=0;attempt<2;attempt++){
+   const latest=await this.readNews(),next=apply(latest.json);next.updated_at=new Date().toISOString();
+   const {data:ref}=await this.request(`${REPO}/git/ref/heads/${REF}`),parent=ref.object.sha;
+   const {data:commit}=await this.request(`${REPO}/git/commits/${parent}`);
+   const check=await this.readNews();if(check.sha!==latest.sha){if(attempt===0)continue;throw new GitHubError('Кто-то сохранил изменения одновременно. Повторите сохранение.',409);}
+   const tree=new Map();
+   if(deleteDirectories.length||files.some(f=>f.blob===null)){
+    const {data:listing}=await this.request(`${REPO}/git/trees/${commit.tree.sha}?recursive=1`);
+    if(listing.truncated)throw new GitHubError('Не удалось безопасно проверить фотографии. Обратитесь к разработчику.',0);
+    for(const entry of listing.tree||[])if(entry.type==='blob'&&(deleteDirectories.some(dir=>entry.path.startsWith(dir))||files.some(f=>f.blob===null&&f.path===entry.path)))tree.set(entry.path,{path:entry.path,mode:'100644',type:'blob',sha:null});
+   }
+   const all=[...files.filter(f=>f.blob!==null),{path:'site/content/news.json',blob:new Blob([JSON.stringify(next,null,2)+'\n'],{type:'application/json'})}];
+   for(const f of all){const bytes=new Uint8Array(await f.blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const {data}=await this.request(`${REPO}/git/blobs`,{method:'POST',body:JSON.stringify({content:btoa(binary),encoding:'base64'})});tree.set(f.path,{path:f.path,mode:'100644',type:'blob',sha:data.sha});}
+   const {data:treeData}=await this.request(`${REPO}/git/trees`,{method:'POST',body:JSON.stringify({base_tree:commit.tree.sha,tree:[...tree.values()]})});
+   const {data:saved}=await this.request(`${REPO}/git/commits`,{method:'POST',body:JSON.stringify({message,tree:treeData.sha,parents:[parent]})});
+   try{await this.request(`${REPO}/git/refs/heads/${REF}`,{method:'PATCH',body:JSON.stringify({sha:saved.sha,force:false})});return {json:next,commit:saved.sha,sha:tree.get('site/content/news.json').sha};}
+   catch(e){if((e.status===409||e.status===422)&&attempt===0)continue;if(e.status===409||e.status===422)throw new GitHubError('Кто-то сохранил изменения одновременно. Повторите сохранение.',409);throw e;}
+  }
+  throw new GitHubError('Кто-то сохранил изменения одновременно. Повторите сохранение.',409);
+ }
  async savePrices(apply, count, progress=()=>{}){
   for(let attempt=0;attempt<2;attempt++){
    progress(attempt?'Проверяем одновременные изменения…':'Проверяем цены перед сохранением…');
