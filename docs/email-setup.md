@@ -43,12 +43,18 @@
 | **First name \*** | `Pavel` |
 | **Last name \*** | `Yakovenko` |
 | **Organization name \*** | `AvtoTehServis` |
-| **Website \*** | `https://sledovatel61.github.io/avtotehservis/` |
+| **Website \*** | `sledovatel61.github.io` — **без** `https://`, **без** `/avtotehservis` и **без** `/` в конце |
 | ☐ I don't have a website | **галочку НЕ ставить** — сайт у нас есть |
 | ☐ I don't want to receive product updates, marketing tips… | **галочку поставить** — меньше рекламы на почту; на отправку писем не влияет |
 
 Латиницей — потому что Brevo европейский сервис и латиница избавляет от проблем с
 кодировкой в письмах проверки. На работу отправки это не влияет.
+
+**Про поле Website — ошибка `errorWrong website format`.** Brevo принимает только «голый»
+домен в виде `www.mywebsite.com`. Нельзя: `https://`, путь после домена, `/` в конце.
+Правильно — `sledovatel61.github.io`. Если Brevo упрётся и в такой вариант, поставьте
+галочку **I don't have a website** — на отправку писем это поле не влияет вообще,
+оно нужно Brevo только для подсказок в кабинете.
 
 **Если Brevo спросит дальше** (следующие экраны онбординга):
 
