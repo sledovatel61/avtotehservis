@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-19T17:09:14.166Z",
+  "updated_at": "2026-11-19T17:10:37.435Z",
   "cases": [
     {
       "slug": "remont-stupitsy",
@@ -72,7 +72,7 @@
       "description": "Замена комплекта грм, цепи 3шт., натяжители, успокоители.",
       "service_slug": "shinomontazh",
       "mode": "single",
-      "status": "draft",
+      "status": "published",
       "published_at": "2026-11-19",
       "sort": 30,
       "cover": {
