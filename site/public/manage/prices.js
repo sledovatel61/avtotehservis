@@ -2,6 +2,8 @@ import {validate, slugifyRu} from './prices-schema.js';
 import {escapeHTML as esc} from './store.js';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const PRICE_ERROR='Похоже, это не цена. Напишите, например: 1200 ₽';
+const VERSION_ERROR='Файл цен от другой версии сайта, сообщите разработчику';
+const readError=result=>result.errors.includes(VERSION_ERROR)?VERSION_ERROR:'Не удалось прочитать цены. Обратитесь к разработчику.';
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const findCategory=(doc,key)=>{
  if(key.startsWith('group:'))return doc.groups.find(g=>g.id===key.slice(6))?.items;
@@ -52,7 +54,7 @@ export function createPrices(root){
   saving=true;root.querySelectorAll('button,input').forEach(x=>x.disabled=true);message('Сохраняем изменения…');
   try{
    const result=await api.savePrices(latest=>{
-    const checked=validate(latest);if(!checked.ok)throw Error('Не удалось прочитать цены. Обратитесь к разработчику.');
+    const checked=validate(latest);if(!checked.ok)throw Error(readError(checked));
     const next=clone(latest),used=allIds(next),missing=[],conflicts=[];
     const selectedKeys=new Set(keys);for(const [key,change] of changes)if(change.isNew&&!selectedKeys.has(key))used.add(change.id);
     for(const change of selected){const rows=findCategory(next,change.cat);if(!Array.isArray(rows)){missing.push(nameOf(change.fields,change.cat==='tyres:set'?'set':change.cat==='tyres:repair'?'repair':'group')||change.id);continue;}
@@ -69,7 +71,7 @@ export function createPrices(root){
   }catch(e){render();message(errorText(e),true);}finally{saving=false;root.querySelectorAll('button,input').forEach(x=>x.disabled=false);updateCount();}
  }
  render();return {
-  async connect(client){api=client;snapshot=null;changes.clear();render();message('Загружаем цены…');try{const read=await api.readPrices();const result=validate(read.json);if(!result.ok)throw Error('Не удалось прочитать цены. Обратитесь к разработчику.');snapshot=read;render();}catch(e){message(errorText(e),true);}},
+  async connect(client){api=client;snapshot=null;changes.clear();render();message('Загружаем цены…');try{const read=await api.readPrices();const result=validate(read.json);if(!result.ok)throw Error(readError(result));snapshot=read;render();}catch(e){message(errorText(e),true);}},
   mayDisconnect(){return !dirty()||confirm('Есть несохранённые изменения цен. Отменить их?');},
   disconnect(){api=null;snapshot=null;changes.clear();render();}
  };

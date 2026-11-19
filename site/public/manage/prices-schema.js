@@ -11,7 +11,8 @@ export function validate(value){
  const price=(x,where)=>{if(typeof x!=='string'||!x.trim()||x.trim().length>40||!/\d/.test(x))err(where,'Похоже, это не цена. Напишите, например: 1200 ₽');};
  const items=(xs,where,fn)=>{if(!Array.isArray(xs)){err(where,'ожидается список');return;}xs.forEach((x,i)=>{const at=`${where}[${i}]`;if(!object(x)){err(at,'ожидается запись');return;}id(x.id,`${at}.id`);if(x.hidden!==undefined&&typeof x.hidden!=='boolean')err(`${at}.hidden`,'нужно да или нет');fn(x,at);});};
  if(!object(value))return {ok:false,errors:['Ожидается список цен.']};
- if(value.version!==1)err('version','неподдерживаемая версия');
+ // В действующем файле поле версии отсутствует; сохраняем его только если оно уже есть.
+ if(Object.hasOwn(value,'version') && value.version!==1)errors.push('Файл цен от другой версии сайта, сообщите разработчику');
  if(typeof value.updated_at!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value.updated_at))err('updated_at','нужна дата ГГГГ-ММ-ДД');
  items(value.groups,'groups',(g,at)=>{text(g.title,`${at}.title`);text(g.service,`${at}.service`);items(g.items,`${at}.items`,(p,pAt)=>{text(p.name,`${pAt}.name`);price(p.price,`${pAt}.price`);});});
  if(!object(value.tyres))err('tyres','ожидаются таблицы');else{
