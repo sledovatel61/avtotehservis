@@ -11,7 +11,11 @@ import { SLOT_TIMES, moscowNow } from '../src/server/slots.ts';
 
 const SITE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = mkdtempSync(join(tmpdir(), 'ats-int-'));
-const A = { data: join(TMP, 'a-data'), media: join(TMP, 'a-media'), mail: join(TMP, 'a-mail') };
+const A = { data: join(TMP, 'a-data'), media: join(TMP, 'a-media'), mail: join(TMP, 'a-mail'), cases: join(TMP, 'a-cases.json') };
+/* Витрина работ читает site/content/cases.json (круг 79), а не таблицу `cases`.
+   Сервер A получает свой пустой файл: тест публикации пишет в него, остальные
+   проверки не зависят от того, что лежит в репозитории. */
+writeFileSync(A.cases, JSON.stringify({ version: 1, updated_at: '', cases: [] }));
 const B = { data: join(TMP, 'b-data'), media: join(TMP, 'b-media'), mail: join(TMP, 'b-mail') };
 // Сервер C: пустой DATA_DIR без миграций — для проверки /api/health → 503 degraded (M6 ревью).
 const C = { data: join(TMP, 'c-data'), media: join(TMP, 'c-media'), mail: join(TMP, 'c-mail') };
@@ -147,7 +151,7 @@ before(async () => {
   await prepare(F);
   portA = await freePort(); portB = await freePort();
   srvA = await startServer(portA, {
-    DATA_DIR: A.data, MEDIA_DIR: A.media, SMTP_JSON_DIR: A.mail,
+    DATA_DIR: A.data, MEDIA_DIR: A.media, SMTP_JSON_DIR: A.mail, CASES_FILE: A.cases,
     TELEGRAM_API_BASE: tgBase(), BOT_TOKEN: 'TEST:TOKEN', TELEGRAM_CHAT_ID: '42',
     SESSION_SECRET: 'test-secret', RATE_LIMIT_LEADS: '1000', RATE_LIMIT_UPLOADS: '1000',
     RATE_LIMIT_ANTIFLOOD: '1000',
@@ -679,21 +683,49 @@ test('rate-limit: антифлуд срабатывает на шквал люб
 });
 
 test('кейсы: свежая публикация сразу видна на / и /about, выше старых', async () => {
-  process.env.DATA_DIR = A.data; process.env.MEDIA_DIR = A.media;
-  const { closeDb, db } = await import('../src/server/db.ts');
-  closeDb();
-  db().prepare(`INSERT INTO cases(slug,title,description,service_slug,cover_static,status,published_at,sort)
-    VALUES('test-fresh-case','Свежий кейс ПРОВЕРКА','Описание свежего кейса',NULL,'/img/case-1.svg','published',datetime('now'),99)`).run();
+  /* Публичная витрина работ читает site/content/cases.json (круг 79), поэтому
+     публикуем в файл сервера A — тот же путь, которым пишет «Фото работ».
+     Раньше тест вставлял строку в SQLite `cases`: этот путь работает только в
+     режиме «файла работ нет» и к витрине с файлом отношения не имеет. */
+  const work = (o: { slug: string; title: string; status?: 'draft' | 'published'; published_at: string }): Record<string, unknown> => ({
+    slug: o.slug,
+    title: o.title,
+    description: 'Работа из теста',
+    service_slug: null,
+    mode: 'single',
+    status: o.status ?? 'published',
+    published_at: o.published_at,
+    sort: 10, // одинаковый sort — порядок решает дата публикации
+    cover: { base: 'test-single', alt: 'Кадр тестовой работы', w: 1600, h: 1200, ext: 'webp' },
+    before: [],
+    after: [],
+    photos: [],
+  });
+  const older = work({ slug: 'staraya-rabota', title: 'Старая работа КУЗОВ', published_at: '2026-11-01' });
+  const fresh = work({ slug: 'svezhaya-rabota', title: 'Свежий кейс ПРОВЕРКА', published_at: '2026-11-20' });
+  const draft = work({ slug: 'chernovik-raboty', title: 'Черновик работы ПРОВЕРКА', status: 'draft', published_at: '2026-11-21' });
+  const writeCases = (cases: unknown[]): void =>
+    writeFileSync(A.cases, JSON.stringify({ version: 1, updated_at: new Date().toISOString(), cases }, null, 2));
+
   try {
+    // 1) Витрина действительно читает файл: одна старая работа уже видна.
+    writeCases([older]);
+    const first = await (await fetch(`http://127.0.0.1:${portA}/`)).text();
+    assert.ok(first.includes('Старая работа КУЗОВ'), 'витрина читает файл работ');
+
+    // 2) Публикуем свежую и черновик: свежая видна и стоит выше, черновик — нет.
+    writeCases([older, fresh, draft]);
     const home = await (await fetch(`http://127.0.0.1:${portA}/`)).text();
     assert.ok(home.includes('Свежий кейс ПРОВЕРКА'), 'новый кейс виден на главной');
+    assert.ok(!home.includes('Черновик работы ПРОВЕРКА'), 'черновик на главной не виден');
+    assert.ok(
+      home.indexOf('Свежий кейс ПРОВЕРКА') < home.indexOf('Старая работа КУЗОВ'),
+      'порядок: свежая работа выше старой',
+    );
     const about = await (await fetch(`http://127.0.0.1:${portA}/about`)).text();
     assert.ok(about.includes('Свежий кейс ПРОВЕРКА'), 'новый кейс виден на /about');
-    // Новые выше старых: свежий кейс встречается в галерее раньше первого сеянного.
-    assert.ok(home.indexOf('Свежий кейс ПРОВЕРКА') < home.indexOf('Порез по боковине'), 'порядок: свежий кейс первым в галерее');
   } finally {
-    db().prepare(`DELETE FROM cases WHERE slug='test-fresh-case'`).run();
-    closeDb();
+    writeCases([]);
   }
 });
 
