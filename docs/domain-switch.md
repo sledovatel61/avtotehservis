@@ -31,6 +31,7 @@ GitHub → репозиторий `sledovatel61/avtotehservis` → **Settings** 
 
 **Actions** → слева **Publish client preview** → справа **Run workflow** → ветка `preview/github-pages` → **Run workflow**.
 Дождаться зелёной галочки (3–4 минуты). Если сборка упала — домен **не включать**, прислать мне лог.
+Если `PUBLIC_DEMO_REVIEWS` забыть, сборка упадёт на гейте `check-reviews-artifact` — это защита, а не поломка.
 
 ## Шаг 3. Проверка, что сборка уже под домен (я, до включения)
 
