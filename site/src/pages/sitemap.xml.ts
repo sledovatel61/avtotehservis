@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { listCatalogServices } from '../server/services.ts';
-import { listNews, NEWS_CATEGORIES, newsCategoryCounts } from '../server/content.ts';
+import { listNews, NEWS_CATEGORIES, newsCategoryPages } from '../server/news-store.ts';
 import { listSiteCaseSlugs } from '../server/cases-store.ts';
 
 function esc(s: string): string {
@@ -13,21 +13,26 @@ export const GET: APIRoute = ({ site }) => {
   const urls: { loc: string; lastmod?: string }[] = statics.map((p) => ({ loc: base + p }));
   try {
     for (const s of listCatalogServices()) urls.push({ loc: `${base}/services/${s.slug}` });
-    for (const n of listNews({ per: 500 }).items) urls.push({ loc: `${base}/news/${n.slug}`, lastmod: n.published_at ?? undefined });
+  } catch { /* БД не мигрирована — отдаём только статику */ }
+  /* Круг 89: статьи «Полезного» и их пагинация читаются из site/content/news.json (не зависят от БД). */
+  try {
+    for (const n of listNews({ per: 500 }).items) {
+      const lastmod = (n.updated_at ? n.updated_at.slice(0, 10) : (n.published_at ?? '')).slice(0, 10) || undefined;
+      urls.push({ loc: `${base}/news/${n.slug}`, lastmod });
+    }
     /* Страницы листинга «Полезного» — реальные пути, а не query: статический экспорт
        рендерит ровно то, что перечислено в sitemap. */
     const per = 6;
     const newsPages = listNews({ per }).pages;
     for (let i = 2; i <= newsPages; i++) urls.push({ loc: `${base}/news/page/${i}` });
-    const counts = newsCategoryCounts();
     for (const { slug } of NEWS_CATEGORIES) {
-      const count = counts[slug] ?? 0;
-      if (!count) continue;
+      const catPages = newsCategoryPages(slug, per);
+      if (!catPages) continue;
       const categoryBase = `${base}/news/cat/${slug}`;
       urls.push({ loc: categoryBase });
-      for (let i = 2; i <= Math.ceil(count / per); i++) urls.push({ loc: `${categoryBase}/page/${i}` });
+      for (let i = 2; i <= catPages; i++) urls.push({ loc: `${categoryBase}/page/${i}` });
     }
-  } catch { /* БД не мигрирована — отдаём только статику */ }
+  } catch { /* файл статей битый — базовый /news уже в statics */ }
   /* Задание 79-2: раздел «Наши работы». Файл работ не зависит от БД, поэтому отдельным
      try — падение базы не должно выкидывать работы из карты сайта.
      Сам листинг /raboty в карте есть всегда: статический экспорт рендерит ровно то, что

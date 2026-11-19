@@ -1,5 +1,8 @@
 import { db } from './db.ts';
 import { getPrices, fillPrices } from './prices-store.ts';
+import { NEWS_CATEGORIES, NEWS_CATEGORY_SLUGS, catTitle } from '../shared/news-schema.ts';
+
+export { NEWS_CATEGORIES, NEWS_CATEGORY_SLUGS, catTitle };
 
 export interface CaseRow {
   id: number; slug: string; title: string; description: string | null; service_slug: string | null;
@@ -44,15 +47,6 @@ export function getCase(slug: string): CaseRow | undefined {
 }
 export function listPublishedReviews(limit = 12): ReviewRow[] {
   return db().prepare(`SELECT * FROM reviews WHERE status='published' ORDER BY published_at DESC LIMIT ?`).all(limit) as ReviewRow[];
-}
-export const NEWS_CATEGORIES = [
-  { slug: 'sezonnoe', title: 'Сезонное' },
-  { slug: 'sovety', title: 'Советы' },
-  { slug: 'servis', title: 'Сервис' },
-] as const;
-
-export function catTitle(slug: string): string {
-  return NEWS_CATEGORIES.find((c) => c.slug === slug)?.title ?? slug;
 }
 export function newsCategoryCounts(): Record<string, number> {
   const rows = db().prepare(`SELECT category, COUNT(*) AS c FROM news WHERE status='published' GROUP BY category`).all() as { category: string; c: number }[];

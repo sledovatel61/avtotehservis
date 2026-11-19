@@ -20,6 +20,8 @@ mkdirSync(DIRS.mail, { recursive: true });
    подменяем путь пустым файлом и не зависим от содержимого репозитория. */
 const EMPTY_CASES = join(TMP, 'empty-cases.json');
 writeFileSync(EMPTY_CASES, JSON.stringify({ version: 1, updated_at: '', cases: [] }));
+const TEMP_NEWS = join(TMP, 'news.json');
+writeFileSync(TEMP_NEWS, JSON.stringify({ version: 1, updated_at: '2026-11-21T09:00:00.000Z', items: [] }));
 
 let port = 0, srv: ChildProcess | null = null, BASE = '';
 const ADMIN_LOGIN = 'owner';
@@ -53,7 +55,7 @@ before(async () => {
   BASE = `http://127.0.0.1:${port}`;
   srv = spawn(process.execPath, [join(SITE_ROOT, 'dist/server/entry.mjs')], {
     cwd: SITE_ROOT,
-    env: { ...process.env, HOST: '127.0.0.1', PORT: String(port), SMTP_JSON_DIR: DIRS.mail, SESSION_SECRET: 'adm-test', RATE_LIMIT_LEADS: '1000', CASES_FILE: EMPTY_CASES },
+    env: { ...process.env, HOST: '127.0.0.1', PORT: String(port), SMTP_JSON_DIR: DIRS.mail, SESSION_SECRET: 'adm-test', RATE_LIMIT_LEADS: '1000', CASES_FILE: EMPTY_CASES, NEWS_FILE: TEMP_NEWS },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   srv.stderr?.on('data', (d) => { if (process.env.TEST_DEBUG) console.error('[adm-srv]', String(d)); });
@@ -209,6 +211,13 @@ test('закрытые отзывы: постоянный редирект до 
       assert.equal(r.headers.get('location'), '/manage/#reviews');
     }
   }
+  for (const path of ['/admin/news', '/admin/news/new', '/admin/news/123', '/admin/news/123/edit.html']) {
+    for (const cookie of ['', sessionCookie]) {
+      const r = await fetch(`${BASE}${path}`, { headers: cookie ? { Cookie: cookie } : {}, redirect: 'manual' });
+      assert.equal(r.status, 301, `${path}: статус при ${cookie ? 'сессии' : 'без сессии'}`);
+      assert.equal(r.headers.get('location'), '/manage/#news');
+    }
+  }
 });
 
 test('закладки с завершающим слешем доходят до мастерской через канонизацию Astro', async () => {
@@ -217,6 +226,8 @@ test('закладки с завершающим слешем доходят д�
     ['/admin/cases/123/', '/admin/cases/123', '/manage/#photos'],
     ['/admin/reviews/', '/admin/reviews', '/manage/#reviews'],
     ['/admin/reviews/123/', '/admin/reviews/123', '/manage/#reviews'],
+    ['/admin/news/', '/admin/news', '/manage/#news'],
+    ['/admin/news/123/', '/admin/news/123', '/manage/#news'],
   ]) {
     for (const cookie of ['', sessionCookie]) {
       const headers: Record<string, string> = cookie ? { Cookie: cookie } : {};
@@ -244,15 +255,17 @@ test('дашборд ведёт в мастерскую, не содержит �
   const html = await r.text();
   assert.ok(!html.includes('/admin/cases'));
   assert.ok(!html.includes('/admin/reviews'));
+  assert.ok(!html.includes('/admin/news'));
   assert.ok(html.includes('href="/manage/#photos"'));
   assert.ok(html.includes('href="/manage/#reviews"'));
+  assert.ok(html.includes('href="/manage/#news"'));
   assert.ok(!html.includes('Черновиков кейсов'));
   assert.ok(!html.includes('Отзывов на модерации'));
+  assert.ok(!html.includes('Черновиков новостей'));
   const nav = html.match(/<nav class="adm-nav"[\s\S]*?<\/nav>/)?.[0] ?? '';
   assert.ok(nav, 'навигация найдена');
-  assert.doesNotMatch(nav, />\s*(?:Кейсы|Отзывы)\s*<\/a>/);
+  assert.doesNotMatch(nav, />\s*(?:Кейсы|Отзывы|Новости)\s*<\/a>/);
   assert.match(nav, /Заявки/);
-  assert.match(nav, /Новости/);
 });
 
 test('заявка с сайта видна в админке; смена статуса + журнал', async () => {
@@ -302,16 +315,36 @@ test('черновик кейса не виден публично; публик
 });
 
 test('черновик новости: 404 публично, публикация — 200', async () => {
-  const { db } = await import('../src/server/db.ts');
-  db().prepare(`INSERT INTO news(slug,title,body_md,category,status) VALUES('testovaya-novost','Тестовая новость','# Текст','sovety','draft')`).run();
+  const bodyMd = '# Текст тестовой статьи\n\n' + 'Подробное описание работ по проверке и обслуживанию автомобиля в автосервисе. '.repeat(4);
+  const itemBase = {
+    slug: 'testovaya-novost',
+    title: 'Тестовая новость',
+    seo_title: null,
+    excerpt: 'Краткое описание тестовой статьи для проверки черновика и публикации.',
+    category: 'sovety',
+    body_md: bodyMd,
+    cover: null,
+    cover_static: '/img/news-1.svg',
+    published_at: '2026-11-18 10:00',
+    updated_at: '2026-11-18 10:00',
+  };
+  writeFileSync(TEMP_NEWS, JSON.stringify({
+    version: 1,
+    updated_at: '2026-11-21T09:00:00.000Z',
+    items: [{ ...itemBase, status: 'draft' }],
+  }, null, 2));
   assert.equal((await fetch(`${BASE}/news/testovaya-novost`)).status, 404);
-  db().prepare(`UPDATE news SET status='published', published_at=datetime('now') WHERE slug='testovaya-novost'`).run();
+  writeFileSync(TEMP_NEWS, JSON.stringify({
+    version: 1,
+    updated_at: '2026-11-21T09:00:01.000Z',
+    items: [{ ...itemBase, status: 'published' }],
+  }, null, 2));
   const r = await fetch(`${BASE}/news/testovaya-novost`);
   assert.equal(r.status, 200);
   assert.ok((await r.text()).includes('Тестовая новость'));
   const listHtml = await (await fetch(`${BASE}/news`)).text();
   assert.ok(listHtml.includes('Тестовая новость'), 'статья в списке');
-  db().prepare(`DELETE FROM news WHERE slug='testovaya-novost'`).run();
+  writeFileSync(TEMP_NEWS, JSON.stringify({ version: 1, updated_at: '2026-11-21T09:00:02.000Z', items: [] }));
 });
 
 test('медиа: обложка опубликованного кейса защищена от удаления из библиотеки (M1 ревью round4)', async () => {
