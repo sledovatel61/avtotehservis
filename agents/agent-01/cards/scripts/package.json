@@ -1,0 +1,18 @@
+{
+  "name": "ats-cards-agent01",
+  "private": true,
+  "type": "module",
+  "description": "Генератор визиток АвтоТехСервис: SVG с глифами в кривых, PNG 600 dpi, коллаж, PDF с вылетами, самопроверка.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "jsqr": "1.4.0",
+    "opentype.js": "1.3.4",
+    "pdf-lib": "1.17.1",
+    "qrcode": "1.5.4",
+    "sharp": "0.35.5",
+    "wawoff2": "1.0.2"
+  }
+}

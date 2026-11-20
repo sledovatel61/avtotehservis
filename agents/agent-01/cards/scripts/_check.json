@@ -1,0 +1,142 @@
+[
+ {
+  "file": "concepts/01-nochnoy-ceh/back.json",
+  "id": "01-nochnoy-ceh",
+  "side": "back",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 11,
+   "minSize": 6,
+   "minContrast": 8.972815855272573,
+   "qr": 1,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/01-nochnoy-ceh/front.json",
+  "id": "01-nochnoy-ceh",
+  "side": "front",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 6,
+   "minSize": 6.2,
+   "minContrast": 8.972815855272573,
+   "qr": 0,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/02-smeta/back.json",
+  "id": "02-smeta",
+  "side": "back",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 16,
+   "minSize": 6,
+   "minContrast": 4.6933071484708115,
+   "qr": 1,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/02-smeta/front.json",
+  "id": "02-smeta",
+  "side": "front",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 12,
+   "minSize": 6,
+   "minContrast": 4.6933071484708115,
+   "qr": 0,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/03-mishen/back.json",
+  "id": "03-mishen",
+  "side": "back",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 10,
+   "minSize": 6,
+   "minContrast": 4.6933071484708115,
+   "qr": 1,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/03-mishen/front.json",
+  "id": "03-mishen",
+  "side": "front",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 6,
+   "minSize": 6.4,
+   "minContrast": 8.972815855272573,
+   "qr": 0,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/04-svetlaya/back.json",
+  "id": "04-svetlaya",
+  "side": "back",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 10,
+   "minSize": 6,
+   "minContrast": 4.6933071484708115,
+   "qr": 1,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/04-svetlaya/front.json",
+  "id": "04-svetlaya",
+  "side": "front",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 6,
+   "minSize": 6.2,
+   "minContrast": 4.6933071484708115,
+   "qr": 0,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/05-dva-podyomnika/back.json",
+  "id": "05-dva-podyomnika",
+  "side": "back",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 15,
+   "minSize": 6,
+   "minContrast": 8.972815855272573,
+   "qr": 1,
+   "safe": "7–89 × 7–49"
+  }
+ },
+ {
+  "file": "concepts/05-dva-podyomnika/front.json",
+  "id": "05-dva-podyomnika",
+  "side": "front",
+  "violations": [],
+  "warnings": [],
+  "stats": {
+   "texts": 9,
+   "minSize": 6,
+   "minContrast": 8.972815855272573,
+   "qr": 0,
+   "safe": "7–89 × 7–49"
+  }
+ }
+]
