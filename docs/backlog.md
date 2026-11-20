@@ -8,7 +8,7 @@
 — копия обновляется при каждом изменении этого файла. Инструкция по В2 там же:
 [«память» для отзывов](https://docs.google.com/document/d/1yNOY0lbuiwHmllUuGo36LMgKcQTgUCDS_10OJDdj-38/edit).
 **Боевой сайт:** `https://ats-rostov.ru` — HTTPS включён, заявки идут в Telegram
-(`/health`: `telegram:true`, `email:null`, `kv:false`, `reviews:true`, `reviewsKv:false`).
+(`/health`: `telegram:true`, `email:null`, `kv:true`, `reviews:true`, `reviewsKv:true`).
 **Индексация открыта:** `noindex` снят со всех боевых страниц (PR #105), `robots.txt` и sitemap на месте.
 Закрыты намеренно только `/manage/`, `404` и три meta-refresh заглушки услуг.
 
