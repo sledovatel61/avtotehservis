@@ -21,7 +21,14 @@ export interface Settings {
   legal: { name: string; inn: string; ogrnip: string };
   ratings_visible: boolean;
   ratings: Rating[];
+  /**
+   * Версия согласия формы — сверяется с `relay/wrangler.toml` в `relay-smoke.yml`.
+   * НЕ МЕНЯТЬ без правки прослойки: несовпадение ломает все заявки (`400 consent_version`).
+   * Для политики/баннера cookies есть отдельное поле `policy_version`.
+   */
   consent_version: string;
+  /** Версия политики (= дата редакции §6 «Cookies и аналитика»). Её печатает /privacy. */
+  policy_version: string;
   slot_capacity: number;
   map_link: string;
   brands: string[];
@@ -56,6 +63,8 @@ export const DEFAULTS: Settings = {
     { source: 'Zoon', value: '2,2', count: 1, note: 'поисковая выдача на 21.10.2026', url: 'https://zoon.ru/rostov-na-donu/?query=АвтоТехСервис+Портовая+439' },
   ],
   consent_version: '2026-11-20',
+  // Круг 89: редакция §6 политики (баннер cookies, Метрика и GA4 по согласию).
+  policy_version: '2026-11-21',
   slot_capacity: 2,
   map_link: 'https://yandex.ru/maps/?pt=39.648295,47.193068&z=17&l=map',
   brands: [],

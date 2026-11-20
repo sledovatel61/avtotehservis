@@ -4,6 +4,7 @@ import type { APIContext } from 'astro';
 import { ensureWorkers } from './server/outbox.ts';
 import { resolveSession, SESSION_COOKIE } from './server/auth.ts';
 import { LEADS_BASE } from './shared/leads-endpoint.ts';
+import { counterHosts, cspWithAnalytics } from './client/consent.ts';
 
 /* 301 со старых адресов мокапа на ЧПУ (требование задания §6.4). */
 const STATIC_REDIRECTS: Record<string, string> = {
@@ -77,7 +78,13 @@ const securityHeaders = defineMiddleware(async (context: APIContext, next) => {
   }
 
   const isHttps = (process.env.PUBLIC_SITE_URL ?? '').startsWith('https:');
-  const csp = [
+  /* Круг 89 (задание 133, §3): домены счётчиков добавляются УСЛОВНО — только если ID
+     задан переменной сборки. Без ID строка политики остаётся прежней, строгой. */
+  const analyticsHosts = counterHosts({
+    ym: process.env.PUBLIC_YM_ID ?? '',
+    ga: process.env.PUBLIC_GA_ID ?? '',
+  });
+  const csp = cspWithAnalytics([
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self'",
@@ -92,7 +99,7 @@ const securityHeaders = defineMiddleware(async (context: APIContext, next) => {
     "base-uri 'self'",
     "form-action 'self'",
     isHttps ? 'upgrade-insecure-requests' : '',
-  ].filter(Boolean).join('; ');
+  ].filter(Boolean), analyticsHosts);
   res.headers.set('Content-Security-Policy', csp);
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

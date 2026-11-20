@@ -20,9 +20,14 @@ const pageUrl = (p: number): string => {
   return p > 1 ? `${base}/page/${p}` : base;
 };
 const categoryTitle = cat ? catTitle(cat) : null;
+/* Круг 89 (§3): у каждой страницы листинга свой заголовок, чтобы /news, /news/page/2
+   и категории не конкурировали в выдаче одинаковыми <title>. */
+const pageSuffix = pageNum > 1 ? ` — страница ${pageNum}` : '';
 const title = categoryTitle
-  ? `Полезное: ${categoryTitle}${pageNum > 1 ? ` — страница ${pageNum}` : ''} — АвтоТехСервис`
-  : 'Полезное: статьи о ремонте и сезоне';
+  ? `Полезное: ${categoryTitle}${pageSuffix} — АвтоТехСервис`
+  : pageSuffix
+    ? `Полезное${pageSuffix} — АвтоТехСервис`
+    : 'Полезное: статьи о ремонте и сезоне — АвтоТехСервис';
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -54,7 +59,7 @@ const jsonLd = {
   </div>
 </section>
 <section class="sec" aria-labelledby="news-h">
-  <h2 id="news-h" class="u-sr">Список новостей</h2>
+  <h2 id="news-h" class="u-sr">Список статей раздела «Полезное»</h2>
   <div class="container">
     <div class="filters" role="group" aria-label="Фильтр по категориям">
       <a class={`filter-chip${!cat ? ' is-on' : ''}`} href="/news" data-news-category="" data-news-pages={Math.max(1, Math.ceil(allCount / PER))} aria-current={!cat ? 'page' : undefined}>Все ({allCount})</a>
