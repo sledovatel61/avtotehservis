@@ -58,7 +58,7 @@ export const DEFAULTS: Settings = {
   // Блок рейтингов скрыт, пока владелец не подтвердит цифры (требование задания §6).
   ratings_visible: false,
   ratings: [
-    { source: 'Яндекс Карты', value: '4,5', count: 182, note: 'данные заказчика, требуется проверка', url: 'https://yandex.ru/maps/?text=АвтоТехСервис+Ростов-на-Дону+Портовая+439' },
+    { source: 'Яндекс Карты', value: '4,6', count: 182, note: 'данные заказчика, требуется проверка', url: 'https://yandex.ru/maps/?text=АвтоТехСервис+Ростов-на-Дону+Портовая+439' },
     { source: '2ГИС', value: '3,6', count: 12, note: 'поисковая выдача на 21.10.2026', url: 'https://2gis.ru/rostov-na-donu/search/АвтоТехСервис%20Портовая%20439' },
     { source: 'Zoon', value: '2,2', count: 1, note: 'поисковая выдача на 21.10.2026', url: 'https://zoon.ru/rostov-na-donu/?query=АвтоТехСервис+Портовая+439' },
   ],

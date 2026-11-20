@@ -1,20 +1,21 @@
 /**
  * Приём отзывов: `POST /reviews`.
  *
- * Отзыв НЕ публикуется автоматически — у воркера нет доступа к репозиторию, и
- * это осознанно. Прослойка только проверяет текст и кладёт уведомление в ту же
- * группу Telegram (и на почту, если настроена); дальше человек открывает
- * админку → «Отзывы» и решает сам.
+ * Отзыв публикуется СРАЗУ. Воркер проверяет текст, кладёт отзыв в KV со статусом
+ * `published` (его забирает страница /otzyvy) и отправляет уведомление в группу
+ * Telegram и на почту. Это уведомление, а не «модерация»: если в отзыве спам
+ * или мат, владелец скрывает или удаляет его в /manage/ → «Отзывы» одной кнопкой.
  *
  * Контракт (менять нельзя — на него завязаны форма сайта и админка):
- *   201 { ok:true, status:'pending', id:'<uuid>' }
+ *   201 { ok:true, status:'published', id:'<uuid>' }
  *   400 { error:'validation', fields:{…} }
  *   400 { error:'link_not_allowed', fields:{…} }
  *   400 { error:'consent_version' }
  *   403 { error:'origin' }
  *   413 { error:'too_large' }
  *   429 { error:'rate_limit', retryAfter:60 }
- *   503 { error:'delivery_failed' }
+ *   503 { error:'delivery_failed' } — только если отзыв не сохранён И уведомление не ушло;
+ *       когда отзыв уже в хранилище, ответ всегда 201: он на сайте.
  *
  * Приватность: в логах только id, длина текста и результат доставки. Ни текста,
  * ни имени — они уходят исключительно в Telegram и на почту владельца.
@@ -28,7 +29,7 @@ import { composeReviewTelegram, sendTelegram } from './telegram.ts';
 import { emailProvider, sendReviewEmail } from './email.ts';
 import { markMailOk, markMailFailed } from './mail-status.ts';
 import { originAllowed, type OriginsEnv } from './origins.ts';
-import { saveToInbox } from './reviews-inbox.ts';
+import { publishReview } from './reviews-live.ts';
 
 /** Тело отзыва: больше 8 КБ — это уже не отзыв, а попытка что-то залить. */
 export const REVIEW_MAX_BYTES = 8 * 1024;
@@ -167,7 +168,7 @@ export async function handleReview(
   /* Тихая ловушка: боту отвечаем как при успехе, но не отправляем ничего.
      Именно поэтому здесь есть id — по ответу нельзя отличить ловушку от приёма. */
   if (review.honeypot.trim() !== '') {
-    return reply({ ok: true, status: 'pending', id: crypto.randomUUID() }, 201);
+    return reply({ ok: true, status: 'published', id: crypto.randomUUID() }, 201);
   }
 
   if (env.CONSENT_VERSION && review.consentVersion !== env.CONSENT_VERSION) {
@@ -177,7 +178,14 @@ export async function handleReview(
   const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'unknown';
   const ipHash = await deps.hashIp(ip);
 
-  const rl = await takeRateLimit(deps.store, ipHash);
+  /* Хранилище может отказать: тогда лимит считаем недоступным, а не роняем
+     приём отзыва в 500. Текст отзыва всё равно проверим и отправим. */
+  let rl = { ok: true, retry: 0 };
+  try {
+    rl = await takeRateLimit(deps.store, ipHash);
+  } catch (e) {
+    console.error('[reviews] rate limit unavailable', String((e as Error)?.message ?? e).slice(0, 120));
+  }
   if (!rl.ok) {
     return new Response(JSON.stringify({ error: 'rate_limit', retryAfter: rl.retry }), {
       status: 429,
@@ -194,14 +202,14 @@ export async function handleReview(
 
   /* Дубль: уведомление уже уходило за последние сутки. Отвечаем тем же 201 —
      человек не должен видеть ошибку из-за того, что нажал кнопку дважды. */
-  const seen = await deps.store.get(idemKey);
-  if (seen) return reply({ ok: true, status: 'pending', id: seen }, 201);
+  const seen = await deps.store.get(idemKey).catch(() => null);
+  if (seen) return reply({ ok: true, status: 'published', id: seen }, 201);
 
   const id = crypto.randomUUID();
 
-  /* Копия отзыва в KV — до всякой отправки. Даже если Telegram и почта подведут,
-     отзыв останется в журнале и его можно будет опубликовать руками. */
-  const stored = await saveToInbox(deps.store, review, id);
+  /* Публикуем сразу и до уведомления: даже если Telegram и почта подведут,
+     отзыв уже на сайте. Модерация — после публикации: спам скрывается кнопкой. */
+  const stored = await publishReview(deps.store, review, id);
 
   const telegramOn = Boolean(env.BOT_TOKEN && env.TELEGRAM_CHAT_ID);
   const emailOn = Boolean(emailProvider(env));
@@ -247,18 +255,20 @@ export async function handleReview(
   const [tgErr, mailErr] = await Promise.all([telegramJob, emailJob]);
   const delivered = { telegram: telegramOn && !tgErr, email: emailOn && !mailErr };
 
-  /* Ни один канал не принял — говорим честно 503: «попробуйте позже». Врать про
-     успех нельзя, иначе человек будет ждать отзыв, которого никто не увидит. */
-  if (!delivered.telegram && !delivered.email) {
+  await deps.store.put(idemKey, id, 86400).catch(() => undefined);
+
+  /* 503 остаётся только на случай, когда отзыв нигде не сохранён и уведомление
+     не ушло. Если отзыв уже в хранилище — человеку говорим «опубликован», даже
+     когда Telegram и почта подвели: отзыв на сайте, ошибаться нельзя. */
+  if (!stored && !delivered.telegram && !delivered.email) {
     console.error('[reviews] delivery failed', id, review.text.length, `tg=${tgErr ?? 'ok'}`, `mail=${mailErr ?? 'ok'}`);
     return fail('delivery_failed', 503);
   }
 
-  await deps.store.put(idemKey, id, 86400);
   /* Лог без текста и имени: только id, длина и что сработало. */
   console.log('[reviews] accepted', id, review.text.length, `tg=${delivered.telegram}`, `mail=${delivered.email}`, `kv=${stored}`);
 
-  return reply({ ok: true, status: 'pending', id }, 201);
+  return reply({ ok: true, status: 'published', id }, 201);
 }
 
 /** Что показать в `/health`: включён ли приём отзывов и переживает ли он перезапуск. */

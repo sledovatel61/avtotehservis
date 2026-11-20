@@ -102,7 +102,7 @@ after(() => { srv?.kill('SIGKILL'); });
 
 /* ---------- ответы воркера ---------- */
 interface Reply { status: number; body: unknown; headers?: Record<string, string> }
-let reply: Reply = { status: 201, body: { ok: true, status: 'pending' } };
+let reply: Reply = { status: 201, body: { ok: true, status: 'published' } };
 let calls: { url: string; body: Record<string, unknown> | null }[] = [];
 
 function installFetch(): void {
@@ -248,9 +248,9 @@ describe('ошибки формы отзыва: вложенный формат 
   });
 
   test('10. 201 → благодарность, поля очищены, запрос ушёл в прослойку', async () => {
-    const doc = await submitWith({ status: 201, body: { ok: true, status: 'pending' } });
+    const doc = await submitWith({ status: 201, body: { ok: true, status: 'published' } });
     assert.equal($(doc, '#rev-done')?.hasAttribute('hidden'), false);
-    assert.match($(doc, '#rev-done')?.textContent ?? '', /Спасибо! Отзыв ушёл на проверку/);
+    assert.match($(doc, '#rev-done')?.textContent ?? '', /Спасибо! Отзыв опубликован/);
     assert.equal(($(doc, '#rev-name') as HTMLInputElement).value, '');
     assert.equal(($(doc, '#rev-text') as HTMLTextAreaElement).value, '');
     assert.equal(($(doc, '#rev-consent') as HTMLInputElement).checked, false);

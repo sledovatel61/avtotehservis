@@ -606,6 +606,22 @@ test('/health показывает канал почты и адрес полу�
 
 /* ---------- журнал отзывов: отзыв не теряется ---------- */
 
+/** Своё KV на каждый тест: иначе отзывы перетекают между проверками. */
+function makeKv(): { get(k: string): Promise<string | null>; put(k: string, v: string, o?: { expirationTtl?: number }): Promise<void>; delete(k: string): Promise<void> } {
+  const map = new Map<string, string>();
+  return {
+    get: async (k) => map.get(k) ?? null,
+    put: async (k, v) => { map.set(k, v); },
+    delete: async (k) => { map.delete(k); },
+  };
+}
+
+/** Окружение с изолированным KV для тестов отзывов. */
+function reviewEnv(over: Partial<Env> = {}): Env {
+  return env({ ATS_KV: makeKv() as unknown as NonNullable<Env['ATS_KV']>, REVIEWS_INBOX_KEY: 'secret-code', ...over });
+}
+
+
 const reviewBody = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
   author: 'Иван П.',
   text: 'Меняли колодки и тормозные диски, всё показали на подъёмнике и назвали цену заранее.',
@@ -628,64 +644,99 @@ async function postReview(
   }), e);
 }
 
-test('журнал отзывов: принятый отзыв остаётся в KV, даже когда Telegram упал', async () => {
-  /* Моделируем худший случай: Telegram отвечает 500, почта не настроена.
-     Человек видит 503, но копия отзыва уже лежит в журнале — не потеряли. */
+test('отзыв публикуется сразу: он в общем списке /reviews, хотя Telegram упал', async () => {
+  /* Худший случай: Telegram отвечает 500, почта не настроена. Отзыв уже
+     опубликован, поэтому человеку говорим «опубликован», а не «ошибка»:
+     иначе он отправит второй раз. */
   tgStatus = 500;
-  const e = env({ REVIEWS_INBOX_KEY: 'secret-code' });
+  const e = reviewEnv();
   const r = await postReview(e);
-  assert.equal(r.status, 503, 'доставки нет — человеку честно говорим');
+  assert.equal(r.status, 201, 'отзыв на сайте — значит, ошибки человеку не показываем');
+  const ok = (await r.json()) as { status?: string };
+  assert.equal(ok.status, 'published');
 
-  const list = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
-    headers: { 'x-inbox-key': 'secret-code' },
-  }), e);
+  const list = await worker.fetch(new Request('https://relay.test/reviews'), e);
   assert.equal(list.status, 200);
-  const data = (await list.json()) as { items: Array<{ author: string; rating: number }>; total: number };
-  assert.equal(data.items.length, 1, 'отзыв сохранён, хотя Telegram ответил 500');
+  const data = (await list.json()) as { items: Array<{ author: string; rating: number; status?: string }>; total: number };
+  assert.equal(data.items.length, 1, 'отзыв на сайте, хотя Telegram ответил 500');
   assert.equal(data.items[0].author, 'Иван П.');
   assert.equal(data.items[0].rating, 5);
+  assert.equal(data.items[0].status, undefined, 'наружу не отдаём служебный статус');
 });
 
-test('журнал отзывов: без кода доступа адреса нет, с чужим кодом — 403', async () => {
-  const e = env({ REVIEWS_INBOX_KEY: 'secret-code' });
-  const noSecret = await worker.fetch(new Request('https://relay.test/reviews/inbox'), env());
-  assert.equal(noSecret.status, 404, 'без настроенного секрета журнал выключен');
-
-  const wrong = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
-    headers: { 'x-inbox-key': 'not-it' },
-  }), e);
-  assert.equal(wrong.status, 403);
-
-  const ok = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
-    headers: { 'x-inbox-key': 'secret-code' },
-  }), e);
-  assert.equal(ok.status, 200);
+test('503 только когда отзыв нигде не сохранён и уведомление не ушло', async () => {
+  /* Хранилище падает и Telegram отвечает 500 — вот тогда честная ошибка,
+     иначе человек будет ждать отзыв, которого никто не увидит. */
+  tgStatus = 500;
+  const broken = {
+    get: async () => { throw new Error('kv down'); },
+    put: async () => { throw new Error('kv down'); },
+  } as unknown as NonNullable<Env['ATS_KV']>;
+  const r = await postReview(env({ ATS_KV: broken }));
+  assert.equal(r.status, 503);
+  const body = (await r.json()) as { error?: string };
+  assert.equal(body.error, 'delivery_failed');
+  tgStatus = 200;
 });
 
-test('журнал отзывов: после публикации отзыв уходит из списка', async () => {
-  const e = env({ REVIEWS_INBOX_KEY: 'secret-code' });
-  const created = (await (await postReview(e, reviewBody({ author: 'Марина С.' }))).json()) as { id: string };
-  assert.ok(created.id, 'id отзыва вернулся');
+test('отзыв опубликован без всякого кода: страница /otzyvy читает список без пароля', async () => {
+  const e = reviewEnv();
+  const created = await postReview(e);
+  assert.equal(created.status, 201);
+  const body = (await created.json()) as { status?: string };
+  assert.equal(body.status, 'published', 'ответ формы говорит «опубликован», а не «на проверке»');
+  const list = await worker.fetch(new Request('https://relay.test/reviews'), e);
+  assert.equal(((await list.json()) as { total: number }).total, 1);
+});
 
-  const before = (await (await worker.fetch(new Request('https://relay.test/reviews/inbox', {
-    headers: { 'x-inbox-key': 'secret-code' },
-  }), e)).json()) as { items: Array<{ id: string }> };
-  assert.ok(before.items.some((x) => x.id === created.id));
+test('модерация: скрытый отзыв исчезает с сайта, удалённый не возвращается', async () => {
+  const e = reviewEnv();
+  const a = (await (await postReview(e, reviewBody({ author: 'Спамер', text: 'Купите дешёвые запчасти тут, звоните прямо сейчас!' }))).json()) as { id: string };
+  const b = (await (await postReview(e, reviewBody({ author: 'Марина С.' }))).json()) as { id: string };
 
-  const done = await worker.fetch(new Request('https://relay.test/reviews/inbox/done', {
+  const moderate = (id: string, action: string) => worker.fetch(new Request('https://relay.test/reviews/moderate', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-inbox-key': 'secret-code' },
-    body: JSON.stringify({ id: created.id }),
+    body: JSON.stringify({ id, action }),
   }), e);
-  assert.equal(done.status, 200);
 
-  const after = (await (await worker.fetch(new Request('https://relay.test/reviews/inbox', {
-    headers: { 'x-inbox-key': 'secret-code' },
-  }), e)).json()) as { items: Array<{ id: string }> };
-  assert.ok(!after.items.some((x) => x.id === created.id), 'опубликованный отзыв в списке не висит');
+  assert.equal((await moderate(a.id, 'hide')).status, 200);
+  let list = (await (await worker.fetch(new Request('https://relay.test/reviews'), e)).json()) as { items: Array<{ id: string }> };
+  assert.deepEqual(list.items.map((x) => x.id), [b.id], 'скрытый отзыв на сайте не виден');
+
+  assert.equal((await moderate(a.id, 'publish')).status, 200);
+  list = (await (await worker.fetch(new Request('https://relay.test/reviews'), e)).json()) as { items: Array<{ id: string }> };
+  assert.equal(list.items.length, 2, 'вернули на сайт');
+
+  assert.equal((await moderate(a.id, 'delete')).status, 200);
+  list = (await (await worker.fetch(new Request('https://relay.test/reviews'), e)).json()) as { items: Array<{ id: string }> };
+  assert.deepEqual(list.items.map((x) => x.id), [b.id]);
 });
 
-test('health: показывает, включён ли журнал отзывов', async () => {
+test('модерация без кода: чужая попытка скрыть отзыв отклоняется', async () => {
+  const e = reviewEnv();
+  const a = (await (await postReview(e)).json()) as { id: string };
+
+  const noKey = await worker.fetch(new Request('https://relay.test/reviews/moderate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id: a.id, action: 'delete' }),
+  }), e);
+  assert.equal(noKey.status, 403);
+
+  /* Без настроенного секрета модерации нет вовсе. */
+  const noSecret = await worker.fetch(new Request('https://relay.test/reviews/moderate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id: a.id, action: 'delete' }),
+  }), env());
+  assert.equal(noSecret.status, 404);
+
+  const still = (await (await worker.fetch(new Request('https://relay.test/reviews'), e)).json()) as { total: number };
+  assert.equal(still.total, 1, 'отзыв на месте');
+});
+
+test('health: показывает, включена ли модерация отзывов', async () => {
   const off = (await (await worker.fetch(new Request('https://relay.test/health'), env())).json()) as { reviewsInbox?: boolean };
   assert.equal(off.reviewsInbox, false);
   const on = (await (await worker.fetch(new Request('https://relay.test/health'), env({ REVIEWS_INBOX_KEY: 'k' }))).json()) as { reviewsInbox?: boolean };
