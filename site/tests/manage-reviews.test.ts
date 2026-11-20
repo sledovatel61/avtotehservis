@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
 // @ts-ignore статический модуль
-import {createReviews,reviewErrors,parseTelegram} from '../public/manage/reviews.js';
+import {createReviews,configureReviews,reviewErrors,parseTelegram} from '../public/manage/reviews.js';
 // @ts-ignore статический модуль
 import {GitHub,GitHubError} from '../public/manage/github.js';
 import {parseReviewsFile} from '../src/shared/reviews-schema.ts';
@@ -133,7 +133,7 @@ test('139-5: без настоящих отзывов показывается �
 test('94-1: в «Отзывах» есть панель отзывов с сайта и поле статуса в редакторе',async()=>{
  const c=await setup();try{
   assert.ok(c.q('[data-reviews-inbox]'),'панель отзывов с сайта на месте');
-  assert.ok(c.q('[data-inbox-key]'),'поле кода доступа есть');
+  assert.equal(c.root.querySelector('[data-inbox-key]'),null,'второго кода больше нет: вход тот же, что и в мастерскую');
   assert.ok(c.q('[data-inbox-load]'),'кнопка загрузки есть');
   c.click('[data-review-add]');
   const status=c.q('[data-review-field="status"]') as HTMLSelectElement;
@@ -169,10 +169,11 @@ test('96-1: отзывы с сайта видны сразу, скрыть/ве�
    }
    throw Error(url);
   };
-  (c.q('[data-inbox-key]') as HTMLInputElement).value='secret';
+  configureReviews({token:'ghp_test'});
   c.click('[data-inbox-load]');await new Promise(r=>setTimeout(r,0));
-  assert.equal(calls[0].url,'https://ats-leads.ats439.workers.dev/reviews/inbox');
-  assert.equal(calls[0].init.headers['x-inbox-key'],'secret');
+  const inboxCalls=calls.filter(call=>call.url.endsWith('/reviews/inbox'));
+  assert.equal(inboxCalls[0].url,'https://ats-leads.ats439.workers.dev/reviews/inbox');
+  assert.equal(inboxCalls[0].init.headers.authorization,'Bearer ghp_test','прослойка получает тот же ключ GitHub, что и мастерская');
   assert.equal(c.root.querySelectorAll('[data-live-review]').length,1);
   assert.match(c.q('[data-live-review]').textContent!,/на сайте/);
   c.click('[data-live-action="hide"]');await new Promise(r=>setTimeout(r,0));
@@ -188,13 +189,13 @@ test('96-1: отзывы с сайта видны сразу, скрыть/ве�
   (globalThis as any).fetch=original;
  }finally{c.close();}
 });
-test('96-2: неверный код доступа объясняется по-русски, без действий',async()=>{
+test('96-2: ключ без права записи объясняется по-русски, без действий',async()=>{
  const c=await setup();try{
   const original=(globalThis as any).fetch;const calls:any[]=[];
-  (globalThis as any).fetch=async(url:string)=>{calls.push(url);return {ok:false,status:403,json:async()=>({})};};
-  (c.q('[data-inbox-key]') as HTMLInputElement).value='wrong';
+  (globalThis as any).fetch=async(url:string,init:any={})=>{calls.push(url);return {ok:false,status:403,json:async()=>({})};};
+  configureReviews({token:'ghp_read_only'});
   c.click('[data-inbox-load]');await new Promise(r=>setTimeout(r,0));
-  assert.match(c.q('.review-inbox-list').textContent!,/Код не подошёл/);
+  assert.match(c.q('.review-inbox-list').textContent!,/Ключ не подошёл/);
   (globalThis as any).fetch=original;
  }finally{c.close();}
 });

@@ -10,8 +10,8 @@
  *                               429 { error:'rate_limit', retryAfter } + Retry-After
  *                               503 { error:'delivery_failed' }
  *   GET  /reviews             → { items:[{id,author,text,rating,publishedAt}], total } — публично
- *   GET  /reviews/inbox       → { items:[…] } со статусами, заголовок `x-inbox-key: <REVIEWS_INBOX_KEY>`
- *   POST /reviews/moderate    → { ok:true } — { id, action:'hide'|'publish'|'delete' }
+ *   GET  /reviews/inbox       → { items:[…] } со статусами (ключ GitHub из /manage/)
+ *   POST /reviews/moderate    → { ok:true } — { id, action:'hide'|'publish'|'delete' } (тот же ключ)
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
  *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
  *                               400 { error:{ code:'validation'|'bad_json'|'consent_version', message, fields? } }
@@ -46,8 +46,10 @@ export interface Env {
   EMAIL_FROM?: string;
   /** Необязательное KV: лимиты и идемпотентность переживают перезапуск изолята. */
   ATS_KV?: KVNamespace;
-  /** Код доступа к запасному журналу отзывов. Без него адреса `/reviews/inbox` нет. */
+  /** Старый код модерации. Необязателен: основной вход — ключ GitHub из /manage/. */
   REVIEWS_INBOX_KEY?: string;
+  /** Репозиторий для проверки ключа GitHub. По умолчанию — сайт сервиса. */
+  GITHUB_REPO?: string;
 }
 
 interface KVNamespace {
@@ -78,7 +80,8 @@ function corsHeaders(req: Request, env: Env): Record<string, string> {
        ответ заблокирует, и подставлять чужой адрес из конфига не нужно. */
     'access-control-allow-origin': ok ? origin : 'null',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
-    'access-control-allow-headers': 'content-type, x-inbox-key',
+    /* `authorization` — вход в модерацию тем же ключом GitHub, что и в /manage/. */
+    'access-control-allow-headers': 'content-type, authorization, x-inbox-key',
     /* `retry-after` на 429 не входит в safelist, поэтому без этого заголовка
        кросс-доменный JS не видит, через сколько секунд повторять. */
     'access-control-expose-headers': 'retry-after',

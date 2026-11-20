@@ -136,12 +136,21 @@ npx wrangler deploy
 | Метод и адрес | Что делает | Доступ |
 |---|---|---|
 | `GET /reviews` | опубликованные отзывы, новые сверху (`cache-control: public, max-age=60`) | без пароля, CORS по `ALLOWED_ORIGINS` |
-| `GET /reviews/inbox` | все отзывы, включая скрытые | заголовок `x-inbox-key` |
-| `POST /reviews/moderate` | `{id, action:'hide'\|'publish'\|'delete'}` | заголовок `x-inbox-key`, `content-type: application/json` |
+| `GET /reviews/inbox` | все отзывы, включая скрытые | `Authorization: Bearer <ключ GitHub>` |
+| `POST /reviews/moderate` | `{id, action:'hide'\|'publish'\|'delete'}` | тот же ключ, `content-type: application/json` |
 
-Без секрета `REVIEWS_INBOX_KEY` оба адреса модерации отвечают `404` (дверь без пароля
-не открываем), неверный код — `403`. Публичный список работает всегда.
-В `/health` поле `reviewsInbox` показывает, включена ли модерация.
+**Модерация открывается тем же ключом GitHub, которым владелец входит в `/manage/`** —
+второго кода нет. Воркер не хранит ключ: он спрашивает `GET https://api.github.com/repos/<repo>`
+(репозиторий из `GITHUB_REPO`, по умолчанию `sledovatel61/avtotehservis`) и пускает только
+при `permissions.push = true`. В памяти изолята остаётся лишь SHA-256 отпечаток успешной
+проверки на 5 минут, чтобы каждый клик не ходил в GitHub.
+
+Ответы: `403` — ключа нет или у него нет права записи; `503 auth_unavailable` — GitHub не
+ответил, поэтому решать не берёмся (это не «нет доступа»).
+
+Запасной вход для проверки руками: заголовок `x-inbox-key: <REVIEWS_INBOX_KEY>`, если секрет
+задан. В `/health` поле `reviewsInbox` показывает, задан ли этот запасной код, а
+`reviewsModeration: "github"` — основной способ входа.
 
 ### Контракт
 
@@ -245,7 +254,7 @@ curl -i -X POST https://ats-leads.ats439.workers.dev/reviews \
 ## Разработка
 
 ```bash
-npm test          # 75 тестов (заявки, слоты, отзывы, модерация), сеть подменена — наружу ничего не уходит
+npm test          # 83 теста (заявки, слоты, отзывы, модерация, вход по ключу GitHub), сеть подменена — наружу ничего не уходит
 npm run typecheck # tsc по src/
 npx wrangler dev  # локальный запуск, секреты берутся из .dev.vars
 ```
