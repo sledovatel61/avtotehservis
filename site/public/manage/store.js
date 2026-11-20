@@ -17,7 +17,12 @@ export function slugify(s) {
  return s.toLowerCase().split('').map(c=>map[c] ?? c).join('').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,LIMITS.slug.max).replace(/-+$/,'');
 }
 export function id() { const bytes = new Uint8Array(6); crypto.getRandomValues(bytes); return Array.from(bytes, n => 'abcdefghijklmnopqrstuvwxyz0123456789'[n % 36]).join(''); }
-export function blank(cases) { return {slug:'',title:'',description:'',service_slug:SERVICES[0][0],mode:'before_after',status:'draft',published_at:new Date().toISOString().slice(0,10),sort:Math.max(0,...cases.map(c=>Number(c.sort)||0))+10,cover:null,before:[],after:[],photos:[]}; }
+// Копия порядка витрины из src/shared/cases-schema.ts: браузер не импортирует TS.
+export function orderCases(cases) {
+ return [...cases].sort((a,b)=>{if(a.sort!==b.sort)return a.sort-b.sort;return a.published_at<b.published_at?1:a.published_at>b.published_at?-1:0;});
+}
+export const firstCaseSort=cases=>Math.min(0,...cases.map(c=>Number(c.sort)||0))-10;
+export function blank(cases) { return {slug:'',title:'',description:'',service_slug:SERVICES[0][0],mode:'before_after',status:'draft',published_at:new Date().toISOString().slice(0,10),sort:firstCaseSort(cases),cover:null,before:[],after:[],photos:[]}; }
 function lengthCheck(value, limits, label, field) {
  const length=value.trim().length;
  if(length<limits.min||length>limits.max) throw new ValidationError(`${label}: ${limits.min}–${limits.max} символов, сейчас ${length} — ${length>limits.max?'сократите':'дополните'}.`,field);
