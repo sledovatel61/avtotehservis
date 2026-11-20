@@ -724,13 +724,14 @@ test('модерация без кода: чужая попытка скрыть
   }), e);
   assert.equal(noKey.status, 403);
 
-  /* Без настроенного секрета модерации нет вовсе. */
+  /* Без ключа GitHub и без старого кода — «нет доступа», а не «адреса нет»:
+     модерация теперь открывается тем же ключом, что и вся мастерская. */
   const noSecret = await worker.fetch(new Request('https://relay.test/reviews/moderate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ id: a.id, action: 'delete' }),
   }), env());
-  assert.equal(noSecret.status, 404);
+  assert.equal(noSecret.status, 403);
 
   const still = (await (await worker.fetch(new Request('https://relay.test/reviews'), e)).json()) as { total: number };
   assert.equal(still.total, 1, 'отзыв на месте');

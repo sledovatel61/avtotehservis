@@ -12,13 +12,18 @@
  * Почему без предварительной проверки: ручная публикация каждого отзыва — это
  * работа на каждый отзыв. Владелец должен реагировать только на плохое.
  *
- * Доступ к модерации:
+ * Доступ к модерации — тем же ключом GitHub, которым владелец входит в /manage/:
  *   GET  /reviews            — публичный список (только `published`), CORS открыт;
- *   GET  /reviews/inbox      — всё, включая скрытые; заголовок `x-inbox-key`;
- *   POST /reviews/moderate   — `x-inbox-key` + { id, action: 'hide'|'publish'|'delete' }.
+ *   GET  /reviews/inbox      — всё, включая скрытые;
+ *   POST /reviews/moderate   — { id, action: 'hide'|'publish'|'delete' }.
  *
- * Без секрета `REVIEWS_INBOX_KEY` модерация отвечает 404: «дверь» без пароля
- * недопустима. Публичный список при этом работает всегда.
+ * Второй адрес и второй код не нужны: воркер проверяет `Authorization: Bearer
+ * <ключ GitHub>` запросом к api.github.com и пускает только того, у кого есть
+ * право записи в репозиторий сайта. Ключ никуда не сохраняется: он уходит в
+ * GitHub и живёт в памяти изолята не дольше пяти минут (только отпечаток).
+ *
+ * Старый способ — заголовок `x-inbox-key: <REVIEWS_INBOX_KEY>` — оставлен для
+ * проверки руками через curl, когда ключа GitHub под рукой нет.
  *
  * Приватность: в логах только id и длина текста. Текст лежит в KV Cloudflare —
  * та же инфраструктура, что уже принимает отзывы.
@@ -33,7 +38,68 @@ const INDEX_KEY = 'rlive:index';
 const itemKey = (id: string) => `rlive:item:${id}`;
 
 export interface LiveEnv {
+  /** Старый код модерации. Необязателен: основной вход — ключ GitHub. */
   REVIEWS_INBOX_KEY?: string;
+  /** Репозиторий, доступ к которому проверяем. По умолчанию — сайт сервиса. */
+  GITHUB_REPO?: string;
+}
+
+/** Куда идём проверять ключ GitHub. */
+const DEFAULT_GITHUB_REPO = 'sledovatel61/avtotehservis';
+/** Сколько помним, что ключ уже проверен (только отпечаток, не сам ключ). */
+const GITHUB_OK_TTL_MS = 5 * 60_000;
+
+/** Отпечатки проверенных ключей: живут в памяти изолята, на диск не попадают. */
+const verifiedTokens = new Map<string, number>();
+
+const githubFingerprint = async (token: string): Promise<string> => {
+  const data = new TextEncoder().encode(token);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+};
+
+/**
+ * Пускать ли этого человека к модерации. Ответы:
+ *   `ok`        — ключ GitHub с правом записи в репозиторий (или старый код);
+ *   `forbidden` — ключа нет или он не наш;
+ *   `unavailable` — GitHub не ответил, поэтому решать не берёмся.
+ */
+async function authoriseModeration(
+  req: Request,
+  url: URL,
+  env: LiveEnv,
+  fetcher: typeof fetch,
+): Promise<'ok' | 'forbidden' | 'unavailable'> {
+  const secret = (env.REVIEWS_INBOX_KEY ?? '').trim();
+  if (secret && sameKey(moderationKeyOf(req, url), secret)) return 'ok';
+
+  const bearer = /^Bearer\s+(.+)$/i.exec((req.headers.get('authorization') ?? '').trim());
+  const token = bearer?.[1]?.trim() ?? '';
+  if (!token) return 'forbidden';
+
+  try {
+    const print = await githubFingerprint(token);
+    const until = verifiedTokens.get(print) ?? 0;
+    if (until > Date.now()) return 'ok';
+
+    const repo = (env.GITHUB_REPO ?? DEFAULT_GITHUB_REPO).replace(/^\/+|\/+$/g, '');
+    const res = await fetcher(`https://api.github.com/repos/${repo}`, {
+      headers: {
+        accept: 'application/vnd.github+json',
+        authorization: `Bearer ${token}`,
+        'x-github-api-version': '2022-11-28',
+        'user-agent': 'ats-rostov-reviews',
+      },
+    });
+    if (!res.ok) return 'forbidden';
+    const data = (await res.json()) as { permissions?: { push?: boolean; admin?: boolean; maintain?: boolean } };
+    const canPush = Boolean(data.permissions?.push || data.permissions?.admin || data.permissions?.maintain);
+    if (!canPush) return 'forbidden';
+    verifiedTokens.set(print, Date.now() + GITHUB_OK_TTL_MS);
+    return 'ok';
+  } catch {
+    return 'unavailable';
+  }
 }
 
 export interface LiveStore {
@@ -206,6 +272,7 @@ export async function handleLiveReviews(
   url: URL,
   env: LiveEnv,
   store: LiveStore,
+  deps: { fetchGithub?: typeof fetch } = {},
 ): Promise<Response | null> {
   const { pathname } = url;
 
@@ -221,9 +288,10 @@ export async function handleLiveReviews(
   const isModerate = pathname === '/reviews/moderate';
   if (!isInbox && !isModerate) return null;
 
-  const secret = (env.REVIEWS_INBOX_KEY ?? '').trim();
-  if (!secret) return json({ error: 'not_found' }, 404);
-  if (!sameKey(moderationKeyOf(req, url), secret)) return json({ error: 'forbidden' }, 403);
+  /* Один вход на всю мастерскую: ключ GitHub из /manage/. Второго кода нет. */
+  const access = await authoriseModeration(req, url, env, deps.fetchGithub ?? fetch);
+  if (access === 'unavailable') return json({ error: 'auth_unavailable' }, 503);
+  if (access === 'forbidden') return json({ error: 'forbidden' }, 403);
 
   if (isInbox) {
     if (req.method !== 'GET') return json({ error: 'not_found' }, 404);
@@ -251,6 +319,11 @@ export async function handleLiveReviews(
 }
 
 /** Что показать в `/health`: включена ли модерация отзывов. */
-export function liveReviewsHealth(env: LiveEnv): { reviewsInbox: boolean } {
-  return { reviewsInbox: Boolean((env.REVIEWS_INBOX_KEY ?? '').trim()) };
+export function liveReviewsHealth(env: LiveEnv): { reviewsInbox: boolean; reviewsModeration: 'github' } {
+  return {
+    /* Старый код модерации — необязательный запасной вход. */
+    reviewsInbox: Boolean((env.REVIEWS_INBOX_KEY ?? '').trim()),
+    /* Основной вход всегда один: ключ GitHub из /manage/. */
+    reviewsModeration: 'github',
+  };
 }
