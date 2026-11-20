@@ -130,9 +130,9 @@ test('139-5: без настоящих отзывов показывается �
  }finally{c.close();}
 });
 
-test('94-1: в «Отзывах» есть панель запасного журнала и поле статуса в редакторе',async()=>{
+test('94-1: в «Отзывах» есть панель отзывов с сайта и поле статуса в редакторе',async()=>{
  const c=await setup();try{
-  assert.ok(c.q('[data-reviews-inbox]'),'панель журнала на месте');
+  assert.ok(c.q('[data-reviews-inbox]'),'панель отзывов с сайта на месте');
   assert.ok(c.q('[data-inbox-key]'),'поле кода доступа есть');
   assert.ok(c.q('[data-inbox-load]'),'кнопка загрузки есть');
   c.click('[data-review-add]');
@@ -152,5 +152,49 @@ test('94-2: отзыв из Telegram сразу получает статус «
   c.click('[data-review-done]');await c.save();
   assert.equal(c.doc.items.at(-1).status,'published','после сохранения отзыв сразу на сайте');
   assert.equal(c.doc.items.at(-1).author,'Ольга В.');
+ }finally{c.close();}
+});
+
+test('96-1: отзывы с сайта видны сразу, скрыть/вернуть/удалить уходят в прослойку',async()=>{
+ const c=await setup();try{
+  const original=(globalThis as any).fetch;const calls:any[]=[];
+  let items:any[]=[{id:'rlive-1',author:'Михаил',text:'Менял ступичный подшипник, всё быстро и аккуратно.',rating:5,status:'published',createdAt:'2026-11-20T10:00:00Z'}];
+  (globalThis as any).fetch=async(url:string,init:any={})=>{
+   calls.push({url,init});
+   if(url.endsWith('/reviews/inbox'))return {ok:true,status:200,json:async()=>({items})};
+   if(url.endsWith('/reviews/moderate')){
+    const body=JSON.parse(init.body);
+    items=body.action==='delete'?[]:items.map(item=>item.id===body.id?{...item,status:body.action==='hide'?'hidden':'published'}:item);
+    return {ok:true,status:200,json:async()=>({ok:true})};
+   }
+   throw Error(url);
+  };
+  (c.q('[data-inbox-key]') as HTMLInputElement).value='secret';
+  c.click('[data-inbox-load]');await new Promise(r=>setTimeout(r,0));
+  assert.equal(calls[0].url,'https://ats-leads.ats439.workers.dev/reviews/inbox');
+  assert.equal(calls[0].init.headers['x-inbox-key'],'secret');
+  assert.equal(c.root.querySelectorAll('[data-live-review]').length,1);
+  assert.match(c.q('[data-live-review]').textContent!,/на сайте/);
+  c.click('[data-live-action="hide"]');await new Promise(r=>setTimeout(r,0));
+  const sent=()=>calls.filter(call=>call.url.endsWith('/reviews/moderate')).map(call=>JSON.parse(call.init.body));
+  assert.deepEqual(sent(),[{id:'rlive-1',action:'hide'}]);
+  assert.match(c.q('[data-live-review]').textContent!,/скрыт/);
+  c.click('[data-live-action="publish"]');await new Promise(r=>setTimeout(r,0));
+  assert.deepEqual(sent().at(-1),{id:'rlive-1',action:'publish'});
+  assert.match(c.q('[data-live-review]').textContent!,/на сайте/);
+  c.click('[data-live-action="delete"]');await new Promise(r=>setTimeout(r,0));
+  assert.deepEqual(sent().at(-1),{id:'rlive-1',action:'delete'});
+  assert.equal(c.root.querySelectorAll('[data-live-review]').length,0);
+  (globalThis as any).fetch=original;
+ }finally{c.close();}
+});
+test('96-2: неверный код доступа объясняется по-русски, без действий',async()=>{
+ const c=await setup();try{
+  const original=(globalThis as any).fetch;const calls:any[]=[];
+  (globalThis as any).fetch=async(url:string)=>{calls.push(url);return {ok:false,status:403,json:async()=>({})};};
+  (c.q('[data-inbox-key]') as HTMLInputElement).value='wrong';
+  c.click('[data-inbox-load]');await new Promise(r=>setTimeout(r,0));
+  assert.match(c.q('.review-inbox-list').textContent!,/Код не подошёл/);
+  (globalThis as any).fetch=original;
  }finally{c.close();}
 });

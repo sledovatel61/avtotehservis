@@ -1,4 +1,5 @@
-// Отзывы сохраняются только через GitHub; временные изменения остаются в памяти вкладки.
+// Отзывы с сайта приходят из прослойки и публикуются сразу — здесь их только скрывают и удаляют.
+// Постоянные отзывы (старые, из файла) сохраняются через GitHub; правки живут в памяти вкладки.
 const copy=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
@@ -82,60 +83,72 @@ export function createReviews(root){
   if(success){const done=element('div','success');done.setAttribute('role','status');done.setAttribute('aria-live','polite');done.append(element('b','','Отправлено. GitHub собирает сайт — 1–2 минуты'));const links=element('div','review-actions');const site=element('a','','Открыть /otzyvy на сайте ↗');site.href='../otzyvy/';const actions=element('a','','Ход сборки ↗');actions.href='https://github.com/sledovatel61/avtotehservis/actions';actions.target='_blank';actions.rel='noopener noreferrer';add(links,site,actions);done.append(links);root.append(done);}
   const moderation=element('section','panel review-moderation');add(moderation,element('h3','','Отзыв из Telegram'),element('p','hint','Вставьте сообщение из группы в Telegram, нажмите «Разобрать» — поля заполнятся. Проверьте текст, нажмите «Добавить в список», затем «Сохранить» внизу: только после этого отзыв появится на сайте (1–2 минуты на сборку).'));const telegramLabel=element('label','','Вставить текст из Telegram');const text=element('textarea');text.rows=5;text.value=telegram;text.dataset.telegram='';telegramLabel.append(text);moderation.append(telegramLabel);const parse=button('Разобрать','data-parse-telegram','');moderation.append(parse);root.append(moderation);
   text.addEventListener('input',()=>{telegram=text.value;});parse.addEventListener('click',()=>{const parsed=parseTelegram(telegram);const item={id:nextId(draft.items,today()),author:parsed.author,text:parsed.text,rating:parsed.rating,source:'site',source_url:null,published_at:today(),status:'published',demo:false};startEditor(item);});
-  /* Запасной журнал отзывов: копия каждого отзыва лежит в Cloudflare KV, поэтому
-     отзыв не пропадает, даже если сообщение в Telegram удалят. Открывается кодом
-     доступа (секрет REVIEWS_INBOX_KEY), который владелец один раз вставляет сюда. */
+  /* Отзывы с сайта приходят из прослойки (Cloudflare KV). Код доступа — секрет
+     REVIEWS_INBOX_KEY, владелец вставляет его здесь один раз. */
   /* localStorage может быть недоступен (приватный режим, тесты): код тогда просто
      живёт до перезагрузки страницы, а мастерская не падает. */
   const lsGet=k=>{try{return localStorage.getItem(k)||'';}catch(e){return '';}};
   const lsSet=(k,v)=>{try{localStorage.setItem(k,v);return true;}catch(e){return false;}};
   const lsDel=k=>{try{localStorage.removeItem(k);}catch(e){/* нечего чистить */}};
-  const inboxStorageKey='ats.reviewsInboxKey';
-  const inboxBase=()=>lsGet('ats.reviewsInboxBase')||'https://ats-leads.ats439.workers.dev';
-  const inboxKey=()=>lsGet(inboxStorageKey);
+  /* Отзывы с сайта живут в прослойке и публикуются сразу. Здесь владелец
+     убирает спам и мат: «Скрыть» уводит отзыв с сайта, «Вернуть» показывает
+     снова, «Удалить» стирает навсегда. */
+  const liveStorageKey='ats.reviewsInboxKey';
+  const liveBase=()=>lsGet('ats.reviewsInboxBase')||'https://ats-leads.ats439.workers.dev';
   const archive=element('section','panel review-inbox');archive.dataset.reviewsInbox='';
-  add(archive,element('h3','','Отзывы с сайта — запасная копия'),
-    element('p','hint','Каждый отзыв, отправленный через форму, сохраняется здесь. Это страховка: если сообщение в группе Telegram удалят, отзыв не потеряется — его можно взять отсюда.')); 
-  const keyLabel=element('label','','Код доступа к журналу');const keyInput=element('input');keyInput.type='password';keyInput.value=inboxKey();keyInput.autocomplete='off';keyInput.dataset.inboxKey='';keyLabel.append(keyInput);archive.append(keyLabel);
+  add(archive,element('h3','','Отзывы с сайта'),
+    element('p','hint','Отзыв с сайта появляется сразу, без проверки. Здесь можно убрать спам или мат: «Скрыть» убирает отзыв с сайта, «Вернуть» показывает его снова, «Удалить» стирает навсегда.'));
+  const keyLabel=element('label','','Код доступа к отзывам');const keyInput=element('input');keyInput.type='password';keyInput.value=lsGet(liveStorageKey);keyInput.autocomplete='off';keyInput.dataset.inboxKey='';keyLabel.append(keyInput);archive.append(keyLabel);
   const archiveActions=element('div','review-actions');const load=button('Загрузить отзывы с сайта','data-inbox-load','', 'button');const saveKey=button('Запомнить код','data-inbox-save-key','','button small');add(archiveActions,load,saveKey);archive.append(archiveActions);
   const archiveList=element('div','review-inbox-list');archive.append(archiveList);root.append(archive);
-  const inboxSay=(text,isError)=>{archiveList.textContent='';const n=element('p',isError?'notice error':'hint',text);archiveList.append(n);};
-  saveKey.addEventListener('click',()=>{const v=keyInput.value.trim();if(!v){lsDel(inboxStorageKey);inboxSay('Код стёрт — журнал закрыт.',false);return;}lsSet(inboxStorageKey,v);inboxSay('Код сохранён на этом устройстве.',false);});
-  load.addEventListener('click',async()=>{
-   const key=keyInput.value.trim();if(!key){inboxSay('Вставьте код доступа и нажмите «Загрузить». Код выдаёт разработчик: он хранится в GitHub Secrets как REVIEWS_INBOX_KEY.',true);return;}
-   lsSet(inboxStorageKey,key);
-   load.disabled=true;inboxSay('Загружаем…',false);
+  const liveSay=(text,isError)=>{archiveList.textContent='';archiveList.append(element('p',isError?'notice error':'hint',text));};
+  saveKey.addEventListener('click',()=>{const v=keyInput.value.trim();if(!v){lsDel(liveStorageKey);liveSay('Код стёрт — отзывы закрыты.',false);return;}lsSet(liveStorageKey,v);liveSay('Код сохранён на этом устройстве.',false);});
+  function liveCard(item,key){
+   const card=element('article','review-card review-card--inbox');card.dataset.liveReview=item.id;
+   const head=element('div','review-card-head');const who=element('div');
+   who.append(element('span','review-stars','★'.repeat(item.rating||0)+'☆'.repeat(5-(item.rating||0))),element('strong','review-author',item.author));
+   head.append(who,element('span','review-meta',`${String(item.createdAt||'').slice(0,10)} · ${item.status==='published'?'на сайте':'скрыт'}`));
+   card.append(head,element('p','review-excerpt',item.text));
+   const row=element('div','review-actions');
+   if(item.status==='published')row.append(button('Скрыть с сайта','data-live-action','hide','button'));
+   else row.append(button('Вернуть на сайт','data-live-action','publish','button'));
+   row.append(button('Удалить','data-live-action','delete','button danger'));
+   for(const btn of row.querySelectorAll('[data-live-action]')){btn.dataset.liveId=item.id;btn.addEventListener('click',()=>moderate(item,btn.dataset.liveAction,key,btn));}
+   card.append(row);return card;
+  }
+  async function moderate(item,action,key,btn){
+   if(action==='delete'&&!window.confirm(`Удалить отзыв «${item.author}» навсегда?`))return;
+   btn.disabled=true;
    try{
-    const res=await fetch(`${inboxBase()}/reviews/inbox`,{headers:{'x-inbox-key':key}});
-    if(res.status===404){inboxSay('Журнал ещё не включён: в GitHub Secrets нет REVIEWS_INBOX_KEY. Пока отзывы приходят только в Telegram и на почту.',true);return;}
-    if(res.status===403){inboxSay('Код не подошёл. Проверьте его и попробуйте ещё раз.',true);return;}
-    if(!res.ok){inboxSay(`Сервер ответил ошибкой ${res.status}. Попробуйте позже.`,true);return;}
+    const res=await fetch(`${liveBase()}/reviews/moderate`,{method:'POST',headers:{'content-type':'application/json','x-inbox-key':key},body:JSON.stringify({id:item.id,action})});
+    if(res.status===404){liveSay('Модерация ещё не включена: в GitHub Secrets нет REVIEWS_INBOX_KEY.',true);return;}
+    if(res.status===403){liveSay('Код не подошёл. Проверьте его и попробуйте ещё раз.',true);return;}
+    if(!res.ok){liveSay(`Сервер ответил ошибкой ${res.status}. Попробуйте позже.`,true);return;}
+    await loadLive(key);
+    archiveList.prepend(element('p','hint',action==='delete'?'Отзыв удалён навсегда.':action==='hide'?'Отзыв скрыт — на сайте его больше нет.':'Отзыв снова на сайте.'));
+   }catch(e){liveSay('Не удалось связаться с сервером: нет сети. Попробуйте ещё раз.',true);}
+   finally{btn.disabled=false;}
+  }
+  async function loadLive(key){
+   liveSay('Загружаем…',false);
+   try{
+    const res=await fetch(`${liveBase()}/reviews/inbox`,{headers:{'x-inbox-key':key}});
+    if(res.status===404){liveSay('Модерация ещё не включена: в GitHub Secrets нет REVIEWS_INBOX_KEY. Пока отзывы приходят только в Telegram и на почту.',true);return;}
+    if(res.status===403){liveSay('Код не подошёл. Проверьте его и попробуйте ещё раз.',true);return;}
+    if(!res.ok){liveSay(`Сервер ответил ошибкой ${res.status}. Попробуйте позже.`,true);return;}
     const data=await res.json();
     const items=Array.isArray(data.items)?data.items:[];
     archiveList.textContent='';
-    if(!items.length){archiveList.append(element('p','hint','Новых отзывов в журнале нет — всё, что приходило, уже добавлено в список.'));return;}
-    archiveList.append(element('p','hint',`В журнале ${items.length} ${plural(items.length,'отзыв','отзыва','отзывов')}. Нажмите «Добавить в список» — текст попадёт в редактор, останется проверить и сохранить.`));
-    for(const item of items){
-     const card=element('article','review-card review-card--inbox');card.dataset.inboxReview=item.id;
-     const head=element('div','review-card-head');const who=element('div');who.append(element('span','review-stars','★'.repeat(item.rating||0)+'☆'.repeat(5-(item.rating||0))),element('strong','review-author',item.author));head.append(who,element('span','review-meta',String(item.createdAt||'').slice(0,10)));card.append(head);
-     card.append(element('p','review-excerpt',item.text));
-     const row=element('div','review-actions');
-     const addBtn=button('Добавить в список','data-inbox-add',item.id,'button primary');
-     const skipBtn=button('Уже на сайте','data-inbox-skip',item.id,'button small');
-     add(row,addBtn,skipBtn);card.append(row);archiveList.append(card);
-     addBtn.addEventListener('click',async()=>{
-      const date=(String(item.createdAt||'').slice(0,10))||today();
-      startEditor({id:nextId(draft.items,date),author:item.author,text:item.text,rating:item.rating,source:'site',source_url:null,published_at:date,status:'published',demo:false});
-      await markInbox(item.id,key);
-     });
-     skipBtn.addEventListener('click',async()=>{await markInbox(item.id,key);card.remove();});
-    }
-   }catch(e){inboxSay('Не удалось связаться с журналом: нет сети или сервер недоступен.',true);}
-   finally{load.disabled=false;}
-  });
-  async function markInbox(id,key){
-   try{await fetch(`${inboxBase()}/reviews/inbox/done`,{method:'POST',headers:{'content-type':'application/json','x-inbox-key':key},body:JSON.stringify({id})});}catch(e){/* журнал — страховка: молча продолжаем */}
+    if(!items.length){archiveList.append(element('p','hint','Отзывов с сайта пока нет. Как только кто-то напишет, отзыв появится здесь, а вам придёт сообщение в Telegram.'));return;}
+    const shown=items.filter(item=>item.status==='published').length;
+    archiveList.append(element('p','hint',`Всего ${items.length} ${plural(items.length,'отзыв','отзыва','отзывов')}, из них на сайте ${shown}.`));
+    for(const item of items)archiveList.append(liveCard(item,key));
+   }catch(e){liveSay('Не удалось связаться с сервером: нет сети. Попробуйте ещё раз.',true);}
   }
+  load.addEventListener('click',async()=>{
+   const key=keyInput.value.trim();if(!key){liveSay('Вставьте код доступа и нажмите «Загрузить». Код выдаёт разработчик: он хранится в GitHub Secrets как REVIEWS_INBOX_KEY.',true);return;}
+   lsSet(liveStorageKey,key);await loadLive(key);
+  });
   const toolbar=element('div','review-toolbar');const filterGroup=element('div','review-filters');filterGroup.setAttribute('role','group');filterGroup.setAttribute('aria-label','Фильтр отзывов');const counts={all:realItems.length,published:realPublished,hidden:realHidden,demo:demoItems.length};for(const [key,title] of [['all','Все'],['published','Опубликованные'],['hidden','Скрытые'],['demo','Примеры']]){const b=button(`${title} ${counts[key]}`,'data-review-filter',key,'button small');b.setAttribute('aria-pressed',String(filter===key));b.addEventListener('click',()=>{filter=key;render();});filterGroup.append(b);}toolbar.append(filterGroup);
   const actions=element('div','review-actions');const create=button('+ Добавить отзыв','data-review-add','', 'button primary');const clear=button('Удалить все примеры','data-review-clear-demo','', 'button danger');clear.disabled=!demoItems.length||saving;add(actions,create,clear);toolbar.append(actions);root.append(toolbar);
   // Владелец должен видеть, почему /otzyvy/ пустая, а в мастерской «есть отзывы».

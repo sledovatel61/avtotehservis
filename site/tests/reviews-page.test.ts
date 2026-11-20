@@ -200,13 +200,13 @@ describe('форма отзыва /otzyvy', () => {
     assert.equal($(doc, '.consent-row')?.classList.contains('is-bad'), true);
   });
 
-  test('5. успех: «ушёл на проверку», поля очищены, кнопка снова активна', async () => {
+  test('5. успех: «Отзыв опубликован», поля очищены, кнопка снова активна', async () => {
     reply = () => json(201, { ok: true, status: 'pending' });
     const { doc } = await mount();
     fill(doc);
     send(doc);
     await waitFor(() => ($(doc, '#rev-done')?.hasAttribute('hidden') === false), 'успех');
-    assert.match($(doc, '#rev-done')?.textContent ?? '', /Спасибо! Отзыв ушёл на проверку — опубликуем в течение дня/);
+    assert.match($(doc, '#rev-done')?.textContent ?? '', /Спасибо! Отзыв опубликован\./);
     assert.equal(($(doc, '#rev-name') as HTMLInputElement).value, '');
     assert.equal(($(doc, '#rev-text') as HTMLTextAreaElement).value, '');
     assert.equal(($(doc, '#rev-consent') as HTMLInputElement).checked, false);
@@ -249,7 +249,7 @@ describe('форма отзыва /otzyvy', () => {
     send(doc);
     await waitFor(() => ($(doc, '#rev-done')?.hasAttribute('hidden') === false), 'успех бота');
     assert.equal(calls.length, 0, 'запрос с заполненной ловушкой не уходит');
-    assert.match($(doc, '#rev-done')?.textContent ?? '', /ушёл на проверку/);
+    assert.match($(doc, '#rev-done')?.textContent ?? '', /Отзыв опубликован/);
   });
 
   test('8. ссылка в тексте отзыва — предупреждение до отправки', async () => {

@@ -46,7 +46,7 @@ const title = stats.count > 0
 <Base
   page="otzyvy"
   title={title}
-  description="Отзывы клиентов АвтоТехСервис на Портовой 439: оценки и тексты посетителей сайта после проверки. Здесь же можно оставить свой отзыв — он появится после модерации."
+  description="Отзывы клиентов АвтоТехСервис на Портовой 439: оценки и тексты посетителей сайта, рейтинг 4,6 на Яндекс.Картах. Здесь же можно оставить свой отзыв — он появится сразу."
   jsonLd={jsonLd}
 >
 
@@ -55,12 +55,22 @@ const title = stats.count > 0
   <div class="container">
     <span class="eyebrow">Отзывы</span>
     <h1>Отзывы клиентов</h1>
-    <p class="lead">Отзывы оставляют посетители сайта, мы проверяем их перед публикацией. Чужие оценки не переносим и рейтинг не придумываем.</p>
+    <p class="lead">Отзывы оставляют посетители сайта, и они появляются сразу. Если в отзыве спам или грубость — мы его убираем. Чужие оценки не переносим и рейтинг не придумываем.</p>
   </div>
 </section>
 
 <section class="sec" aria-labelledby="rev-sum-h">
   <div class="container">
+    {/* Рейтинг на Яндекс.Картах: цифру называет владелец, мы её не придумываем.
+        Отзывы оттуда не копируем — ссылка ведёт на карточку сервиса. */}
+    <div class="rev-yandex" data-yandex-rating>
+      <div class="rev-yandex-num"><b>{S.ratings[0]?.value ?? '4,6'}</b><small>из 5</small></div>
+      <div class="rev-yandex-body">
+        <p class="rev-yandex-line"><b>Рейтинг на Яндекс.Картах</b><span class="hint"> · цифру назвал владелец сервиса</span></p>
+        <p class="hint">Отзывы, оценки и фотографии — в карточке сервиса на Яндекс.Картах. Сюда мы их не копируем: там своя модерация и живые оценки.</p>
+      </div>
+      <a class="btn btn--ghost" href={yandexUrl} target="_blank" rel="noopener noreferrer">Читать на Яндекс.Картах</a>
+    </div>
     <div class="rev-summary" id="rev-sum-h">
       {stats.count > 0 && avgText ? (
         <>
@@ -72,7 +82,7 @@ const title = stats.count > 0
             <p class="rev-summary-line">
               {stats.count} {plural(stats.count, 'отзыв', 'отзыва', 'отзывов')} на сайте · средняя оценка {avgText}
             </p>
-            <p class="hint">Оценки ставили посетители сайта. Отзывы с Яндекса и 2ГИС мы не копируем — там своя карточка.</p>
+            <p class="hint">Оценки ставили посетители сайта — здесь только отзывы, оставленные на сайте.</p>
           </div>
         </>
       ) : (
@@ -84,8 +94,8 @@ const title = stats.count > 0
       <a class="btn btn--ghost rev-summary-btn" href={yandexUrl} target="_blank" rel="noopener noreferrer">Все отзывы на Яндекс.Картах</a>
     </div>
 
-    {reviews.length > 0 ? (
-      <div class="rev-grid">
+    <>
+      <div class="rev-grid" data-reviews-grid>
         {reviews.map((r) => (
           <article class="rev-card rev-card--site">
             <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating} из 5`}>
@@ -105,8 +115,8 @@ const title = stats.count > 0
           </article>
         ))}
       </div>
-    ) : (
-      <div class="rev-empty">
+      {reviews.length === 0 && (
+      <div class="rev-empty" data-reviews-empty>
         <article class="rev-card rev-card--site">
           <div class="rev-text"><p>{PHOTO_PHRASE}</p></div>
           <div class="rev-who">
@@ -114,10 +124,11 @@ const title = stats.count > 0
             <span><b>Яндекс.Карты</b><span><a class="linklike" href={yandexUrl} target="_blank" rel="noopener noreferrer">Открыть Яндекс Карты</a></span></span>
           </div>
         </article>
-        <p class="hint">Своих отзывов не пишем и чужие не переносим. Первый отзыв, оставленный здесь, появится на этой странице после проверки.</p>
+        <p class="hint">Своих отзывов не пишем и чужие не переносим. Первый отзыв, оставленный здесь, появится на этой странице сразу.</p>
         <a class="btn btn--copper" href="#leave-review">Оставить отзыв</a>
       </div>
-    )}
+      )}
+    </>
 
     {hasDemo && (
       <p class="rev-demo-note" role="note">
@@ -132,7 +143,7 @@ const title = stats.count > 0
     <div class="rev-form-head">
       <span class="eyebrow">Обратная связь</span>
       <h2 id="rev-form-h">Оставить отзыв</h2>
-      <p class="hint">Отзыв появится на сайте после проверки — обычно в течение рабочего дня. Оценку ставьте свою: подставлять «пятёрки» мы не будем.</p>
+      <p class="hint">Отзыв появится на сайте сразу. Если в нём окажется спам или грубость, мы его уберём. Оценку ставьте свою: подставлять «пятёрки» мы не будем.</p>
     </div>
 
     <form
@@ -161,7 +172,9 @@ const title = stats.count > 0
       <fieldset class="field rev-stars-field">
         <legend>Оценка <span class="req" aria-hidden="true">*</span></legend>
         <div class="rev-star-row">
-          {[5, 4, 3, 2, 1].map((n) => (
+          {/* Порядок 1→5: слева «одна звезда», справа «пять». Раньше было наоборот,
+              и люди, ставя пять, попадали в единицу — все отзывы приходили как 1/5. */}
+          {[1, 2, 3, 4, 5].map((n) => (
             <span class="rev-star">
               <input type="radio" id={`rev-rating-${n}`} name="rating" value={String(n)} aria-label={n === 1 ? '1 звезда из 5' : `${n} ${plural(n, 'звезда', 'звезды', 'звёзд')} из 5`}>
               <label for={`rev-rating-${n}`} aria-hidden="true">
@@ -210,4 +223,5 @@ const title = stats.count > 0
 </section>
 
 <script>import '../client/review-form.ts';</script>
+<script>import '../client/reviews-live.ts';</script>
 </Base>

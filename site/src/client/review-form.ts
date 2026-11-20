@@ -282,7 +282,7 @@ function setup(root: HTMLFormElement): void {
     }
     /* Ловушка для ботов: человек её не видит. Показываем успех, но ничего не шлём. */
     if ((hpEl?.value ?? '').trim() !== '') {
-      succeed('Спасибо! Отзыв ушёл на проверку — опубликуем в течение дня.');
+      succeed('Спасибо! Отзыв опубликован.');
       return;
     }
 
@@ -303,7 +303,9 @@ function setup(root: HTMLFormElement): void {
         }),
       });
       if (res.status === 201 || res.ok) {
-        succeed('Спасибо! Отзыв ушёл на проверку — опубликуем в течение дня.');
+        succeed('Спасибо! Отзыв опубликован.');
+        /* Отзыв уже в прослойке: просим страницу подтянуть его в список. */
+        document.dispatchEvent(new Event('review:published'));
         return;
       }
 

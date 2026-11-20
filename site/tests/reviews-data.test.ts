@@ -92,11 +92,13 @@ describe('reviews-schema, reviews-store и check-reviews (круг 87)', () => {
     assert.equal(res.file.items.length, 4);
     assert.deepEqual(res.file.items, raw.items);
 
-    // Штатный site/content/reviews.json содержит 6 демо-отзывов без ошибок схемы
+    // Штатный site/content/reviews.json: 9 настоящих отзывов с сайта + 6 демо, все без ошибок схемы
     const repoFile = readReviewsFile();
     assert.deepEqual(repoFile.errors, []);
-    assert.equal(repoFile.file.items.length, 6);
-    assert.ok(repoFile.file.items.every((r) => r.demo === true && r.source === 'demo'));
+    assert.equal(repoFile.file.items.length, 15);
+    assert.equal(repoFile.file.items.filter((r) => r.demo === true).length, 6);
+    assert.equal(repoFile.file.items.filter((r) => r.demo !== true).length, 9);
+    assert.ok(repoFile.file.items.every((r) => (r.demo === true ? r.source === 'demo' : r.source === 'site')));
   });
 
   it('2. битый JSON → пусто + одна ошибка, без исключения', () => {
@@ -358,12 +360,14 @@ describe('reviews-schema, reviews-store и check-reviews (круг 87)', () => {
     delete process.env.PUBLIC_DEMO_REVIEWS;
     resetReviewsCache();
 
-    // На штатном reviews.json (6 демо-записей) без PUBLIC_DEMO_REVIEWS выдача пуста
-    assert.deepEqual(listPublishedSiteReviews(), []);
+    // На штатном reviews.json без PUBLIC_DEMO_REVIEWS отдаются только настоящие отзывы, без демо
+    const real = listPublishedSiteReviews();
+    assert.equal(real.length, 9);
+    assert.ok(real.every((r) => r.demo !== true));
 
-    // И при пустой строке PUBLIC_DEMO_REVIEWS="" (как подставляет export-pages.mjs по умолчанию) — тоже пуста
+    // И при пустой строке PUBLIC_DEMO_REVIEWS="" (как подставляет export-pages.mjs по умолчанию) — тоже без демо
     process.env.PUBLIC_DEMO_REVIEWS = process.env.PUBLIC_DEMO_REVIEWS ?? '';
-    assert.deepEqual(listPublishedSiteReviews(), []);
+    assert.deepEqual(listPublishedSiteReviews().length, 9);
 
     // Проверим также, что в export-pages.mjs прописан дефолт ?? '' (а не ?? '1')
     const exportPagesSrc = fs.readFileSync(
@@ -379,7 +383,7 @@ describe('reviews-schema, reviews-store и check-reviews (круг 87)', () => {
     resetReviewsCache();
 
     const published = listPublishedSiteReviews();
-    assert.equal(published.length, 6);
-    assert.ok(published.every((r) => r.demo === true && r.status === 'published'));
+    assert.equal(published.length, 15);
+    assert.equal(published.filter((r) => r.demo === true && r.status === 'published').length, 6);
   });
 });

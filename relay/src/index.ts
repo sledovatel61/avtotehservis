@@ -4,13 +4,14 @@
  * Контракт (задание 80-1, менять нельзя):
  *   GET  /health              → { ok, service:'ats-leads', time, telegram, email, emailTo, consentVersion, kv }
  *   GET  /slots?date=…        → { date, slots:[{time, available, reason?}] }
- *   POST /reviews             → 201 { ok:true, status:'pending', id }  (отзыв, только модерация)
+ *   POST /reviews             → 201 { ok:true, status:'published', id }  (отзыв сразу на сайте)
  *                               400 { error:'validation'|'consent_version'|'link_not_allowed' }
  *                               403 { error:'origin' }, 413 { error:'too_large' }
  *                               429 { error:'rate_limit', retryAfter } + Retry-After
  *                               503 { error:'delivery_failed' }
- *   GET  /reviews/inbox       → { items:[…] } при заголовке `x-inbox-key: <REVIEWS_INBOX_KEY>`
- *   POST /reviews/inbox/done  → { ok:true } — отзыв опубликован, из журнала уходит
+ *   GET  /reviews             → { items:[{id,author,text,rating,publishedAt}], total } — публично
+ *   GET  /reviews/inbox       → { items:[…] } со статусами, заголовок `x-inbox-key: <REVIEWS_INBOX_KEY>`
+ *   POST /reviews/moderate    → { ok:true } — { id, action:'hide'|'publish'|'delete' }
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
  *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
  *                               400 { error:{ code:'validation'|'bad_json'|'consent_version', message, fields? } }
@@ -27,7 +28,7 @@ import { composeTelegram, sendTelegram, sendPhotos } from './telegram.ts';
 import { emailProvider, sendEmail, DEFAULT_EMAIL_TO } from './email.ts';
 import { mailStatus, markMailOk, markMailFailed } from './mail-status.ts';
 import { handleReview, reviewsHealth, type ReviewsStore } from './reviews.ts';
-import { handleInbox, inboxHealth } from './reviews-inbox.ts';
+import { handleLiveReviews, liveReviewsHealth } from './reviews-live.ts';
 import { allowedOrigins } from './origins.ts';
 
 export interface Env {
@@ -340,7 +341,7 @@ export default {
           /* Приём отзывов: по `reviews` смоук понимает, что сборка доехала,
              по `reviewsKv` — что дубли и лимиты переживают перезапуск изолята. */
           ...reviewsHealth(env),
-          ...inboxHealth(env),
+          ...liveReviewsHealth(env),
         }));
       }
       if (req.method === 'GET' && url.pathname === '/slots') return withCors(handleSlots(url));
@@ -348,9 +349,9 @@ export default {
       if (req.method === 'POST' && url.pathname === '/reviews') {
         return withCors(await handleReview(req, env, { hashIp, store: reviewStore(env) }));
       }
-      /* Запасной журнал отзывов: закрыт кодом `REVIEWS_INBOX_KEY`. */
-      const inbox = await handleInbox(req, url, env, reviewStore(env));
-      if (inbox) return withCors(inbox);
+      /* Живые отзывы: публичный список для /otzyvy и модерация по коду. */
+      const live = await handleLiveReviews(req, url, env, reviewStore(env));
+      if (live) return withCors(live);
       return withCors(err(404, 'not_found', 'Неизвестный адрес'));
     } catch (e) {
       console.error('[relay] unhandled', String((e as Error)?.stack ?? e).slice(0, 400));
