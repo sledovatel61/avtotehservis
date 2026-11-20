@@ -5,7 +5,8 @@
 
 **Обновлено:** 20.11.2026, круг 90 — «память» отзывов включена, А7 делает порядок работ, почта ждёт ключ.
 **Читать в Google Drive:** [доска проекта](https://docs.google.com/document/d/1tDg5XaRlA3cic8kLUWIx7G6HELLY5QKccsU2Xz116hY/edit)
-— копия обновляется при каждом изменении этого файла. Инструкция по В2 там же:
+— копия обновляется при каждом изменении этого файла.
+Инструкции там же: [почта через Resend](https://docs.google.com/document/d/14uBq2gGuj2qOmnaKxHXDx9xU320F4yEh9jYx58v9TSU/edit),
 [«память» для отзывов](https://docs.google.com/document/d/1yNOY0lbuiwHmllUuGo36LMgKcQTgUCDS_10OJDdj-38/edit).
 **Боевой сайт:** `https://ats-rostov.ru` — HTTPS включён, заявки идут в Telegram
 (`/health`: `telegram:true`, `email:null`, `kv:true`, `reviews:true`, `reviewsKv:true`).
