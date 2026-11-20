@@ -6,9 +6,9 @@
 **Обновлено:** 20.11.2026, круг 89 — SEO статей и аналитика в бою, снимаем `noindex`.
 **Читать в Google Drive:** [backlog.md — АвтоТехСервис](https://docs.google.com/document/d/1tDg5XaRlA3cic8kLUWIx7G6HELLY5QKccsU2Xz116hY/edit)
 — копия обновляется при каждом изменении этого файла.
-**Боевой сайт:** `https://ats-rostov.ru` — HTTPS включён, заявки идут в
-Telegram; **в поиск ещё не попадёт**: на каждой странице стоит `noindex, nofollow` (задание А10,
-`prompts/135`) (`/health`: `telegram:true`, `email:null`, `kv:false`, `reviews:true`, `reviewsKv:false`).
+**Боевой сайт:** `https://ats-rostov.ru` — HTTPS включён, заявки идут в Telegram
+(`/health`: `telegram:true`, `email:null`, `kv:false`, `reviews:true`, `reviewsKv:false`).
+**В поиск сайт пока не попадёт:** на каждой странице стоит `noindex, nofollow` — задание А10, `prompts/135`.
 
 ---
 
