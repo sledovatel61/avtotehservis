@@ -293,21 +293,22 @@ def raster(svg, width, height):
     return Image.open(BytesIO(png))
 
 
-def render():
+def render(concepts=CONCEPTS, stem='collage-03',
+           heading='АвтоТехСервис · визитка · агент 03', first=1):
     width, height = 2268, 1322
     sheet_w, margin, gap = 3200, 60, 40
     cw = (sheet_w - 2 * margin - gap) // 2
     ch = round(cw * 50 / 90)
     top, row = 180, ch + 140
-    sheet_h = top + row * len(CONCEPTS) + 15
+    sheet_h = top + row * len(concepts) + 15
     sheet = Image.new('RGB', (sheet_w, sheet_h), N)
     # Artifact date intentionally fixed for stable rerenders of the same concept round.
-    labels = [text('АвтоТехСервис · визитка · агент 03', margin, 111, 65, I, family='u', safe=False),
+    labels = [text(heading, margin, 111, 65, I, family='u', safe=False),
               text('20.11.2026', sheet_w - margin, 111, 27, M, align='right', safe=False),
               line(margin, 133, sheet_w - margin, 133, B, 1, .7),
               text('ЛИЦЕВАЯ', margin, 164, 20, B, tracking=2.5, safe=False),
               text('ОБОРОТНАЯ', margin + cw + gap, 164, 20, B, tracking=2.5, safe=False)]
-    for i, (slug, title, description, build) in enumerate(CONCEPTS):
+    for i, (slug, title, description, build) in enumerate(concepts):
         pair = OUT / 'concepts' / slug
         pair.mkdir(parents=True, exist_ok=True)
         y = top + row * i
@@ -333,7 +334,7 @@ def render():
             x = margin + j * (cw + gap)
             sheet.paste(arr, (x, y))
             labels.append(rect(x + .5, y + .5, cw - 1, ch - 1, 'none', B, .7))
-        labels += [text(f'{i + 1:02d} · {title}', margin, y + ch + 49, 32, I, family='u', safe=False),
+        labels += [text(f'{i + first:02d} · {title}', margin, y + ch + 49, 32, I, family='u', safe=False),
                    text(description, margin, y + ch + 85, 22, M, safe=False)]
         print(f'{slug}: geometry, contacts, contrast and 3 QR renders OK')
     layer = raster(f'<svg xmlns="http://www.w3.org/2000/svg" width="{sheet_w}" height="{sheet_h}">'
@@ -341,8 +342,8 @@ def render():
     sheet.paste(layer, (0, 0), layer)
     collage = OUT / 'collage'
     collage.mkdir(exist_ok=True)
-    sheet.save(collage / 'collage-03.png', optimize=True)
-    jpg = collage / 'collage-03.jpg'
+    sheet.save(collage / f'{stem}.png', optimize=True)
+    jpg = collage / f'{stem}.jpg'
     for quality in (94, 90, 86, 82):
         sheet.save(jpg, quality=quality, optimize=True, subsampling=0)
         if jpg.stat().st_size <= 2_000_000:

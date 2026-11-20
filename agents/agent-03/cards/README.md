@@ -1,6 +1,9 @@
 # АвтоТехСервис · визитка · агент 03
 
-**Смотреть сначала:** [коллаж PNG](collage/collage-03.png) или [JPG для пересылки, 1,67 МБ](collage/collage-03.jpg). Слева лицевая, справа оборотная, без вылетов и в одном масштабе. Под каждым рядом — название и идея. Открывайте отдельные `front.png` и `back.png` из `concepts/`, если нужно разглядеть мелкий текст. В [notes.md](notes.md) — разбор пяти вариантов и самопроверка.
+- **Серия I · 01–05:** [коллаж PNG](collage/collage-03.png) · [JPG, 1,67 МБ](collage/collage-03.jpg) · [идеи и проверка](notes.md).
+- **Серия II · 06–10:** [коллаж PNG](collage/collage-03-encore.png) · [JPG, 1,73 МБ](collage/collage-03-encore.jpg) · [идеи и проверка](notes-encore.md).
+
+В каждом ряду слева лицевая, справа оборотная, без вылетов и в одном масштабе. Отдельные стороны `front` и `back` лежат в `concepts/`.
 
 ## Форматы и печать
 
@@ -20,7 +23,8 @@
 
 ```sh
 python -m pip install -r agents/agent-03/cards/requirements.txt
-python agents/agent-03/cards/render.py
+python agents/agent-03/cards/render.py         # серия I
+python agents/agent-03/cards/render_encore.py  # серия II
 ```
 
 Скрипт берёт SVG-знак, токены и локальные WOFF2 из `site/`, переводит глифы в контуры, рендерит стороны и собирает коллаж. При генерации проверяет тексты, физические размеры шрифтов, безопасную зону, пересечение текстовых блоков, контраст и распознавание QR.
