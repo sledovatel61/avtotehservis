@@ -5,7 +5,8 @@
  *   • сайт не падает никогда: нет файла, пусто, битый JSON → `[]` и ошибки в диагностике;
  *   • кэш на процесс + проверка `mtime` (файл читается один раз, пока не изменился);
  *   • `REVIEWS_FILE` переопределяет путь к файлу (для тестов и предпросмотра);
- *   • `listPublishedSiteReviews()` учитывает `PUBLIC_DEMO_REVIEWS === '1'`.
+ *   • `listPublishedSiteReviews()` учитывает `PUBLIC_DEMO_REVIEWS === '1'`, но НИКОГДА
+ *     не отдаёт демо-примеры на боевом домене (см. `isProductionSite()`).
  */
 import { readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -140,18 +141,38 @@ export function readReviewsFile(): { file: ReviewsFile; errors: string[]; fromCa
   return { file, errors, fromCache: false };
 }
 
+/** Боевой домен сервиса: здесь демо-примеры отзывов не показываем никогда. */
+const PRODUCTION_HOSTS = ['ats-rostov.ru', 'www.ats-rostov.ru'];
+
+/**
+ * Собираем ли мы боевой сайт (домен сервиса), а не превью.
+ *
+ * Зачем: демо-примеры отзывов раньше прятались только переменной сборки
+ * `PUBLIC_DEMO_REVIEWS`. Одна ошибка в переменной — и «примеры» оказываются на
+ * боевом сайте как отзывы клиентов. Теперь домен блокирует их сам, независимо
+ * от переменной: на `ats-rostov.ru` витрина показывает только настоящие отзывы.
+ */
+export function isProductionSite(): boolean {
+  const raw = (process.env.PUBLIC_SITE_URL ?? '').trim().toLowerCase();
+  if (!raw) return false;
+  const host = raw.replace(/^[a-z]+:\/\//, '').split(/[/?#]/)[0].replace(/:\d+$/, '');
+  return PRODUCTION_HOSTS.includes(host);
+}
+
 /**
  * Опубликованные отзывы для витрины с учётом `PUBLIC_DEMO_REVIEWS`
- * (`'1'` — демо попадают в выдачу, иначе нет).
+ * (`'1'` — демо попадают в выдачу, иначе нет) и боевого домена
+ * (на `ats-rostov.ru` демо не попадают никогда).
  */
 export function listPublishedSiteReviews(
   options?: { includeDemo?: boolean; limit?: number },
 ): SiteReview[] {
   const { file } = readReviewsFile();
+  const demoAllowed = !isProductionSite();
   const includeDemo =
     options?.includeDemo !== undefined
-      ? Boolean(options.includeDemo)
-      : process.env.PUBLIC_DEMO_REVIEWS === '1';
+      ? Boolean(options.includeDemo) && demoAllowed
+      : demoAllowed && process.env.PUBLIC_DEMO_REVIEWS === '1';
   const list = publishedReviews(file, { includeDemo });
   return options?.limit && options.limit > 0 ? list.slice(0, options.limit) : list;
 }

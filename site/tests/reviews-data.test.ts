@@ -201,8 +201,24 @@ describe('reviews-schema, reviews-store и check-reviews (круг 87)', () => {
 
       process.env.PUBLIC_DEMO_REVIEWS = '1';
       assert.equal(listPublishedSiteReviews().length, 3);
+
+      /* Боевой домен: примеры не показываем даже с флагом, иначе они уедут
+         на ats-rostov.ru как отзывы клиентов. */
+      process.env.PUBLIC_SITE_URL = 'https://ats-rostov.ru';
+      assert.equal(listPublishedSiteReviews().length, 2, 'на ats-rostov.ru демо нет');
+      process.env.PUBLIC_SITE_URL = 'https://www.ats-rostov.ru/';
+      assert.equal(listPublishedSiteReviews().length, 2, 'www.ats-rostov.ru — тоже боевой');
+      process.env.PUBLIC_SITE_URL = 'https://sledovatel61.github.io/avtotehservis/';
+      assert.equal(listPublishedSiteReviews().length, 3, 'превью показывает примеры');
+      /* Явный includeDemo не должен обходить запрет для боевого домена. */
+      process.env.PUBLIC_SITE_URL = 'https://ats-rostov.ru';
+      assert.equal(listPublishedSiteReviews({ includeDemo: true }).length, 2);
+      delete process.env.PUBLIC_SITE_URL;
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
+      delete process.env.PUBLIC_DEMO_REVIEWS;
+      delete process.env.REVIEWS_FILE;
+      resetReviewsCache();
     }
   });
 
