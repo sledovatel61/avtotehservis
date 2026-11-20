@@ -430,9 +430,9 @@ test('emailProvider: Brevo в приоритете, без ключей почт
   assert.equal(emailProvider({ RESEND_API_KEY: 'r', BREVO_API_KEY: 'b' }), 'brevo');
 });
 
-test('emailFrom: по умолчанию свой ящик, Resend — onboarding@resend.dev', () => {
+test('emailFrom: по умолчанию свой ящик, Resend — адрес на подтверждённом домене', () => {
   assert.equal(emailFrom({ BREVO_API_KEY: 'b' }, 'Pavel.yakovenko@mail.ru'), 'Pavel.yakovenko@mail.ru');
-  assert.match(emailFrom({ RESEND_API_KEY: 'r' }, 'x@y.ru'), /onboarding@resend\.dev/);
+  assert.equal(emailFrom({ RESEND_API_KEY: 'r' }, 'x@y.ru'), 'АвтоТехСервис <no-reply@ats-rostov.ru>');
   assert.equal(emailFrom({ BREVO_API_KEY: 'b', EMAIL_FROM: 'Сервис <box@site.ru>' }, 'x@y.ru'), 'Сервис <box@site.ru>');
 });
 

@@ -5,8 +5,9 @@
  * лишний риск), поэтому письмо отправляется через HTTP-API почтового сервиса.
  * Поддерживаются два, включается тот, чей ключ лежит в секретах:
  *
- *   RESEND_API_KEY — Resend (https://resend.com): аккаунт регистрируется на тот же
- *                    адрес, куда шлём, отправитель onboarding@resend.dev;
+ *   RESEND_API_KEY — Resend (https://resend.com): домен ats-rostov.ru подтверждён
+ *                    (DKIM + CNAME rsend/send + DMARC), письма идут с
+ *                    no-reply@ats-rostov.ru на любой ящик;
  *   BREVO_API_KEY  — Brevo (https://brevo.com): отправитель EMAIL_FROM должен быть
  *                    подтверждён в аккаунте (single sender), домен не нужен.
  *
@@ -196,10 +197,11 @@ export async function buildAttachments(
 export function emailFrom(env: EmailEnv, to: string): string {
   const own = (env.EMAIL_FROM ?? '').trim();
   if (own) return own;
-  /* Resend без своего домена разрешает отправку только с onboarding@resend.dev,
-     Brevo — только с подтверждённого адреса. По умолчанию берём ящик получателя:
-     его владелец и так подтверждает в аккаунте. */
-  return emailProvider(env) === 'resend' ? 'АвтоТехСервис <onboarding@resend.dev>' : to;
+  /* Resend: домен ats-rostov.ru подтверждён (DKIM, rsend, send, DMARC), поэтому
+     по умолчанию пишем с адреса сервиса. Пока домен не подтверждён, Resend отвечает
+     403 — этот код виден в /health как emailLastError. Brevo (закрыт) требовал
+     подтверждённого отправителя, поэтому там по умолчанию берём ящик получателя. */
+  return emailProvider(env) === 'resend' ? 'АвтоТехСервис <no-reply@ats-rostov.ru>' : to;
 }
 
 export async function sendEmail(args: SendEmailArgs): Promise<SentEmail> {
