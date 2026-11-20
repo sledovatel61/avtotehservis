@@ -3,9 +3,12 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { readPublicPath } from './lib/public-path.mjs';
+import { isPublicProduction } from './export-pages.mjs';
 
 const root = resolve(import.meta.dirname, '../pages-dist');
-const { base, cnameHost } = readPublicPath(process.env);
+const { base, publicOrigin, cnameHost } = readPublicPath(process.env);
+/* Круг 89 (135): режим — теми же переменными, что robots.txt и экспорт мета-тегов. */
+const production = isPublicProduction({ publicOrigin, base });
 const basePrefix = `${base}/`;
 let pages = 0;
 let links = 0;
@@ -22,6 +25,31 @@ async function walk(dir) {
       pages++;
       const dom = new JSDOM(await readFile(file, 'utf8'));
       assert.equal(dom.window.document.body.dataset.preview, 'true');
+      /* Круг 89 (135): дефект «noindex на каждой странице боевой сборки» жил с
+         переезда на домен и нашёлся только при приёмке. Гейт: на боевой сборке
+         ни одна публичная страница не закрыта от индексации, на превью —
+         закрыта каждая. Служебное не проверяем: /manage/** (свой noindex),
+         404.html и meta-refresh заглушки переездов (noindex у них намеренный). */
+      const rel = file.slice(root.length + 1).split('\\').join('/');
+      const isServicePage =
+        rel.startsWith('manage/') ||
+        rel === '404.html' ||
+        Boolean(dom.window.document.querySelector('meta[http-equiv="refresh"]'));
+      if (!isServicePage) {
+        const robotsMetas = [...dom.window.document.querySelectorAll('meta[name="robots"]')]
+          .map((el) => el.getAttribute('content') ?? '');
+        if (production) {
+          assert.ok(
+            !robotsMetas.some((c) => /noindex/i.test(c)),
+            `FAIL: боевая сборка закрыта от индексации (meta robots noindex): ${file}`,
+          );
+        } else {
+          assert.ok(
+            robotsMetas.some((c) => /noindex/i.test(c)),
+            `FAIL: превью-страница без meta robots noindex: ${file}`,
+          );
+        }
+      }
       /* data-img/data-cover: адреса картинок лайтбокса. Гейт не проверял их — из-за этого
          на Pages «увеличенный» сертификат открывался пустой рамкой (путь без базового префикса). */
       for (const el of dom.window.document.querySelectorAll('[href], [src], [poster], [data-img], [data-cover]')) {
