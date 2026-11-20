@@ -48,6 +48,11 @@ input[hidden]{display:none}
 .review-author { display: inline-block; margin-left: 10px; overflow-wrap: anywhere; }
 .review-excerpt { margin: 12px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .review-save-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 20px; }
+.badge.demo { background: #fdf3dd; color: #8a6320; }
+.notice.warn { background: #fff6e0; color: #7a4d0c; border: 1px solid #efd7a6; }
+.review-demo-note { color: #8a6320; }
+.review-site-count { font-weight: 700; color: #4c6557; }
+
 @media (max-width: 700px) {
  .review-form-grid { grid-template-columns: 1fr; }
  .review-field:has(textarea) { grid-column: auto; }
