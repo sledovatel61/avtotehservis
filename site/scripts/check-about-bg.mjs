@@ -410,7 +410,7 @@ const mutants = [
   ['.facts возвращены в левую колонку', () => { const m = ASTRO.match(/    <div class="facts facts--strip">[\s\S]*?<\/div>\n/); if (!m) return ['мутант не собрался'];
     const a = ASTRO.replace(m[0], '').replace('<p class="u-mt24">', m[0].trim() + '\n      <p class="u-mt24">');
     return gate({ css, astro: a, zones, files }); }],
-  ['заголовок карточки совпал с плашкой (A1)', () => gate({ css, astro: ASTRO.replace('<h3>Запись без живой очереди</h3>', '<h3>Гарантия в заказ-наряде</h3>'), zones, files })],
+  ['заголовок карточки совпал с плашкой (A1)', () => gate({ css, astro: ASTRO.replace('<h3>Смета до начала работ</h3>', '<h3>Гарантия в заказ-наряде</h3>'), zones, files })],
   ['у .fact b убран text-wrap:balance', () => gate({ css: css.replace('.about .fact b{text-wrap:balance}', ''), astro: ASTRO, zones, files })],
   ['карточка B1 с полосой ярче верха', () => gate({ css, astro: ASTRO, zones, files, bandMul: 5 })],
 ];
