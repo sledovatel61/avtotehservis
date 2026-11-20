@@ -328,6 +328,21 @@ test('media: перевёрнутый Range (bytes=100-50) → 416, а не 500 
   assert.equal(bad.headers.get('content-range'), 'bytes */200');
 });
 
+test('контакты: карта Яндекс.Карт встроена по координатам и разрешена политикой CSP', async () => {
+  const res = await fetch(`http://127.0.0.1:${portA}/contacts`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  /* Виджет ставит точку по координатам из настроек: ll и pt — «долгота,широта». */
+  assert.match(html, /https:\/\/yandex\.ru\/map-widget\/v1\/\?ll=39\.648295%2C47\.193068&(?:amp;)?z=17&(?:amp;)?pt=39\.648295%2C47\.193068%2Cpm2rdm/);
+  assert.match(html, /<iframe[^>]+loading="lazy"/, 'карта не тормозит загрузку страницы');
+  assert.match(html, /<iframe[^>]+title="Яндекс\.Карта:[^"]+Портовая, 439/, 'у рамки есть подпись для скринридера');
+  assert.match(html, /Построить маршрут в Яндекс\.Картах/, 'ссылка на маршрут осталась');
+  assert.match(html, /Схема от остановки/, 'рисованная схема не потерялась');
+  const csp = res.headers.get('content-security-policy') ?? '';
+  assert.ok(csp.includes("frame-src https://yandex.ru"), `frame-src для карты: ${csp}`);
+  assert.ok(!csp.includes("frame-src *"), 'разрешён только домен виджета');
+});
+
 test('страницы и редиректы: /, /appointment, услуга, 404, .html → 301', async () => {
   const home = await fetch(`http://127.0.0.1:${portA}/`);
   assert.equal(home.status, 200);

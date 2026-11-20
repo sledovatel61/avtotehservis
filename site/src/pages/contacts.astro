@@ -6,6 +6,12 @@ import { relayMode } from '../shared/leads-endpoint.ts';
 const S = getSettings();
 const E0 = S.phones_extra[0];
 const E1 = S.phones_extra[1];
+/* Карта на странице — виджет Яндекс.Карт по координатам из настроек.
+   В параметрах `ll` и `pt` порядок «долгота,широта» — так требует Яндекс. */
+const mapLat = S.coords.lat;
+const mapLon = S.coords.lon;
+const mapWidget = `https://yandex.ru/map-widget/v1/?ll=${mapLon}%2C${mapLat}&z=17&pt=${mapLon}%2C${mapLat}%2Cpm2rdm`;
+const mapRoute = S.map_link;
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -35,13 +41,27 @@ const jsonLd = {
   <div class="container contacts-grid">
     <div class="reveal">
       <div class="map-box">
-        <img src="/img/map.svg" alt={`Схема проезда: ${S.address} — между остановкой «3-й Поселковый» (~330 м) и базой «Бум». Не картографически точная схема.`} width="1200" height="760">
+        <div class="map-frame">
+          <iframe
+            src={mapWidget}
+            title={`Яндекс.Карта: ${S.address_full} — АвтоТехСервис`}
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+          ></iframe>
+        </div>
         <div class="map-cap">
-          <span><b>Координаты:</b> 47.193068, 39.648295</span>
+          <span><b>Координаты:</b> {mapLat}, {mapLon}</span>
           <span><b>Индекс:</b> 344033</span>
-          <a href={`${S.map_link}`} data-track="route_click" class="u-brass">Построить маршрут в картографическом сервисе →</a>
+          <a href={mapRoute} data-track="route_click" class="u-brass" target="_blank" rel="noopener noreferrer">Построить маршрут в Яндекс.Картах →</a>
         </div>
       </div>
+      <noscript><p class="hint u-mt12">Карта выше работает с включённым JavaScript в браузере. Без него откройте <a href={mapRoute}>Яндекс.Карты</a> — адрес и телефон есть ниже.</p></noscript>
+      <details class="map-scheme">
+        <summary>Схема от остановки «3-й Поселковый»</summary>
+        <img src="/img/map.svg" alt={`Схема проезда: ${S.address} — между остановкой «3-й Поселковый» (~330 м) и базой «Бум». Не картографически точная схема.`} width="1200" height="760" loading="lazy">
+        <p class="hint">Рисованная схема для ориентира: как идти от остановки. Точное положение — на карте выше.</p>
+      </details>
       <div class="c-list u-mt26">
         <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><div><h3>Адрес</h3><span class="v">{S.address_full}</span><small>Железнодорожный район, Западный жилой массив. Остановка «3-й Поселковый» ~330 м, рядом база «Бум».</small></div></div>
         <div class="c-item"><span class="c-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><div><h3>Часы работы</h3><span class="v">{S.hours}</span></div></div>

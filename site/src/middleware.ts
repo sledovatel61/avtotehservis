@@ -94,6 +94,9 @@ const securityHeaders = defineMiddleware(async (context: APIContext, next) => {
        connect-src блокирует запрос. Демо-режим (адреса нет) остаётся со 'self'. */
     `connect-src 'self'${LEADS_BASE ? ` ${LEADS_BASE}` : ''}`,
     "media-src 'self'",
+    /* Карта на /contacts — встроенный виджет Яндекс.Карт: без frame-src браузер
+       покажет пустой прямоугольник. Разрешён только домен виджета. */
+    "frame-src https://yandex.ru",
     "object-src 'none'",
     process.env.ALLOW_FRAME_PREVIEW === '1' ? '' : "frame-ancestors 'none'",
     "base-uri 'self'",
