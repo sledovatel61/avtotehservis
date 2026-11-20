@@ -254,6 +254,16 @@ body.has-dock{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 .gar-item p{margin:0;color:var(--mist);font-size:14.5px}
 .gar-note{color:var(--mist);font-size:13.5px;margin-top:18px}
 
+/* Круг 103: реальные фотографии сервиса на /about (блок «Как выглядит сервис»).
+   Кадры владельца от 20.11.2026: фасад с вывеской, приёмка у ворот, моторный отсек
+   в работе, шиномонтажный участок. Сетка 2×2 на десктопе, одна колонка на телефоне. */
+.ab-photos{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:18px}
+@media (max-width:640px){.ab-photos{grid-template-columns:1fr}}
+.ab-photo{margin:0}
+.ab-photo picture,.ab-photo img{display:block;width:100%;height:auto;border-radius:12px}
+.ab-photo picture{border:1px solid rgba(16,32,26,.12);box-shadow:0 10px 26px rgba(11,20,16,.10);border-radius:12px;overflow:hidden}
+.ab-photo figcaption{margin-top:8px;font-size:13px;color:#3F4E47}
+
 /* Круг 26: блок сертификатов на /about (иллюстрации, не сканы документов) */
 .certs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
 /* брейкпоинты держим В ТОМ ЖЕ файле сразу после базы: бандлы Astro могут разложить

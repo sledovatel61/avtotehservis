@@ -24,6 +24,9 @@ const SITE = join(ROOT, 'site');
 const IMG = join(SITE, 'public', 'img');
 const MASTERS = join(ROOT, 'docs', 'photos-source', 'r23-about');
 const ASTRO = join(SITE, 'src', 'pages', 'about.astro');
+/* I6: обложки кейсов и разметка карточки живут отдельно с круга 78 */
+const COVERS = join(SITE, 'src', 'server', 'case-covers.ts');
+const CARD = join(SITE, 'src', 'components', 'CaseCard.astro');
 
 /* пары «ассет → мастер» (§A3). Ключ — имя файла без расширения. */
 const PAIRS = {
@@ -148,22 +151,37 @@ export async function checkAboutImages(opts = {}) {
   }
 
   /* ---------- I5. подпись ---------- */
-  if (!/<figcaption>Иллюстрация:[^<]*<\/figcaption>/.test(astro))
-    fails.push('I5 подпись media не переписана: ожидается <figcaption>Иллюстрация: …</figcaption>');
+  /* Круг 103: владелец попросил убрать слово «иллюстрация» со страницы совсем.
+     Подпись остаётся описанием кадра, но без служебного префикса. */
+  if (!/<figcaption>Рабочий пост на два подъёмника<\/figcaption>/.test(astro))
+    fails.push('I5 подпись media не переписана: ожидается <figcaption>Рабочий пост на два подъёмника</figcaption>');
+  /* Проверяем только видимую разметку: служебные комментарии в .astro не считаем —
+     в них слово остаётся как объяснение истории правок. */
+  const visible = astro
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  if (/Иллюстрац/i.test(visible))
+    fails.push('I5 в разметке /about осталось слово «иллюстрация»');
   if (astro.includes('Портовая, 439 — бокс и зона выдачи'))
     fails.push('I5 старая подпись media («Портовая, 439 — бокс и зона выдачи…») осталась');
 
   /* ---------- I6. кейсы ---------- */
+  /* Круг 78: пути обложек переехали в `server/case-covers.ts`, разметка карточки —
+     в `CaseCard.astro`. Гейт проверяет источник и то, что about его использует. */
+  const covers = opts.covers ?? readFileSync(COVERS, 'utf8');
+  const card = opts.card ?? readFileSync(CARD, 'utf8');
   for (let i = 1; i <= 6; i++)
-    if (!astro.includes(`/img/ab-case-${i}-640.avif`) || !astro.includes(`/img/ab-case-${i}-640.webp`))
-      fails.push(`I6 кейс ${i}: в разметке нет фото-обложки ab-case-${i}-640 (avif+webp)`);
+    if (!covers.includes(`/img/ab-case-${i}-640.avif`) || !covers.includes(`/img/ab-case-${i}-640.webp`))
+      fails.push(`I6 кейс ${i}: нет фото-обложки ab-case-${i}-640 (avif+webp)`);
   const galM = astro.match(/<section class="sec" aria-labelledby="ab-gal-h">[\s\S]*?<\/section>/);
   if (!galM) fails.push('I6 в about.astro нет секции галереи кейсов');
   else {
     if (/\.svg/.test(galM[0])) fails.push('I6 в галерее кейсов about осталась SVG-заглушка');
-    if (/class="ba">до \/ после</.test(galM[0])) fails.push('I6 в галерее about остался бейдж «до / после»');
-    if (!/class="ba">пример работы</.test(galM[0])) fails.push('I6 в галерее about нет ярлыка «пример работы»');
+    if (!galM[0].includes('CASE_COVERS') || !galM[0].includes('<CaseCard'))
+      fails.push('I6 галерея about не берёт обложки CASE_COVERS и карточку CaseCard');
   }
+  if (/class="ba">до \/ после</.test(card)) fails.push('I6 в галерее about остался бейдж «до / после»');
+  if (!/class="ba">пример работы/.test(card)) fails.push('I6 в галерее about нет ярлыка «пример работы»');
   warn('проверены резкость (lapvar ≥ 200), плотность кода, ширина ≤ мастера, media/подпись/кейсы');
 
   if (fails.length && !opts.quiet) fails.forEach(f => console.log('FAIL ' + f));
@@ -192,13 +210,17 @@ const MUTANTS = [
     setAstro((a) => a.replace('/img/ab-media-1080.webp', '/img/about-service-1600.webp')
       .replace('/img/ab-media-1080.avif', '/img/about-service-1600.avif'));
   }],
-  ['5-кейсы-вернулись-на-svg', ({ setAstro }) => {
-    setAstro((a) => a.replace('/img/ab-case-1-640.avif', '/img/case-1.svg')
+  ['5-кейсы-вернулись-на-svg', ({ setCovers }) => {
+    setCovers((c) => c.replace('/img/ab-case-1-640.avif', '/img/case-1.svg')
       .replace('/img/ab-case-1-640.webp', '/img/case-1.svg'));
   }],
   ['6-старая-подпись-media', ({ setAstro }) => {
-    setAstro((a) => a.replace('Иллюстрация: рабочий пост на два подъёмника',
+    setAstro((a) => a.replace('Рабочий пост на два подъёмника',
       'Портовая, 439 — бокс и зона выдачи: сюда можно приехать без записи через центр'));
+  }],
+  ['10-слово-иллюстрация-вернулось', ({ setAstro }) => {
+    setAstro((a) => a.replace('<figcaption>Рабочий пост на два подъёмника</figcaption>',
+      '<figcaption>Иллюстрация: рабочий пост на два подъёмника</figcaption>'));
   }],
   ['7-мастер-исчез', ({ setPairs }) => { setPairs('ab-f2-640', 'нет-такого-мастера.jpg'); }],
   ['8-мобильный-из-альбомного-мастера', async ({ setBuf }) => {
@@ -220,12 +242,16 @@ async function selfTest() {
   let fell = 0;
   for (const [name, mutate] of MUTANTS) {
     const buffers = {}; const pairs = { ...PAIRS }; let astro = astro0;
+    let covers = readFileSync(COVERS, 'utf8');
+    let card = readFileSync(CARD, 'utf8');
     await mutate({
       setBuf: (f, b) => { buffers[f] = b; },
       setAstro: (fn) => { astro = fn(astro); },
+      setCovers: (fn) => { covers = fn(covers); },
+      setCard: (fn) => { card = fn(card); },
       setPairs: (k, v) => { pairs[k] = v; },
     });
-    const r = await checkAboutImages({ quiet: true, buffers, pairs, astro });
+    const r = await checkAboutImages({ quiet: true, buffers, pairs, astro, covers, card });
     if (r.ok) { console.log(`МУТАНТ ВЫЖИЛ: ${name}`); }
     else { fell++; console.log(`ok   ${name}: гейт упал (${r.fails[0]})`); }
   }

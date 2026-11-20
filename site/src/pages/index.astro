@@ -6,7 +6,7 @@ import { listPublishedCases } from '../server/content.ts';
 /* Отзывы берём из того же файла, что и страница /otzyvy: в базе статической сборки
    их нет, поэтому главная раньше показывала одну заглушку «читайте на Яндексе». */
 import { listPublishedSiteReviews, reviewsStats } from '../server/reviews-store.ts';
-import { plural } from '../server/format.ts';
+import { plural, fmtDayMonthRu } from '../server/format.ts';
 /* круг 78: витрина работ на главной — те же фото-обложки, что и на «О компании» (карта
    общая, см. ../server/case-covers.ts); раньше тут были шесть SVG-заглушек с бейджем
    «до / после». Круг 79 → задание 79-2: если владелец наполнил site/content/cases.json,
@@ -35,15 +35,8 @@ const allSiteReviews = listPublishedSiteReviews();
 const reviews = allSiteReviews.slice(0, HOME_REVIEWS);
 const reviewStats = reviewsStats(allSiteReviews);
 const reviewAvg = reviewStats.average === null ? '' : reviewStats.average.toFixed(1).replace('.', ',');
-/* Как на /otzyvy: «19 ноября», а если год не текущий — «19 ноября 2025». */
-const MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-const nowYear = new Date().getFullYear();
-function dayMonth(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return iso;
-  const base = `${d.getUTCDate()} ${MONTHS_GEN[d.getUTCMonth()]}`;
-  return d.getUTCFullYear() === nowYear ? base : `${base} ${d.getUTCFullYear()}`;
-}
+/* Как на /otzyvy: «19 ноября», а если год не текущий — «19 ноября 2025».
+   Круг 103: формат переехал в `server/format.ts` — тот же нужен и на /about. */
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -78,7 +71,7 @@ const jsonLd = {
             <source type="image/webp" media="(max-width:640px)" srcset="/img/hero-service-m-640.webp 640w, /img/hero-service-m-960.webp 960w" sizes="100vw">
             <source type="image/avif" srcset="/img/hero-service-640.avif 640w, /img/hero-service-960.avif 960w, /img/hero-service-1600.avif 1600w, /img/hero-service-2560.avif 2560w" sizes="100vw">
             <source type="image/webp" srcset="/img/hero-service-640.webp 640w, /img/hero-service-960.webp 960w, /img/hero-service-1600.webp 1600w, /img/hero-service-2560.webp 2560w" sizes="100vw">
-            <img class="f16" src="/img/hero-service-1600.webp" width="1600" height="900" alt="Иллюстрация: фасад автосервиса вечером — вывеска «АвтоТехСервис» с телефонами и две машины у ворот" fetchpriority="high" decoding="async">
+            <img class="f16" src="/img/hero-service-1600.webp" width="1600" height="900" alt="Фасад автосервиса вечером — вывеска «АвтоТехСервис» с телефонами и две машины у ворот" fetchpriority="high" decoding="async">
           </picture>
         </div>
         <div class="slide-in container">
@@ -153,7 +146,7 @@ const jsonLd = {
     <picture>
       <source type="image/avif" srcset="/img/strip-bay.avif">
       <source type="image/webp" srcset="/img/strip-bay.webp">
-      <img src="/img/strip-bay.webp" width="1200" height="500" alt="Иллюстрация: автомобиль на подъёмнике в боксе, кирпичные стены и красные шкафы" loading="lazy" decoding="async">
+      <img src="/img/strip-bay.webp" width="1200" height="500" alt="Автомобиль на подъёмнике в боксе, кирпичные стены и красные шкафы" loading="lazy" decoding="async">
     </picture>
     <figcaption>Портовая, 439 — наш адрес</figcaption>
   </figure>
@@ -238,7 +231,7 @@ const jsonLd = {
       <picture>
         <source type="image/avif" srcset="/img/about-service-640.avif 640w, /img/about-service-960.avif 960w, /img/about-service-1600.avif 1600w" sizes="(max-width:1024px) 92vw, 46vw">
         <source type="image/webp" srcset="/img/about-service-640.webp 640w, /img/about-service-960.webp 960w, /img/about-service-1600.webp 1600w" sizes="(max-width:1024px) 92vw, 46vw">
-        <img src="/img/about-service-960.webp" width="1600" height="1000" alt="Иллюстрация: фасад с баннером брендов, две машины в боксах и стойка NGN у входа" loading="lazy" decoding="async">
+        <img src="/img/about-service-960.webp" width="1600" height="1000" alt="Фасад с баннером брендов, две машины в боксах и стойка NGN у входа" loading="lazy" decoding="async">
       </picture>
       <figcaption>{S.address_full} — заезд с Портовой</figcaption>
     </figure>
@@ -274,8 +267,8 @@ const jsonLd = {
       <div class="feat reveal" data-d="3">
         <div class="feat-bg" aria-hidden="true"><picture><source srcset="/img/about-c4-480.avif 480w, /img/about-c4-720.avif 720w, /img/about-c4-1080.avif 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/avif"><source srcset="/img/about-c4-480.webp 480w, /img/about-c4-720.webp 720w, /img/about-c4-1080.webp 1080w" sizes="(max-width:768px) 92vw, (max-width:1024px) 48vw, 278px" type="image/webp"><img src="/img/about-c4-720.webp" alt="" loading="lazy" decoding="async"></picture></div>
         <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v11H1zM14 9h4l4 4v4h-8z"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></span>
-        <h3>Официальная точка продаж четырёх брендов</h3>
-        <p>Сертификаты LYNXauto, SUFIX, KORSON и NGN действуют до 23.06.2027. Документы подтверждают официальный статус точки продаж.</p>
+        <h3>Официальная точка продаж LYNXauto, SUFIX, KORSON и NGN</h3>
+        <p>Сертификаты четырёх брендов действуют до 23.06.2027 — документы подтверждают официальный статус точки продаж. На вывеске сервиса, кроме них, ICHIRO, PROMATIX и BARDAHL: эту продукцию тоже можно взять у нас.</p>
       </div>
     </div>
   </div>
@@ -518,7 +511,7 @@ const jsonLd = {
               <div class="rev-text"><p>{r.text}</p></div>
               <div class="rev-who">
                 <span class="rev-ava" aria-hidden="true">{r.author.slice(0, 1)}</span>
-                <span><b>{r.author}</b><span>Сайт · {dayMonth(r.published_at)}</span></span>
+                <span><b>{r.author}</b><span>Сайт · {fmtDayMonthRu(r.published_at)}</span></span>
               </div>
             </article>
           ))}
@@ -548,7 +541,7 @@ const jsonLd = {
       <h2 id="brands-h">Работаем с легковыми автомобилями</h2>
     </div>
   </div>
-  <div class="marq reveal" aria-label="Марки автомобилей (бегущая строка)">
+  <div class="marq reveal" aria-label="Марки и модели автомобилей (бегущая строка)">
     <div class="marq-in">
       {[...S.brands, ...S.brands].map((b, bi) => (
         <span class="brand-chip" aria-hidden={bi >= S.brands.length ? 'true' : 'false'}>{b}</span>
