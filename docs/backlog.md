@@ -4,8 +4,9 @@
 Обновляется оркестратором каждый круг. Правила работы — `AGENTS.md`.
 
 **Обновлено:** 20.11.2026, круг 89 — SEO и аналитика в бою; почту ведёт Паша; осталась «память» для отзывов.
-**Читать в Google Drive:** [backlog.md — АвтоТехСервис](https://docs.google.com/document/d/1tDg5XaRlA3cic8kLUWIx7G6HELLY5QKccsU2Xz116hY/edit)
-— копия обновляется при каждом изменении этого файла.
+**Читать в Google Drive:** [доска проекта](https://docs.google.com/document/d/1tDg5XaRlA3cic8kLUWIx7G6HELLY5QKccsU2Xz116hY/edit)
+— копия обновляется при каждом изменении этого файла. Инструкция по В2 там же:
+[«память» для отзывов](https://docs.google.com/document/d/1yNOY0lbuiwHmllUuGo36LMgKcQTgUCDS_10OJDdj-38/edit).
 **Боевой сайт:** `https://ats-rostov.ru` — HTTPS включён, заявки идут в Telegram
 (`/health`: `telegram:true`, `email:null`, `kv:false`, `reviews:true`, `reviewsKv:false`).
 **В поиск сайт пока не попадёт:** на каждой странице стоит `noindex, nofollow` — задание А10, `prompts/135`.
