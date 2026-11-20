@@ -3,6 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Dock from '../components/Dock.astro';
 import Modals from '../components/Modals.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 import { getSettings } from '../server/settings.ts';
 import '../styles/fonts.css';
 import '../styles/tokens.css';
@@ -50,14 +51,20 @@ function readVerification(value: unknown): string {
 }
 let googleVerification = '';
 let yandexVerification = '';
+/* ID счётчиков аналитики. Их отсутствие — норма: тогда в <html> пустые data-атрибуты,
+   consent.ts нечего грузить, а CSP остаётся строгой. Сами теги в разметку не попадают. */
+let ymId = '';
+let gaId = '';
 try {
   googleVerification = readVerification(import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION);
   yandexVerification = readVerification(import.meta.env.PUBLIC_YANDEX_VERIFICATION);
+  ymId = readVerification(import.meta.env.PUBLIC_YM_ID);
+  gaId = readVerification(import.meta.env.PUBLIC_GA_ID);
 } catch { /* без import.meta.env (чистый node-рендер) — просто нет тегов */ }
 const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-ym={ymId} data-ga={gaId} data-policy-version={S.policy_version}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -100,6 +107,7 @@ const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
   <Footer />
   <Dock />
   <Modals />
+  <CookieConsent />
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title">
     <button class="lb-close" id="lb-close" type="button" aria-label="Закрыть">✕</button>
     <div class="lb-box">
@@ -109,6 +117,6 @@ const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <button class="lb-arrow lb-prev" id="lb-prev" type="button" aria-label="Предыдущий">←</button>
     <button class="lb-arrow lb-next" id="lb-next" type="button" aria-label="Следующий">→</button>
   </div>
-  <script>import '../client/global.ts';</script>
+  <script>import '../client/global.ts'; import '../client/consent.ts';</script>
 </body>
 </html>

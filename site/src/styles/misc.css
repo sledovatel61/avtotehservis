@@ -6,3 +6,36 @@
 .linklike:hover{color:var(--ivory);border-color:var(--ivory)}
 #draft-note{display:none}
 #draft-note.is-on{display:flex}
+
+/* ---------- круг 89: панель согласия на cookies ---------- */
+/* Панель висит внизу, не перекрывает контент надолго и не блокирует прокрутку
+   (нет оверлея и body-lock). `hidden` главнее display: без JS её не видно. */
+.cookie-panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  background:var(--deep);border-top:1px solid var(--line);
+  box-shadow:0 -18px 40px rgba(0,0,0,.45);
+  padding:14px 0 calc(14px + env(safe-area-inset-bottom));
+  max-height:70vh;overflow:auto;
+}
+.cookie-panel[hidden]{display:none}
+/* Пока панель открыта, нижний мобильный док («Позвонить / Записаться») прячем:
+   два блока в одном и том же месте перекрывали бы друг друга. Док вернётся сразу
+   после выбора — панель исчезает, класс снимается. */
+body.consent-open .dock{display:none}
+.cookie-panel__in{display:flex;gap:14px 24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.cookie-panel__text{flex:1 1 420px;min-width:0}
+.cookie-panel__title{display:block;font-family:var(--font-display);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:6px}
+.cookie-panel__lead{margin:0;font-size:13px;line-height:1.5;color:var(--mist)}
+.cookie-panel__note{margin:8px 0 0;font-size:12px;color:var(--warn)}
+.cookie-panel__note[hidden]{display:none}
+.cookie-panel__actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cookie-panel__actions .btn{min-height:44px}
+.cookie-panel__link{font-size:13px;color:var(--brass);border-bottom:1px dashed rgba(224,169,109,.55);padding:2px 0}
+.cookie-panel__link:hover{color:var(--ivory);border-color:var(--ivory)}
+@media(max-width:640px){
+  .cookie-panel__in{gap:12px}
+  .cookie-panel__text{flex-basis:100%}
+  .cookie-panel__actions{width:100%}
+  .cookie-panel__actions .btn{flex:1 1 160px}
+  .cookie-panel__link{flex-basis:100%;text-align:center;padding-top:4px}
+}
