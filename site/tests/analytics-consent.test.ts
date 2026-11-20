@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { JSDOM } from 'jsdom';
 import {
   POLICY_VERSION,
   CONSENT_COOKIE,
@@ -25,6 +26,7 @@ import {
   cspWithAnalytics,
 } from '../src/client/consent.ts';
 import { DEFAULTS } from '../src/server/settings.ts';
+import { track } from '../src/client/lib.ts';
 
 const SITE = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(SITE, 'pages-dist');
@@ -182,4 +184,36 @@ test('8. policy_version ≠ consent_version; согласие формы не т
   assert.equal(POLICY_VERSION, DEFAULTS.policy_version, 'константа клиента совпадает с настройками');
   assert.equal(DEFAULTS.consent_version, '2026-11-20', 'consent_version сверяется с relay/wrangler.toml — не меняем');
   assert.notEqual(DEFAULTS.policy_version, DEFAULTS.consent_version, 'это разные сущности');
+});
+
+test('9. события сайта уходят целью в Метрику только после согласия и загрузки счётчика', () => {
+  /* Круг 100: `track()` теперь дублирует событие целью Метрики (reachGoal), иначе в
+     отчёте «Цели» были бы только визиты. До согласия наружу не уходит ничего. */
+  const goals: unknown[][] = [];
+  const doc = new JSDOM('<!doctype html><html data-ym="12345678"><body></body></html>').window.document;
+  const win = doc.defaultView as unknown as { ym?: (...args: unknown[]) => void };
+  win.ym = (...args: unknown[]) => goals.push(args);
+  const g = globalThis as unknown as { document?: Document; window?: unknown };
+  const prevDoc = g.document, prevWin = g.window;
+  g.document = doc as unknown as Document;
+  g.window = doc.defaultView;
+
+  try {
+    /* согласия ещё нет (флага загрузки нет) — цель не отправляем */
+    track('cform_success');
+    assert.equal(goals.length, 0, 'до согласия цель не уходит');
+
+    doc.documentElement.dataset.ymLoaded = '1';
+    track('cform_success');
+    assert.deepEqual(goals[0], ['12345678', 'reachGoal', 'cform_success']);
+    assert.equal(goals.length, 1);
+
+    /* счётчика на странице нет (сборка без PUBLIC_YM_ID) — тоже молчим */
+    delete doc.documentElement.dataset.ym;
+    track('call_click');
+    assert.equal(goals.length, 1, 'без номера счётчика цель не уходит');
+  } finally {
+    g.document = prevDoc;
+    g.window = prevWin;
+  }
 });

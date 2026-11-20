@@ -182,7 +182,10 @@
 .c-ic{width:44px;height:44px;border-radius:12px;background:rgba(200,127,69,.13);border:1px solid rgba(224,169,109,.3);display:flex;align-items:center;justify-content:center}
 .c-ic svg{width:20px;height:20px;stroke:var(--brass)}
 .c-item h3{font-family:var(--font-text);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);margin:2px 0 5px}
-.c-item .v{font-size:17px;color:var(--ivory);font-weight:500}
+.c-item .v{display:block;font-size:17px;color:var(--ivory);font-weight:500}
+/* Круг 100: на «Контактах» три номера шли одной строкой вплотную и сливались
+   в «+7 (951) 826-98-39+7 (951) 826-58-47…». Каждый номер — своей строкой. */
+.c-item .v + .v{margin-top:8px}
 .c-item .v a{color:var(--ivory)}
 .c-item .v a:hover{color:var(--brass)}
 .c-item small{display:block;color:var(--mist);font-size:13.5px;margin-top:3px}
