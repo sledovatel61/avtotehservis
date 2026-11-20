@@ -28,6 +28,7 @@ import { composeReviewTelegram, sendTelegram } from './telegram.ts';
 import { emailProvider, sendReviewEmail } from './email.ts';
 import { markMailOk, markMailFailed } from './mail-status.ts';
 import { originAllowed, type OriginsEnv } from './origins.ts';
+import { saveToInbox } from './reviews-inbox.ts';
 
 /** Тело отзыва: больше 8 КБ — это уже не отзыв, а попытка что-то залить. */
 export const REVIEW_MAX_BYTES = 8 * 1024;
@@ -48,6 +49,8 @@ export interface ReviewsEnv extends OriginsEnv {
   EMAIL_TO?: string;
   EMAIL_FROM?: string;
   ATS_KV?: KVLike;
+  /** Код доступа к запасному журналу отзывов (`/reviews/inbox`). Необязателен. */
+  REVIEWS_INBOX_KEY?: string;
 }
 
 export interface KVLike {
@@ -195,6 +198,11 @@ export async function handleReview(
   if (seen) return reply({ ok: true, status: 'pending', id: seen }, 201);
 
   const id = crypto.randomUUID();
+
+  /* Копия отзыва в KV — до всякой отправки. Даже если Telegram и почта подведут,
+     отзыв останется в журнале и его можно будет опубликовать руками. */
+  const stored = await saveToInbox(deps.store, review, id);
+
   const telegramOn = Boolean(env.BOT_TOKEN && env.TELEGRAM_CHAT_ID);
   const emailOn = Boolean(emailProvider(env));
 
@@ -248,7 +256,7 @@ export async function handleReview(
 
   await deps.store.put(idemKey, id, 86400);
   /* Лог без текста и имени: только id, длина и что сработало. */
-  console.log('[reviews] accepted', id, review.text.length, `tg=${delivered.telegram}`, `mail=${delivered.email}`);
+  console.log('[reviews] accepted', id, review.text.length, `tg=${delivered.telegram}`, `mail=${delivered.email}`, `kv=${stored}`);
 
   return reply({ ok: true, status: 'pending', id }, 201);
 }

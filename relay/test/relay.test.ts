@@ -603,3 +603,91 @@ test('/health показывает канал почты и адрес полу�
   assert.equal(j2.email, 'brevo');
   assert.equal(j2.emailTo, DEFAULT_EMAIL_TO);
 });
+
+/* ---------- журнал отзывов: отзыв не теряется ---------- */
+
+const reviewBody = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+  author: 'Иван П.',
+  text: 'Меняли колодки и тормозные диски, всё показали на подъёмнике и назвали цену заранее.',
+  rating: 5,
+  consent: true,
+  consent_version: '2026-11-20',
+  page: 'otzyvy',
+  honeypot: '',
+  ...over,
+});
+
+async function postReview(
+  e: Env = env(),
+  body: Record<string, unknown> = reviewBody(),
+): Promise<Response> {
+  return worker.fetch(new Request('https://relay.test/reviews', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: 'https://sledovatel61.github.io' },
+    body: JSON.stringify(body),
+  }), e);
+}
+
+test('журнал отзывов: принятый отзыв остаётся в KV, даже когда Telegram упал', async () => {
+  /* Моделируем худший случай: Telegram отвечает 500, почта не настроена.
+     Человек видит 503, но копия отзыва уже лежит в журнале — не потеряли. */
+  tgStatus = 500;
+  const e = env({ REVIEWS_INBOX_KEY: 'secret-code' });
+  const r = await postReview(e);
+  assert.equal(r.status, 503, 'доставки нет — человеку честно говорим');
+
+  const list = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { 'x-inbox-key': 'secret-code' },
+  }), e);
+  assert.equal(list.status, 200);
+  const data = (await list.json()) as { items: Array<{ author: string; rating: number }>; total: number };
+  assert.equal(data.items.length, 1, 'отзыв сохранён, хотя Telegram ответил 500');
+  assert.equal(data.items[0].author, 'Иван П.');
+  assert.equal(data.items[0].rating, 5);
+});
+
+test('журнал отзывов: без кода доступа адреса нет, с чужим кодом — 403', async () => {
+  const e = env({ REVIEWS_INBOX_KEY: 'secret-code' });
+  const noSecret = await worker.fetch(new Request('https://relay.test/reviews/inbox'), env());
+  assert.equal(noSecret.status, 404, 'без настроенного секрета журнал выключен');
+
+  const wrong = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { 'x-inbox-key': 'not-it' },
+  }), e);
+  assert.equal(wrong.status, 403);
+
+  const ok = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { 'x-inbox-key': 'secret-code' },
+  }), e);
+  assert.equal(ok.status, 200);
+});
+
+test('журнал отзывов: после публикации отзыв уходит из списка', async () => {
+  const e = env({ REVIEWS_INBOX_KEY: 'secret-code' });
+  const created = (await (await postReview(e, reviewBody({ author: 'Марина С.' }))).json()) as { id: string };
+  assert.ok(created.id, 'id отзыва вернулся');
+
+  const before = (await (await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { 'x-inbox-key': 'secret-code' },
+  }), e)).json()) as { items: Array<{ id: string }> };
+  assert.ok(before.items.some((x) => x.id === created.id));
+
+  const done = await worker.fetch(new Request('https://relay.test/reviews/inbox/done', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-inbox-key': 'secret-code' },
+    body: JSON.stringify({ id: created.id }),
+  }), e);
+  assert.equal(done.status, 200);
+
+  const after = (await (await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { 'x-inbox-key': 'secret-code' },
+  }), e)).json()) as { items: Array<{ id: string }> };
+  assert.ok(!after.items.some((x) => x.id === created.id), 'опубликованный отзыв в списке не висит');
+});
+
+test('health: показывает, включён ли журнал отзывов', async () => {
+  const off = (await (await worker.fetch(new Request('https://relay.test/health'), env())).json()) as { reviewsInbox?: boolean };
+  assert.equal(off.reviewsInbox, false);
+  const on = (await (await worker.fetch(new Request('https://relay.test/health'), env({ REVIEWS_INBOX_KEY: 'k' }))).json()) as { reviewsInbox?: boolean };
+  assert.equal(on.reviewsInbox, true);
+});
