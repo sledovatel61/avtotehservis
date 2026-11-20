@@ -25,12 +25,21 @@ export const reducedMotion = (): boolean =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * Отладочная аналитика: структурные события только в консоль — наружу ничего не уходит.
- * Внешние счётчики (Метрика, GA4) подключает `consent.ts` и только после согласия
- * на cookies (круг 89, задание `prompts/133`), поэтому здесь их не добавляем.
+ * Событие сайта: пишем в консоль и, если счётчик Метрики уже разрешён и загружен
+ * (см. `consent.ts`, круг 89/100), отправляем цель с тем же именем. Так владелец
+ * видит в отчёте «Цели» не безымянные визиты, а «заявка отправлена», «позвонили».
+ *
+ * До согласия на cookies наружу не уходит ничего: `consent.ts` ставит флаг
+ * `data-ym-loaded` только после загрузки счётчика.
  */
 export function track(name: string, data?: Record<string, unknown>): void {
   try { console.debug('[event]', name, data ?? {}); } catch { /* ignore */ }
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  const root = document.documentElement;
+  const id = root.dataset.ym ?? '';
+  if (!id || root.dataset.ymLoaded !== '1') return;
+  const w = window as unknown as { ym?: (...args: unknown[]) => void };
+  try { w.ym?.(id, 'reachGoal', name); } catch { /* счётчик — не повод ломать страницу */ }
 }
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';

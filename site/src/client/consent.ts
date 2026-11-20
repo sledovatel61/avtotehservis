@@ -172,6 +172,8 @@ function loadYandex(id: string): void {
     (w.ym as unknown as { a: unknown[][] }).a = queue;
   }
   w.ym(id, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: false });
+  /* Флаг для `lib.ts`: только теперь события сайта можно отправлять целью в Метрику. */
+  document.documentElement.dataset.ymLoaded = '1';
   const s = document.createElement('script');
   s.async = true;
   s.src = `${YM}/metrika/tag.js`;
