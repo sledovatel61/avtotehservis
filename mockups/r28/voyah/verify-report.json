@@ -1,0 +1,51 @@
+{
+  "noJs": {
+    "intro": false,
+    "h1": "Ремонт и обслуживание Voyah Free",
+    "h1Visible": true
+  },
+  "reduce_intro-a.html": false,
+  "reduce_intro-b.html": false,
+  "intro_intro-a.html": {
+    "present": true,
+    "goneAfter2500": true,
+    "scrollUnlocked": true,
+    "repeatShown": false
+  },
+  "intro_intro-b.html": {
+    "present": true,
+    "goneAfter2500": true,
+    "scrollUnlocked": true,
+    "repeatShown": false
+  },
+  "stop_click": true,
+  "stop_esc": true,
+  "stop_wheel": true,
+  "sizeKb": {
+    "index.html": {
+      "htmlKb": 48.5,
+      "cssAllGz": 8.4,
+      "cssIntroGz": 0,
+      "jsGz": 0.6
+    },
+    "home-section.html": {
+      "htmlKb": 35.8,
+      "cssAllGz": 8.5,
+      "cssIntroGz": 0.4,
+      "jsGz": 0
+    },
+    "intro-a.html": {
+      "htmlKb": 42.7,
+      "cssAllGz": 9.7,
+      "cssIntroGz": 2,
+      "jsGz": 2
+    },
+    "intro-b.html": {
+      "htmlKb": 43.3,
+      "cssAllGz": 10.1,
+      "cssIntroGz": 2.4,
+      "jsGz": 1.9
+    }
+  },
+  "externalRequests": []
+}

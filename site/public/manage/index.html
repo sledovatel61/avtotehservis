@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Управление сайтом — АвтоТехСервис</title>
+  <link rel="stylesheet" href="./manage.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body data-preview="true">
+<header class="top"><div class="wrap top-inner"><a class="back" href="../">← На сайт</a><span class="brand">АВТО<span>ТЕХ</span>СЕРВИС</span><span class="top-label">Мастерская фотографий</span></div></header>
+<main class="wrap">
+  <div class="intro"><div><p class="eyebrow" id="intro-label">УПРАВЛЕНИЕ САЙТОМ / ФОТО РАБОТ</p><h1 id="intro-title">Фото работ</h1><p class="lead" id="intro-description">Добавляйте фотографии и рассказывайте о проделанной работе.</p></div><div class="intro-mark" aria-hidden="true">✳</div></div>
+  <section class="panel access" aria-labelledby="access-title"><div class="section-head"><div><p class="eyebrow">01 / ДОСТУП</p><h2 id="access-title">Подключение к GitHub</h2><p>Личный ключ нужен, чтобы сохранить изменения на сайте.</p></div><span id="connection" class="badge">Не подключено</span></div>
+    <details id="help" open><summary>Как получить личный токен?</summary><div class="help-text"><ol><li>В GitHub откройте Settings → Developer settings → Fine-grained tokens и создайте токен.</li><li>В Only select repositories выберите <b>avtotehservis</b>.</li><li>В Repository permissions установите Contents: Read and write. Срок (Expiration) — 90 days.</li><li>Скопируйте токен и вставьте ниже.</li></ol><p><b>Токен = доступ к фото и текстам сайта.</b> Не пересылайте его и не вставляйте на чужих устройствах.</p></div></details>
+    <div class="token-row"><label class="grow">Личный токен<input id="token" type="password" autocomplete="off" placeholder="github_pat_…"></label><button id="check" class="button primary">Проверить</button><button id="logout" class="button quiet">Выйти</button></div><p id="token-info" class="hint"></p>
+  </section>
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+  <nav class="manage-tabs" aria-label="Разделы управления"><a href="#photos" data-tab="photos">Фото работ</a><a href="#prices" data-tab="prices">Цены и услуги</a><a href="#reviews" data-tab="reviews">Отзывы</a><a href="#news" data-tab="news">Полезное</a></nav>
+  <div id="photo-panel"><section id="list" class="content" hidden></section>
+  <section id="form" class="content" hidden></section></div>
+  <section id="prices-panel" class="content" hidden aria-label="Цены и услуги"></section>
+  <section id="reviews-panel" class="content" hidden aria-label="Отзывы"></section>
+  <section id="news-panel" class="content" hidden aria-label="Полезное"></section>
+</main>
+<dialog id="editor" aria-labelledby="editor-title"><div id="editor-body"></div></dialog>
+<footer class="wrap footer">АвтоТехСервис <span>·</span> Фото работ</footer>
+</body></html>

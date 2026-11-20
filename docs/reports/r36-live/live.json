@@ -1,0 +1,206 @@
+{
+  "base": "http://127.0.0.1:4399",
+  "path": "/voyah-free?intro=0",
+  "shots": [
+    {
+      "viewport": "1440",
+      "css": [
+        1440,
+        900
+      ],
+      "dpr": 1,
+      "hostCss": [
+        1425,
+        767
+      ],
+      "canvas": [
+        1425,
+        767
+      ],
+      "canvasExpected": [
+        1425,
+        767
+      ],
+      "oneToOne": true,
+      "tier": "high",
+      "state": "on",
+      "quad": {
+        "W": 1425,
+        "H": 767,
+        "x0": 598,
+        "y0": 330,
+        "w": 413,
+        "h": 149
+      },
+      "textPct": 8.4,
+      "bodyVisiblePct": 90.5,
+      "frontVisiblePct": 100,
+      "bodyL": 26.1,
+      "bodySigmaL": 17.5,
+      "bodyPx": 43240,
+      "bodyLowerL": 18.6,
+      "bodyLowerSigmaL": 11.1,
+      "floorL": 10.5,
+      "contrastL": 15.6,
+      "floorBodyContrastL": 8.1,
+      "frameMeanL": 11.62,
+      "frameMeanRgb": 12.61,
+      "screenMeanL": 24.22,
+      "screen": "after-1440-screen.jpg",
+      "frames": {
+        "withText": "after-1440.jpg",
+        "noText": "after-1440-notitle.jpg"
+      }
+    },
+    {
+      "viewport": "1440-dpr2",
+      "css": [
+        1440,
+        900
+      ],
+      "dpr": 2,
+      "hostCss": [
+        1425,
+        767
+      ],
+      "canvas": [
+        2850,
+        1534
+      ],
+      "canvasExpected": [
+        2850,
+        1534
+      ],
+      "oneToOne": true,
+      "tier": "high",
+      "state": "on",
+      "quad": {
+        "W": 2850,
+        "H": 1534,
+        "x0": 1196,
+        "y0": 660,
+        "w": 827,
+        "h": 299
+      },
+      "textPct": 7.8,
+      "bodyVisiblePct": 92.2,
+      "frontVisiblePct": 100,
+      "bodyL": 26.1,
+      "bodySigmaL": 17.9,
+      "bodyPx": 173927,
+      "bodyLowerL": 18.6,
+      "bodyLowerSigmaL": 11.8,
+      "floorL": 10.1,
+      "contrastL": 16,
+      "floorBodyContrastL": 8.6,
+      "frameMeanL": 11.59,
+      "frameMeanRgb": 12.57,
+      "screenMeanL": 24.2,
+      "screen": "after-1440-dpr2-screen.jpg",
+      "frames": {
+        "withText": "after-1440-dpr2.jpg",
+        "noText": "after-1440-dpr2-notitle.jpg"
+      }
+    },
+    {
+      "viewport": "390",
+      "css": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "hostCss": [
+        375,
+        565
+      ],
+      "canvas": [
+        375,
+        565
+      ],
+      "canvasExpected": [
+        375,
+        565
+      ],
+      "oneToOne": true,
+      "tier": "high",
+      "state": "on",
+      "quad": {
+        "W": 375,
+        "H": 565,
+        "x0": 87,
+        "y0": 471,
+        "w": 259,
+        "h": 94
+      },
+      "textPct": 21.3,
+      "bodyVisiblePct": 94.9,
+      "frontVisiblePct": 97.7,
+      "bodyL": 16,
+      "bodySigmaL": 7.2,
+      "bodyPx": 17145,
+      "bodyLowerL": 12.7,
+      "bodyLowerSigmaL": 2.9,
+      "floorL": 10.7,
+      "contrastL": 5.4,
+      "floorBodyContrastL": 2,
+      "frameMeanL": 12.14,
+      "frameMeanRgb": 13.09,
+      "screenMeanL": 33.31,
+      "screen": "after-390-screen.jpg",
+      "frames": {
+        "withText": "after-390.jpg",
+        "noText": "after-390-notitle.jpg"
+      }
+    },
+    {
+      "viewport": "390-dpr2",
+      "css": [
+        390,
+        844
+      ],
+      "dpr": 2,
+      "hostCss": [
+        375,
+        565
+      ],
+      "canvas": [
+        750,
+        1130
+      ],
+      "canvasExpected": [
+        750,
+        1130
+      ],
+      "oneToOne": true,
+      "tier": "high",
+      "state": "on",
+      "quad": {
+        "W": 750,
+        "H": 1130,
+        "x0": 174,
+        "y0": 943,
+        "w": 519,
+        "h": 187
+      },
+      "textPct": 19.4,
+      "bodyVisiblePct": 95.9,
+      "frontVisiblePct": 97.8,
+      "bodyL": 16,
+      "bodySigmaL": 7.4,
+      "bodyPx": 68292,
+      "bodyLowerL": 12.6,
+      "bodyLowerSigmaL": 3.1,
+      "floorL": 10.7,
+      "contrastL": 5.4,
+      "floorBodyContrastL": 2,
+      "frameMeanL": 12.14,
+      "frameMeanRgb": 13.09,
+      "screenMeanL": 33.33,
+      "screen": "after-390-dpr2-screen.jpg",
+      "frames": {
+        "withText": "after-390-dpr2.jpg",
+        "noText": "after-390-dpr2-notitle.jpg"
+      }
+    }
+  ]
+}

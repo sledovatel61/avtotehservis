@@ -1,4 +1,8 @@
 import { db } from './db.ts';
+import { getPrices, fillPrices } from './prices-store.ts';
+import { NEWS_CATEGORIES, NEWS_CATEGORY_SLUGS, catTitle } from '../shared/news-schema.ts';
+
+export { NEWS_CATEGORIES, NEWS_CATEGORY_SLUGS, catTitle };
 
 export interface CaseRow {
   id: number; slug: string; title: string; description: string | null; service_slug: string | null;
@@ -13,24 +17,36 @@ export interface NewsRow {
   cover_media_id: string | null; cover_static: string | null; status: string; published_at: string | null;
 }
 
+function mapCaseRow(r: CaseRow): CaseRow {
+  const prices = getPrices();
+  return {
+    ...r,
+    title: fillPrices(r.title ?? '', prices),
+    description: r.description ? fillPrices(r.description, prices) : r.description,
+  };
+}
+
+function mapNewsRow(r: NewsRow): NewsRow {
+  const prices = getPrices();
+  return {
+    ...r,
+    title: fillPrices(r.title ?? '', prices),
+    excerpt: r.excerpt ? fillPrices(r.excerpt, prices) : r.excerpt,
+    body_md: fillPrices(r.body_md ?? '', prices),
+  };
+}
+
 export function listPublishedCases(limit = 12): CaseRow[] {
   // Новые кейсы выше старых (M1 ревью): свежая публикация сразу попадает на главную и «О компании».
-  return db().prepare(`SELECT * FROM cases WHERE status='published' ORDER BY published_at DESC, sort DESC LIMIT ?`).all(limit) as CaseRow[];
+  const rows = db().prepare(`SELECT * FROM cases WHERE status='published' ORDER BY published_at DESC, sort DESC LIMIT ?`).all(limit) as CaseRow[];
+  return rows.map(mapCaseRow);
 }
 export function getCase(slug: string): CaseRow | undefined {
-  return db().prepare(`SELECT * FROM cases WHERE slug=? AND status='published'`).get(slug) as CaseRow | undefined;
+  const row = db().prepare(`SELECT * FROM cases WHERE slug=? AND status='published'`).get(slug) as CaseRow | undefined;
+  return row ? mapCaseRow(row) : undefined;
 }
 export function listPublishedReviews(limit = 12): ReviewRow[] {
   return db().prepare(`SELECT * FROM reviews WHERE status='published' ORDER BY published_at DESC LIMIT ?`).all(limit) as ReviewRow[];
-}
-export const NEWS_CATEGORIES = [
-  { slug: 'sezonnoe', title: 'Сезонное' },
-  { slug: 'sovety', title: 'Советы' },
-  { slug: 'servis', title: 'Сервис' },
-] as const;
-
-export function catTitle(slug: string): string {
-  return NEWS_CATEGORIES.find((c) => c.slug === slug)?.title ?? slug;
 }
 export function newsCategoryCounts(): Record<string, number> {
   const rows = db().prepare(`SELECT category, COUNT(*) AS c FROM news WHERE status='published' GROUP BY category`).all() as { category: string; c: number }[];
@@ -42,24 +58,56 @@ export function newsTotal(): number {
   return (db().prepare(`SELECT COUNT(*) AS c FROM news WHERE status='published'`).get() as { c: number }).c;
 }
 
+/** Moscow now as YYYY-MM-DD HH:MM for sorting — UTC+3 without depending on host TZ. */
+function nowMoscowStr(): string {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  const p = fmt.formatToParts(new Date());
+  const g = (t: string): string => p.find((x) => x.type === t)?.value ?? '00';
+  return `${g('year')}-${g('month')}-${g('day')} ${g('hour')}:${g('minute')}`;
+}
+
 export function listNews(opts: { category?: string | null; page?: number; per?: number } = {}): { items: NewsRow[]; total: number; pages: number } {
   const per = opts.per ?? 6;
   const page = Math.max(1, opts.page ?? 1);
   const where = opts.category ? `status='published' AND category=?` : `status='published'`;
   const params: unknown[] = opts.category ? [opts.category] : [];
   const total = (db().prepare(`SELECT COUNT(*) AS c FROM news WHERE ${where}`).get(...params) as { c: number }).c;
-  const items = db().prepare(`SELECT * FROM news WHERE ${where} ORDER BY published_at DESC LIMIT ? OFFSET ?`)
-    .all(...params, per, (page - 1) * per) as NewsRow[];
-  return { items, total, pages: Math.max(1, Math.ceil(total / per)) };
+  const now = nowMoscowStr();
+  const items = db().prepare(`SELECT * FROM news WHERE ${where} ORDER BY (published_at > ?) ASC, published_at DESC LIMIT ? OFFSET ?`)
+    .all(...params, now, per, (page - 1) * per) as NewsRow[];
+  return { items: items.map(mapNewsRow), total, pages: Math.max(1, Math.ceil(total / per)) };
 }
 export function getNews(slug: string): NewsRow | undefined {
-  return db().prepare(`SELECT * FROM news WHERE slug=? AND status='published'`).get(slug) as NewsRow | undefined;
+  const row = db().prepare(`SELECT * FROM news WHERE slug=? AND status='published'`).get(slug) as NewsRow | undefined;
+  return row ? mapNewsRow(row) : undefined;
 }
 export function otherNews(slug: string, limit = 3): NewsRow[] {
-  return db().prepare(`SELECT * FROM news WHERE slug != ? AND status='published' ORDER BY published_at DESC LIMIT ?`).all(slug, limit) as NewsRow[];
+  const now = nowMoscowStr();
+  const rows = db().prepare(`SELECT * FROM news WHERE slug != ? AND status='published' ORDER BY (published_at > ?) ASC, published_at DESC LIMIT ?`).all(slug, now, limit) as NewsRow[];
+  return rows.map(mapNewsRow);
 }
 /** Обложка целиком: src, крупный вариант, srcset и alt (из media.alt, если владелец заполнил). */
 export interface CoverInfo { src: string; lg: string; srcset: string | null; alt: string }
+/** Alt статичных обложек статей: описывает кадр по факту, без марки и модели (круг 72).
+ *  Ключ — путь из cover_static; для остальных картинок alt остаётся заголовком статьи. */
+export const STATIC_COVER_ALT: Record<string, string> = {
+  '/img/vy-art-to-1600.webp': 'Белый кроссовер на двухстоечном подъёмнике в боксе автосервиса',
+  '/img/vy-art-maslo-1600.webp': 'Подкапотное пространство гибридного кроссовера во время замены масла',
+  '/img/vy-art-bolezni-1600.webp': 'Передний тормозной диск и суппорт крупным планом',
+  '/img/vy-art-update-1600.webp': 'Тёмно-зелёный кроссовер на мокрой площади перед стеклянным фасадом, вечерний свет',
+  '/img/vy-art-connect-1600.webp': 'Серебристый кроссовер на мокрой площадке у ворот сервиса, на переднем плане рука с телефоном',
+  '/img/vy-art-app-1600.webp': 'Открытая дверь кроссовера, видна передняя панель с большим экраном в светлом салоне',
+  '/img/vy-art-media-1600.webp': 'Тёмно-бордовый кроссовер в боксе со включённой полосой задних фонарей, на переднем плане диагностический планшет на тележке',
+  '/img/vy-art-to-lift-1600.webp': 'Серебристо-голубой кроссовер на двухстоечном подъёмнике, механик сливает масло в поддон',
+  '/img/vy-art-maslo-page-1600.webp': 'Тёмно-зелёный кроссовер с открытым капотом, виден моторный отсек, рядом канистра масла',
+  '/img/vy-art-bolezni-page-1600.webp': 'Графитовый кроссовер на подъёмнике со снятым колесом, механик осматривает тормозной диск',
+  '/img/vy-art-intervaly-1600.webp': 'Сервисная книжка с таблицей обслуживания на капоте белого кроссовера, рука листает страницу',
+  '/img/vy-art-momenty-1600.webp': 'Тёмно-красный кроссовер на подъёмнике, механик затягивает ступицу динамометрическим ключом',
+  '/img/vy-art-kondicioner-1600.webp': 'Белый кроссовер с открытым капотом, рядом станция кондиционирования с манометрами и шлангами',
+};
 export function coverInfo(row: { cover_media_id: string | null; cover_static: string | null }, fallbackSrc: string, title: string, staticAlt?: string): CoverInfo {
   if (row.cover_media_id) {
     const m = db().prepare('SELECT kind, id, poster_path, alt FROM media WHERE id=?').get(row.cover_media_id) as
@@ -80,6 +128,6 @@ export function coverInfo(row: { cover_media_id: string | null; cover_static: st
     }
   }
   const src = row.cover_static ?? fallbackSrc;
-  return { src, lg: src, srcset: null, alt: staticAlt ?? `${title} — фото появится после съёмки` };
+  return { src, lg: src, srcset: null, alt: staticAlt ?? STATIC_COVER_ALT[src] ?? title };
 }
 

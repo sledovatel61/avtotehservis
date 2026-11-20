@@ -1,0 +1,38 @@
+name = "ats-leads"
+main = "src/index.ts"
+compatibility_date = "2026-11-18"
+workers_dev = true
+
+# Адреса, которым разрешено обращаться к прослойке из браузера. Другого списка
+# в коде нет: пустое значение = ни один источник не разрешён (fail-closed).
+#   ats-rostov.ru — боевой домен (с www и без);
+#   sledovatel61.github.io — превью: старый адрес ещё живёт и редиректит,
+#   а при редиректе браузер сохраняет Origin исходной страницы;
+#   localhost — локальная разработка.
+[vars]
+ALLOWED_ORIGINS = "https://ats-rostov.ru,https://www.ats-rostov.ru,https://sledovatel61.github.io,http://localhost:4321,http://127.0.0.1:4321"
+SITE_NAME = "АвтоТехСервис"
+SITE_ADDRESS = "Ростов-на-Дону, ул. Портовая, 439"
+CONSENT_VERSION = "2026-11-20"
+# Почта-дубль: адрес, куда приходит копия каждой заявки.
+EMAIL_TO = "Pavel.yakovenko@mail.ru"
+# Отправитель. Пусто — берётся EMAIL_TO (Brevo) или onboarding@resend.dev (Resend).
+# EMAIL_FROM = "АвтоТехСервис <box@ваш-домен.ру>"
+
+# Секреты задаются командами (в файле их быть не должно):
+#   npx wrangler secret put BOT_TOKEN
+#   npx wrangler secret put TELEGRAM_CHAT_ID
+#   npx wrangler secret put BREVO_API_KEY     (или RESEND_API_KEY — см. README)
+# В GitHub Actions эти секреты прокидываются самим workflow, руками вводить не нужно.
+
+# Лимиты и идемпотентность. Без KV работают в памяти изолята (сбрасываются при
+# перезапуске), с KV — общие для всех изолятов и переживают перезапуск.
+#
+# Включается одной командой с правами на аккаунт Cloudflare:
+#   npx wrangler kv namespace create ATS_KV
+# Она печатает настоящий id — его и вписать ниже (раскомментировав блок),
+# затем передеплоить. Придуманных id здесь быть не должно: с чужим id деплой
+# падает. Статус виден снаружи: /health → "reviewsKv": true|false.
+# [[kv_namespaces]]
+# binding = "ATS_KV"
+# id = "ВСТАВИТЬ_ID_ИЗ_ВЫВОДА_КОМАНДЫ"

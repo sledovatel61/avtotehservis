@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -33,7 +33,7 @@ test('bookingSchema: год 1980–2026', () => {
     name: 'Иван', phone: '+79289065700', contact_method: 'call',
     car: { brand: 'Лада', model: null, year: 2019, vin: null, mileage: null },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    photos: [], consent: true, consent_version: '2026-10-21', page: 'appointment',
+    photos: [], consent: true, consent_version: '2026-11-20', page: 'appointment',
     idempotency_key: crypto.randomUUID(), honeypot: '', form_started_at: Date.now() - 60000,
   };
   runMigrations();
@@ -50,7 +50,7 @@ test('валидация: сообщения об ошибках — всегд�
     name: 'Иван', phone: '+79289065700', contact_method: 'call',
     car: { brand: 'Лада', model: null, year: 2019, vin: null, mileage: null },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    photos: [], consent: true, consent_version: '2026-10-21', page: 'appointment',
+    photos: [], consent: true, consent_version: '2026-11-20', page: 'appointment',
     idempotency_key: crypto.randomUUID(), honeypot: '', form_started_at: Date.now() - 60000,
   };
   const bad = bookingSchema.safeParse({
@@ -75,7 +75,7 @@ test('bookingSchema: VIN без I/O/Q, 17 символов', () => {
     name: 'Иван', phone: '89289065700', contact_method: 'call',
     car: { brand: 'Kia', model: 'Rio', year: 2020, vin: 'XTWKIA12345678901'.slice(0, 17), mileage: 84000 },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    consent: true, consent_version: '2026-10-21', page: 'appointment', idempotency_key: crypto.randomUUID(),
+    consent: true, consent_version: '2026-11-20', page: 'appointment', idempotency_key: crypto.randomUUID(),
   };
   assert.ok(bookingSchema.safeParse({ ...base, car: { ...base.car, vin: 'XTWA1234567890123' } }).success);
   const bad = bookingSchema.safeParse({ ...base, car: { ...base.car, vin: 'IOQ12345678901234' } });
@@ -89,7 +89,7 @@ test('bookingSchema: пробег 0–2 000 000, услуги whitelist, сог�
     name: 'Иван', phone: '89289065700', contact_method: 'call',
     car: { brand: 'Kia', model: null, year: null, vin: null, mileage: 2000000 },
     services: ['shinomontazh'], preferred: { date: null, slot: null, asap: true },
-    consent: true, consent_version: '2026-10-21', page: 'appointment', idempotency_key: crypto.randomUUID(),
+    consent: true, consent_version: '2026-11-20', page: 'appointment', idempotency_key: crypto.randomUUID(),
   };
   assert.ok(bookingSchema.safeParse(base).success);
   assert.ok(!bookingSchema.safeParse({ ...base, car: { ...base.car, mileage: 2000001 } }).success);
@@ -103,7 +103,7 @@ test('bookingSchema: пробег 0–2 000 000, услуги whitelist, сог�
 test('messageSchema: короткая форма', () => {
   const base = {
     name: 'Мария', phone: '+7 951 826-98-39', message: 'Подскажите по замене масла',
-    consent: true, consent_version: '2026-10-21', page: 'contacts', idempotency_key: crypto.randomUUID(),
+    consent: true, consent_version: '2026-11-20', page: 'contacts', idempotency_key: crypto.randomUUID(),
   };
   const ok = messageSchema.safeParse(base);
   assert.ok(ok.success);
@@ -144,6 +144,15 @@ test('слоты: 10 штук 09:00–18:00, даты в пределах 14 д�
   const slots = getSlots(now.date);
   assert.equal(slots.length, 10);
   assert.ok(slots.every((s) => typeof s.available === 'boolean'));
+  // живая очередь (80-4, B1): недоступны только прошедшие часы, причина одна — 'past'
+  assert.ok(slots.every((s) => (s.available ? s.reason === undefined : s.reason === 'past')));
+  assert.deepEqual(
+    slots.filter((s) => !s.available).map((s) => s.time),
+    SLOT_TIMES.filter((t) => Number(t.slice(0, 2)) <= now.hour),
+  );
+  // на будущую дату все десять часов доступны, чем бы ни была занята БД
+  const future = new Date(now.date + 'T12:00:00Z'); future.setUTCDate(future.getUTCDate() + 3);
+  assert.ok(getSlots(future.toISOString().slice(0, 10)).every((s) => s.available && s.reason === undefined));
 });
 
 test('markdown: экранирует HTML, ссылки только безопасные', () => {
@@ -156,6 +165,22 @@ test('markdown: экранирует HTML, ссылки только безоп�
   assert.ok(html.includes('<ul>') && html.includes('<li>пункт 1</li>'));
   assert.ok(html.includes('<a href="https://example.com"'));
   assert.ok(!html.includes('javascript:alert'));
+});
+
+test('markdown: перенос строки внутри пункта списка остаётся в том же <li>', () => {
+  const html = mdToHtml('- первый пункт, первая строка\n  продолжение пункта\n- второй');
+  assert.equal((html.match(/<li>/g) || []).length, 2);
+  assert.ok(html.includes('<li>первый пункт, первая строка продолжение пункта</li>'));
+});
+
+test('markdown: таблица рендерится в <table>, HTML в ячейках экранируется', () => {
+  const html = mdToHtml('| Что | Объём |\n|---|---|\n| Масло | **4 л** |\n| Фильтр | <b>нет</b> |');
+  assert.ok(html.includes('<table class="post-table">'));
+  assert.ok(html.includes('<th>Что</th>') && html.includes('<th>Объём</th>'));
+  assert.ok(html.includes('<td><strong>4 л</strong></td>'));
+  assert.ok(html.includes('&lt;b&gt;нет&lt;/b&gt;'));
+  assert.ok(!html.includes('<b>'));
+  assert.ok(html.includes('post-table-wrap'));
 });
 
 test('маскировка телефона в логах', () => {
@@ -224,16 +249,117 @@ test('seed:demo помечает записи, seed:demo:clear удаляет т
   db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES('nastoyashchaya-novost','Настоящая новость','x','текст','sovety','published',datetime('now'))`).run();
   runSeedDemo();
   runSeedDemo(); // идемпотентно: второй запуск не удваивает набор
-  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), DEMO_REVIEWS.length, 'демо-отзывы помечены source=demo');
+  /* круг 26: демо-отзывы больше не вставляются (решение владельца: отзывы только
+     Яндекс.Карты, выдуманных оценок на сайте нет) — массив DEMO_REVIEWS остаётся
+     справочно, но в базу не пишется. */
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), 0, 'демо-отзывы не вставляются (круг 26)');
   assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug LIKE 'demo-%'`), DEMO_NEWS.length, 'демо-новости помечены slug demo-*');
-  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE status='published'`), DEMO_REVIEWS.length + 1, 'без дублей после повторного запуска');
+  assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE status='published'`), 1, 'без дублей после повторного запуска');
   const res = clearSeedDemo();
   assert.equal(res.news, DEMO_NEWS.length);
-  assert.equal(res.reviews, DEMO_REVIEWS.length);
+  assert.equal(res.reviews, 0);
   assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='demo'`), 0, 'демо-отзывы удалены');
   assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug LIKE 'demo-%'`), 0, 'демо-новости удалены');
   assert.equal(cnt(`SELECT COUNT(*) c FROM reviews WHERE source='Яндекс Карты'`), 1, 'реальный отзыв не тронут');
   assert.equal(cnt(`SELECT COUNT(*) c FROM news WHERE slug='nastoyashchaya-novost'`), 1, 'реальная новость не тронута');
   db().prepare(`DELETE FROM reviews WHERE author='Настоящий Клиент'`).run();
   db().prepare(`DELETE FROM news WHERE slug='nastoyashchaya-novost'`).run();
+});
+
+/* ---------- Линтер порядка CSS (M2, раунд 9) ---------- */
+const { lintCssFile, lintStylesDir } = await import('../scripts/lint-css-order.mjs');
+
+test('lint-css-order: src/styles проходит без нарушений', () => {
+  const v = lintStylesDir(new URL('../src/styles', import.meta.url).pathname);
+  assert.deepEqual(v, [], `нарушения порядка: ${JSON.stringify(v)}`);
+});
+
+test('lint-css-order: ловит медиа-блок выше базового правила и молчит при правильном порядке', () => {
+  const bad = join(TMP, 'bad.css');
+  writeFileSync(bad, [
+    '/* x */',
+    '@media (max-width:1200px){',
+    '  .nav{display:none}',
+    '  .burger{display:block}',
+    '}',
+    '.nav{margin-left:auto}',
+    '.burger{display:none}',
+    '',
+  ].join('\n'));
+  const v = lintCssFile(bad);
+  assert.equal(v.length, 2, 'два нарушения: .nav и .burger');
+  assert.deepEqual(v.map((x: { selector: string }) => x.selector).sort(), ['.burger', '.nav']);
+  assert.equal(v[0].mediaLine, 2);
+  assert.ok(v[0].baseLine > v[0].mediaLine);
+
+  const good = join(TMP, 'good.css');
+  writeFileSync(good, [
+    '.nav{margin-left:auto}',
+    '.burger{display:none}',
+    '@media (max-width:1200px){',
+    '  .nav{display:none}',
+    '  .burger{display:block}',
+    '}',
+    '',
+  ].join('\n'));
+  assert.deepEqual(lintCssFile(good), [], 'правильный порядок — без нарушений');
+});
+
+/* ---------- safe-zone первого экрана (раунд 10) ---------- */
+const { safeZoneTable, safeZoneMobile } = await import('../scripts/build-images.mjs');
+const geom = JSON.parse(readFileSync(new URL('../scripts/safe-zone-geom.json', import.meta.url).pathname, 'utf8'));
+
+test('safe-zone: машины и название в видимой полосе на всех десктопных вьюпортах', () => {
+  const rows = safeZoneTable(geom.desk);
+  assert.ok(rows.length >= 9, 'таблица вьюпортов');
+  for (const r of rows) {
+    assert.equal(r.cars, 'ok', `${r.vp}: машины в полосе ${r.band}`);
+    assert.equal(r.title, 'ok', `${r.vp}: название в полосе`);
+    assert.equal(r.inter, 'нет', `${r.vp}: машины не пересекают название`);
+  }
+});
+
+test('safe-zone: мобильные вьюпорты — название внутри ширины кропа', () => {
+  for (const r of safeZoneMobile(geom.mob)) assert.equal(r.title, 'ok', r.vp);
+});
+
+test('safe-zone: ловит машину ниже видимой полосы (синтетика)', () => {
+  /* раунд 12: десктоп показывает фото целиком, поэтому «ниже полосы» = ниже кадра */
+  const bad = { ...geom.desk, cars: [30, 1500, 2274, 1730] };
+  const rows = safeZoneTable(bad);
+  const row = rows.find((r: { vp: string }) => r.vp === '1440×900');
+  assert.ok(row, 'строка 1440×900 есть');
+  assert.equal(row.cars, 'нет', 'машина ниже кадра падает');
+});
+
+/* ---------- сортировка новостей: актуальные перед будущими (круг 78) ---------- */
+test('сортировка новостей: актуальные перед будущими', async () => {
+  const { listNews } = await import('../src/server/content.ts');
+  const ymd = (d: Date): string => {
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const p = fmt.formatToParts(d);
+    const g = (t: string): string => p.find((x) => x.type === t)?.value ?? '00';
+    return `${g('year')}-${g('month')}-${g('day')}`;
+  };
+  const now = new Date();
+  const yest = new Date(now.getTime() - 24 * 3600 * 1000);
+  const before = new Date(now.getTime() - 2 * 24 * 3600 * 1000);
+  const tom = new Date(now.getTime() + 24 * 3600 * 1000);
+  const yestStr = `${ymd(yest)} 09:00`;
+  const beforeStr = `${ymd(before)} 09:00`;
+  const tomStr = `${ymd(tom)} 09:00`;
+  const slugs = ['__t-yest', '__t-before', '__t-tom'];
+  // cleanup before
+  for (const s of slugs) db().prepare('DELETE FROM news WHERE slug=?').run(s);
+  db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES(?,?,?,?,?,?,?)`).run(slugs[0], 'Yest', 'x', 'x', 'sovety', 'published', yestStr);
+  db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES(?,?,?,?,?,?,?)`).run(slugs[1], 'Before', 'x', 'x', 'sovety', 'published', beforeStr);
+  db().prepare(`INSERT INTO news(slug,title,excerpt,body_md,category,status,published_at) VALUES(?,?,?,?,?,?,?)`).run(slugs[2], 'Tom', 'x', 'x', 'sovety', 'published', tomStr);
+  const { items } = listNews({ per: 100 });
+  const pos = (slug: string): number => items.findIndex((r) => r.slug === slug);
+  const py = pos(slugs[0]), pb = pos(slugs[1]), pt = pos(slugs[2]);
+  assert.ok(py >= 0 && pb >= 0 && pt >= 0, 'все три тестовые статьи найдены');
+  // актуальные по убыванию: вчера перед позавчера, будущая последней
+  assert.ok(py < pb, `вчерашняя перед позавчерашней: ${py} < ${pb} (${yestStr} / ${beforeStr})`);
+  assert.ok(pb < pt, `позавчерашняя перед будущей: ${pb} < ${pt} (${beforeStr} / ${tomStr})`);
+  for (const s of slugs) db().prepare('DELETE FROM news WHERE slug=?').run(s);
 });

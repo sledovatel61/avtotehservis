@@ -1,0 +1,212 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSettings } from '../server/settings.ts';
+import { listPublishedSiteReviews } from '../server/reviews-store.ts';
+import { reviewsStats, REVIEW_LIMITS } from '../shared/reviews-schema.ts';
+import { plural } from '../server/format.ts';
+import { relayMode } from '../shared/leads-endpoint.ts';
+
+const S = getSettings();
+/* Единственный источник данных — store Агента 10 (свой парсер reviews.json не пишем).
+   PUBLIC_DEMO_REVIEWS=1 (его ставит сборка Pages) добавляет демо-примеры в выдачу. */
+const reviews = listPublishedSiteReviews();
+const stats = reviewsStats(reviews);
+const hasDemo = reviews.some((r) => r.demo);
+const yandexUrl = S.ratings[0]?.url || S.map_link;
+const avgText = stats.average === null ? null : String(stats.average).replace('.', ',');
+const PHOTO_PHRASE = 'Читайте отзывы на Яндекс.Картах — там же оценки и схема проезда.';
+
+const MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+/* «12 ноября», а если год не текущий — «12 ноября 2025». */
+const nowYear = new Date().getFullYear();
+function fmtDayMonth(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  const base = `${d.getUTCDate()} ${MONTHS_GEN[d.getUTCMonth()]}`;
+  return d.getUTCFullYear() === nowYear ? base : `${base} ${d.getUTCFullYear()}`;
+}
+/* Подпись источника — как в задании: «сайт · 12 ноября» / «Яндекс Карты · 12 ноября». */
+function sourceLabel(source: string): string {
+  if (source === 'yandex') return 'Яндекс Карты';
+  if (source === '2gis') return '2ГИС';
+  return 'сайт';
+}
+const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: siteUrl + '/' },
+    { '@type': 'ListItem', position: 2, name: 'Отзывы' },
+  ],
+};
+const title = stats.count > 0
+  ? `Отзывы клиентов — ${stats.count} ${plural(stats.count, 'отзыв', 'отзыва', 'отзывов')}, средняя оценка ${avgText}`
+  : 'Отзывы клиентов — АвтоТехСервис, Портовая 439';
+---
+<Base
+  page="otzyvy"
+  title={title}
+  description="Отзывы клиентов АвтоТехСервис на Портовой 439: оценки и тексты посетителей сайта после проверки. Здесь же можно оставить свой отзыв — он появится после модерации."
+  jsonLd={jsonLd}
+>
+
+<nav class="crumbs container" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="sep" aria-hidden="true">/</span><span class="cur" aria-current="page">Отзывы</span></nav>
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Отзывы</span>
+    <h1>Отзывы клиентов</h1>
+    <p class="lead">Отзывы оставляют посетители сайта, мы проверяем их перед публикацией. Чужие оценки не переносим и рейтинг не придумываем.</p>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="rev-sum-h">
+  <div class="container">
+    <div class="rev-summary" id="rev-sum-h">
+      {stats.count > 0 && avgText ? (
+        <>
+          <div class="rev-summary-num">
+            <b>{avgText}</b>
+            <small>из 5</small>
+          </div>
+          <div class="rev-summary-body">
+            <p class="rev-summary-line">
+              {stats.count} {plural(stats.count, 'отзыв', 'отзыва', 'отзывов')} на сайте · средняя оценка {avgText}
+            </p>
+            <p class="hint">Оценки ставили посетители сайта. Отзывы с Яндекса и 2ГИС мы не копируем — там своя карточка.</p>
+          </div>
+        </>
+      ) : (
+        <div class="rev-summary-body">
+          <p class="rev-summary-line">Пока на сайте нет опубликованных отзывов — будьте первым.</p>
+          <p class="hint">{PHOTO_PHRASE}</p>
+        </div>
+      )}
+      <a class="btn btn--ghost rev-summary-btn" href={yandexUrl} target="_blank" rel="noopener noreferrer">Все отзывы на Яндекс.Картах</a>
+    </div>
+
+    {reviews.length > 0 ? (
+      <div class="rev-grid">
+        {reviews.map((r) => (
+          <article class="rev-card rev-card--site">
+            <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating} из 5`}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <svg viewBox="0 0 24 24" aria-hidden="true" class={i < r.rating ? 'is-on' : ''}><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>
+              ))}
+            </span>
+            <div class="rev-text"><p>{r.text}</p></div>
+            <div class="rev-who">
+              <span class="rev-ava" aria-hidden="true">{r.author.slice(0, 1)}</span>
+              <span>
+                <b>{r.author}</b>
+                <span>{sourceLabel(r.source)} · {fmtDayMonth(r.published_at)}</span>
+              </span>
+              {r.demo && <span class="rev-demo" title="Образец оформления, а не отзыв клиента">пример</span>}
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="rev-empty">
+        <article class="rev-card rev-card--site">
+          <div class="rev-text"><p>{PHOTO_PHRASE}</p></div>
+          <div class="rev-who">
+            <span class="rev-ava" aria-hidden="true">Я</span>
+            <span><b>Яндекс.Карты</b><span><a class="linklike" href={yandexUrl} target="_blank" rel="noopener noreferrer">Открыть Яндекс Карты</a></span></span>
+          </div>
+        </article>
+        <p class="hint">Своих отзывов не пишем и чужие не переносим. Первый отзыв, оставленный здесь, появится на этой странице после проверки.</p>
+      </div>
+    )}
+
+    {hasDemo && (
+      <p class="rev-demo-note" role="note">
+        Отзывы с пометкой «пример» — образец оформления. Перед запуском на своём домене их нужно заменить настоящими: админка → Отзывы.
+      </p>
+    )}
+  </div>
+</section>
+
+<section class="sec sec--deep" aria-labelledby="rev-form-h" id="leave-review">
+  <div class="container rev-form-wrap">
+    <div class="rev-form-head">
+      <span class="eyebrow">Обратная связь</span>
+      <h2 id="rev-form-h">Оставить отзыв</h2>
+      <p class="hint">Отзыв появится на сайте после проверки — обычно в течение рабочего дня. Оценку ставьте свою: подставлять «пятёрки» мы не будем.</p>
+    </div>
+
+    <form
+      class="rev-form"
+      id="rev-form"
+      novalidate
+      data-consent-version={S.consent_version}
+      data-phone={S.phone_main}
+      data-email={S.email}
+      aria-labelledby="rev-form-h"
+    >
+      <p class="rev-unavailable" id="rev-unavailable" hidden={relayMode}>
+        <b>Отправка отзывов сейчас недоступна.</b> Форма заработает после подключения приёмника отзывов.
+        Пока напишите нам на <a href={`mailto:${S.email}`}>{S.email}</a> или позвоните: <a href={`tel:${S.phone_main_tel}`}>{S.phone_main}</a>.
+      </p>
+
+      <div class="fields">
+        <div class="field">
+          <label for="rev-name">Имя <span class="req" aria-hidden="true">*</span></label>
+          <input class="input" type="text" id="rev-name" name="author" autocomplete="name" maxlength={REVIEW_LIMITS.author[1]} aria-describedby="rev-name-hint">
+          <span class="hint" id="rev-name-hint">Как к вам обращаться. Достаточно имени и первой буквы фамилии — «Павел И.»</span>
+          <span class="err" role="alert"></span>
+        </div>
+      </div>
+
+      <fieldset class="field rev-stars-field">
+        <legend>Оценка <span class="req" aria-hidden="true">*</span></legend>
+        <div class="rev-star-row">
+          {[5, 4, 3, 2, 1].map((n) => (
+            <span class="rev-star">
+              <input type="radio" id={`rev-rating-${n}`} name="rating" value={String(n)} aria-label={n === 1 ? '1 звезда из 5' : `${n} ${plural(n, 'звезда', 'звезды', 'звёзд')} из 5`}>
+              <label for={`rev-rating-${n}`} aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>
+              </label>
+            </span>
+          ))}
+        </div>
+        <span class="hint">По умолчанию не выбрано — поставьте оценку сами. Стрелки ← → переключают звёзды с клавиатуры.</span>
+        <span class="err" role="alert"></span>
+      </fieldset>
+
+      <div class="field">
+        <label for="rev-text">Отзыв <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="rev-text" name="text" rows="6" minlength={REVIEW_LIMITS.text[0]} maxlength={REVIEW_LIMITS.text[1]} aria-describedby="rev-text-hint rev-count"></textarea>
+        <span class="hint" id="rev-text-hint">От {REVIEW_LIMITS.text[0]} до {REVIEW_LIMITS.text[1]} знаков: что делали, как приняли, что понравилось или нет. Без ссылок и телефонов.</span>
+        <span class="rev-counter" id="rev-count" aria-live="polite">0 / {REVIEW_LIMITS.text[1]}</span>
+        <span class="err" role="alert"></span>
+      </div>
+
+      <div class="field u-sr" aria-hidden="true">
+        <label>Служебное поле — не заполняйте его
+          <input id="rev-hp" name="rev_hp" type="text" tabindex="-1" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="consent-row">
+        <input type="checkbox" id="rev-consent" aria-describedby="rev-consent-hint">
+        <div class="u-flex1">
+          <label for="rev-consent">Даю согласие на обработку персональных данных<span class="req" aria-hidden="true">*</span></label>
+          <span class="hint u-blk-mt4" id="rev-consent-hint">
+            <span class="consent-pair"><a href="/consent">Согласие на обработку ПД</a> ·</span>
+            <span class="consent-pair"><a href="/privacy">Политика обработки ПД</a></span>
+          </span>
+          <span class="hint u-blk-mt4">Версия документа: {S.consent_version}. Отметка о согласии и её дата сохраняются вместе с отзывом.</span>
+          <span class="err" role="alert"></span>
+        </div>
+      </div>
+
+      <button class="btn btn--copper btn--block u-mt18" type="submit" id="rev-send" disabled={!relayMode} aria-disabled={relayMode ? 'false' : 'true'}>Отправить отзыв</button>
+      <p class="rev-status" id="rev-status" role="status" aria-live="polite"></p>
+      <p class="rev-done" id="rev-done" role="status" aria-live="polite" hidden></p>
+      <noscript><p class="hint">Форма работает с включённым JavaScript. Без него напишите на {S.email} или позвоните: {S.phone_main}.</p></noscript>
+    </form>
+  </div>
+</section>
+
+<script>import '../client/review-form.ts';</script>
+</Base>

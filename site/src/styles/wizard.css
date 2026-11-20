@@ -47,6 +47,16 @@
 }
 .skip-chip:hover{background:rgba(224,169,109,.12)}
 .skip-chip[aria-pressed="true"]{background:rgba(200,127,69,.2);border-style:solid;color:var(--ivory)}
+/* «Не помню год / Не знаю VIN / Не знаю пробег» — настоящие чекбоксы в виде пилюли:
+   родная галочка скрыта, но остаётся в дереве доступности и работает с клавиатуры. */
+.skip-toggle{display:inline-flex;align-items:center;gap:8px;user-select:none}
+.skip-toggle input{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  clip:rect(0 0 0 0);clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+.skip-toggle.is-on,.skip-toggle:has(input:checked){background:rgba(200,127,69,.2);border-style:solid;color:var(--ivory)}
+.skip-toggle:has(input:focus-visible){box-shadow:0 0 0 3px rgba(224,169,109,.25)}
+.skip-toggle input:checked + span::before{content:"✓";margin-right:6px;color:var(--brass)}
+.field.is-skipped .input{border-style:dashed;opacity:.55}
+.field.is-skipped .input:disabled{cursor:not-allowed}
 
 /* поиск марки */
 .combo{position:relative}
@@ -84,6 +94,24 @@
 
 /* фото */
 .photos{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+/* Превью приложенных фото: 3 плитки по 104 px, крестик в углу. */
+.photos:empty{display:none}
+/* Поле выбора файла: не display:none, иначе часть браузеров не открывает диалог
+   по клику на label. Прячем визуально, оставляем в потоке доступности. */
+.photo-input{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  clip:rect(0 0 0 0);clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+.photo-input:focus-visible + .photo-add{box-shadow:0 0 0 3px rgba(224,169,109,.25)}
+.photo{position:relative;margin:0;width:104px}
+.photo img{display:block;width:104px;height:104px;object-fit:cover;border-radius:var(--r-sm);border:1px solid var(--line)}
+.photo figcaption{margin-top:4px;font-size:11px;line-height:1.3;color:var(--mist);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.photo--error img{opacity:.35;filter:grayscale(1)}
+.photo--error figcaption{color:var(--danger);white-space:normal}
+.photo-x{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;
+  border:1px solid var(--line);background:var(--deep2);color:var(--ivory);font-size:12px;
+  line-height:1;cursor:pointer;display:grid;place-items:center}
+.photo-x:hover{background:var(--danger);color:var(--night)}
+.photo--error .photo-x{background:var(--danger);color:var(--night)}
 .photo-add{
   width:104px;height:104px;border-radius:var(--r-sm);border:1.5px dashed rgba(224,169,109,.5);
   background:transparent;color:var(--brass);cursor:pointer;font-size:13px;display:flex;flex-direction:column;
@@ -137,6 +165,8 @@
 .sum-row .k{flex:0 0 130px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mist);padding-top:2px}
 .sum-row .v{flex:1;font-size:15.5px;color:var(--ivory)}
 .sum-row .v small{display:block;color:var(--mist);font-size:13px;margin-top:2px}
+/* приписка «подтвердим по телефону» рядом с желаемым временем */
+.sum-row .sum-note{display:inline-block;margin-left:8px;color:var(--mist);font-size:13px;white-space:nowrap}
 .sum-row .edit{
   background:none;border:0;color:var(--brass);font-size:13px;font-weight:500;cursor:pointer;
   min-height:36px;padding:2px 8px;border-bottom:1px dashed rgba(224,169,109,.5);flex-shrink:0;
@@ -144,8 +174,15 @@
 .sum-row .edit:hover{color:var(--ivory)}
 .consent-row{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:14px 16px;background:rgba(11,20,16,.35)}
 .consent-row input{width:22px;height:22px;flex-shrink:0;margin:2px 0 0;accent-color:var(--copper);cursor:pointer}
-.consent-row label{font-size:14px;color:var(--mist);cursor:pointer}
-.consent-row label a{color:var(--brass);border-bottom:1px dashed}
+.consent-row label{font-size:14px;color:var(--mist);cursor:pointer;line-height:1.45;display:block}
+.consent-row label a,
+.consent-row .hint a{color:var(--brass);border-bottom:1px dashed}
+.consent-row .hint{line-height:1.5}
+/* ссылки в строке согласия не рвутся посередине на 390 — перенос только между парами
+   «ссылка + разделитель» */
+.consent-row .hint .consent-pair{display:inline-block;white-space:nowrap}
+.consent-row .hint .consent-pair + .consent-pair{margin-left:2px}
+.consent-row .req{margin-left:2px;white-space:nowrap}
 .consent-row.is-bad{border-color:var(--danger)}
 .radio-row{display:flex;gap:12px;flex-wrap:wrap}
 .radio-card{position:relative;flex:1;min-width:150px}
@@ -175,6 +212,8 @@
 .ticket .ok{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .ticket .ok svg{width:34px;height:34px;stroke:var(--emerald);flex-shrink:0}
 .ticket .ok b{font-size:17px;color:var(--ivory)}
+/* демо-плашка (80-2 §5): не «успех», а пояснение — иконка информации бронзой */
+.ticket .ok.is-info svg{stroke:var(--brass)}
 .ticket .no{font-family:var(--font-display);font-weight:600;font-size:clamp(1.4rem,4vw,1.9rem);color:var(--brass);letter-spacing:.02em;margin-bottom:6px}
 .ticket .no small{display:block;font-family:var(--font-text);font-weight:400;font-size:12.5px;color:var(--mist);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
 .ticket dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:14px 0 0;font-size:14.5px}
@@ -210,5 +249,8 @@
 .cform h2{font-size:1.3rem;margin-bottom:.4em}
 .cform .fields{grid-template-columns:1fr}
 .cform-state{display:none;text-align:center;padding:26px 10px}
+/* демо-плашка (80-2 §5): кнопка с телефоном на 390 уже колонки — разрешаем перенос
+   по строкам, номер при этом не рвётся (.u-nowrap) */
+.wiz-state .btn,.cform-state .btn{max-width:100%;white-space:normal;flex-wrap:wrap}
 .cform-state.is-on{display:block;animation:step-in var(--t-mid) var(--ease) both}
 

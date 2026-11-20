@@ -24,7 +24,11 @@ export const safeLS = {
 export const reducedMotion = (): boolean =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/** Отладочная аналитика: структурные события в консоль. Метрики на сайт не ставим (152-ФЗ, чужие счётчики запрещены). */
+/**
+ * Отладочная аналитика: структурные события только в консоль — наружу ничего не уходит.
+ * Внешние счётчики (Метрика, GA4) подключает `consent.ts` и только после согласия
+ * на cookies (круг 89, задание `prompts/133`), поэтому здесь их не добавляем.
+ */
 export function track(name: string, data?: Record<string, unknown>): void {
   try { console.debug('[event]', name, data ?? {}); } catch { /* ignore */ }
 }

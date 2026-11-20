@@ -3,6 +3,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Dock from '../components/Dock.astro';
 import Modals from '../components/Modals.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 import { getSettings } from '../server/settings.ts';
 import '../styles/fonts.css';
 import '../styles/tokens.css';
@@ -18,6 +19,8 @@ import '../styles/wizard.css';
 import '../styles/motion.css';
 import '../styles/media.css';
 import '../styles/misc.css';
+/* круг 79: кейсы «до / после» (страница кейса, слайдер сравнения, сетка фото) */
+import '../styles/cases.css';
 
 export interface Props {
   page: string;
@@ -27,16 +30,41 @@ export interface Props {
   noindex?: boolean;
   ogType?: string;
   publishedTime?: string;
+  /** `article:modified_time` статьи (ISO с поясом). */
+  modifiedTime?: string;
+  /** Своя картинка для og:image/twitter:image (абсолютный или относительный путь). */
+  ogImage?: string;
 }
-const { page, title, description, jsonLd, noindex = false, ogType = 'website', publishedTime } = Astro.props;
+const { page, title, description, jsonLd, noindex = false, ogType = 'website', publishedTime, modifiedTime, ogImage } = Astro.props;
 const S = getSettings();
 const siteOrigin = Astro.site?.origin ?? Astro.url.origin;
-const canonical = new URL(Astro.url.pathname + Astro.url.search, siteOrigin).href;
-const ogImage = new URL('/img/og.png', siteOrigin).href;
+/* круг 26 (a9/03-structure §5.1): canonical без query-строки — фильтры /news?cat=… и пагинация
+   не должны объявлять себя отдельными страницами */
+const canonical = new URL(Astro.url.pathname, siteOrigin).href;
+/* Круг 89: у статьи своя обложка (`-og.jpg` 1200×630), у остальных страниц — общий og.png. */
+const ogImageUrl = ogImage ? new URL(ogImage, siteOrigin).href : new URL('/img/og.png', siteOrigin).href;
+/* Подтверждение прав в поисковиках. Значения приходят переменными репозитория на сборку
+   (`PUBLIC_GOOGLE_SITE_VERIFICATION`, `PUBLIC_YANDEX_VERIFICATION`); пусто — тега нет вовсе,
+   а не пустой `content=""`. */
+function readVerification(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+let googleVerification = '';
+let yandexVerification = '';
+/* ID счётчиков аналитики. Их отсутствие — норма: тогда в <html> пустые data-атрибуты,
+   consent.ts нечего грузить, а CSP остаётся строгой. Сами теги в разметку не попадают. */
+let ymId = '';
+let gaId = '';
+try {
+  googleVerification = readVerification(import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION);
+  yandexVerification = readVerification(import.meta.env.PUBLIC_YANDEX_VERIFICATION);
+  ymId = readVerification(import.meta.env.PUBLIC_YM_ID);
+  gaId = readVerification(import.meta.env.PUBLIC_GA_ID);
+} catch { /* без import.meta.env (чистый node-рендер) — просто нет тегов */ }
 const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-ym={ymId} data-ga={gaId} data-policy-version={S.policy_version}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -49,15 +77,23 @@ const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
   <meta property="og:url" content={canonical}>
-  <meta property="og:image" content={ogImage}>
+  <meta property="og:image" content={ogImageUrl}>
+  {/* Размеры печатаем только там, где они правда 1200×630: og.png сайта и `-og.jpg`
+      статьи. У старых статей обложка — SVG/картинка другого размера, врать не нужно. */}
+  {(ogImageUrl.endsWith('/img/og.png') || ogImageUrl.endsWith('-og.jpg')) && <meta property="og:image:width" content="1200">}
+  {(ogImageUrl.endsWith('/img/og.png') || ogImageUrl.endsWith('-og.jpg')) && <meta property="og:image:height" content="630">}
   <meta property="og:locale" content="ru_RU">
   {publishedTime && <meta property="article:published_time" content={publishedTime}>}
+  {modifiedTime && <meta property="article:modified_time" content={modifiedTime}>}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content={title}>
   <meta name="twitter:description" content={description}>
-  <meta name="twitter:image" content={ogImage}>
+  <meta name="twitter:image" content={ogImageUrl}>
   <meta name="theme-color" content="#0B1410">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="Полезное — АвтоТехСервис" href="/news/rss.xml">
+  {googleVerification && <meta name="google-site-verification" content={googleVerification}>}
+  {yandexVerification && <meta name="yandex-verification" content={yandexVerification}>}
   <link rel="preload" href="/fonts/golos-cyrillic-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/unbounded-cyrillic-600.woff2" as="font" type="font/woff2" crossorigin>
   {ldList.map((j) => <script type="application/ld+json" set:html={JSON.stringify(j)} />)}
@@ -71,6 +107,16 @@ const ldList = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
   <Footer />
   <Dock />
   <Modals />
-  <script>import '../client/global.ts';</script>
+  <CookieConsent />
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title">
+    <button class="lb-close" id="lb-close" type="button" aria-label="Закрыть">✕</button>
+    <div class="lb-box">
+      <div class="lb-img" id="lb-img"></div>
+      <div class="lb-cap"><b id="lb-title"></b><span id="lb-sub"></span><span id="lb-count"></span></div>
+    </div>
+    <button class="lb-arrow lb-prev" id="lb-prev" type="button" aria-label="Предыдущий">←</button>
+    <button class="lb-arrow lb-next" id="lb-next" type="button" aria-label="Следующий">→</button>
+  </div>
+  <script>import '../client/global.ts'; import '../client/consent.ts';</script>
 </body>
 </html>

@@ -3,6 +3,8 @@ import { defineMiddleware, sequence } from 'astro:middleware';
 import type { APIContext } from 'astro';
 import { ensureWorkers } from './server/outbox.ts';
 import { resolveSession, SESSION_COOKIE } from './server/auth.ts';
+import { LEADS_BASE } from './shared/leads-endpoint.ts';
+import { counterHosts, cspWithAnalytics } from './client/consent.ts';
 
 /* 301 со старых адресов мокапа на ЧПУ (требование задания §6.4). */
 const STATIC_REDIRECTS: Record<string, string> = {
@@ -17,6 +19,10 @@ const STATIC_REDIRECTS: Record<string, string> = {
 };
 
 function legacyRedirect(url: URL): string | null {
+  // Закрытые разделы работали с другой базой; старые закладки ведут в мастерскую.
+  if (url.pathname === '/admin/cases' || url.pathname.startsWith('/admin/cases/')) return '/manage/#photos';
+  if (url.pathname === '/admin/reviews' || url.pathname.startsWith('/admin/reviews/')) return '/manage/#reviews';
+  if (url.pathname === '/admin/news' || url.pathname.startsWith('/admin/news/')) return '/manage/#news';
   if (!url.pathname.endsWith('.html')) return null;
   const known = STATIC_REDIRECTS[url.pathname];
   if (known) return known + (url.pathname === '/appointment.html' && url.searchParams.get('s') ? `?s=${encodeURIComponent(url.searchParams.get('s')!)}` : '');
@@ -72,20 +78,28 @@ const securityHeaders = defineMiddleware(async (context: APIContext, next) => {
   }
 
   const isHttps = (process.env.PUBLIC_SITE_URL ?? '').startsWith('https:');
-  const csp = [
+  /* Круг 89 (задание 133, §3): домены счётчиков добавляются УСЛОВНО — только если ID
+     задан переменной сборки. Без ID строка политики остаётся прежней, строгой. */
+  const analyticsHosts = counterHosts({
+    ym: process.env.PUBLIC_YM_ID ?? '',
+    ga: process.env.PUBLIC_GA_ID ?? '',
+  });
+  const csp = cspWithAnalytics([
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self'",
     "img-src 'self' data:",
     "font-src 'self'",
-    "connect-src 'self'",
+    /* круг 87: форма отзыва шлёт POST в прослойку (Cloudflare Worker) — без её адреса
+       connect-src блокирует запрос. Демо-режим (адреса нет) остаётся со 'self'. */
+    `connect-src 'self'${LEADS_BASE ? ` ${LEADS_BASE}` : ''}`,
     "media-src 'self'",
     "object-src 'none'",
-    "frame-ancestors 'none'",
+    process.env.ALLOW_FRAME_PREVIEW === '1' ? '' : "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     isHttps ? 'upgrade-insecure-requests' : '',
-  ].filter(Boolean).join('; ');
+  ].filter(Boolean), analyticsHosts);
   res.headers.set('Content-Security-Policy', csp);
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

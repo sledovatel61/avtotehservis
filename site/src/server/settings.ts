@@ -21,7 +21,14 @@ export interface Settings {
   legal: { name: string; inn: string; ogrnip: string };
   ratings_visible: boolean;
   ratings: Rating[];
+  /**
+   * Версия согласия формы — сверяется с `relay/wrangler.toml` в `relay-smoke.yml`.
+   * НЕ МЕНЯТЬ без правки прослойки: несовпадение ломает все заявки (`400 consent_version`).
+   * Для политики/баннера cookies есть отдельное поле `policy_version`.
+   */
   consent_version: string;
+  /** Версия политики (= дата редакции §6 «Cookies и аналитика»). Её печатает /privacy. */
+  policy_version: string;
   slot_capacity: number;
   map_link: string;
   brands: string[];
@@ -37,14 +44,12 @@ export const DEFAULTS: Settings = {
   landmark: 'ост. «3-й Поселковый» ~330 м, рядом база «Бум»',
   coords: { lat: 47.193068, lon: 39.648295 },
   hours: 'ежедневно 9:00–19:00',
-  phone_main: '+7 (928) 906-57-00',
-  phone_main_tel: '+79289065700',
-  // Доп. номера СКРЫТЫ до подтверждения владельцем (docs/06 C5, §3 ревью round5):
-  // значения найдены в сторонних каталогах. Владельцу — заполнить display/tel
-  // в /admin/settings; при пустом tel номер не показывается. Пункт в docs/12.
+  // Телефоны подтверждены владельцем 17.11.2026 по визитке: три номера, основной — мобильный.
+  phone_main: '+7 (951) 826-98-39',
+  phone_main_tel: '+79518269839',
   phones_extra: [
-    { title: 'Приёмная', display: '', tel: '' },
-    { title: 'Ремонтная зона', display: '', tel: '' },
+    { title: '', display: '+7 (951) 826-58-47', tel: '+79518265847' },
+    { title: '', display: '+7 (863) 229-19-50', tel: '+78632291950' },
   ],
   telegram_phone: '+7 (951) 826-98-39',
   telegram_url: 'https://t.me/+79518269839',
@@ -57,7 +62,9 @@ export const DEFAULTS: Settings = {
     { source: '2ГИС', value: '3,6', count: 12, note: 'поисковая выдача на 21.10.2026', url: 'https://2gis.ru/rostov-na-donu/search/АвтоТехСервис%20Портовая%20439' },
     { source: 'Zoon', value: '2,2', count: 1, note: 'поисковая выдача на 21.10.2026', url: 'https://zoon.ru/rostov-na-donu/?query=АвтоТехСервис+Портовая+439' },
   ],
-  consent_version: '2026-10-21',
+  consent_version: '2026-11-20',
+  // Круг 89: редакция §6 политики (баннер cookies, Метрика и GA4 по согласию).
+  policy_version: '2026-11-21',
   slot_capacity: 2,
   map_link: 'https://yandex.ru/maps/?pt=39.648295,47.193068&z=17&l=map',
   brands: [],

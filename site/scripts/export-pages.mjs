@@ -1,0 +1,250 @@
+/** Render the existing SSR site against an isolated demo DB; publish HTML/assets only. */
+import { spawn } from 'node:child_process';
+import { mkdtemp, mkdir, cp, readFile, writeFile, rm, readdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { JSDOM } from 'jsdom';
+import { parseLeadsEndpoint } from '../src/shared/leads-endpoint.ts';
+import { writePriceRefs } from './lib/price-refs.mjs';
+import { DEFAULT_PUBLIC_ORIGIN, readPublicPath } from './lib/public-path.mjs';
+
+/**
+ * Генерирует содержимое robots.txt по режиму сборки:
+ * - Превью (publicOrigin дефолтный или base !== '/' и не корень ''): Disallow: /
+ * - Боевой (publicOrigin задан и не дефолтный и base === '/' | ''): Allow: /, Disallow: /manage, Sitemap
+ *
+ * @param {{ publicOrigin?: string; base?: string }} [opts]
+ * @returns {string}
+ */
+export function robotsTxt({ publicOrigin, base } = {}) {
+  const origin = typeof publicOrigin === 'string' ? publicOrigin.trim().replace(/\/+$/, '') : '';
+  const isCustomOrigin = origin !== '' && origin !== DEFAULT_PUBLIC_ORIGIN;
+  const isRootBase = base === '/' || base === '';
+  if (!isCustomOrigin || !isRootBase) {
+    return 'User-agent: *\nDisallow: /\n';
+  }
+  return `User-agent: *\nAllow: /\nDisallow: /manage\n\nSitemap: ${origin}/sitemap.xml\n`;
+}
+
+const isMain =
+  Boolean(process.argv[1]) &&
+  fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+
+if (isMain) {
+const root = resolve(import.meta.dirname, '..');
+const output = join(root, 'pages-dist');
+const temp = await mkdtemp(join(tmpdir(), 'ats-pages-'));
+const { base, publicOrigin, cnameHost } = readPublicPath(process.env);
+const port = process.env.PREVIEW_PORT || '4337';
+/* Круг 80 / 80-1: одна переменная решает, куда уходят заявки.
+   Без PUBLIC_LEADS_ENDPOINT — демо-сборка со своим сервером и плашкой «не отправляются».
+   С адресом прослойки — боевой режим: формы идут в Cloudflare Worker, плашки нет.
+   Кривой адрес роняет сборку: иначе на Pages тихо уедет демо-версия с «не отправляются». */
+const leads = parseLeadsEndpoint(process.env.PUBLIC_LEADS_ENDPOINT);
+if (leads.error) throw new Error(`PUBLIC_LEADS_ENDPOINT: ${leads.error}`);
+const relayMode = leads.base !== '';
+if (relayMode) console.log(`[pages] заявки идут в прослойку: ${leads.base}`);
+const origin = `http://127.0.0.1:${port}`;
+const env = { ...process.env, DATA_DIR: join(temp, 'data'), MEDIA_DIR: join(temp, 'media'), PUBLIC_SITE_URL: publicOrigin, PUBLIC_DEMO_REVIEWS: process.env.PUBLIC_DEMO_REVIEWS ?? '', HOST: '127.0.0.1', PORT: port };
+const run = (args) => new Promise((resolveRun, reject) => {
+  const child = spawn(process.execPath, args, { cwd: root, env, stdio: 'inherit' });
+  child.on('error', reject);
+  child.on('exit', (code) => code === 0 ? resolveRun() : reject(new Error(`${args.join(' ')} exited ${code}`)));
+});
+let server;
+try {
+  await run(['scripts/migrate.ts']);
+  await run(['scripts/seed.ts']);
+  /* круг 26 (ревью A6, minor 5.3 и 5.7): демо-новости в статический экспорт НЕ сеем.
+     Их 3 при 5 владельческих, PER=6 => листинг печатал ссылку news?page=2, которой в статике
+     не существует (query-строка на Pages игнорируется), а даты демо-статей были временем
+     сборки и каждый раз всплывали выше настоящих. Пять владельческих статей укладываются
+     в одну страницу — пагинатор не появляется вовсе. */
+  // await run(['scripts/seed-demo.ts']);
+  await run(['node_modules/astro/bin/astro.mjs', 'build']);
+  server = spawn(process.execPath, ['dist/server/entry.mjs'], { cwd: root, env, stdio: 'inherit' });
+  let ready = false;
+  for (let i = 0; i < 120; i++) {
+    try { if ((await fetch(origin)).ok) { ready = true; break; } } catch { /* starting */ }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  if (!ready) throw new Error('Preview server did not start');
+  await rm(output, { recursive: true, force: true });
+  await cp(join(root, 'dist/client'), output, { recursive: true });
+  const sitemap = await (await fetch(`${origin}/sitemap.xml`)).text();
+  const routes = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
+  if (!routes.includes('/') || routes.length < 8) throw new Error('Incomplete sitemap');
+  const prefix = (value) => value.startsWith('/') && !value.startsWith('//') ? base + value : value;
+  /* Круг 89: адрес своего сайта в публикации = публичный origin + префикс репозитория.
+     Нужен и обложкам статей (og:image), и JSON-LD. Трогаем только http(s) на нашем хосте —
+     почта, телефоны, внешние ссылки (карты, мессенджеры) остаются как есть. */
+  const siteHost = new URL(publicOrigin).host;
+  const toPublicUrl = (value) => {
+    if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return value;
+    let u;
+    try { u = new URL(value); } catch { return value; }
+    if (u.host !== siteHost) return value;
+    return publicOrigin + base + u.pathname + u.search + u.hash;
+  };
+  for (const route of [...new Set([...routes, '/404'])]) {
+    const response = await fetch(origin + route);
+    if (!response.ok && route !== '/404') throw new Error(`Failed page: ${route} (${response.status})`);
+    const dom = new JSDOM(await response.text());
+    const doc = dom.window.document;
+    doc.body.dataset.preview = 'true';
+    /* Задание 80-2 §5: статика на Pages — витрина. Клиент (wizard.ts, contacts-form.ts)
+       по этому признаку показывает «Демо-версия: заявка не отправлена» и не делает fetch. */
+    doc.body.dataset.demo = '1';
+    doc.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove());
+    const robots = doc.createElement('meta');
+    robots.name = 'robots'; robots.content = 'noindex, nofollow'; doc.head.append(robots);
+    /* Круг 89: раньше ld+json вырезался целиком — на опубликованном сайте вообще не было
+       структурированных данных (BlogPosting, BreadcrumbList, FAQPage). Теперь оставляем и
+       переписываем абсолютные адреса на адрес публикации (с префиксом репозитория), иначе
+       image/@id указывали бы в корень домена и schema.org получала бы битые ссылки. */
+    const fixLd = (node) => {
+      if (typeof node === 'string') return toPublicUrl(node);
+      if (Array.isArray(node)) return node.map(fixLd);
+      if (node && typeof node === 'object') {
+        const out = {};
+        for (const [k, v] of Object.entries(node)) out[k] = fixLd(v);
+        return out;
+      }
+      return node;
+    };
+    for (const el of doc.querySelectorAll('script[type="application/ld+json"]')) {
+      try {
+        el.textContent = JSON.stringify(fixLd(JSON.parse(el.textContent ?? '')));
+      } catch { /* не разобрали — оставляем как есть, страница важнее разметки */ }
+    }
+    /* data-img / data-cover — адреса картинок для лайтбокса и карточек: их читает JS уже в
+       браузере, поэтому без префикса они уходили в /img/... корня домена и на Pages давали
+       404. Так «увеличенный» сертификат открывался пустой рамкой с alt вместо картинки. */
+    for (const el of doc.querySelectorAll('[href], [src], [poster], [srcset], [data-img], [data-cover]')) {
+      for (const attr of ['href', 'src', 'poster', 'data-img', 'data-cover']) {
+        const value = el.getAttribute(attr);
+        if (value) el.setAttribute(attr, prefix(value));
+      }
+      const srcset = el.getAttribute('srcset');
+      if (srcset) el.setAttribute('srcset', srcset.replace(/(^|,\s*)(\/[^/])/g, `$1${base}$2`));
+    }
+    for (const el of doc.querySelectorAll('link[rel="canonical"], meta[property="og:url"]')) {
+      el.setAttribute(el.tagName === 'LINK' ? 'href' : 'content', publicOrigin + base + (route === '/' ? '/' : route));
+    }
+    for (const el of doc.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]')) {
+      el.setAttribute('content', toPublicUrl(el.getAttribute('content') ?? ''));
+    }
+    doc.querySelectorAll('a[href*="/admin"]').forEach((el) => el.remove());
+    /* Файловые поля гасим только в демо: с прослойкой фото уходят вместе с заявкой.
+       Раньше здесь стояло безусловное disabled — из-за него на Pages нельзя было
+       приложить ни одного снимка, хотя текст обещал «до 3 файлов». */
+    if (!relayMode) doc.querySelectorAll('input[type="file"]').forEach((el) => { el.disabled = true; });
+    /* Плашка — только в демо-режиме (без PUBLIC_LEADS_ENDPOINT): с прослойкой заявки
+       уходят по-настоящему, и текст «не отправляются» был бы ложью. data-preview остаётся
+       всегда — на нём держатся гейты раскладки. */
+    if (!relayMode) {
+      const notice = doc.createElement('p');
+      /* раунд 15: плашка — отдельной полосой НАД шапкой (фон --deep, свой отступ),
+         иначе её вторая строка наезжает на меню на 1024–1279 px */
+      notice.className = 'demo-notice hdr-wrap';
+      notice.textContent = 'Демонстрационная версия для согласования. Заявки и сообщения не отправляются. Время записи — пример.';
+      const header = doc.querySelector('header');
+      if (header) header.parentNode?.insertBefore(notice, header); else doc.querySelector('main')?.prepend(notice);
+    }
+    const file = route === '/404' ? join(output, '404.html') : join(output, route.slice(1), 'index.html');
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, dom.serialize());
+    dom.window.close();
+  }
+  async function fixCss(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await fixCss(path);
+      else if (entry.name.endsWith('.css')) {
+        const css = await readFile(path, 'utf8');
+        /* РАУНД 17 / приёмка: минцификатор переписывает declaration внутри @supports в
+           image-set("/img/x.avif" 1x type("image/avif")) — без url(), поэтому прежняя
+           замена промахивалась и фон секции 404-ился на Pages. Префиксуем оба вида. */
+        const fixed = css
+          .replace(/url\((["']?)\/(?!\/)/g, `url($1${base}/`)
+          .replace(/(image-set\(\s*)(["'])\/(?!\/)/g, `$1$2${base}/`)
+          .replace(/(,\s*)(["'])\/(?!\/)(?=[^"']*\.(?:avif|webp|png|jpe?g|svg|woff2?)["'])/g, `$1$2${base}/`);
+        await writeFile(path, fixed);
+      }
+    }
+  }
+  await fixCss(output);
+  /* Круг 31 / приёмка превью: пути к картинкам, зашитые В JS, не переписывались — префикс
+     ставился только в HTML и CSS. Заставка собирает адреса в рантайме
+     (`/img/vy-intro-poster.webp`, `/img/vy-mark-light.svg`), и на Pages оба уходили в 404:
+     постер-заглушка не показывалась, а текстура знака не загружалась, то есть заставка
+     рисовалась БЕЗ эмблемы. Сервер в песочнице отдаёт корень, поэтому локальные прогоны
+     и скриншоты этого не видели — ловится только на публикации.
+     Ограничиваемся каталогами ассетов: `/api/...` префиксовать нельзя — на статике API нет,
+     и путь к нему ничего не меняет. */
+  async function fixJs(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await fixJs(path);
+      else if (entry.name.endsWith('.js')) {
+        const js = await readFile(path, 'utf8');
+        const fixed = js.replace(/(["'`])\/(img|fonts|audio|video|media)\//g, `$1${base}/$2/`);
+        if (fixed !== js) await writeFile(path, fixed);
+      }
+    }
+  }
+  await fixJs(output);
+  /* круг 26 (задание №30): SSR отдаёт 301 со старых слагов услуг (svc-aliases.ts);
+     на статическом хостинге 301 нет, поэтому публикуем meta-refresh-файлы тех же пар */
+  const ALIASES = {
+    '/services/remont-shin': '/services/balansirovka',
+    '/services/hodovaya-tormoza': '/services/podveska',
+    '/services/elektrika': '/services/diagnostika',
+  };
+  for (const [from, to] of Object.entries(ALIASES)) {
+    const dir = join(output, ...from.split('/').filter(Boolean));
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'index.html'),
+      `<!doctype html><html lang="ru"><head><meta charset="utf-8">`
+      + `<meta http-equiv="refresh" content="0; url=${base}${to}">`
+      + `<link rel="canonical" href="${publicOrigin}${base}${to}">`
+      + `<meta name="robots" content="noindex, follow"><title>Переезд страницы: ${to}</title></head>`
+      + `<body data-preview="true"><p>Страница переехала: <a href="${base}${to}">${to}</a></p></body></html>`);
+  }
+  /* круг 29 (M1): sitemap.xml не попадал в pages-dist, а в SSR-версии адреса шли
+     без публичного префикса — canonical на странице и <loc> расходились.
+     Кладём sitemap в публикацию с тем же префиксом, что и HTML. */
+  const sitemapPublic = sitemap.replace(/<loc>([^<]+)<\/loc>/g, (_, u) => {
+    const path = new URL(u).pathname;
+    return `<loc>${publicOrigin}${base}${path === '/' ? '/' : path}</loc>`;
+  });
+  await writeFile(join(output, 'sitemap.xml'), sitemapPublic);
+  /* Круг 89 (§5): ленты нет в sitemap, поэтому статический экспорт её бы не забрал —
+     на Pages /news/rss.xml отдавал бы 404, хотя <link rel="alternate"> стоит в <head>.
+     Тянем с сервера и переписываем абсолютные адреса на публичные (с префиксом). */
+  try {
+    const rss = await (await fetch(`${origin}/news/rss.xml`)).text();
+    const rssPublic = rss.replace(
+      /(<link>|<guid isPermaLink="true">|<atom:link href=")([^<"]+)/g,
+      (_, open, url) => `${open}${toPublicUrl(url)}`,
+    );
+    await mkdir(join(output, 'news'), { recursive: true });
+    await writeFile(join(output, 'news', 'rss.xml'), rssPublic);
+  } catch (e) {
+    throw new Error(`RSS не собран: ${e.message}`);
+  }
+
+  await writeFile(join(output, '.nojekyll'), '');
+  await writeFile(join(output, 'robots.txt'), robotsTxt({ publicOrigin, base }));
+  if (cnameHost) await writeFile(join(output, 'CNAME'), `${cnameHost}\n`);
+  await writePriceRefs({ siteRoot: root, outFile: join(output, 'manage/price-refs.json') });
+  console.log(`Exported ${routes.length} public pages + 404 to ${output}`);
+} finally {
+  if (server) {
+    server.kill();
+    await new Promise((r) => server.once('exit', r));
+  }
+  await rm(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+}
+}

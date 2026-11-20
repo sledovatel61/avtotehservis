@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "updated_at": "2026-11-19T17:24:10.093Z",
+  "cases": [
+    {
+      "slug": "remont-stupitsy",
+      "title": "Ремонт ступицы",
+      "description": "Отремонтировали ступицу, тест",
+      "service_slug": "podveska",
+      "mode": "single",
+      "status": "published",
+      "published_at": "2026-11-18",
+      "sort": 10,
+      "cover": {
+        "base": "7qhrqc-single",
+        "alt": "Ступица",
+        "w": 960,
+        "h": 720,
+        "ext": "webp"
+      },
+      "before": [],
+      "after": [],
+      "photos": [
+        {
+          "base": "7qhrqc-single",
+          "alt": "Ступица",
+          "w": 960,
+          "h": 720,
+          "ext": "webp"
+        }
+      ]
+    },
+    {
+      "slug": "zamena-rychaga",
+      "title": "Замена рычага",
+      "description": "Замена рычага тест",
+      "service_slug": "podveska",
+      "mode": "before_after",
+      "status": "published",
+      "published_at": "2026-11-19",
+      "sort": 20,
+      "cover": {
+        "base": "7q5bz3-before",
+        "alt": "старый рычаг",
+        "w": 356,
+        "h": 267,
+        "ext": "webp"
+      },
+      "before": [
+        {
+          "base": "7q5bz3-before",
+          "alt": "старый рычаг",
+          "w": 356,
+          "h": 267,
+          "ext": "webp"
+        }
+      ],
+      "after": [
+        {
+          "base": "khqe1k-after",
+          "alt": "новый рычаг",
+          "w": 356,
+          "h": 267,
+          "ext": "webp"
+        }
+      ],
+      "photos": []
+    },
+    {
+      "slug": "zamena-tsepi-grm-i-masl-nasosa-wv-passat-cc-1-8-t",
+      "title": "Замена цепи ГРМ и масл. насоса WV Passat CC 1.8 т",
+      "description": "Замена комплекта грм, цепи 3шт., натяжители, успокоители.",
+      "service_slug": "grm-sceplenie",
+      "mode": "single",
+      "status": "published",
+      "published_at": "2026-11-19",
+      "sort": 30,
+      "cover": {
+        "base": "suhodf-single",
+        "alt": "грм",
+        "w": 1600,
+        "h": 1200,
+        "ext": "webp"
+      },
+      "before": [],
+      "after": [],
+      "photos": [
+        {
+          "base": "m2cgnk-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        },
+        {
+          "base": "irgti3-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        },
+        {
+          "base": "zjeqj8-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        },
+        {
+          "base": "ncz9ne-single",
+          "alt": "грм",
+          "w": 1600,
+          "h": 1200,
+          "ext": "webp"
+        },
+        {
+          "base": "e1wlab-single",
+          "alt": "грм",
+          "w": 1600,
+          "h": 1200,
+          "ext": "webp"
+        },
+        {
+          "base": "suhodf-single",
+          "alt": "грм",
+          "w": 1600,
+          "h": 1200,
+          "ext": "webp"
+        },
+        {
+          "base": "slk48w-single",
+          "alt": "грм",
+          "w": 1320,
+          "h": 990,
+          "ext": "webp"
+        }
+      ]
+    }
+  ]
+}

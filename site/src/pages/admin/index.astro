@@ -3,27 +3,39 @@ import Admin from '../../layouts/Admin.astro';
 import { db } from '../../server/db.ts';
 import { listAudit } from '../../server/admin-auth.ts';
 import { fmtDateShort } from '../../server/format.ts';
+import { readPrices, dateRu, PricesError } from '../../server/prices-admin-store.ts';
 
 const cnt = (sql: string): number => (db().prepare(sql).get() as { c: number }).c;
 const newLeads = cnt(`SELECT COUNT(*) c FROM leads WHERE status='new'`);
 const deliveryFailed = cnt(`SELECT COUNT(*) c FROM outbox WHERE status='failed' AND attempts>=8`);
 const deliveryRetrying = cnt(`SELECT COUNT(*) c FROM outbox WHERE status='failed' AND attempts<8`);
-const draftCases = cnt(`SELECT COUNT(*) c FROM cases WHERE status='draft'`);
-const draftNews = cnt(`SELECT COUNT(*) c FROM news WHERE status='draft'`);
-const pendingReviews = cnt(`SELECT COUNT(*) c FROM reviews WHERE status='pending'`);
 const recentLeads = db().prepare(`SELECT id, ticket, kind, name, phone, created_at, status FROM leads ORDER BY id DESC LIMIT 6`).all() as
   { id: number; ticket: string; kind: string; name: string; phone: string; created_at: string; status: string }[];
 const audit = listAudit(8);
+/* Плитка «Цены»: сколько позиций в прайсе и когда цифры подтверждены. Если файл цен
+   не прочитан, плитка показывает это, а не роняет дашборд. */
+let pricesInfo: { count: number; date: string } | null = null;
+try {
+  const p = readPrices();
+  pricesInfo = {
+    count: p.groups.reduce((n, g) => n + g.items.length, 0) + p.tyres.set.length + p.tyres.repair.length + p.tyres.extra.length + p.voyah.length,
+    date: dateRu(p.updated_at),
+  };
+} catch (e) {
+  if (!(e instanceof PricesError)) throw e;
+}
 ---
 <Admin section="dash" title="Дашборд">
   <h1 class="adm-h1">Дашборд</h1>
+  <p>Работы и фото публикуются в <a href="/manage/#photos">/manage/ → «Фото работ»</a>. Отзывы — в <a href="/manage/#reviews">/manage/ → «Отзывы»</a>. Статьи — в мастерской: <a href="/manage/#news">/manage/ → «Полезное»</a>.</p>
   <div class="adm-grid">
     <a class="adm-stat" href="/admin/leads?status=new"><div class="n">{newLeads}</div><div class="t">Новых заявок</div></a>
     <a class="adm-stat" href="/admin/leads?delivery=failed"><div class="n">{deliveryFailed}</div><div class="t">Доставка не удалась (≥8 попыток)</div></a>
     <div class="adm-stat"><div class="n">{deliveryRetrying}</div><div class="t">Доставка в ретраях</div></div>
-    <a class="adm-stat" href="/admin/cases"><div class="n">{draftCases}</div><div class="t">Черновиков кейсов</div></a>
-    <a class="adm-stat" href="/admin/news"><div class="n">{draftNews}</div><div class="t">Черновиков новостей</div></a>
-    <a class="adm-stat" href="/admin/reviews"><div class="n">{pendingReviews}</div><div class="t">Отзывов на модерации</div></a>
+    <a class="adm-stat" href="/admin/prices">
+      <div class="n">{pricesInfo ? pricesInfo.count : '—'}</div>
+      <div class="t">Цен и услуг{pricesInfo ? ` · подтверждены ${pricesInfo.date}` : ' · файл цен не прочитан'}</div>
+    </a>
   </div>
 
   <div class="adm-card u-mt24">

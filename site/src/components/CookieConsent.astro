@@ -1,0 +1,34 @@
+---
+/**
+ * Панель согласия на cookies (круг 89, задание `prompts/133`).
+ *
+ * Разметка статична и лежит в `hidden`: счётчиков в ней нет вовсе — их создаёт
+ * `src/client/consent.ts` после «Принять все». Без JS панель не появляется
+ * (нет согласия — нет обработки), а формы и запись работают как обычно.
+ */
+---
+<div
+  class="cookie-panel"
+  data-consent
+  hidden
+  role="region"
+  aria-label="Согласие на cookies"
+>
+  <div class="cookie-panel__in container">
+    <div class="cookie-panel__text">
+      <b class="cookie-panel__title">Cookies</b>
+      <p class="cookie-panel__lead">
+        Сайт использует необходимые cookies, чтобы работали формы и защита от спама.
+        С вашего согласия мы подключаем Яндекс.Метрику и Google Analytics — чтобы понимать,
+        какие страницы полезны. Отказ ничего не ломает.
+      </p>
+      <p class="cookie-panel__note" data-consent-note hidden>Изменения применятся после обновления страницы.</p>
+    </div>
+    <div class="cookie-panel__actions">
+      <button class="btn btn--copper btn--sm" type="button" data-consent-accept>Принять все</button>
+      <button class="btn btn--ghost btn--sm" type="button" data-consent-necessary>Только необходимые</button>
+      <button class="btn btn--ghost btn--sm" type="button" data-consent-revoke hidden>Отозвать согласие</button>
+      <a class="cookie-panel__link" href="/privacy#cookies">Подробнее — в политике</a>
+    </div>
+  </div>
+</div>
