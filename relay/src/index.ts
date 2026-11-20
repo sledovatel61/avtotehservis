@@ -23,6 +23,7 @@ import { validateLead, MIN_FILL_MS, type LeadPayload } from './validate.ts';
 import { getSlots, isValidSlotDate } from './slots.ts';
 import { composeTelegram, sendTelegram, sendPhotos } from './telegram.ts';
 import { emailProvider, sendEmail, DEFAULT_EMAIL_TO } from './email.ts';
+import { mailStatus, markMailOk, markMailFailed } from './mail-status.ts';
 import { handleReview, reviewsHealth, type ReviewsStore } from './reviews.ts';
 import { allowedOrigins } from './origins.ts';
 
@@ -256,10 +257,13 @@ async function handleLead(req: Request, env: Env): Promise<Response> {
           address: env.SITE_ADDRESS ?? 'Ростов-на-Дону, ул. Портовая, 439',
         },
       });
+      await markMailOk(env);
       return null;
     } catch (e) {
       const msg = String((e as Error)?.message ?? e).slice(0, 120);
       console.error('[leads] email failed', msg);
+      /* Причину видно в /health: emailLastError. */
+      await markMailFailed(env, msg);
       return msg;
     }
   })();
@@ -308,6 +312,8 @@ export default {
 
     try {
       if (req.method === 'GET' && url.pathname === '/health') {
+        const mail = emailProvider(env);
+        const mailLog = mail ? await mailStatus(env) : {};
         return withCors(json({
           ok: true,
           service: 'ats-leads',
@@ -317,6 +323,13 @@ export default {
           emailTo: emailProvider(env) ? (env.EMAIL_TO ?? DEFAULT_EMAIL_TO) : undefined,
           /* Версия согласия, которую принимает воркер. Смоук и владелец видят её
              здесь и не гадают, почему форма получает 400 consent_version. */
+          /* Последняя попытка письма: код ошибки и время. Помогает понять, почему
+             заявка пришла в Telegram, а письма нет, не открывая логи Cloudflare. */
+          ...(mail ? {
+            emailLastOk: mailLog.lastOk,
+            emailLastError: mailLog.lastError,
+            emailLastErrorAt: mailLog.lastErrorAt,
+          } : {}),
           consentVersion: env.CONSENT_VERSION ?? null,
           kv: Boolean(env.ATS_KV),
           /* Приём отзывов: по `reviews` смоук понимает, что сборка доехала,

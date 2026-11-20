@@ -532,6 +532,68 @@ test('оба канала упали → 502 delivery', async () => {
   } finally { globalThis.fetch = baseFetch; }
 });
 
+/* Небольшой KV-заглушка: проверяем, что причина ошибки письма переживает запрос
+   и видна в /health, а не только в логах Cloudflare. */
+function fakeKv(): { store: Map<string, string>; get(k: string): Promise<string | null>; put(k: string, v: string): Promise<void> } {
+  const store = new Map<string, string>();
+  return {
+    store,
+    get: async (k) => store.get(k) ?? null,
+    put: async (k, v) => { store.set(k, v); },
+  };
+}
+
+test('/health: телеграм дошёл, письмо упало — причина видна как emailLastError', async () => {
+  const kv = fakeKv();
+  const mail = env({ RESEND_API_KEY: 'r', ATS_KV: kv as never });
+  mockFetch({ 'api.resend.com': 403 });
+  try {
+    const res = await worker.fetch(new Request('https://relay.test/leads', {
+      method: 'POST',
+      headers: { origin: 'https://sledovatel61.github.io', 'cf-connecting-ip': '10.30.0.1' },
+      body: formWith([]),
+    }), mail);
+    assert.equal(res.status, 201, 'заявка принята: Telegram сработал');
+
+    const health = await (await worker.fetch(new Request('https://relay.test/health'), mail)).json() as {
+      email: string; emailLastError?: string; emailLastErrorAt?: string; emailLastOk?: string;
+    };
+    assert.equal(health.email, 'resend');
+    assert.equal(health.emailLastError, 'email_resend_http:403', 'код ошибки, без данных клиента');
+    assert.ok(health.emailLastErrorAt, 'время ошибки');
+    assert.equal(health.emailLastOk, undefined, 'успеха ещё не было');
+    assert.ok(!`${health.emailLastError}${health.emailLastErrorAt}`.includes('@'), 'в коде ошибки нет адресов почты');
+  } finally { globalThis.fetch = baseFetch; }
+});
+
+test('/health: после успешного письма прошлая ошибка снимается', async () => {
+  const kv = fakeKv();
+  const mail = env({ RESEND_API_KEY: 'r', ATS_KV: kv as never });
+  mockFetch({ 'api.resend.com': 500 });
+  try {
+    await worker.fetch(new Request('https://relay.test/leads', {
+      method: 'POST',
+      headers: { origin: 'https://sledovatel61.github.io', 'cf-connecting-ip': '10.30.0.2' },
+      body: formWith([]),
+    }), mail);
+  } finally { globalThis.fetch = baseFetch; }
+  const sent = mockFetch({ 'api.resend.com': 200 });
+  try {
+    const res = await worker.fetch(new Request('https://relay.test/leads', {
+      method: 'POST',
+      headers: { origin: 'https://sledovatel61.github.io', 'cf-connecting-ip': '10.30.0.3' },
+      body: formWith([]),
+    }), mail);
+    assert.equal(res.status, 201);
+    assert.ok(sent.urls.some((u) => u.includes('api.resend.com')), 'письмо ушло');
+  } finally { globalThis.fetch = baseFetch; }
+  const health = await (await worker.fetch(new Request('https://relay.test/health'), mail)).json() as {
+    emailLastError?: string; emailLastOk?: string;
+  };
+  assert.equal(health.emailLastError, undefined, 'ошибка снята успехом');
+  assert.ok(health.emailLastOk, 'время последнего письма');
+});
+
 test('/health показывает канал почты и адрес получателя', async () => {
   const r1 = await worker.fetch(new Request('https://relay.test/health'), env());
   const j1 = await r1.json() as { email: string | null };

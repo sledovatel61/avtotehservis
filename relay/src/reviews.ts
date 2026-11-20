@@ -26,6 +26,7 @@ import {
 } from './validate.ts';
 import { composeReviewTelegram, sendTelegram } from './telegram.ts';
 import { emailProvider, sendReviewEmail } from './email.ts';
+import { markMailOk, markMailFailed } from './mail-status.ts';
 import { originAllowed, type OriginsEnv } from './origins.ts';
 
 /** Тело отзыва: больше 8 КБ — это уже не отзыв, а попытка что-то залить. */
@@ -224,10 +225,13 @@ export async function handleReview(
     if (!emailOn) return 'email_not_configured';
     try {
       await sendReviewEmail({ review, env, opts });
+      await markMailOk(env);
       return null;
     } catch (e) {
       const msg = String((e as Error)?.message ?? e).slice(0, 120);
       console.error('[reviews] email failed', id, msg);
+      /* Причину видно в /health — в дашборд Cloudflare заглядывать не нужно. */
+      await markMailFailed(env, msg);
       return msg;
     }
   })();
