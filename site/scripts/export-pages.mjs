@@ -76,6 +76,17 @@ try {
   const routes = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
   if (!routes.includes('/') || routes.length < 8) throw new Error('Incomplete sitemap');
   const prefix = (value) => value.startsWith('/') && !value.startsWith('//') ? base + value : value;
+  /* Круг 89: адрес своего сайта в публикации = публичный origin + префикс репозитория.
+     Нужен и обложкам статей (og:image), и JSON-LD. Трогаем только http(s) на нашем хосте —
+     почта, телефоны, внешние ссылки (карты, мессенджеры) остаются как есть. */
+  const siteHost = new URL(publicOrigin).host;
+  const toPublicUrl = (value) => {
+    if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return value;
+    let u;
+    try { u = new URL(value); } catch { return value; }
+    if (u.host !== siteHost) return value;
+    return publicOrigin + base + u.pathname + u.search + u.hash;
+  };
   for (const route of [...new Set([...routes, '/404'])]) {
     const response = await fetch(origin + route);
     if (!response.ok && route !== '/404') throw new Error(`Failed page: ${route} (${response.status})`);
@@ -88,7 +99,25 @@ try {
     doc.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove());
     const robots = doc.createElement('meta');
     robots.name = 'robots'; robots.content = 'noindex, nofollow'; doc.head.append(robots);
-    doc.querySelectorAll('script[type="application/ld+json"]').forEach((el) => el.remove());
+    /* Круг 89: раньше ld+json вырезался целиком — на опубликованном сайте вообще не было
+       структурированных данных (BlogPosting, BreadcrumbList, FAQPage). Теперь оставляем и
+       переписываем абсолютные адреса на адрес публикации (с префиксом репозитория), иначе
+       image/@id указывали бы в корень домена и schema.org получала бы битые ссылки. */
+    const fixLd = (node) => {
+      if (typeof node === 'string') return toPublicUrl(node);
+      if (Array.isArray(node)) return node.map(fixLd);
+      if (node && typeof node === 'object') {
+        const out = {};
+        for (const [k, v] of Object.entries(node)) out[k] = fixLd(v);
+        return out;
+      }
+      return node;
+    };
+    for (const el of doc.querySelectorAll('script[type="application/ld+json"]')) {
+      try {
+        el.textContent = JSON.stringify(fixLd(JSON.parse(el.textContent ?? '')));
+      } catch { /* не разобрали — оставляем как есть, страница важнее разметки */ }
+    }
     /* data-img / data-cover — адреса картинок для лайтбокса и карточек: их читает JS уже в
        браузере, поэтому без префикса они уходили в /img/... корня домена и на Pages давали
        404. Так «увеличенный» сертификат открывался пустой рамкой с alt вместо картинки. */
@@ -104,7 +133,7 @@ try {
       el.setAttribute(el.tagName === 'LINK' ? 'href' : 'content', publicOrigin + base + (route === '/' ? '/' : route));
     }
     for (const el of doc.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"]')) {
-      el.setAttribute('content', publicOrigin + base + '/img/og.png');
+      el.setAttribute('content', toPublicUrl(el.getAttribute('content') ?? ''));
     }
     doc.querySelectorAll('a[href*="/admin"]').forEach((el) => el.remove());
     /* Файловые поля гасим только в демо: с прослойкой фото уходят вместе с заявкой.
@@ -191,6 +220,20 @@ try {
     return `<loc>${publicOrigin}${base}${path === '/' ? '/' : path}</loc>`;
   });
   await writeFile(join(output, 'sitemap.xml'), sitemapPublic);
+  /* Круг 89 (§5): ленты нет в sitemap, поэтому статический экспорт её бы не забрал —
+     на Pages /news/rss.xml отдавал бы 404, хотя <link rel="alternate"> стоит в <head>.
+     Тянем с сервера и переписываем абсолютные адреса на публичные (с префиксом). */
+  try {
+    const rss = await (await fetch(`${origin}/news/rss.xml`)).text();
+    const rssPublic = rss.replace(
+      /(<link>|<guid isPermaLink="true">|<atom:link href=")([^<"]+)/g,
+      (_, open, url) => `${open}${toPublicUrl(url)}`,
+    );
+    await mkdir(join(output, 'news'), { recursive: true });
+    await writeFile(join(output, 'news', 'rss.xml'), rssPublic);
+  } catch (e) {
+    throw new Error(`RSS не собран: ${e.message}`);
+  }
 
   await writeFile(join(output, '.nojekyll'), '');
   await writeFile(join(output, 'robots.txt'), robotsTxt({ publicOrigin, base }));

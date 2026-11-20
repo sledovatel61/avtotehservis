@@ -49,6 +49,11 @@ jobs:
           PUBLIC_DEMO_REVIEWS: ${{ vars.PUBLIC_DEMO_REVIEWS || '1' }}
           PUBLIC_ORIGIN: ${{ vars.PUBLIC_ORIGIN }}
           PUBLIC_BASE_PATH: ${{ vars.PUBLIC_BASE_PATH }}
+          # Круг 89 (§6): подтверждение прав в поисковиках. Пустая переменная репозитория —
+          # тега в <head> нет вовсе (не пустой content=""). Значения вписывает владелец
+          # в Settings → Secrets and variables → Actions → Variables.
+          PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ vars.PUBLIC_GOOGLE_SITE_VERIFICATION }}
+          PUBLIC_YANDEX_VERIFICATION: ${{ vars.PUBLIC_YANDEX_VERIFICATION }}
       # Круг 86: если владелец удалил позицию, на которую ссылаются тексты, сборка
       # падает и сайт остаётся на предыдущей версии — лучше так, чем сырой {{price:…}} в прайсе.
       - run: node scripts/check-prices-sync.mjs --refs-only
