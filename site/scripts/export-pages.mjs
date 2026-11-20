@@ -10,21 +10,56 @@ import { writePriceRefs } from './lib/price-refs.mjs';
 import { DEFAULT_PUBLIC_ORIGIN, readPublicPath } from './lib/public-path.mjs';
 
 /**
+ * Общий предикат режима сборки (круг 89, задание `prompts/135`): одна и та же
+ * проверка определяет и содержимое robots.txt, и судьбу `<meta name="robots">`
+ * при статическом экспорте. Режим нельзя угадывать по содержимому страниц:
+ * - Превью: publicOrigin пустой или равен дефолтному github.io, либо base !== '/'
+ *   (включая домен + префикс — это ошибка конфигурации, а не боевой режим);
+ * - Боевой: publicOrigin задан, не дефолтный, и base — корень ('/' или '').
+ *
+ * @param {{ publicOrigin?: string; base?: string }} [opts]
+ * @returns {boolean}
+ */
+export function isPublicProduction({ publicOrigin, base } = {}) {
+  const origin = typeof publicOrigin === 'string' ? publicOrigin.trim().replace(/\/+$/, '') : '';
+  const isCustomOrigin = origin !== '' && origin !== DEFAULT_PUBLIC_ORIGIN;
+  const isRootBase = base === '/' || base === '';
+  return isCustomOrigin && isRootBase;
+}
+
+/**
  * Генерирует содержимое robots.txt по режиму сборки:
- * - Превью (publicOrigin дефолтный или base !== '/' и не корень ''): Disallow: /
- * - Боевой (publicOrigin задан и не дефолтный и base === '/' | ''): Allow: /, Disallow: /manage, Sitemap
+ * - Превью (не `isPublicProduction`): Disallow: /
+ * - Боевой (`isPublicProduction`): Allow: /, Disallow: /manage, Sitemap
  *
  * @param {{ publicOrigin?: string; base?: string }} [opts]
  * @returns {string}
  */
 export function robotsTxt({ publicOrigin, base } = {}) {
-  const origin = typeof publicOrigin === 'string' ? publicOrigin.trim().replace(/\/+$/, '') : '';
-  const isCustomOrigin = origin !== '' && origin !== DEFAULT_PUBLIC_ORIGIN;
-  const isRootBase = base === '/' || base === '';
-  if (!isCustomOrigin || !isRootBase) {
+  if (!isPublicProduction({ publicOrigin, base })) {
     return 'User-agent: *\nDisallow: /\n';
   }
+  const origin = typeof publicOrigin === 'string' ? publicOrigin.trim().replace(/\/+$/, '') : '';
   return `User-agent: *\nAllow: /\nDisallow: /manage\n\nSitemap: ${origin}/sitemap.xml\n`;
+}
+
+/**
+ * Применяет политику `<meta name="robots">` к экспортируемой странице:
+ * - Боевой режим (`production: true`): мета-теги не трогаем — остаётся то, что
+ *   отдал сервер (у служебных страниц свой `noindex`, у публичных тега нет).
+ * - Превью (`production: false`): удаляем все исходные и ставим ровно один
+ *   `noindex, nofollow`, чтобы превью не попало в поиск.
+ *
+ * @param {Document} doc
+ * @param {{ production?: boolean }} [opts]
+ */
+export function applyRobotsMeta(doc, { production } = {}) {
+  if (production) return;
+  doc.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove());
+  const robots = doc.createElement('meta');
+  robots.name = 'robots';
+  robots.content = 'noindex, nofollow';
+  doc.head.append(robots);
 }
 
 const isMain =
@@ -96,9 +131,12 @@ try {
     /* Задание 80-2 §5: статика на Pages — витрина. Клиент (wizard.ts, contacts-form.ts)
        по этому признаку показывает «Демо-версия: заявка не отправлена» и не делает fetch. */
     doc.body.dataset.demo = '1';
-    doc.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove());
-    const robots = doc.createElement('meta');
-    robots.name = 'robots'; robots.content = 'noindex, nofollow'; doc.head.append(robots);
+    /* Круг 89 (135): раньше здесь каждой странице безусловно ставился
+       `noindex, nofollow` — из-за этого боевой сайт на своём домене был закрыт
+       от индексации на уровне страниц при открытом robots.txt. Теперь режим
+       определяется теми же переменными, что и robotsTxt: на боевой сборке
+       мета-теги не подменяем, на превью — закрываем всё. */
+    applyRobotsMeta(doc, { production: isPublicProduction({ publicOrigin, base }) });
     /* Круг 89: раньше ld+json вырезался целиком — на опубликованном сайте вообще не было
        структурированных данных (BlogPosting, BreadcrumbList, FAQPage). Теперь оставляем и
        переписываем абсолютные адреса на адрес публикации (с префиксом репозитория), иначе
