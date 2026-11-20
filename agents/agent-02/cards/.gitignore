@@ -1,0 +1,4 @@
+# рабочие каталоги сборки — в репозиторий не идут
+node_modules/
+.cache/
+.concepts.json
