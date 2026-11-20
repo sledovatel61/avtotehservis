@@ -130,12 +130,25 @@ jobs:
           else
             echo "::warning::Ключа почты нет (BREVO_API_KEY / RESEND_API_KEY) — копии заявок на почту не уходят"
           fi
+          # Адрес отправителя и получателя — только если заданы. После подтверждения
+          # домена в Resend сюда кладут EMAIL_FROM вида «АвтоТехСервис <no-reply@ats-rostov.ru>»:
+          # без домена Resend разрешает писать лишь самому себе с onboarding@resend.dev.
+          if [ -n "$EMAIL_FROM" ]; then
+            printf '%s' "$EMAIL_FROM" | npx wrangler secret put EMAIL_FROM
+            echo "Почта: отправитель $EMAIL_FROM"
+          fi
+          if [ -n "$EMAIL_TO" ]; then
+            printf '%s' "$EMAIL_TO" | npx wrangler secret put EMAIL_TO
+            echo "Почта: получатель $EMAIL_TO"
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
 
       - name: Health check
         run: |
