@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 // @ts-ignore статический модуль
-import { buildCard, formatDayMonth, mountLiveReviews, pickNew, plural, reviewKey, updateSummary } from '../src/client/reviews-live.ts';
+import { buildCard, formatDayMonth, mountHomeReviews, mountLiveReviews, pickNew, plural, reviewKey, updateHomeRates, updateSummary } from '../src/client/reviews-live.ts';
 
 const NOW = new Date('2026-11-20T12:00:00Z');
 
@@ -143,5 +143,69 @@ describe('живые отзывы: подключение к странице', 
       },
     });
     assert.match(calls[0], /^https:\/\/relay\.test\/reviews\?t=\d+$/);
+  });
+});
+
+const HOME_RATES = `
+  <div class="rev-rates" data-reviews-rates>
+    <div class="rev-rate rev-rate--site"><b data-reviews-avg>5,0</b><span>из 5 · <span data-reviews-count>9</span> отзывов на сайте</span></div>
+  </div>`;
+
+const HOME = (cards = 6) => `${HOME_RATES}
+  <div class="carousel" data-carousel><div class="carousel-win"><div class="carousel-track" data-home-reviews-track>
+    ${Array.from({ length: cards }).map((_, i) => CARD(`Клиент ${i + 1}`, `Отзыв номер ${i + 1}, достаточно длинный.`, 5)).join('')}
+  </div></div></div>`;
+
+describe('главная: превью отзывов', () => {
+  it('12. свежий отзыв встаёт первым, плашки считают 9 + 1 = 10', async () => {
+    const doc = page(HOME());
+    const track = doc.querySelector('[data-home-reviews-track]')!;
+    assert.equal(track.children.length, 6);
+    const added = await mountHomeReviews(doc, {
+      base: 'https://relay.test',
+      fetcher: async () => ({ ok: true, status: 200, json: async () => ({ items: [live({ rating: 5 })] }) } as unknown as Response),
+    });
+    assert.equal(added, 1);
+    assert.equal(track.children.length, 7);
+    assert.equal(track.firstElementChild?.querySelector('.rev-who b')?.textContent, 'Ольга В.');
+    assert.equal(doc.querySelector('[data-reviews-count]')?.textContent, '10');
+    assert.equal(doc.querySelector('[data-reviews-avg]')?.textContent, '5,0');
+  });
+
+  it('13. повторный заход не считает живые отзывы дважды', async () => {
+    const doc = page(HOME());
+    const fetcher = async () => ({ ok: true, status: 200, json: async () => ({ items: [live({ rating: 4 })] }) } as unknown as Response);
+    await mountHomeReviews(doc, { base: 'https://relay.test', fetcher });
+    await mountHomeReviews(doc, { base: 'https://relay.test', fetcher });
+    assert.equal(doc.querySelector('[data-reviews-count]')?.textContent, '10');
+    /* (9 × 5,0 + 4) / 10 = 4,9 */
+    assert.equal(doc.querySelector('[data-reviews-avg]')?.textContent, '4,9');
+  });
+
+  it('14. заглушка «читайте на Яндексе» уходит, когда есть живые отзывы', async () => {
+    const doc = page(`${HOME_RATES}<div class="carousel-track" data-home-reviews-track>
+      <article class="rev-card rev-card--yandex"><div class="rev-text"><p>Читайте отзывы на Яндекс.Картах</p></div></article>
+    </div>`);
+    const added = await mountHomeReviews(doc, {
+      base: 'https://relay.test',
+      fetcher: async () => ({ ok: true, status: 200, json: async () => ({ items: [live()] }) } as unknown as Response),
+    });
+    assert.equal(added, 1);
+    assert.equal(doc.querySelector('.rev-card--yandex'), null);
+  });
+
+  it('15. нет блока на странице — нет и запроса', async () => {
+    const doc = page('<div class="rev-grid"></div>');
+    let called = 0;
+    const added = await mountHomeReviews(doc, { base: 'https://relay.test', fetcher: async () => { called += 1; return { ok: true } as Response; } });
+    assert.equal(added, 0);
+    assert.equal(called, 0);
+  });
+
+  it('16. updateHomeRates без плашек не падает', () => {
+    const doc = page(HOME());
+    doc.querySelector('[data-reviews-rates]')!.remove();
+    updateHomeRates(doc, doc.querySelector('[data-home-reviews-track]')!);
+    assert.equal(doc.querySelector('[data-reviews-avg]'), null);
   });
 });

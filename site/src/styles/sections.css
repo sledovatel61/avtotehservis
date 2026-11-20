@@ -295,6 +295,35 @@
 .rev-who span{font-size:13px;color:var(--mist)}
 .demo-chip{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);border:1px solid rgba(217,160,91,.4);border-radius:999px;padding:2px 9px;margin-left:auto;align-self:center;flex-shrink:0}
 /* ---------- Страница отзывов (/otzyvy, круг 87) ---------- */
+/* Шапка раздела отзывов на главной: слева заголовок, справа две плашки рейтингов.
+   Ширину не ограничиваем (в отличие от обычного .sec-head) — иначе плашки падают вниз. */
+.rev-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;max-width:none;flex-wrap:wrap}
+.rev-head>div:first-child{flex:1 1 320px;min-width:0}
+.rev-head-lead{margin:12px 0 0;max-width:52ch;color:var(--mist);font-size:15.5px;line-height:1.5}
+.rev-rates{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:2px}
+.rev-rate{
+  display:flex;flex-direction:column;gap:4px;min-width:168px;
+  border:1px solid var(--line-soft);border-radius:var(--r-sm);
+  background:rgba(16,32,26,.55);padding:14px 18px;
+  text-decoration:none;color:inherit;
+  transition:border-color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+}
+.rev-rate b{font-family:var(--font-display);font-weight:600;font-size:32px;line-height:1;color:var(--ivory)}
+.rev-rate span{font-size:12.5px;line-height:1.35;color:var(--mist)}
+.rev-rate--site{border-color:rgba(224,169,109,.4);background:linear-gradient(160deg,rgba(200,127,69,.12),rgba(16,32,26,.6))}
+.rev-rate--site b{color:var(--brass)}
+.rev-rate--yandex{border-color:rgba(255,80,80,.3)}
+.rev-rate--yandex b{color:#ff9a9a}
+.rev-rate:hover{border-color:rgba(224,169,109,.6);color:inherit}
+.rev-rate--yandex:hover{border-color:rgba(255,80,80,.55)}
+@media (max-width:900px){
+  .rev-rates{width:100%}
+  .rev-rate{flex:1 1 0;min-width:0}
+}
+@media (max-width:480px){
+  .rev-rate{padding:12px 14px}
+  .rev-rate b{font-size:26px}
+}
 /* Рейтинг на Яндекс.Картах: отдельная карточка над отзывами сайта. */
 .rev-yandex{
   display:flex;flex-wrap:wrap;align-items:center;gap:18px 24px;

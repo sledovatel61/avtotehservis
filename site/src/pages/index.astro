@@ -2,8 +2,11 @@
 import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import { listCatalogServices, listHomeServices } from '../server/services.ts';
-import { listPublishedCases, listPublishedReviews } from '../server/content.ts';
-import { fmtDateRu, plural } from '../server/format.ts';
+import { listPublishedCases } from '../server/content.ts';
+/* Отзывы берём из того же файла, что и страница /otzyvy: в базе статической сборки
+   их нет, поэтому главная раньше показывала одну заглушку «читайте на Яндексе». */
+import { listPublishedSiteReviews, reviewsStats } from '../server/reviews-store.ts';
+import { plural } from '../server/format.ts';
 /* круг 78: витрина работ на главной — те же фото-обложки, что и на «О компании» (карта
    общая, см. ../server/case-covers.ts); раньше тут были шесть SVG-заглушек с бейджем
    «до / после». Круг 79 → задание 79-2: если владелец наполнил site/content/cases.json,
@@ -27,7 +30,20 @@ const cases = listPublishedCases(6);
 /* Реальные работы из файла. Пусто — витрина прежняя (сид-работы + иллюстрации). */
 const siteCases = listPublishedSiteCases(6);
 const realCases = siteCases.length > 0;
-const reviews = listPublishedReviews(8);
+const HOME_REVIEWS = 6;
+const allSiteReviews = listPublishedSiteReviews();
+const reviews = allSiteReviews.slice(0, HOME_REVIEWS);
+const reviewStats = reviewsStats(allSiteReviews);
+const reviewAvg = reviewStats.average === null ? '' : reviewStats.average.toFixed(1).replace('.', ',');
+/* Как на /otzyvy: «19 ноября», а если год не текущий — «19 ноября 2025». */
+const MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const nowYear = new Date().getFullYear();
+function dayMonth(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  const base = `${d.getUTCDate()} ${MONTHS_GEN[d.getUTCMonth()]}`;
+  return d.getUTCFullYear() === nowYear ? base : `${base} ${d.getUTCFullYear()}`;
+}
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -456,10 +472,21 @@ const jsonLd = {
 </section>
 <section class="sec sec--deep sec--narrow" aria-labelledby="rev-h">
   <div class="container">
-    <div class="sec-head reveal">
+    <div class="sec-head rev-head reveal">
       <div>
         <span class="eyebrow">Отзывы</span>
-        <h2 id="rev-h">Отзывы клиентов на Яндекс Картах</h2>
+        <h2 id="rev-h">Отзывы клиентов</h2>
+        <p class="rev-head-lead">Живые отзывы с сайта и оценки на Яндекс.Картах — без выдумок и переноса чужих текстов.</p>
+      </div>
+      <div class="rev-rates" data-reviews-rates>
+        <div class="rev-rate rev-rate--site">
+          <b data-reviews-avg>{reviewAvg || '—'}</b>
+          <span>из 5 · <span data-reviews-count>{reviewStats.count}</span> {plural(reviewStats.count, 'отзыв', 'отзыва', 'отзывов')} на сайте</span>
+        </div>
+        <a class="rev-rate rev-rate--yandex" href={S.ratings[0]?.url || S.map_link} target="_blank" rel="noopener noreferrer">
+          <b>{S.ratings[0]?.value ?? '4,6'}</b>
+          <span>из 5 · рейтинг на Яндекс.Картах</span>
+        </a>
       </div>
       {/* круг 26 (ревью A6, minor 5.6): кнопок нет, если листать нечего — при одной
           карточке-заглушке они были активны и ничего не делали (для скринридера — обман) */}
@@ -470,11 +497,11 @@ const jsonLd = {
         </div>
       )}
     </div>
-    <div class="carousel reveal" data-carousel data-live-word="Отзыв">
+    <div class="carousel reveal" data-carousel data-live-word="Отзыв" data-home-reviews>
       <div class="carousel-win">
-        <div class="carousel-track">
+        <div class="carousel-track" data-home-reviews-track>
           {reviews.length === 0 ? (
-            <article class="rev-card">
+            <article class="rev-card rev-card--yandex">
               <div class="rev-text"><p>Читайте отзывы на Яндекс.Картах — там же оценки и схема проезда.</p></div>
               <div class="rev-who">
                 <span class="rev-ava" aria-hidden="true">Я</span>
@@ -482,12 +509,16 @@ const jsonLd = {
               </div>
             </article>
           ) : reviews.map((r) => (
-            <article class="rev-card">
-              <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating ?? 5} из 5`}>{Array.from({ length: r.rating ?? 5 }).map(() => (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>))}</span>
+            <article class="rev-card rev-card--site">
+              <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating} из 5`}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class={i < r.rating ? 'is-on' : ''}><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>
+                ))}
+              </span>
               <div class="rev-text"><p>{r.text}</p></div>
               <div class="rev-who">
                 <span class="rev-ava" aria-hidden="true">{r.author.slice(0, 1)}</span>
-                <span><b>{r.author}</b><span>{[r.source, r.published_at ? fmtDateRu(r.published_at) : ''].filter(Boolean).join(' · ')}</span></span>
+                <span><b>{r.author}</b><span>сайт · {dayMonth(r.published_at)}</span></span>
               </div>
             </article>
           ))}
@@ -496,6 +527,7 @@ const jsonLd = {
     </div>
     {/* круг 87: с /otzyvy живёт форма отзыва и полный список с пометками «пример» */}
     <p class="rate-link-row"><a class="linklike" href="/otzyvy">Все отзывы и форма →</a></p>
+<script>import '../client/reviews-live.ts';</script>
     {S.ratings_visible && (
       <div class="rates">
         {S.ratings.map((r, ri) => (
@@ -506,7 +538,7 @@ const jsonLd = {
         ))}
       </div>
     )}
-    <p class="rate-note">Своих отзывов не пишем и чужие не переносим. Оценки и живые отзывы о сервисе — на Яндекс.Картах: там же карточка с адресом, часами и схемой проезда.</p>
+    <p class="rate-note">Отзывы оставляют посетители сайта — они появляются сразу. Своих отзывов не пишем и чужие не переносим: на Яндекс.Картах та же карточка сервиса с адресом, часами и схемой проезда.</p>
   </div>
 </section>
 <section class="sec" aria-labelledby="brands-h">
