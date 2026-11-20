@@ -25,11 +25,13 @@ function fmtDayMonth(iso: string): string {
   const base = `${d.getUTCDate()} ${MONTHS_GEN[d.getUTCMonth()]}`;
   return d.getUTCFullYear() === nowYear ? base : `${base} ${d.getUTCFullYear()}`;
 }
-/* Подпись источника — как в задании: «сайт · 12 ноября» / «Яндекс Карты · 12 ноября». */
+/* Подпись источника: «Сайт · 12 ноября» / «Яндекс Карты · 12 ноября».
+   Заглавная — как в карточках живых отзывов (buildCard), иначе на одной странице
+   две разные подписи. */
 function sourceLabel(source: string): string {
   if (source === 'yandex') return 'Яндекс Карты';
   if (source === '2gis') return '2ГИС';
-  return 'сайт';
+  return 'Сайт';
 }
 const siteUrl = (Astro.site?.href ?? 'http://localhost:4321/').replace(/\/$/, '');
 const jsonLd = {
