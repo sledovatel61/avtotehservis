@@ -103,7 +103,7 @@ test.beforeEach(() => {
  *  1. Успешный путь
  * ---------------------------------------------------------------- */
 
-test('валидный отзыв: 201 pending, Telegram вызван один раз с тем же текстом', async () => {
+test('валидный отзыв: 201 published, Telegram вызван один раз с тем же текстом', async () => {
   const text = uniqueText('Менял масло и колодки, мастер объяснил всё по делу');
   const body = review({ text });
 
@@ -111,7 +111,7 @@ test('валидный отзыв: 201 pending, Telegram вызван один �
   assert.equal(r.status, 201);
   const j = await r.json() as { ok: boolean; status: string; id: string };
   assert.equal(j.ok, true);
-  assert.equal(j.status, 'pending');
+  assert.equal(j.status, 'published');
   assert.match(j.id, /^[0-9a-f-]{36}$/);
 
   const tg = tgCalls();
@@ -211,7 +211,7 @@ test('honeypot: 201 и ноль вызовов Telegram и почты', async ()
   assert.equal(r.status, 201);
   const j = await r.json() as { ok: boolean; status: string; id: string };
   assert.equal(j.ok, true);
-  assert.equal(j.status, 'pending');
+  assert.equal(j.status, 'published');
   assert.ok(j.id, 'ловушка отвечает так же, как приём — по ответу её не отличить');
   assert.equal(calls.length, 0, 'ни одного сетевого вызова');
 });
@@ -287,7 +287,7 @@ test('четвёртый отзыв за 10 минут с одного IP → 42
  *  10. Доставка: частичный сбой и полный отказ
  * ---------------------------------------------------------------- */
 
-test('Telegram упал, почта прошла → 201; упали оба → 503', async () => {
+test('Telegram упал, почта прошла → 201; упали оба — отзыв всё равно на сайте', async () => {
   const mailEnv = env({ BREVO_API_KEY: 'brevo-test' });
 
   tgStatus = 500;
@@ -302,15 +302,17 @@ test('Telegram упал, почта прошла → 201; упали оба → 
   calls = [];
   mailStatus = 500;
   const down = await post(review({ text: uniqueText('Оба канала лежали') }), { env: mailEnv });
-  assert.equal(down.status, 503);
-  assert.deepEqual(await down.json(), { error: 'delivery_failed' });
+  /* Отзыв уже сохранён и опубликован: 503 показал бы человеку ошибку и он
+     отправил бы второй раз. Ошибка остаётся только там, где не сохранено ничего. */
+  assert.equal(down.status, 201);
+  assert.equal(((await down.json()) as { status?: string }).status, 'published');
 
   calls = [];
   mailStatus = 200;
   const noChannels = await post(review({ text: uniqueText('Ничего не настроено') }), {
     env: env({ BOT_TOKEN: undefined, TELEGRAM_CHAT_ID: undefined }),
   });
-  assert.equal(noChannels.status, 503, 'без единого канала приём бессмыслен — честный 503');
+  assert.equal(noChannels.status, 201, 'отзыв сохранён — значит, он опубликован, даже без уведомлений');
 });
 
 /* ---------------------------------------------------------------- *

@@ -245,7 +245,7 @@ curl -i -X POST https://ats-leads.ats439.workers.dev/reviews \
 ## Разработка
 
 ```bash
-npm test          # 46 тестов (заявки, слоты, отзывы, модерация), сеть подменена — наружу ничего не уходит
+npm test          # 75 тестов (заявки, слоты, отзывы, модерация), сеть подменена — наружу ничего не уходит
 npm run typecheck # tsc по src/
 npx wrangler dev  # локальный запуск, секреты берутся из .dev.vars
 ```
