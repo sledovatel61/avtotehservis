@@ -2,6 +2,7 @@
 
 - **Серия I · 01–05:** [коллаж PNG](collage/collage-03.png) · [JPG, 1,67 МБ](collage/collage-03.jpg) · [идеи и проверка](notes.md).
 - **Серия II · 06–10:** [коллаж PNG](collage/collage-03-encore.png) · [JPG, 1,73 МБ](collage/collage-03-encore.jpg) · [идеи и проверка](notes-encore.md).
+- **Серия III · 11–15 · медная:** [коллаж PNG](collage/collage-03-copper.png) · [JPG, 1,67 МБ](collage/collage-03-copper.jpg) · [идеи и проверка](notes-copper.md).
 
 В каждом ряду слева лицевая, справа оборотная, без вылетов и в одном масштабе. Отдельные стороны `front` и `back` лежат в `concepts/`.
 
@@ -25,6 +26,7 @@
 python -m pip install -r agents/agent-03/cards/requirements.txt
 python agents/agent-03/cards/render.py         # серия I
 python agents/agent-03/cards/render_encore.py  # серия II
+python agents/agent-03/cards/render_copper.py  # серия III
 ```
 
 Скрипт берёт SVG-знак, токены и локальные WOFF2 из `site/`, переводит глифы в контуры, рендерит стороны и собирает коллаж. При генерации проверяет тексты, физические размеры шрифтов, безопасную зону, пересечение текстовых блоков, контраст и распознавание QR.
