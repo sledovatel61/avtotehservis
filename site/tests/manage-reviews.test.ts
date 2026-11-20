@@ -65,7 +65,7 @@ test('88-3: оценка из Telegram отсутствует — пустой �
  assert.equal(parseTelegram(message).rating,null);
  const c=await setup();try{const field=c.q('[data-telegram]') as HTMLTextAreaElement;field.value=message;field.dispatchEvent(new c.dom.window.Event('input',{bubbles:true}));c.click('[data-parse-telegram]');
  const select=c.q('[data-review-field="rating"]') as HTMLSelectElement;assert.equal(select.value,'');assert.equal(select.options[0].textContent,'— выберите оценку —');assert.match(c.q('[data-field-error="rating"]').textContent!,/Выберите оценку/);assert.equal((c.q('[data-review-done]') as HTMLButtonElement).disabled,true);assert.equal((c.q('[data-save-reviews]') as HTMLButtonElement).disabled,true);assert.equal(c.commits,0);
- c.input('rating','3');c.click('[data-review-done]');await c.save();assert.equal(c.doc.items.at(-1).rating,3);assert.equal(c.doc.items.at(-1).demo,false);assert.equal(c.doc.items.at(-1).status,'hidden');assert.equal(c.doc.items.at(-1).source,'site');
+ c.input('rating','3');c.click('[data-review-done]');await c.save();assert.equal(c.doc.items.at(-1).rating,3);assert.equal(c.doc.items.at(-1).demo,false);assert.equal(c.doc.items.at(-1).status,'published','отзыв из Telegram сразу публикуется, чтобы владелец не искал его на сайте');assert.equal(c.doc.items.at(-1).source,'site');
  }finally{c.close();}
 });
 test('88-4: ручное добавление требует выбора оценки и сохраняет выбранную четвёрку',async()=>{
@@ -127,5 +127,30 @@ test('139-5: без настоящих отзывов показывается �
   assert.match(c.q('.review-site-count').textContent!,/не видят ни одного отзыва/);
   assert.equal((c.q('[data-review-clear-demo]') as HTMLButtonElement).disabled,false);
   assert.equal(c.root.querySelectorAll('[data-review-id]').length,0);
+ }finally{c.close();}
+});
+
+test('94-1: в «Отзывах» есть панель запасного журнала и поле статуса в редакторе',async()=>{
+ const c=await setup();try{
+  assert.ok(c.q('[data-reviews-inbox]'),'панель журнала на месте');
+  assert.ok(c.q('[data-inbox-key]'),'поле кода доступа есть');
+  assert.ok(c.q('[data-inbox-load]'),'кнопка загрузки есть');
+  c.click('[data-review-add]');
+  const status=c.q('[data-review-field="status"]') as HTMLSelectElement;
+  assert.ok(status,'в редакторе можно выбрать, показывать ли отзыв на сайте');
+  assert.deepEqual([...status.options].map(o=>o.value),['published','hidden']);
+ }finally{c.close();}
+});
+
+test('94-2: отзыв из Telegram сразу получает статус «опубликован» и виден после сохранения',async()=>{
+ const message='Оценка: 5/5\nИмя: Ольга В.\nОтзыв:\nМеняли тормозные колодки, всё показали и объяснили заранее, спасибо.';
+ const c=await setup();try{
+  const field=c.q('[data-telegram]') as HTMLTextAreaElement;
+  field.value=message;field.dispatchEvent(new c.dom.window.Event('input',{bubbles:true}));
+  c.click('[data-parse-telegram]');
+  assert.equal((c.q('[data-review-field="status"]') as HTMLSelectElement).value,'published');
+  c.click('[data-review-done]');await c.save();
+  assert.equal(c.doc.items.at(-1).status,'published','после сохранения отзыв сразу на сайте');
+  assert.equal(c.doc.items.at(-1).author,'Ольга В.');
  }finally{c.close();}
 });

@@ -9,6 +9,8 @@
  *                               403 { error:'origin' }, 413 { error:'too_large' }
  *                               429 { error:'rate_limit', retryAfter } + Retry-After
  *                               503 { error:'delivery_failed' }
+ *   GET  /reviews/inbox       → { items:[…] } при заголовке `x-inbox-key: <REVIEWS_INBOX_KEY>`
+ *   POST /reviews/inbox/done  → { ok:true } — отзыв опубликован, из журнала уходит
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
  *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
  *                               400 { error:{ code:'validation'|'bad_json'|'consent_version', message, fields? } }
@@ -25,6 +27,7 @@ import { composeTelegram, sendTelegram, sendPhotos } from './telegram.ts';
 import { emailProvider, sendEmail, DEFAULT_EMAIL_TO } from './email.ts';
 import { mailStatus, markMailOk, markMailFailed } from './mail-status.ts';
 import { handleReview, reviewsHealth, type ReviewsStore } from './reviews.ts';
+import { handleInbox, inboxHealth } from './reviews-inbox.ts';
 import { allowedOrigins } from './origins.ts';
 
 export interface Env {
@@ -42,6 +45,8 @@ export interface Env {
   EMAIL_FROM?: string;
   /** Необязательное KV: лимиты и идемпотентность переживают перезапуск изолята. */
   ATS_KV?: KVNamespace;
+  /** Код доступа к запасному журналу отзывов. Без него адреса `/reviews/inbox` нет. */
+  REVIEWS_INBOX_KEY?: string;
 }
 
 interface KVNamespace {
@@ -72,7 +77,7 @@ function corsHeaders(req: Request, env: Env): Record<string, string> {
        ответ заблокирует, и подставлять чужой адрес из конфига не нужно. */
     'access-control-allow-origin': ok ? origin : 'null',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-headers': 'content-type, x-inbox-key',
     /* `retry-after` на 429 не входит в safelist, поэтому без этого заголовка
        кросс-доменный JS не видит, через сколько секунд повторять. */
     'access-control-expose-headers': 'retry-after',
@@ -335,6 +340,7 @@ export default {
           /* Приём отзывов: по `reviews` смоук понимает, что сборка доехала,
              по `reviewsKv` — что дубли и лимиты переживают перезапуск изолята. */
           ...reviewsHealth(env),
+          ...inboxHealth(env),
         }));
       }
       if (req.method === 'GET' && url.pathname === '/slots') return withCors(handleSlots(url));
@@ -342,6 +348,9 @@ export default {
       if (req.method === 'POST' && url.pathname === '/reviews') {
         return withCors(await handleReview(req, env, { hashIp, store: reviewStore(env) }));
       }
+      /* Запасной журнал отзывов: закрыт кодом `REVIEWS_INBOX_KEY`. */
+      const inbox = await handleInbox(req, url, env, reviewStore(env));
+      if (inbox) return withCors(inbox);
       return withCors(err(404, 'not_found', 'Неизвестный адрес'));
     } catch (e) {
       console.error('[relay] unhandled', String((e as Error)?.stack ?? e).slice(0, 400));
