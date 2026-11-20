@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-20T07:30:33.092Z",
+  "updated_at": "2026-11-20T07:31:48.920Z",
   "cases": [
     {
       "slug": "remont-stupitsy",
@@ -10,7 +10,7 @@
       "mode": "single",
       "status": "published",
       "published_at": "2026-11-18",
-      "sort": 10,
+      "sort": 20,
       "cover": {
         "base": "7qhrqc-single",
         "alt": "Ступица",
@@ -74,7 +74,7 @@
       "mode": "single",
       "status": "published",
       "published_at": "2026-11-19",
-      "sort": 20,
+      "sort": 10,
       "cover": {
         "base": "suhodf-single",
         "alt": "грм",
