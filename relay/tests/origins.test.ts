@@ -136,7 +136,7 @@ test('POST /reviews с Origin: https://ats-rostov.ru → 201', async () => {
   assert.equal(r.headers.get('access-control-allow-origin'), SITE, 'CORS отвечает тем же origin');
   const j = await r.json() as { ok: boolean; status: string; id: string };
   assert.equal(j.ok, true);
-  assert.equal(j.status, 'pending');
+  assert.equal(j.status, 'published');
   assert.ok(j.id);
   assert.equal(calls, 1, 'Telegram вызван один раз');
 
