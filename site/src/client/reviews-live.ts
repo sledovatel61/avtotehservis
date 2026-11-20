@@ -135,6 +135,38 @@ export function buildCard(item: LiveReview, doc: Document = document): HTMLEleme
   return card;
 }
 
+/** Ключи уже показанных отзывов: по ним отсекаем дубли из прослойки. */
+function existingKeys(container: Element): Set<string> {
+  const keys = new Set<string>();
+  for (const card of Array.from(container.querySelectorAll('.rev-card'))) {
+    const author = card.querySelector('.rev-who b')?.textContent ?? '';
+    const text = card.querySelector('.rev-text p')?.textContent ?? '';
+    const label = card.querySelector('.rev-stars')?.getAttribute('aria-label') ?? '';
+    const rating = Number((/Оценка (\d)/.exec(label) ?? [])[1] ?? 0);
+    if (author || text) keys.add(reviewKey({ author, text, rating }));
+  }
+  return keys;
+}
+
+/** Забирает свежие отзывы из прослойки. Пусто и при любой сетевой ошибке. */
+async function fetchLive(
+  base: string,
+  options: { fetcher?: (url: string) => Promise<Response>; refresh?: boolean },
+): Promise<LiveReview[]> {
+  try {
+    const fetcher = options.fetcher ?? ((url: string) => leadsFetch(url, { method: 'GET' }));
+    /* После отправки формы ответ мог осесть в кэше на минуту — тогда нового
+       отзыва не видно. Параметр в адресе обходит кэш только для этого запроса. */
+    const url = options.refresh ? `${base}/reviews?t=${Date.now()}` : `${base}/reviews`;
+    const res = await fetcher(url);
+    if (!res.ok) return [];
+    const payload = (await res.json()) as { items?: LiveReview[] };
+    return Array.isArray(payload.items) ? payload.items : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Подключает живые отзывы на странице. Возвращает число добавленных карточек. */
 export async function mountLiveReviews(
   doc: Document = document,
@@ -145,43 +177,92 @@ export async function mountLiveReviews(
   const grid = doc.querySelector<HTMLElement>('.rev-grid');
   if (!grid) return 0;
 
-  const existing = new Set<string>();
-  for (const card of Array.from(grid.querySelectorAll('.rev-card--site'))) {
-    const author = card.querySelector('.rev-who b')?.textContent ?? '';
-    const text = card.querySelector('.rev-text p')?.textContent ?? '';
-    const label = card.querySelector('.rev-stars')?.getAttribute('aria-label') ?? '';
-    const rating = Number((/Оценка (\d)/.exec(label) ?? [])[1] ?? 0);
-    existing.add(reviewKey({ author, text, rating }));
-  }
+  const existing = existingKeys(grid);
+  const items = await fetchLive(base, options);
+  if (!items.length) return 0;
+  const fresh = pickNew(items, existing, options.limit ?? 50);
+  if (!fresh.length) return 0;
 
-  try {
-    const fetcher = options.fetcher ?? ((url: string) => leadsFetch(url, { method: 'GET' }));
-    /* После отправки формы ответ мог осесть в кэше на минуту — тогда нового
-       отзыва не видно. Параметр в адресе обходит кэш только для этого запроса. */
-    const url = options.refresh ? `${base}/reviews?t=${Date.now()}` : `${base}/reviews`;
-    const res = await fetcher(url);
-    if (!res.ok) return 0;
-    const payload = (await res.json()) as { items?: LiveReview[] };
-    const items = Array.isArray(payload.items) ? payload.items : [];
-    const fresh = pickNew(items, existing, options.limit ?? 50);
-    if (!fresh.length) return 0;
-
-    /* Новые сверху: вставляем перед первой карточкой, сохраняя порядок списка. */
-    const anchor = grid.firstElementChild;
-    for (const item of fresh) {
-      const card = buildCard(item, doc);
-      if (!anchor) grid.append(card);
-      else grid.insertBefore(card, anchor);
-    }
-    grid.dataset.reviewsLive = String(fresh.length);
-    /* Живой отзыв появился — заглушка «пока отзывов нет» больше не правда. */
-    doc.querySelector('[data-reviews-empty]')?.remove();
-    updateSummary(doc, grid);
-    return fresh.length;
-  } catch {
-    /* Сеть подвела — страница остаётся со статикой. Это не ошибка для посетителя. */
-    return 0;
+  /* Новые сверху: вставляем перед первой карточкой, сохраняя порядок списка. */
+  const anchor = grid.firstElementChild;
+  for (const item of fresh) {
+    const card = buildCard(item, doc);
+    if (!anchor) grid.append(card);
+    else grid.insertBefore(card, anchor);
   }
+  grid.dataset.reviewsLive = String(fresh.length);
+  /* Живой отзыв появился — заглушка «пока отзывов нет» больше не правда. */
+  doc.querySelector('[data-reviews-empty]')?.remove();
+  updateSummary(doc, grid);
+  return fresh.length;
+}
+
+
+/**
+ * Пересчитывает плашки на главной. В статике лежат 6 карточек из 9 отзывов файла,
+ * поэтому «базу» (сколько всего отзывов и их сумма баллов) запоминаем при первом
+ * заходе, а дальше прибавляем к ней только живые отзывы. Иначе плашка показывала бы
+ * 6 или 8 вместо настоящего числа — на /otzyvy было бы другое.
+ */
+export function updateHomeRates(doc: Document, track: Element): void {
+  const box = doc.querySelector<HTMLElement>('[data-reviews-rates]');
+  const avgEl = doc.querySelector<HTMLElement>('[data-reviews-avg]');
+  const countEl = doc.querySelector<HTMLElement>('[data-reviews-count]');
+  if (!box || !avgEl || !countEl) return;
+
+  if (box.dataset.baseCount === undefined) {
+    const shown = Number((avgEl.textContent ?? '').replace(',', '.'));
+    box.dataset.baseCount = countEl.textContent ?? '0';
+    box.dataset.baseSum = String((Number.isFinite(shown) ? shown : 0) * Number(box.dataset.baseCount));
+  }
+  let count = Number(box.dataset.baseCount);
+  let sum = Number(box.dataset.baseSum);
+
+  for (const card of Array.from(track.querySelectorAll('.rev-card[data-live-review]'))) {
+    const found = /Оценка (\d)/.exec(card.querySelector('.rev-stars')?.getAttribute('aria-label') ?? '');
+    if (!found) continue;
+    count += 1;
+    sum += Number(found[1]);
+  }
+  if (!count) return;
+  avgEl.textContent = (sum / count).toFixed(1).replace('.', ',');
+  countEl.textContent = String(count);
+}
+
+/**
+ * Главная: свежие отзывы сверху в карусели. Карточек в статике шесть, поэтому
+ * новые с сайта не теряются — они встают первыми, а карусель просто удлиняется.
+ */
+export async function mountHomeReviews(
+  doc: Document = document,
+  options: { base?: string; fetcher?: (url: string) => Promise<Response>; limit?: number; refresh?: boolean } = {},
+): Promise<number> {
+  const base = options.base ?? LEADS_BASE;
+  if (!base) return 0;
+  const track = doc.querySelector<HTMLElement>('[data-home-reviews-track]');
+  if (!track) return 0;
+
+  const existing = existingKeys(track);
+  const items = await fetchLive(base, options);
+  if (!items.length) return 0;
+  const fresh = pickNew(items, existing, options.limit ?? 6);
+  if (!fresh.length) return 0;
+
+  const placeholder = track.querySelector('.rev-card--yandex');
+  placeholder?.remove();
+  const anchor = track.firstElementChild;
+  for (const item of fresh) {
+    const card = buildCard(item, doc);
+    card.dataset.liveReview = '1';
+    if (!anchor) track.append(card);
+    else track.insertBefore(card, anchor);
+  }
+  updateHomeRates(doc, track);
+  /* Карусель пересчитывает, сколько всего карточек, при каждом render —
+     после добавления вызываем его, чтобы стрелки знали про новые отзывы. */
+  const carousel = doc.querySelector('[data-carousel]') as (HTMLElement & { __carousel?: { render(animate?: boolean): void } }) | null;
+  carousel?.__carousel?.render(false);
+  return fresh.length;
 }
 
 if (typeof document !== 'undefined' && document.querySelector('.rev-grid')) {
@@ -189,5 +270,12 @@ if (typeof document !== 'undefined' && document.querySelector('.rev-grid')) {
   /* После отправки форма обновляет список — см. `review-form.ts` (событие ниже). */
   document.addEventListener('review:published', () => {
     void mountLiveReviews(document, { refresh: true });
+  });
+}
+
+if (typeof document !== 'undefined' && document.querySelector('[data-home-reviews-track]')) {
+  void mountHomeReviews(document);
+  document.addEventListener('review:published', () => {
+    void mountHomeReviews(document, { refresh: true });
   });
 }

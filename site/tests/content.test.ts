@@ -52,7 +52,11 @@ test('L1 нет вранья: снятые направления не упом�
 
 test('L2 главная: отзывы только Яндекс, без выдуманных рейтингов', () => {
   const html = read('index.html');
-  assert.ok(html.includes('Отзывы об АвтоТехСервис на Яндекс.Картах'), 'aria-label яндексовской ссылки');
+  /* круг 99: на главной превью реальных отзывов с сайта + плашки рейтингов.
+     Плашка Яндекса — ссылка на карточку сервиса, она обязана быть. */
+  assert.ok(html.includes('рейтинг на Яндекс.Картах'), 'плашка рейтинга Яндекса');
+  assert.ok(html.includes('data-reviews-avg'), 'плашка среднего балла по отзывам сайта');
+  assert.ok((html.match(/rev-card rev-card--site/g) || []).length > 0, 'карточки отзывов с сайта');
   assert.ok(!html.includes('AggregateRating'), 'нет AggregateRating');
   assert.ok(!/"@type"\s*:\s*"Review"/.test(html), 'нет Review в ld+json');
   const text = stripTags(html);
