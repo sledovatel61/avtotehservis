@@ -13,6 +13,16 @@ export function fmtDateShort(iso: string | null | undefined): string {
   const p = (n: number): string => String(n).padStart(2, '0');
   return `${p(d.getUTCDate())}.${p(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
 }
+/**
+ * «20 ноября», а если год не текущий — «20 ноября 2025».
+ * Подпись под отзывом на главной, на /about и на /otzyvy: один формат на всех страницах.
+ */
+export function fmtDayMonthRu(iso: string, now: Date = new Date()): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (isNaN(d.getTime())) return iso;
+  const base = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  return d.getUTCFullYear() === now.getUTCFullYear() ? base : `${base} ${d.getUTCFullYear()}`;
+}
 export function plural(n: number, one: string, few: string, many: string): string {
   const m10 = n % 10, m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return one;

@@ -16,7 +16,8 @@
      6) /services: «фото появится» по site/src = 0, картинки карточек не .svg;
      7) геометрия: текстовая секция @390 ≤1500 px, .about-media ≥70 % колонки на 1024/768,
         overflow 0 на всех ширинах, rate-note ровно один (B4);
-     8) вес about: потолок = замер «до» (base-проход render-about) + 60 КБ на ширину.
+     8) вес about: потолок = замер «до» (base-проход render-about) + 60 КБ на ширину;
+     9) галерея: шесть фото-обложек из server/case-covers.ts и ярлык «пример работы» в CaseCard.
    Мутанты --self-test: 17, каждый валит гейт (12 обязательных из задания + 5 доп.). */
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -290,11 +291,18 @@ export async function checkAboutPage(opts = {}) {
     if (wAbs > cap) fails.push(`C8 ${w}: вес ${wAbs} КБ > потолка ${WEIGHT_CAP[w]} − запаса ${WEIGHT_MARGIN} (база справочно ${base})`);
   }
   /* ---------- 9. кейсы на about: фото-обложки, без «до / после» (§D) ---------- */
+  /* Круг 78 перенёс обложки в общую карту `server/case-covers.ts`, а разметку карточки —
+     в `CaseCard.astro`; строк с путями в about.astro больше нет, и старый гейт падал на
+     правильной странице. Проверяем источник обложек и то, что about берёт именно его. */
+  const covers = opts.covers ?? readFileSync(join(SITE, 'src/server/case-covers.ts'), 'utf8');
+  const card = opts.card ?? readFileSync(join(SITE, 'src/components/CaseCard.astro'), 'utf8');
   for (let i = 1; i <= 6; i++)
-    if (!astro.includes(`/img/ab-case-${i}-640.avif`) || !astro.includes(`/img/ab-case-${i}-640.webp`))
+    if (!covers.includes(`/img/ab-case-${i}-640.avif`) || !covers.includes(`/img/ab-case-${i}-640.webp`))
       fails.push(`C9 у кейса ${i} нет фото-обложки ab-case-${i}-640 (avif+webp)`);
-  if (/class="ba">до \/ после</.test(astro)) fails.push('C9 на about остался бейдж «до / после»');
-  if (!/class="ba">пример работы</.test(astro)) fails.push('C9 на about нет ярлыка «пример работы»');
+  if (!astro.includes('CASE_COVERS') || !astro.includes('<CaseCard'))
+    fails.push('C9 галерея about не берёт фото-обложки CASE_COVERS и карточку CaseCard');
+  if (/class="ba">до \/ после</.test(card)) fails.push('C9 на about остался бейдж «до / после»');
+  if (!/class="ba">пример работы</.test(card)) fails.push('C9 на about нет ярлыка «пример работы»');
   if (/gal-card[\s\S]{0,400}?\.svg/.test(astro)) fails.push('C9 в галерее about осталась SVG-заглушка');
   return { fails, warns };
 }
@@ -322,8 +330,9 @@ const MUTANTS = {
   'вес-сверх-потолка': ({ G }) => { G.weights['1440'] = G.weightsBase['1440'] + 61; },
   'media-50-процентов-колонки': ({ G }) => { G.widths['768'].media.colRatio = 0.5; },
   'стык-без-разделителя': ({ o }) => { o.css = o.css.replace(/border-top:1px solid var\(--line\)/g, ''); },
-  'кейсы-вернулись-на-svg': ({ o }) => { o.astro = o.astro.replace('/img/ab-case-1-640.webp', '/img/case-1.svg'); },
-  'бейдж-до-после-вернулся': ({ o }) => { o.astro = o.astro.replace('class="ba">пример работы', 'class="ba">до / после'); },
+  'кейсы-вернулись-на-svg': ({ o }) => { o.covers = o.covers.replace('/img/ab-case-1-640.webp', '/img/case-1.svg'); },
+  'бейдж-до-после-вернулся': ({ o }) => { o.card = o.card.replace('class="ba">пример работы', 'class="ba">до / после'); },
+  'about-без-карты-обложек': ({ o }) => { o.astro = o.astro.replace(/CASE_COVERS/g, 'СТАРАЯ_КАРТА'); },
 };
 
 const load = () => ({
@@ -331,6 +340,9 @@ const load = () => ({
   css: readFileSync(join(SITE, 'src/styles/sections.css'), 'utf8') + '\n' + readFileSync(join(SITE, 'src/styles/media.css'), 'utf8'),
   html: existsSync(join(SITE, 'pages-dist/about/index.html')) ? readFileSync(join(SITE, 'pages-dist/about/index.html'), 'utf8') : '',
   srcAll: walkSrc(join(SITE, 'src')).map((f) => readFileSync(f, 'utf8')).join('\n'),
+  /* C9: обложки кейсов и разметка карточки — отдельные источники с круга 78 */
+  covers: readFileSync(join(SITE, 'src/server/case-covers.ts'), 'utf8'),
+  card: readFileSync(join(SITE, 'src/components/CaseCard.astro'), 'utf8'),
   geom: JSON.parse(readFileSync(join(SITE, 'data/about-geom.json'), 'utf8')),
   skipFiles: true,
 });

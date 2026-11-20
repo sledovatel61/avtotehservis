@@ -237,7 +237,18 @@ const RAW_SEED = {
  }
 ],
  "brands": [
+ "Voyah Free",
  "Лада (LADA)",
+ "LADA Vesta",
+ "LADA Granta",
+ "LADA Largus",
+ "LADA Niva",
+ "LADA XRAY",
+ "LADA Priora",
+ "LADA Kalina",
+ "ГАЗель",
+ "Соболь",
+ "УАЗ Патриот",
  "Toyota",
  "Kia",
  "Hyundai",

@@ -134,8 +134,12 @@ export async function checkCerts(opts = {}) {
       if (!s.includes(`/img/cert-${k}-720.webp`) || !s.includes(`/img/cert-${k}-720.avif`)) fails.push(`C5 нет производных cert-${k}-720 в разметке`);
       if (!s.includes(`/img/cert-${k}-1200.webp`) || !s.includes(`/img/cert-${k}-1200.avif`)) fails.push(`C5 нет производных cert-${k}-1200 в разметке`);
     }
+    /* Круг 103: владелец попросил убрать слово «иллюстрация» из текстов страницы.
+       Alt остаются описанием документа: «Оформленный сертификат <бренд>». */
     const alts = [...s.matchAll(/alt="([^"]+)"/g)].map((m) => m[1]);
-    if (alts.length < 4 || alts.filter((a) => a.startsWith('Иллюстрация:')).length < 4) fails.push('C5 alt иллюстраций сертификатов без пометки «Иллюстрация:»');
+    if (alts.length < 4 || alts.filter((a) => a.startsWith('Оформленный сертификат')).length < 4)
+      fails.push('C5 alt сертификатов не переписаны: ожидается «Оформленный сертификат <бренд>»');
+    if (alts.some((a) => /иллюстрац/i.test(a))) fails.push('C5 в alt сертификатов осталось слово «иллюстрация»');
     if (!s.includes('оформленные сертификаты можно посмотреть в сервисе')) fails.push('C5 нет сноски «оформленные сертификаты можно посмотреть в сервисе»');
   }
   if (/content-source\/r26/.test(astro)) fails.push('C5 разметка ссылается на сканы docs/content-source/r26');
@@ -186,6 +190,10 @@ const MUTANTS = [
       const pipe = sharp(raw, { raw: { width: w, height: h, channels: 3 } });
       setBuf(file, file.endsWith('.avif') ? await pipe.avif({ quality: 70 }).toBuffer() : await pipe.webp({ quality: 90 }).toBuffer());
     }
+  }],
+  /* круг 103: слово «иллюстрация» вернули в alt сертификата */
+  ['7-слово-иллюстрация-в-alt', ({ setAstro }) => {
+    setAstro((a) => a.replace('alt="Оформленный сертификат NGN"', 'alt="Иллюстрация: оформленный сертификат NGN"'));
   }],
   /* круг 27: подмена буфера — все бренды стали клонами LYNXauto */
   ['6-клоны-брендов', ({ setBuf }) => {
