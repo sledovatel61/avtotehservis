@@ -105,6 +105,8 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/pages-dist
+      - name: Wait for artifact indexing
+        run: sleep 5
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
