@@ -3,9 +3,10 @@ import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import { listCatalogServices, listHomeServices } from '../server/services.ts';
 import { listPublishedCases } from '../server/content.ts';
+import { knownAttrs } from '../client/reviews-live.ts';
 /* Отзывы берём из того же файла, что и страница /otzyvy: в базе статической сборки
    их нет, поэтому главная раньше показывала одну заглушку «читайте на Яндексе». */
-import { listPublishedSiteReviews, reviewsStats } from '../server/reviews-store.ts';
+import { listPublishedSiteReviews, readReviewsFile, reviewsStats } from '../server/reviews-store.ts';
 import { plural, fmtDayMonthRu } from '../server/format.ts';
 /* круг 78: витрина работ на главной — те же фото-обложки, что и на «О компании» (карта
    общая, см. ../server/case-covers.ts); раньше тут были шесть SVG-заглушек с бейджем
@@ -32,6 +33,9 @@ const siteCases = listPublishedSiteCases(6);
 const realCases = siteCases.length > 0;
 const HOME_REVIEWS = 6;
 const allSiteReviews = listPublishedSiteReviews();
+/* Круг 106: id и ключи всех отзывов файла (включая скрытые) — по ним клиент отсекает
+   «воскрешение» отзыва из кэша воркера после скрытия в /manage/#reviews. */
+const knownReviews = knownAttrs(readReviewsFile().file.items);
 const reviews = allSiteReviews.slice(0, HOME_REVIEWS);
 const reviewStats = reviewsStats(allSiteReviews);
 const reviewAvg = reviewStats.average === null ? '' : reviewStats.average.toFixed(1).replace('.', ',');
@@ -492,7 +496,7 @@ const jsonLd = {
     </div>
     <div class="carousel reveal" data-carousel data-live-word="Отзыв" data-home-reviews>
       <div class="carousel-win">
-        <div class="carousel-track" data-home-reviews-track>
+        <div class="carousel-track" data-home-reviews-track data-known-ids={knownReviews.ids} data-known-keys={knownReviews.keys}>
           {reviews.length === 0 ? (
             <article class="rev-card rev-card--yandex">
               <div class="rev-text"><p>Читайте отзывы на Яндекс.Картах — там же оценки и схема проезда.</p></div>
@@ -502,7 +506,7 @@ const jsonLd = {
               </div>
             </article>
           ) : reviews.map((r) => (
-            <article class="rev-card rev-card--site">
+            <article class="rev-card rev-card--site" data-review-id={r.id}>
               <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating} из 5`}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <svg viewBox="0 0 24 24" aria-hidden="true" class={i < r.rating ? 'is-on' : ''}><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>

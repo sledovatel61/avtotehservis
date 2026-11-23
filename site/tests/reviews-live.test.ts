@@ -2,7 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 // @ts-ignore статический модуль
-import { buildCard, formatDayMonth, mountHomeReviews, mountLiveReviews, pickNew, plural, reviewKey, updateHomeRates, updateSummary } from '../src/client/reviews-live.ts';
+import { buildCard, formatDayMonth, keyHash, knownAttrs, knownFromContainer, mountHomeReviews, mountLiveReviews, pickNew, plural, reviewKey, reviewKeyHash, updateHomeRates, updateSummary } from '../src/client/reviews-live.ts';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const NOW = new Date('2026-11-20T12:00:00Z');
 
@@ -47,7 +49,7 @@ describe('живые отзывы: чистые функции', () => {
   });
 
   it('3. pickNew пропускает то, что уже на странице, и уважает лимит', () => {
-    const existing = new Set([reviewKey({ author: 'Михаил', text: 'Текст один', rating: 5 })]);
+    const existing = new Set([reviewKeyHash({ author: 'Михаил', text: 'Текст один', rating: 5 })]);
     const items = [
       live({ id: '1', author: 'Михаил', text: 'Текст один' }),
       live({ id: '2', author: 'Анна', text: 'Текст два, достаточно длинный для карточки.' }),
@@ -207,5 +209,111 @@ describe('главная: превью отзывов', () => {
     doc.querySelector('[data-reviews-rates]')!.remove();
     updateHomeRates(doc, doc.querySelector('[data-home-reviews-track]')!);
     assert.equal(doc.querySelector('[data-reviews-avg]'), null);
+  });
+});
+
+/* ── круг 106: скрытый отзыв не «воскресает» из кэша воркера ──────────────────
+   На боевом сайте отзыв «Злой клиент» (id 217a5bdf-…) лежит в reviews.json со
+   status: "hidden": в статике его карточки нет, но GET /reviews продолжал его
+   отдавать — и клиент снова вставлял мат на страницу. Теперь страницы кладут
+   на контейнер data-known-ids/data-known-keys со ВСЕМИ отзывами файла, включая
+   скрытые, и клиент отсекает их по id и по ключу. */
+
+const REPO_REVIEWS = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, '../content/reviews.json'), 'utf8'),
+) as { items: { id: string; author: string; text: string; rating: number; status: string }[] };
+
+const HIDDEN = REPO_REVIEWS.items.find((r) => r.status === 'hidden')!;
+const hiddenLive = () => live({ id: HIDDEN.id, author: HIDDEN.author, text: HIDDEN.text, rating: HIDDEN.rating });
+
+/** Ответ воркера, как он приходит с боевого сервера: матерный отзыв всё ещё в списке. */
+const workerPayload = () => ({
+  items: [
+    hiddenLive(),
+    live({ id: 'rlive-ok', author: 'Артем', text: 'Прошёл ТО и заменил колодки, всё организовали быстро.', rating: 5 }),
+  ],
+});
+
+describe('круг 106: скрытые отзывы не возвращаются из воркера', () => {
+  it('17. в файле есть скрытый отзыв, и он реально матерный (это тот самый случай)', () => {
+    assert.ok(HIDDEN, 'в reviews.json должен быть скрытый отзыв');
+    assert.equal(HIDDEN.id, '217a5bdf-18c4-4fca-aa1b-4b65404a3379');
+    assert.equal(HIDDEN.author, 'Злой клиент');
+  });
+
+  it('18. pickNew отсекает отзыв по id, даже если текста на странице нет', () => {
+    const existingKeys = new Set<string>();
+    const known = knownFromContainer(
+      page(`<div class="rev-grid" data-known-ids='${JSON.stringify([HIDDEN.id])}'></div>`).querySelector('.rev-grid')!,
+    );
+    const fresh = pickNew([hiddenLive()], existingKeys, 50, known.ids);
+    assert.equal(fresh.length, 0, 'скрытый отзыв не должен попасть в выдачу');
+  });
+
+  it('19. pickNew отсекает по ключу «автор|текст|оценка», если id не совпал', () => {
+    const known = knownAttrs([{ ...HIDDEN }]);
+    const keys = new Set<string>(JSON.parse(known.keys));
+    const fresh = pickNew([hiddenLive()], keys);
+    assert.equal(fresh.length, 0, 'тот же отзыв с другим id всё равно не дублируется');
+  });
+
+  it('20. /otzyvy: воркер отдаёт мат, на странице остаются только чистые отзывы', async () => {
+    const known = knownAttrs(REPO_REVIEWS.items);
+    const doc = page(`<div class="rev-grid" data-reviews-grid data-known-ids='${known.ids}' data-known-keys='${known.keys}'>${
+      CARD('Михаил', 'Первый отзыв, хороший.', 5)
+    }</div>`);
+    const added = await mountLiveReviews(doc, {
+      base: 'https://relay.test',
+      fetcher: async () => ({ ok: true, status: 200, json: async () => workerPayload() } as unknown as Response),
+    });
+    assert.equal(added, 1, 'добавился только новый чистый отзыв');
+    const html = doc.querySelector('.rev-grid')!.innerHTML;
+    assert.ok(!html.includes('Злой клиент'), 'скрытый автор не попал в разметку');
+    assert.ok(!html.includes('Хуилы'), 'скрытый текст не попал в разметку');
+    assert.ok(html.includes('Артем'), 'новый отзыв показан');
+  });
+
+  it('21. главная и /about: тот же фильтр на карусели', async () => {
+    const known = knownAttrs(REPO_REVIEWS.items);
+    const doc = page(`${HOME_RATES}<div class="carousel-track" data-home-reviews-track data-known-ids='${known.ids}' data-known-keys='${known.keys}'>${
+      CARD('Клиент', 'Отзыв в статике, достаточно длинный.', 5)
+    }</div>`);
+    const added = await mountHomeReviews(doc, {
+      base: 'https://relay.test',
+      fetcher: async () => ({ ok: true, status: 200, json: async () => ({ items: [hiddenLive()] }) } as unknown as Response),
+    });
+    assert.equal(added, 0, 'скрытый отзыв в карусель не добавляется');
+    assert.ok(!doc.querySelector('[data-home-reviews-track]')!.innerHTML.includes('Злой клиент'));
+  });
+
+  it('21б. в списке известных ключей нет текста отзывов — только отпечатки', () => {
+    const known = knownAttrs(REPO_REVIEWS.items);
+    assert.ok(!known.keys.includes('Хуилы'), 'мат скрытого отзыва не попадает в HTML');
+    assert.ok(!known.keys.includes('Злой клиент'), 'имя скрытого автора тоже');
+    assert.ok(!known.keys.includes('мальчики'), 'тексты опубликованных отзывов в HTML не дублируем');
+    const keys = JSON.parse(known.keys) as string[];
+    assert.equal(keys.length, REPO_REVIEWS.items.length);
+    assert.ok(keys.every((k) => /^[0-9a-f]{8}$/.test(k)), 'каждый ключ — компактный отпечаток');
+    // отпечаток считается от того же ключа, что и на клиенте
+    assert.equal(keyHash(reviewKey({ author: HIDDEN.author, text: HIDDEN.text, rating: HIDDEN.rating })), reviewKeyHash(HIDDEN));
+  });
+
+  it('22. карточки статики несут data-review-id, живые — тоже', () => {
+    const doc = page('<div class="rev-grid"></div>');
+    const live_ = buildCard(live({ id: 'uuid-live-1' }), doc);
+    assert.equal(live_.getAttribute('data-review-id'), 'uuid-live-1');
+
+    const grid = page(`<div class="rev-grid">${CARD('Михаил', 'Первый отзыв.', 5)}</div>`).querySelector('.rev-grid')!;
+    grid.firstElementChild!.setAttribute('data-review-id', 'r-2026-09-06-001');
+    assert.equal(knownFromContainer(grid).ids.has('r-2026-09-06-001'), true, 'id со статической карточки тоже известен');
+  });
+
+  it('23. без data-атрибутов поведение прежнее (совместимость со старыми сборками)', async () => {
+    const doc = page(`<div class="rev-grid">${CARD('Михаил', 'Первый отзыв, хороший.')}</div>`);
+    const added = await mountLiveReviews(doc, {
+      base: 'https://relay.test',
+      fetcher: async () => ({ ok: true, status: 200, json: async () => ({ items: [hiddenLive()] }) } as unknown as Response),
+    });
+    assert.equal(added, 1, 'без списка известных id клиент не может знать про скрытый отзыв');
   });
 });
