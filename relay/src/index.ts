@@ -11,7 +11,9 @@
  *                               503 { error:'delivery_failed' }
  *   GET  /reviews             → { items:[{id,author,text,rating,publishedAt}], total } — публично
  *   GET  /reviews/inbox       → { items:[…] } со статусами (ключ GitHub из /manage/)
- *   POST /reviews/moderate    → { ok:true } — { id, action:'hide'|'publish'|'delete' } (тот же ключ)
+ *   POST /reviews/moderate    → { ok:true } — { id, action:'hide'|'publish'|'delete' }
+ *                               или { id, action:'edit', author, text, rating, status? }
+ *                               записи нет в KV → 200 { ok:true, noop:true } (тот же ключ)
  *   POST /leads               → 201 { ticket, lead_id: 0, status:'accepted', duplicate }
  *                               принимает JSON или multipart (payload=JSON + photo до 3 шт.)
  *                               400 { error:{ code:'validation'|'bad_json'|'consent_version', message, fields? } }
