@@ -42,8 +42,15 @@ test('L1 нет вранья: снятые направления не упом�
      кондиционер («виноват агрегат, датчик давления или электрика»). «ходовая» тоже не баним —
      это словосочетание «диагностика ходовой», действующая услуга. */
   const BANNED = ['грузов', 'прокатк', 'развал-схожден', 'сход-развал', 'правка дисков', 'ремонт шин', 'автоэлектрик'];
+  /* круг 106: карточки отзывов — дословные цитаты клиентов, а не обещания сервиса.
+     Отзыв «Албанский Сейшелец» говорит «нет стенда сход-развала» — это ровно правда
+     (направление снято), но проверка по подстроке ловила цитату как обещание услуги.
+     Маркетинговый текст страниц проверяем по-прежнему: из HTML вырезаем только
+     блоки <article class="rev-card…">…</article>. */
+  const dropReviewCards = (html: string): string =>
+    html.replace(/<article class="rev-card[\s\S]*?<\/article>/g, ' ');
   for (const p of pages) {
-    const text = stripTags(readFileSync(p, 'utf8')).toLowerCase();
+    const text = stripTags(dropReviewCards(readFileSync(p, 'utf8'))).toLowerCase();
     for (const b of BANNED) {
       assert.ok(!text.includes(b), `${p.replace(DIST, '')}: найдено «${b}»`);
     }
@@ -59,7 +66,15 @@ test('L2 главная: отзывы только Яндекс, без выду
   assert.ok((html.match(/rev-card rev-card--site/g) || []).length > 0, 'карточки отзывов с сайта');
   assert.ok(!html.includes('AggregateRating'), 'нет AggregateRating');
   assert.ok(!/"@type"\s*:\s*"Review"/.test(html), 'нет Review в ld+json');
-  const text = stripTags(html);
+  /* круг 106: плашка [data-reviews-rates] — честное среднее по отзывам сайта. Оно может
+     случайно совпасть с 4,5 (и число — с 182), и это не выдуманный рейтинг Яндекса,
+     арифметика по реальным отзывам. Поэтому из проверки исключаем только содержимое
+     самой плашки, остальная страница проверяется как раньше. */
+  const text = stripTags(
+    html
+      .replace(/(<b[^>]*data-reviews-avg[^>]*>)[^<]*(<\/b>)/g, '$1$2')
+      .replace(/(<span[^>]*data-reviews-count[^>]*>)[^<]*(<\/span>)/g, '$1$2'),
+  );
   assert.ok(!text.includes('4,5'), 'цифра рейтинга 4,5 не публикуется');
   assert.ok(!text.includes('182'), 'число отзывов 182 не публикуется');
 });

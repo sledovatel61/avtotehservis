@@ -7,7 +7,9 @@
  * Правила:
  *   • без прослойки (демо-сборка) ничего не делаем — показываем статику;
  *   • если запрос не удался, страница остаётся как была: ни ошибок, ни пустоты;
- *   • дубли отсекаем по имени+тексту+оценке: те же отзывы уже могут быть в статике;
+ *   • дубли отсекаем по id и по отпечатку «имя|текст|оценка»: те же отзывы уже есть в статике;
+ *   • отзывы, которые есть в файле, но скрыты владельцем (`status: "hidden"`), НИКОГДА
+ *     не добавляются из прослойки: их id и ключи приходят в `data-known-ids`/`data-known-keys`;
  *   • порядок — новые сверху, как в статике.
  *
  * Разметку карточки повторяем ровно ту, что у серверной версии: классы
@@ -43,19 +45,92 @@ export function reviewKey(r: { author: string; text: string; rating: number }): 
   return `${squeeze(r.author)}|${squeeze(r.text)}|${r.rating}`;
 }
 
-/** Отбирает отзывы, которых ещё нет на странице. */
-export function pickNew(live: LiveReview[], existingKeys: Set<string>, limit = 50): LiveReview[] {
+/**
+ * Короткий отпечаток ключа (FNV-1a, 32 бита, hex).
+ *
+ * Зачем не сам ключ: список известных ключей уезжает в HTML страницы, а среди отзывов
+ * есть скрытые владельцем — с матом. Текст скрытого отзыва не должен светиться даже
+ * в исходнике страницы, поэтому в `data-known-keys` лежат отпечатки, а не тексты.
+ */
+export function keyHash(key: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i += 1) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, '0');
+}
+
+/** Отпечаток ключа отзыва — то, что сравниваем в `pickNew`. */
+export function reviewKeyHash(r: { author: string; text: string; rating: number }): string {
+  return keyHash(reviewKey(r));
+}
+
+/**
+ * Отбирает отзывы, которых ещё нет на странице.
+ *
+ * Отсекаем по ДВУМ признакам: `id` и ключу «автор|текст|оценка». Одного ключа мало:
+ * отзыв, скрытый в `content/reviews.json` (`status: "hidden"`), не рендерится в статику,
+ * и без проверки id воркер снова подтягивал его из кэша `GET /reviews` — скрытый
+ * матерный отзыв «воскресал» на сайте. Список известных id сервер отдаёт в
+ * `data-known-ids` (см. `knownFromContainer`), включая скрытые записи.
+ */
+export function pickNew(
+  live: LiveReview[],
+  existingKeys: Set<string>,
+  limit = 50,
+  existingIds: Set<string> = new Set(),
+): LiveReview[] {
   const out: LiveReview[] = [];
   const seen = new Set(existingKeys);
+  const seenIds = new Set(existingIds);
   for (const item of live) {
     if (!item || typeof item.text !== 'string') continue;
-    const key = reviewKey(item);
+    if (item.id && seenIds.has(item.id)) continue;
+    const key = reviewKeyHash(item);
     if (seen.has(key)) continue;
     seen.add(key);
+    if (item.id) seenIds.add(item.id);
     out.push(item);
     if (out.length >= limit) break;
   }
   return out;
+}
+
+/**
+ * Данные для серверной разметки: id и ключи ВСЕХ отзывов файла, включая скрытые.
+ * Страницы кладут их на контейнер (`data-known-ids` / `data-known-keys`), чтобы
+ * клиент знал про скрытые записи, которых физически нет в HTML.
+ */
+export function knownAttrs(
+  items: { id: string; author: string; text: string; rating: number }[],
+): { ids: string; keys: string } {
+  return {
+    ids: JSON.stringify(items.map((r) => r.id)),
+    keys: JSON.stringify(items.map((r) => reviewKeyHash(r))),
+  };
+}
+
+/** Читает JSON-массив из data-атрибута; старый формат (через перевод строки) тоже понимаем. */
+function readList(container: Element, attr: string): string[] {
+  const raw = (container.getAttribute(attr) ?? '').trim();
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === 'string' && v !== '');
+  } catch { /* не JSON — разберём как список строк */ }
+  return raw.split(/\n+/).map((v) => v.trim()).filter(Boolean);
+}
+
+/** id и ключи известных отзывов: из data-атрибутов контейнера + с уже отрисованных карточек. */
+export function knownFromContainer(container: Element): { ids: Set<string>; keys: Set<string> } {
+  const ids = new Set<string>(readList(container, 'data-known-ids'));
+  const keys = new Set<string>(readList(container, 'data-known-keys'));
+  for (const card of Array.from(container.querySelectorAll('.rev-card'))) {
+    const id = card.getAttribute('data-review-id');
+    if (id) ids.add(id);
+  }
+  return { ids, keys };
 }
 
 function starRow(doc: Document, rating: number): HTMLElement {
@@ -105,6 +180,9 @@ export function buildCard(item: LiveReview, doc: Document = document): HTMLEleme
   const card = doc.createElement('article');
   card.className = 'rev-card rev-card--site';
   card.dataset.reviewLive = item.id;
+  /* id отзыва виден в разметке: по нему статика и живые отзывы не дублируют друг друга,
+     даже если текст в воркере и в файле отличается пробелами. */
+  card.dataset.reviewId = item.id;
 
   card.append(starRow(doc, item.rating));
 
@@ -143,7 +221,7 @@ function existingKeys(container: Element): Set<string> {
     const text = card.querySelector('.rev-text p')?.textContent ?? '';
     const label = card.querySelector('.rev-stars')?.getAttribute('aria-label') ?? '';
     const rating = Number((/Оценка (\d)/.exec(label) ?? [])[1] ?? 0);
-    if (author || text) keys.add(reviewKey({ author, text, rating }));
+    if (author || text) keys.add(reviewKeyHash({ author, text, rating }));
   }
   return keys;
 }
@@ -177,10 +255,12 @@ export async function mountLiveReviews(
   const grid = doc.querySelector<HTMLElement>('.rev-grid');
   if (!grid) return 0;
 
+  const known = knownFromContainer(grid);
   const existing = existingKeys(grid);
+  for (const key of known.keys) existing.add(key);
   const items = await fetchLive(base, options);
   if (!items.length) return 0;
-  const fresh = pickNew(items, existing, options.limit ?? 50);
+  const fresh = pickNew(items, existing, options.limit ?? 50, known.ids);
   if (!fresh.length) return 0;
 
   /* Новые сверху: вставляем перед первой карточкой, сохраняя порядок списка. */
@@ -242,10 +322,12 @@ export async function mountHomeReviews(
   const track = doc.querySelector<HTMLElement>('[data-home-reviews-track]');
   if (!track) return 0;
 
+  const known = knownFromContainer(track);
   const existing = existingKeys(track);
+  for (const key of known.keys) existing.add(key);
   const items = await fetchLive(base, options);
   if (!items.length) return 0;
-  const fresh = pickNew(items, existing, options.limit ?? 6);
+  const fresh = pickNew(items, existing, options.limit ?? 6, known.ids);
   if (!fresh.length) return 0;
 
   const placeholder = track.querySelector('.rev-card--yandex');
