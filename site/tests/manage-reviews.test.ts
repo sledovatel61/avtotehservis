@@ -9,7 +9,8 @@ import {parseReviewsFile} from '../src/shared/reviews-schema.ts';
 const sample=()=>({updated_at:'2026-11-19',future:{ok:true},items:[
  {id:'r-2026-11-18-001',author:'Павел И.',text:'Замечательная работа и прекрасный сервис.',rating:5,source:'site',source_url:null,published_at:'2026-11-18',status:'hidden',demo:false,extra:'keep'},
  {id:'r-2026-11-19-001',author:'Марина С.',text:'Благодарю за качественную работу мастеров.',rating:4,source:'demo',source_url:null,published_at:'2026-11-19',status:'published',demo:true}]});
-async function setup(initial:any=sample()){
+async function setup(initial:any=sample(),config:any={token:'',base:'https://ats-leads.ats439.workers.dev'}){
+ configureReviews(config);
  const dom=new JSDOM('<section id="root"></section>',{url:'https://example.test/avtotehservis/manage/',runScripts:'dangerously'});
  const previous={window:globalThis.window,document:globalThis.document};Object.assign(globalThis,{window:dom.window,document:dom.window.document});
  const root=dom.window.document.querySelector('#root') as HTMLElement;let doc:any=structuredClone(initial),commits=0,count=0,deletedOnly=false,confirmText='';dom.window.confirm=(text?:string)=>{confirmText=text||'';return true;};
@@ -198,4 +199,60 @@ test('96-2: ключ без права записи объясняется по-
   assert.match(c.q('.review-inbox-list').textContent!,/Ключ не подошёл/);
   (globalThis as any).fetch=original;
  }finally{c.close();}
+});
+
+function fileReviews(n=9){return {updated_at:'2026-11-19',items:Array.from({length:n},(_,i)=>({id:`file-${i}`,author:`Клиент ${i}`,text:`Отзыв из файла номер ${i} про хороший сервис.`,rating:5,source:'site',source_url:null,published_at:'2026-11-19',status:'published',demo:false}))};}
+function inboxReviews(n=8){return Array.from({length:n},(_,i)=>({id:`11111111-1111-4111-8111-${String(i).padStart(12,'0')}`,author:i===0?'Злой клиент':`Гость ${i}`,text:`Текст живого отзыва номер ${i}, достаточно длинный.`,rating:4,status:'published',createdAt:'2026-11-20T12:00:00.000Z'}));}
+function mockInbox(initial:any[],options:{failActions?:string[]}={}){
+ const previous=globalThis.fetch,calls:any[]=[];let items=structuredClone(initial);let failures=options.failActions||[];
+ (globalThis as any).fetch=async(url:string,init:any={})=>{calls.push({url,init});if(url.endsWith('/reviews/inbox'))return {ok:true,status:200,json:async()=>({items:structuredClone(items)})};if(url.endsWith('/reviews/moderate')){const body=JSON.parse(init.body);if(failures.includes(body.action))return {ok:false,status:503};items=body.action==='delete'?items.filter((item:any)=>item.id!==body.id):items.map((item:any)=>item.id===body.id?{...item,...(body.action==='edit'?{author:body.author,text:body.text,rating:body.rating,status:body.status}:{status:body.action==='hide'?'hidden':'published'})}:item);return {ok:true,status:200,json:async()=>({ok:true})};}throw Error(url);};
+ return {calls,get items(){return items;},setFailures(value:string[]){failures=value;},close(){globalThis.fetch=previous;}};
+}
+test('97-1: токен при подключении объединяет девять отзывов и восемь с сайта без потери при фильтрации',async()=>{
+ const net=mockInbox(inboxReviews());const c=await setup(fileReviews(),{token:'github_pat_test',base:'https://relay.test'});try{
+  assert.equal(net.calls[0].url,'https://relay.test/reviews/inbox');assert.equal(net.calls[0].init.headers.authorization,'Bearer github_pat_test');
+  assert.match(c.q('[data-review-filter="all"]').textContent!,/Все 17/);assert.match(c.q('[data-review-filter="published"]').textContent!,/Опубликованные 17/);
+  assert.equal(c.root.querySelectorAll('[data-review-id]').length,17);assert.equal(c.root.querySelectorAll('[data-live-review]').length,8);
+  assert.match(c.q('[data-review-id="11111111-1111-4111-8111-000000000000"]').textContent!,/Новый с сайта/);
+  for(const filter of ['published','hidden','demo','all'])c.click(`[data-review-filter="${filter}"]`);
+  assert.equal(c.root.querySelectorAll('[data-review-id]').length,17);assert.equal(c.root.querySelectorAll('[data-live-review]').length,8);
+  assert.equal((c.q('details.review-moderation') as HTMLDetailsElement).open,false);assert.match(c.q('details.review-moderation summary').textContent!,/Добавить отзыв вручную/);
+  await c.save();assert.equal(c.doc.items.length,17);assert.equal(c.doc.items.find((x:any)=>x.author==='Злой клиент').id,'11111111-1111-4111-8111-000000000000');assert.equal(c.commits,1);
+ }finally{c.close();net.close();configureReviews({token:''});}
+});
+test('97-2: скрытие и удаление живого отзыва сохраняются и в файле и на сайте',async()=>{
+ const net=mockInbox(inboxReviews());const c=await setup(fileReviews(),{token:'github_pat_test',base:'https://relay.test'});try{
+  const id='11111111-1111-4111-8111-000000000000';c.click(`[data-review-status="${id}"]`);assert.equal(net.calls.filter(x=>x.url.endsWith('/reviews/moderate')).length,0);await c.save();
+  assert.equal(c.doc.items.find((x:any)=>x.id===id).status,'hidden');assert.deepEqual(JSON.parse(net.calls.filter(x=>x.url.endsWith('/reviews/moderate'))[0].init.body),{id,action:'hide'});assert.equal(net.items.find((x:any)=>x.id===id).status,'hidden');
+  c.click(`[data-review-delete="${id}"]`);await c.save();assert.equal(c.doc.items.some((x:any)=>x.id===id),false);assert.deepEqual(JSON.parse(net.calls.filter(x=>x.url.endsWith('/reviews/moderate'))[1].init.body),{id,action:'delete'});assert.equal(net.items.some((x:any)=>x.id===id),false);
+ }finally{c.close();net.close();configureReviews({token:''});}
+});
+test('97-3: одинаковый отзыв не дублируется, скрытый статус с сайта учтён, локальные правки не теряются при обновлении',async()=>{
+ const file=fileReviews(1),live=inboxReviews(1);Object.assign(live[0],{author:file.items[0].author,text:file.items[0].text,rating:file.items[0].rating,status:'hidden'});
+ const net=mockInbox(live);const c=await setup(file,{token:'github_pat_test',base:'https://relay.test'});try{
+  assert.match(c.q('[data-review-filter="all"]').textContent!,/Все 1/);assert.match(c.q('[data-review-filter="hidden"]').textContent!,/Скрытые 1/);assert.equal(c.root.querySelectorAll('[data-review-id]').length,1);
+  c.click('[data-review-status="file-0"]');c.click('[data-inbox-load]');await new Promise(r=>setTimeout(r,0));assert.match(c.q('[data-review-filter="published"]').textContent!,/Опубликованные 1/);
+  await c.save();assert.equal(c.doc.items.length,1);assert.equal(c.doc.items[0].status,'published');assert.deepEqual(JSON.parse(net.calls.find(x=>x.url.endsWith('/reviews/moderate')).init.body),{id:live[0].id,action:'publish'});
+ }finally{c.close();net.close();configureReviews({token:''});}
+});
+test('97-4: ошибка сайта не отменяет запись в файл, повтор сохраняет ожидающее изменение',async()=>{
+ const net=mockInbox(inboxReviews(1),{failActions:['hide']});const c=await setup(fileReviews(0),{token:'github_pat_test',base:'https://relay.test'});try{
+  const id=inboxReviews(1)[0].id;c.click(`[data-review-status="${id}"]`);await c.save();assert.equal(c.doc.items[0].status,'hidden');assert.equal(c.commits,1);assert.match(c.q('[data-reviews-message]').textContent!,/не всё обновилось на сайте/);assert.equal((c.q('[data-save-reviews]') as HTMLButtonElement).disabled,false);
+  net.setFailures([]);await c.save();assert.equal(c.commits,1);assert.equal(net.items[0].status,'hidden');assert.equal((c.q('[data-save-reviews]') as HTMLButtonElement).disabled,true);
+ }finally{c.close();net.close();configureReviews({token:''});}
+});
+test('97-5: правка живого отзыва отправляет edit, отказ сервера не скрывается',async()=>{
+ const net=mockInbox(inboxReviews(1),{failActions:['edit']});const c=await setup(fileReviews(0),{token:'github_pat_test',base:'https://relay.test'});try{
+  const id=inboxReviews(1)[0].id;c.click(`[data-review-edit="${id}"]`);c.input('text','Исправленный текст отзыва, достаточно длинный.');c.click('[data-review-done]');await c.save();assert.equal(c.doc.items[0].text,'Исправленный текст отзыва, достаточно длинный.');assert.equal(JSON.parse(net.calls.find(x=>x.url.endsWith('/reviews/moderate')).init.body).action,'edit');assert.match(c.q('[data-reviews-message]').textContent!,/Правка текста на сайте/);assert.equal((c.q('[data-save-reviews]') as HTMLButtonElement).disabled,false);
+ }finally{c.close();net.close();configureReviews({token:''});}
+});
+test('97-6: обновление inbox не возвращает локально удалённый отзыв',async()=>{
+ const net=mockInbox(inboxReviews(1));const c=await setup(fileReviews(0),{token:'github_pat_test',base:'https://relay.test'});try{
+  const id=inboxReviews(1)[0].id;c.click(`[data-review-delete="${id}"]`);c.click('[data-inbox-load]');await new Promise(r=>setTimeout(r,0));assert.equal(c.root.querySelector(`[data-review-id="${id}"]`),null);await c.save();assert.equal(net.items.length,0);assert.equal(c.doc.items.length,0);
+ }finally{c.close();net.close();configureReviews({token:''});}
+});
+test('97-7: разные тексты в двух источниках не переписываются без решения владельца',async()=>{
+ const net=mockInbox(inboxReviews(1));const file=fileReviews(1);file.items[0].id=inboxReviews(1)[0].id;const c=await setup(file,{token:'github_pat_test',base:'https://relay.test'});try{
+  assert.equal(c.root.querySelectorAll('[data-review-id]').length,1);assert.equal((c.q('[data-save-reviews]') as HTMLButtonElement).disabled,true);await c.save();assert.equal(c.commits,0);assert.equal(net.calls.filter(x=>x.url.endsWith('/reviews/moderate')).length,0);
+ }finally{c.close();net.close();configureReviews({token:''});}
 });
