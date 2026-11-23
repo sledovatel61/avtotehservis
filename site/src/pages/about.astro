@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
 import { listCatalogServices } from '../server/services.ts';
 import { listPublishedCases } from '../server/content.ts';
+import { knownAttrs } from '../client/reviews-live.ts';
 /* круг 23 (§D) → круг 78: карта обложек переехала в ../server/case-covers.ts —
    её теперь использует и главная (раньше там были SVG-заглушки с бейджем «до / после») */
 import { CASE_COVERS } from '../server/case-covers.ts';
@@ -13,7 +14,7 @@ import { fmtDateRu, fmtDayMonthRu, plural } from '../server/format.ts';
 /* Круг 103: отзывы на «О компании» — тот же файл `site/content/reviews.json`, что на
    главной и /otzyvy. Раньше страница читала отзывы из БД, а в статической сборке их
    там нет — поэтому вместо карточек оставалась одна заглушка «читайте на Яндексе». */
-import { listPublishedSiteReviews, reviewsStats } from '../server/reviews-store.ts';
+import { listPublishedSiteReviews, readReviewsFile, reviewsStats } from '../server/reviews-store.ts';
 import { PRICE_DISCLAIMER_SHORT } from '../server/prices.ts';
 import { getPrices, fillPrices } from '../server/prices-store.ts';
 
@@ -27,6 +28,9 @@ const siteCases = listPublishedSiteCases(6);
 const realCases = siteCases.length > 0;
 const ABOUT_REVIEWS = 8;
 const allSiteReviews = listPublishedSiteReviews();
+/* Круг 106: id и ключи всех отзывов файла (включая скрытые) — по ним клиент отсекает
+   «воскрешение» отзыва из кэша воркера после скрытия в /manage/#reviews. */
+const knownReviews = knownAttrs(readReviewsFile().file.items);
 const reviews = allSiteReviews.slice(0, ABOUT_REVIEWS);
 const reviewStats = reviewsStats(allSiteReviews);
 const reviewAvg = reviewStats.average === null ? '' : reviewStats.average.toFixed(1).replace('.', ',');
@@ -310,7 +314,7 @@ const jsonLd = {
     </div>
     <div class="carousel reveal" data-carousel data-live-word="Отзыв" data-home-reviews>
       <div class="carousel-win">
-        <div class="carousel-track" data-home-reviews-track>
+        <div class="carousel-track" data-home-reviews-track data-known-ids={knownReviews.ids} data-known-keys={knownReviews.keys}>
           {reviews.length === 0 ? (
             <article class="rev-card rev-card--yandex">
               <div class="rev-text"><p>Читайте отзывы на Яндекс.Картах — там же оценки и схема проезда.</p></div>
@@ -320,7 +324,7 @@ const jsonLd = {
               </div>
             </article>
           ) : reviews.map((r) => (
-            <article class="rev-card rev-card--site">
+            <article class="rev-card rev-card--site" data-review-id={r.id}>
               <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating} из 5`}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <svg viewBox="0 0 24 24" aria-hidden="true" class={i < r.rating ? 'is-on' : ''}><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>

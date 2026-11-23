@@ -1,15 +1,20 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getSettings } from '../server/settings.ts';
-import { listPublishedSiteReviews } from '../server/reviews-store.ts';
+import { listPublishedSiteReviews, readReviewsFile } from '../server/reviews-store.ts';
 import { reviewsStats, REVIEW_LIMITS } from '../shared/reviews-schema.ts';
 import { plural } from '../server/format.ts';
 import { relayMode } from '../shared/leads-endpoint.ts';
+import { knownAttrs } from '../client/reviews-live.ts';
 
 const S = getSettings();
 /* Единственный источник данных — store Агента 10 (свой парсер reviews.json не пишем).
    PUBLIC_DEMO_REVIEWS=1 (его ставит сборка Pages) добавляет демо-примеры в выдачу. */
 const reviews = listPublishedSiteReviews();
+/* Круг 106: id и ключи ВСЕХ отзывов файла — включая скрытые владельцем. Скрытая карточка
+   не рендерится, поэтому без этого списка `reviews-live.ts` не знал про неё и снова
+   подтягивал отзыв из кэша воркера: скрытый мат «воскресал» на странице. */
+const known = knownAttrs(readReviewsFile().file.items);
 const stats = reviewsStats(reviews);
 const hasDemo = reviews.some((r) => r.demo);
 const yandexUrl = S.ratings[0]?.url || S.map_link;
@@ -97,9 +102,9 @@ const title = stats.count > 0
     </div>
 
     <>
-      <div class="rev-grid" data-reviews-grid>
+      <div class="rev-grid" data-reviews-grid data-known-ids={known.ids} data-known-keys={known.keys}>
         {reviews.map((r) => (
-          <article class="rev-card rev-card--site">
+          <article class="rev-card rev-card--site" data-review-id={r.id}>
             <span class="rev-stars" role="img" aria-label={`Оценка ${r.rating} из 5`}>
               {Array.from({ length: 5 }).map((_, i) => (
                 <svg viewBox="0 0 24 24" aria-hidden="true" class={i < r.rating ? 'is-on' : ''}><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>

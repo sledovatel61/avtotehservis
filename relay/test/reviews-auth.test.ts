@@ -17,8 +17,11 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit): P
   if (url.includes('api.github.com')) {
     if (github === 'down') throw new Error('github down');
     if (github === 'bad') return new Response(JSON.stringify({ message: 'Bad credentials' }), { status: 401 });
-    /* Настоящий GitHub отвечает 401 на всё, что не похоже на его ключ. */
-    if (!/^Bearer ghp_/.test(auth)) return new Response(JSON.stringify({ message: 'Bad credentials' }), { status: 401 });
+    /* Настоящий GitHub знает три вида ключей: classic (ghp_), fine-grained
+       (github_pat_) и служебные (gho_/ghu_/ghs_). Всё остальное — 401. */
+    if (!/^Bearer (ghp_|github_pat_|gho_|ghu_|ghs_)/.test(auth)) {
+      return new Response(JSON.stringify({ message: 'Bad credentials' }), { status: 401 });
+    }
     const permissions = github === 'read' ? { push: false, admin: false } : { push: true, admin: false };
     return new Response(JSON.stringify({ full_name: 'sledovatel61/avtotehservis', permissions }), { status: 200 });
   }
@@ -47,6 +50,10 @@ function env(over: Partial<Env> = {}): Env {
   };
 }
 
+/* Состояние мок-сервера сбрасываем перед каждым тестом: иначе упавший тест
+   оставит github='read' и посыплет следующие. */
+test.beforeEach(() => { github = 'push'; });
+
 const review = (over: Record<string, unknown> = {}) => ({
   author: 'Ольга В.',
   text: 'Меняли тормозные колодки, всё показали и объяснили заранее, спасибо большое.',
@@ -68,12 +75,24 @@ async function publish(e: Env): Promise<string> {
   return ((await res.json()) as { id: string }).id;
 }
 
-const moderate = (e: Env, id: string, headers: Record<string, string>, action = 'delete') =>
+const moderate = (
+  e: Env,
+  id: string,
+  headers: Record<string, string>,
+  action = 'delete',
+  extra: Record<string, unknown> = {},
+) =>
   worker.fetch(new Request('https://relay.test/reviews/moderate', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...headers },
-    body: JSON.stringify({ id, action }),
+    body: JSON.stringify({ id, action, ...extra }),
   }), e);
+
+/** Скрыть/показать/удалить по id с ключом GitHub по умолчанию. */
+const act = (e: Env, id: string, action: string, headers: Record<string, string> = { authorization: `Bearer ${PAT}` }) =>
+  moderate(e, id, headers, action);
+
+const PAT = 'github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345';
 
 const listAlive = async (e: Env): Promise<number> => {
   const res = await worker.fetch(new Request('https://relay.test/reviews'), e);
@@ -153,4 +172,150 @@ test('health говорит, что модерация открывается к
   const body = (await res.json()) as { reviewsModeration?: string; reviews?: boolean };
   assert.equal(body.reviews, true);
   assert.equal(body.reviewsModeration, 'github');
+});
+
+/* ------------------------------------------------------------------ *
+ *  Fine-grained ключи GitHub (github_pat_…)
+ *
+ *  У владельца в /manage/ лежит именно такой ключ. Права на репозиторий
+ *  проверяются ответом api.github.com, поэтому форма строки не важна —
+ *  важно, что он проходит и получает 200, а не 403.
+ * ------------------------------------------------------------------ */
+
+test('fine-grained ключ github_pat_ с правом записи пускает к модерации', async () => {
+  calls = [];
+  const e = env();
+  const id = await publish(e);
+
+  const res = await act(e, id, 'hide', { authorization: `Bearer ${PAT}` });
+  assert.equal(res.status, 200, 'fine-grained токен не должен получать 403');
+  assert.deepEqual(await res.json(), { ok: true });
+
+  const gh = calls.filter((c) => c.url.includes('api.github.com'));
+  assert.equal(gh.length, 1, 'ключ проверен у GitHub');
+  assert.equal(gh[0].auth, `Bearer ${PAT}`, 'ключ ушёл как есть, без обрезки по префиксу');
+});
+
+test('github_pat_ открывает и список для мастерской', async () => {
+  const e = env();
+  await publish(e);
+  const res = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { authorization: `Bearer ${PAT}` },
+  }), e);
+  assert.equal(res.status, 200);
+  assert.equal(((await res.json()) as { total: number }).total, 1);
+});
+
+test('github_pat_ без права записи — 403; мусор с похожим префиксом — 403', async () => {
+  const e = env();
+  const id = await publish(e);
+
+  /* Ключ не тот же, что в предыдущем тесте: проверенные ключи помнятся пять
+     минут, и по кэшу этот запрос прошёл бы без вопроса к GitHub. */
+  const noWrite = `${PAT}_nowrite`;
+  github = 'read';
+  assert.equal((await act(e, id, 'delete', { authorization: `Bearer ${noWrite}` })).status, 403);
+  github = 'push';
+
+  /* Ключ, который только притворяется ключом GitHub: 401 от API → 403. */
+  const fake = await act(e, id, 'delete', { authorization: 'Bearer pat_1234567890abcdef' });
+  assert.equal(fake.status, 403, 'форма префикса не заменяет проверку у GitHub');
+  assert.equal(await listAlive(e), 1, 'отзыв на месте');
+});
+
+/* ------------------------------------------------------------------ *
+ *  action: 'edit' — правка отзыва из единого редактора /manage/#reviews
+ * ------------------------------------------------------------------ */
+
+test('edit правит отзыв на месте с ключом GitHub', async () => {
+  calls = [];
+  const e = env();
+  const id = await publish(e);
+
+  const res = await moderate(e, id, { authorization: `Bearer ${PAT}` }, 'edit', {
+    author: 'Ольга В.',
+    text: 'Уточняю отзыв: колодки поменяли за час, цена совпала с той, что назвали заранее.',
+    rating: 4,
+  });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { ok: true });
+
+  const inbox = await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { authorization: `Bearer ${PAT}` },
+  }), e);
+  const item = ((await inbox.json()) as { items: { id: string; author: string; rating: number; text: string; status: string }[] })
+    .items.find((x) => x.id === id);
+  assert.ok(item);
+  assert.equal(item.author, 'Ольга В.');
+  assert.equal(item.rating, 4);
+  assert.match(item.text, /Уточняю отзыв/);
+  assert.equal(item.status, 'published', 'статус остался прежним');
+});
+
+test('edit с неверными полями — 400 validation, отзыв не меняется', async () => {
+  const e = env();
+  const id = await publish(e);
+
+  const shortText = await moderate(e, id, { authorization: `Bearer ${PAT}` }, 'edit', {
+    author: 'Ольга В.', text: 'коротко', rating: 5,
+  });
+  assert.equal(shortText.status, 400);
+  const body = (await shortText.json()) as { error: string; fields: Record<string, string> };
+  assert.equal(body.error, 'validation');
+  assert.equal(body.fields.text, 'too_short');
+
+  const badRating = await moderate(e, id, { authorization: `Bearer ${PAT}` }, 'edit', {
+    author: 'Ольга В.', text: 'Достаточно длинный текст для проверки правки отзыва', rating: 9,
+  });
+  assert.equal(badRating.status, 400);
+  assert.equal(((await badRating.json()) as { fields: Record<string, string> }).fields.rating, 'out_of_range');
+
+  assert.equal(await listAlive(e), 1);
+});
+
+/* ------------------------------------------------------------------ *
+ *  Идемпотентность: старые отзывы из файла не роняют админку в 404
+ * ------------------------------------------------------------------ */
+
+test('hide/publish/delete/edit по отзыву, которого нет в KV, — 200 noop', async () => {
+  const e = env();
+  const ghost = 'file-review-2019-07';
+
+  for (const action of ['hide', 'publish', 'delete']) {
+    const res = await act(e, ghost, action);
+    assert.equal(res.status, 200, action);
+    assert.deepEqual(await res.json(), { ok: true, noop: true }, action);
+  }
+
+  const edited = await moderate(e, ghost, { authorization: `Bearer ${PAT}` }, 'edit', {
+    author: 'Старый отзыв', text: 'Такой отзыв лежит в файле сайта, а в облаке его никогда не было.', rating: 5,
+  });
+  assert.equal(edited.status, 200);
+  assert.deepEqual(await edited.json(), { ok: true, noop: true });
+});
+
+test('повторное удаление уже удалённого отзыва — 200 noop, первый раз 200 ok', async () => {
+  const e = env();
+  const id = await publish(e);
+
+  const first = await act(e, id, 'delete');
+  assert.equal(first.status, 200);
+  assert.deepEqual(await first.json(), { ok: true });
+
+  const second = await act(e, id, 'delete');
+  assert.equal(second.status, 200);
+  assert.deepEqual(await second.json(), { ok: true, noop: true });
+  assert.equal(await listAlive(e), 0);
+});
+
+test('обход кэша: ?t= отдаёт no-store, без него — минуту', async () => {
+  const e = env();
+  await publish(e);
+
+  const warm = await worker.fetch(new Request('https://relay.test/reviews'), e);
+  assert.equal(warm.headers.get('cache-control'), 'public, max-age=60');
+
+  const fresh = await worker.fetch(new Request('https://relay.test/reviews?t=1732012345'), e);
+  assert.equal(fresh.status, 200);
+  assert.equal(fresh.headers.get('cache-control'), 'no-store');
 });

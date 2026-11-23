@@ -15,7 +15,13 @@
  * Доступ к модерации — тем же ключом GitHub, которым владелец входит в /manage/:
  *   GET  /reviews            — публичный список (только `published`), CORS открыт;
  *   GET  /reviews/inbox      — всё, включая скрытые;
- *   POST /reviews/moderate   — { id, action: 'hide'|'publish'|'delete' }.
+ *   POST /reviews/moderate   — { id, action: 'hide'|'publish'|'delete' }
+ *                              или { id, action:'edit', author, text, rating, status? }.
+ *
+ * Модерация идемпотентна: если отзыва с таким id в хранилище уже нет (например,
+ * это старый отзыв из файла сайта), отвечаем `200 { ok:true, noop:true }`, а не
+ * 404. Иначе единый список в /manage/#reviews ломался бы на первой же строке,
+ * которую нечего менять в облаке.
  *
  * Второй адрес и второй код не нужны: воркер проверяет `Authorization: Bearer
  * <ключ GitHub>` запросом к api.github.com и пускает только того, у кого есть
@@ -73,6 +79,12 @@ async function authoriseModeration(
   const secret = (env.REVIEWS_INBOX_KEY ?? '').trim();
   if (secret && sameKey(moderationKeyOf(req, url), secret)) return 'ok';
 
+  /* Ключ берём как есть, без проверки префикса: у GitHub три вида ключей —
+     `ghp_…` (classic), `github_pat_…` (fine-grained) и `gho_/ghu_/ghs_…`.
+     Решает не форма строки, а ответ `api.github.com/repos/<repo>`: он отдаёт
+     `permissions` для ЭТОГО репозитория, и `push: true` там означает ровно
+     «Contents: Read and write» у fine-grained токена. Поэтому токен с правом
+     записи проходит независимо от префикса, а мусор отсекается ответом 401. */
   const bearer = /^Bearer\s+(.+)$/i.exec((req.headers.get('authorization') ?? '').trim());
   const token = bearer?.[1]?.trim() ?? '';
   if (!token) return 'forbidden';
@@ -244,11 +256,28 @@ export async function listAll(store: LiveStore, limit = 100): Promise<LiveReview
   return out;
 }
 
-/** Скрыть, вернуть на сайт или удалить отзыв. */
+export type ModerateAction = 'hide' | 'publish' | 'delete';
+
+/** Поля, которые можно поправить в опубликованном отзыве. */
+export interface ReviewEdit {
+  author: string;
+  text: string;
+  rating: number;
+  status?: ReviewStatus;
+}
+
+/**
+ * Скрыть, вернуть на сайт, удалить или поправить отзыв.
+ *
+ * Возвращает `false`, если записи с таким id в хранилище нет. Это не ошибка:
+ * в едином списке /manage/#reviews лежат и отзывы из файла сайта, которых в KV
+ * никогда не было. Вызывающий отвечает на такое `200 { ok:true, noop:true }`,
+ * чтобы синхронизация списка проходила целиком и идемпотентно.
+ */
 export async function moderateReview(
   store: LiveStore,
   id: string,
-  action: 'hide' | 'publish' | 'delete',
+  action: ModerateAction,
 ): Promise<boolean> {
   const item = await readItem(store, id);
   if (!item) return false;
@@ -261,6 +290,58 @@ export async function moderateReview(
   }
   await store.put(itemKey(id), JSON.stringify({ ...item, status: action === 'hide' ? 'hidden' : 'published' }), REVIEW_TTL_SEC);
   return true;
+}
+
+/**
+ * Поправить отзыв на месте: имя, текст, оценка и (необязательно) статус.
+ * `createdAt` не трогаем — дата публикации остаётся прежней, иначе отзыв
+ * прыгал бы наверх списка после каждой правки.
+ */
+export async function editReview(
+  store: LiveStore,
+  id: string,
+  patch: ReviewEdit,
+): Promise<boolean> {
+  const item = await readItem(store, id);
+  if (!item) return false;
+  const next: LiveReview = {
+    ...item,
+    author: patch.author,
+    text: patch.text,
+    rating: patch.rating,
+    status: patch.status ?? item.status,
+  };
+  await store.put(itemKey(id), JSON.stringify(next), REVIEW_TTL_SEC);
+  return true;
+}
+
+/** Проверка правки: те же границы, что у формы на сайте. */
+export function validateEdit(record: Record<string, unknown>):
+  | { ok: true; value: ReviewEdit }
+  | { ok: false; fields: Record<string, string> } {
+  const fields: Record<string, string> = {};
+  const author = typeof record.author === 'string' ? record.author.trim() : '';
+  const text = typeof record.text === 'string' ? record.text.trim() : '';
+  const rawRating = record.rating;
+
+  if (author.length < 2) fields.author = 'too_short';
+  else if (author.length > 40) fields.author = 'too_long';
+
+  if (text.length < 20) fields.text = 'too_short';
+  else if (text.length > 1500) fields.text = 'too_long';
+
+  const rating = typeof rawRating === 'number' && Number.isInteger(rawRating) ? rawRating : NaN;
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) fields.rating = 'out_of_range';
+
+  const statusRaw = record.status;
+  let status: ReviewStatus | undefined;
+  if (statusRaw !== undefined && statusRaw !== null) {
+    if (statusRaw !== 'published' && statusRaw !== 'hidden') fields.status = 'out_of_range';
+    else status = statusRaw;
+  }
+
+  if (Object.keys(fields).length) return { ok: false, fields };
+  return { ok: true, value: { author, text, rating, ...(status ? { status } : {}) } };
 }
 
 /**
@@ -281,7 +362,14 @@ export async function handleLiveReviews(
   if (pathname === '/reviews') {
     if (req.method !== 'GET') return json({ error: 'not_found' }, 404);
     const items = await listPublished(store);
-    return json({ items, total: items.length }, 200, { 'cache-control': 'public, max-age=60' });
+    /* `?t=<метка>` — обход кэша: после модерации или отправки отзыва сайт
+       просит свежий список и должен увидеть изменения сразу, а не через минуту.
+       Без параметра оставляем минуту кэша, чтобы каждый показ страницы не
+       дёргал KV. */
+    const bust = url.searchParams.has('t');
+    return json({ items, total: items.length }, 200, {
+      'cache-control': bust ? 'no-store' : 'public, max-age=60',
+    });
   }
 
   const isInbox = pathname === '/reviews/inbox';
@@ -306,16 +394,27 @@ export async function handleLiveReviews(
   } catch {
     return json({ error: 'bad_json' }, 400);
   }
-  const record = (body ?? {}) as { id?: unknown; action?: unknown };
+  const record = (body ?? {}) as Record<string, unknown>;
   const id = typeof record.id === 'string' ? record.id.trim() : '';
   const action = record.action;
   if (!id) return json({ error: 'bad_id' }, 400);
-  if (action !== 'hide' && action !== 'publish' && action !== 'delete') {
+  if (action !== 'hide' && action !== 'publish' && action !== 'delete' && action !== 'edit') {
     return json({ error: 'bad_action' }, 400);
   }
+
+  if (action === 'edit') {
+    const parsed = validateEdit(record);
+    if (!parsed.ok) return json({ error: 'validation', fields: parsed.fields }, 400);
+    const ok = await editReview(store, id, parsed.value);
+    console.log('[reviews] moderate', id, action, parsed.value.text.length, ok);
+    /* Записи нет — например, правят отзыв из файла сайта. Админка не должна
+       падать в 404: отвечаем «менять нечего», и список синхронизируется дальше. */
+    return json(ok ? { ok } : { ok: true, noop: true });
+  }
+
   const ok = await moderateReview(store, id, action);
   console.log('[reviews] moderate', id, action, ok);
-  return json({ ok }, ok ? 200 : 404);
+  return json(ok ? { ok } : { ok: true, noop: true });
 }
 
 /** Что показать в `/health`: включена ли модерация отзывов. */

@@ -24,6 +24,10 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit): P
   const raw = init?.body;
   const body = raw ? JSON.parse(String(raw)) as Record<string, unknown> : {};
   calls.push({ url, body });
+  /* Проверка ключа GitHub для модерации: отвечаем «право записи есть». */
+  if (url.includes('api.github.com')) {
+    return new Response(JSON.stringify({ full_name: 'sledovatel61/avtotehservis', permissions: { push: true } }), { status: 200 });
+  }
   const status = /\/sendMessage|\/sendPhoto/.test(url) ? tgStatus : mailStatus;
   return new Response(JSON.stringify({ ok: status === 200 }), { status });
 }) as typeof fetch;
@@ -457,4 +461,184 @@ test('hashIp одинаков для одного адреса и разный �
   assert.notEqual(a, c);
   assert.match(a, /^[0-9a-f]{16}$/);
   assert.ok(!a.includes('203'));
+});
+
+/* ------------------------------------------------------------------ *
+ *  Модерация: редактирование, идемпотентные действия, обход кэша
+ *
+ *  Здесь же живёт живой список `/reviews` (reviews-live.ts), поэтому
+ *  модерацию проверяем отсюда: приём отзыва кладёт запись в тот же KV.
+ * ------------------------------------------------------------------ */
+
+/** Маленький KV: тот же контракт, что у Cloudflare, но в памяти теста. */
+function testKv(): NonNullable<Env['ATS_KV']> {
+  const map = new Map<string, string>();
+  return {
+    get: async (k: string) => map.get(k) ?? null,
+    put: async (k: string, v: string) => { map.set(k, v); },
+    delete: async (k: string) => { map.delete(k); },
+  } as unknown as NonNullable<Env['ATS_KV']>;
+}
+
+const modEnv = (over: Partial<Env> = {}): Env => env({ ATS_KV: testKv(), ...over });
+
+/** Опубликовать отзыв и получить его id. */
+async function publishOne(e: Env, text = uniqueText()): Promise<string> {
+  const r = await post(review({ text }), { env: e });
+  assert.equal(r.status, 201);
+  const j = await r.json() as { id: string; status: string };
+  assert.equal(j.status, 'published', 'отзыв с сайта публикуется сразу');
+  return j.id;
+}
+
+const moderate = (
+  e: Env,
+  body: Record<string, unknown>,
+): Promise<Response> => worker.fetch(new Request('https://relay.test/reviews/moderate', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json', authorization: 'Bearer ghp_test' },
+  body: JSON.stringify(body),
+}), e);
+
+const inbox = async (e: Env): Promise<{ items: { id: string; author: string; text: string; rating: number; status: string }[] }> =>
+  (await worker.fetch(new Request('https://relay.test/reviews/inbox', {
+    headers: { authorization: 'Bearer ghp_test' },
+  }), e)).json() as Promise<{ items: { id: string; author: string; text: string; rating: number; status: string }[] }>;
+
+test('edit правит отзыв на месте и не меняет дату публикации', async () => {
+  const e = modEnv();
+  const id = await publishOne(e);
+  const before = (await inbox(e)).items[0];
+
+  const res = await moderate(e, {
+    id, action: 'edit',
+    author: 'Ольга В.',
+    text: 'Поправили текст отзыва: всё было хорошо, но ждал на 10 минут дольше.',
+    rating: 4,
+  });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { ok: true });
+
+  const after = (await inbox(e)).items.find((i) => i.id === id);
+  assert.ok(after);
+  assert.equal(after.author, 'Ольга В.');
+  assert.equal(after.rating, 4);
+  assert.match(after.text, /Поправили текст/);
+  assert.equal(after.status, 'published');
+  assert.equal(after.id, before.id, 'тот же отзыв, а не новый');
+
+  /* На сайте тоже видно правку. */
+  const pub = await (await worker.fetch(new Request('https://relay.test/reviews?t=1'), e)).json() as { items: { id: string; rating: number }[] };
+  assert.equal(pub.items.find((i) => i.id === id)?.rating, 4);
+});
+
+test('edit с status:"hidden" убирает отзыв с сайта, не удаляя его', async () => {
+  const e = modEnv();
+  const id = await publishOne(e);
+
+  assert.equal((await moderate(e, {
+    id, action: 'edit', author: 'Павел И.', text: uniqueText('Спрятанный правкой отзыв, текст длиной больше двадцати'), rating: 5, status: 'hidden',
+  })).status, 200);
+
+  const pub = await (await worker.fetch(new Request('https://relay.test/reviews'), e)).json() as { total: number };
+  assert.equal(pub.total, 0, 'на сайте его нет');
+  const all = await inbox(e);
+  assert.equal(all.items.length, 1, 'в мастерской он остался');
+  assert.equal(all.items[0].status, 'hidden');
+});
+
+test('edit с плохими полями — 400 с кодами, запись не тронута', async () => {
+  const e = modEnv();
+  const id = await publishOne(e);
+  const before = (await inbox(e)).items[0];
+
+  const bad = [
+    { author: 'Я', text: uniqueText('Достаточно длинный текст для проверки'), rating: 5 },
+    { author: 'Я'.repeat(41), text: uniqueText('Достаточно длинный текст для проверки'), rating: 5 },
+    { author: 'Павел', text: 'слишком коротко', rating: 5 },
+    { author: 'Павел', text: 'я'.repeat(1501), rating: 5 },
+    { author: 'Павел', text: uniqueText('Достаточно длинный текст для проверки'), rating: 0 },
+    { author: 'Павел', text: uniqueText('Достаточно длинный текст для проверки'), rating: 6 },
+    { author: 'Павел', text: uniqueText('Достаточно длинный текст для проверки'), rating: 4.5 },
+    { author: 'Павел', text: uniqueText('Достаточно длинный текст для проверки'), rating: '5' },
+    { author: 'Павел', text: uniqueText('Достаточно длинный текст для проверки'), rating: 5, status: 'deleted' },
+  ];
+  for (const patch of bad) {
+    const res = await moderate(e, { id, action: 'edit', ...patch });
+    assert.equal(res.status, 400, JSON.stringify(patch).slice(0, 80));
+    const j = await res.json() as { error: string; fields?: Record<string, string> };
+    assert.equal(j.error, 'validation');
+    assert.ok(j.fields && Object.keys(j.fields).length > 0, 'коды полей на месте');
+  }
+
+  const after = (await inbox(e)).items[0];
+  assert.deepEqual(after, before, 'ни одна плохая правка не применилась');
+});
+
+test('edit/скрыть/удалить отзыва, которого нет в KV, — 200 noop, а не 404', async () => {
+  const e = modEnv();
+  const id = await publishOne(e);
+  const ghost = 'old-review-from-file-2024-01';
+
+  for (const body of [
+    { id: ghost, action: 'edit', author: 'Старый отзыв', text: uniqueText('Такой отзыв лежит в файле сайта, а не в хранилище'), rating: 5 },
+    { id: ghost, action: 'hide' },
+    { id: ghost, action: 'publish' },
+    { id: ghost, action: 'delete' },
+  ]) {
+    const res = await moderate(e, body);
+    assert.equal(res.status, 200, `${String(body.action)} по несуществующему id`);
+    assert.deepEqual(await res.json(), { ok: true, noop: true });
+  }
+
+  /* Повторное удаление уже удалённого — тоже noop, синхронизация идемпотентна. */
+  assert.deepEqual(await (await moderate(e, { id, action: 'delete' })).json(), { ok: true });
+  const again = await moderate(e, { id, action: 'delete' });
+  assert.equal(again.status, 200);
+  assert.deepEqual(await again.json(), { ok: true, noop: true });
+
+  /* Скрытие уже скрытого и публикация уже опубликованного проходят 200 ok. */
+  const hiddenId = await publishOne(e);
+  assert.deepEqual(await (await moderate(e, { id: hiddenId, action: 'hide' })).json(), { ok: true });
+  assert.deepEqual(await (await moderate(e, { id: hiddenId, action: 'hide' })).json(), { ok: true }, 'повторное скрытие');
+  assert.deepEqual(await (await moderate(e, { id: hiddenId, action: 'publish' })).json(), { ok: true });
+  assert.deepEqual(await (await moderate(e, { id: hiddenId, action: 'publish' })).json(), { ok: true }, 'повторная публикация');
+});
+
+test('модерация всё ещё требует ключ: без него — 403, правка не проходит', async () => {
+  const e = modEnv();
+  const id = await publishOne(e);
+  const res = await worker.fetch(new Request('https://relay.test/reviews/moderate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id, action: 'delete' }),
+  }), e);
+  assert.equal(res.status, 403);
+  assert.equal((await inbox(e)).items.length, 1);
+});
+
+test('неизвестное действие — 400, мусорный id — 400', async () => {
+  const e = modEnv();
+  assert.equal((await moderate(e, { id: 'x', action: 'approve' })).status, 400);
+  assert.equal((await moderate(e, { action: 'hide' })).status, 400);
+});
+
+test('GET /reviews?t=… отдаёт no-store, без параметра — минуту кэша', async () => {
+  const e = modEnv();
+  await publishOne(e);
+
+  const cached = await worker.fetch(new Request('https://relay.test/reviews'), e);
+  assert.equal(cached.status, 200);
+  assert.equal(cached.headers.get('cache-control'), 'public, max-age=60');
+
+  for (const url of ['https://relay.test/reviews?t=1732012345678', 'https://relay.test/reviews?t=']) {
+    const fresh = await worker.fetch(new Request(url), e);
+    assert.equal(fresh.status, 200);
+    assert.equal(fresh.headers.get('cache-control'), 'no-store', url);
+  }
+
+  /* Данные от параметра не зависят — он только про кэш. */
+  const a = await (await worker.fetch(new Request('https://relay.test/reviews'), e)).json() as { total: number };
+  const b = await (await worker.fetch(new Request('https://relay.test/reviews?t=1'), e)).json() as { total: number };
+  assert.equal(a.total, b.total);
 });
