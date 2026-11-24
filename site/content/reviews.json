@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-23",
+  "updated_at": "2026-11-24",
   "items": [
     {
       "id": "r-2026-09-06-001",
@@ -251,6 +251,17 @@
       "source": "site",
       "source_url": null,
       "published_at": "2026-11-23",
+      "status": "published",
+      "demo": false
+    },
+    {
+      "id": "01e9e53a-145a-4d22-822a-549921ff6d8a",
+      "author": "сергей",
+      "text": "Заезжал на шиномонтаж, ценник приемлемый по работе мастера вроде тоже вопросов не возникло. В общем все устроило. Спасибо.",
+      "rating": 5,
+      "source": "site",
+      "source_url": null,
+      "published_at": "2026-11-24",
       "status": "published",
       "demo": false
     }
