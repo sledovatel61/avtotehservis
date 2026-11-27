@@ -72,6 +72,7 @@ export function analyticsProblems(dist, ids = {}) {
   for (const file of pages) {
     const name = rel(dist, file);
     const html = readFileSync(file, 'utf8');
+    const isYandexVerification = /^yandex_[a-f0-9]{16}\.html$/.test(name);
 
     /* 1. В разметке не должно быть счётчиков — ни при пустых ID, ни при заданных. */
     for (const marker of COUNTER_MARKERS) {
@@ -79,6 +80,9 @@ export function analyticsProblems(dist, ids = {}) {
         problems.push(`${name}: в HTML есть «${marker}» — счётчик вставлен статически, согласие обходится`);
       }
     }
+
+    // Служебный файл подтверждения не подключает аналитику и не является страницей сайта.
+    if (isYandexVerification) continue;
 
     /* 2. Баннер согласия — на каждой публичной странице. */
     if (!html.includes('data-consent')) {
@@ -160,10 +164,16 @@ function selfTest() {
     expect('ID в data-атрибутах без тега — чисто', analyticsProblems(makeFixture(join(base, 'withid'), { ym: 'test123' }), { ym: 'test123' }), true);
     expect('ID задан, а data-ym нет — ловится', analyticsProblems(makeFixture(join(base, 'noid')), { ym: 'test123' }), false);
     expect('ID задан и тег в разметке — ловится', analyticsProblems(makeFixture(join(base, 'idcounter'), { counter: true, ym: 'test123' }), { ym: 'test123' }), false);
+    const verification = makeFixture(join(base, 'verification'), { ym: 'test123', ga: 'G-TEST' });
+    const yandexFile = join(verification, 'yandex_e6bfee02e51e16a3.html');
+    writeFileSync(yandexFile, '<html><body>Verification: e6bfee02e51e16a3</body></html>');
+    expect('файл подтверждения без баннера и ID — чисто', analyticsProblems(verification, { ym: 'test123', ga: 'G-TEST' }), true);
+    writeFileSync(yandexFile, '<html><head><script src="https://mc.yandex.ru/metrika/tag.js"></script></head><body>Verification: e6bfee02e51e16a3</body></html>');
+    expect('счётчик в файле подтверждения — ловится', analyticsProblems(verification, { ym: 'test123', ga: 'G-TEST' }), false);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
-  console.log(fail ? '\nself-test: FAIL' : '\nself-test: PASS (7/7)');
+  console.log(fail ? '\nself-test: FAIL' : '\nself-test: PASS (9/9)');
   return fail;
 }
 

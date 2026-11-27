@@ -24,14 +24,22 @@ async function walk(dir) {
     } else if (entry.name.endsWith('.html')) {
       pages++;
       const dom = new JSDOM(await readFile(file, 'utf8'));
-      assert.equal(dom.window.document.body.dataset.preview, 'true');
+      const rel = file.slice(root.length + 1).split('\\').join('/');
+      // Файл Яндекс Вебмастера — статический служебный HTML, а не страница Astro.
+      // Проверяем, что код в теле совпадает с именем файла, не требуя разметку сайта.
+      const yandexVerification = /^yandex_([a-f0-9]{16})\.html$/.exec(rel);
+      if (yandexVerification) {
+        assert.equal(dom.window.document.body.textContent.trim(), `Verification: ${yandexVerification[1]}`, `Invalid Yandex verification file: ${file}`);
+      } else {
+        assert.equal(dom.window.document.body.dataset.preview, 'true');
+      }
       /* Круг 89 (135): дефект «noindex на каждой странице боевой сборки» жил с
          переезда на домен и нашёлся только при приёмке. Гейт: на боевой сборке
          ни одна публичная страница не закрыта от индексации, на превью —
-         закрыта каждая. Служебное не проверяем: /manage/** (свой noindex),
-         404.html и meta-refresh заглушки переездов (noindex у них намеренный). */
-      const rel = file.slice(root.length + 1).split('\\').join('/');
+         закрыта каждая. Служебное не проверяем: файл подтверждения Яндекса,
+         /manage/** (свой noindex), 404.html и meta-refresh заглушки переездов. */
       const isServicePage =
+        Boolean(yandexVerification) ||
         rel.startsWith('manage/') ||
         rel === '404.html' ||
         Boolean(dom.window.document.querySelector('meta[http-equiv="refresh"]'));
@@ -108,6 +116,15 @@ async function walk(dir) {
   }
 }
 await walk(root);
+
+// Файл подтверждения должен попасть в корень публикации без изменений.
+const publicDir = resolve(import.meta.dirname, '../public');
+for (const entry of await readdir(publicDir, { withFileTypes: true })) {
+  if (!entry.isFile() || !/^yandex_[a-f0-9]{16}\.html$/.test(entry.name)) continue;
+  const builtFile = join(root, entry.name);
+  assert.ok(await exists(builtFile), `Missing Yandex verification file: ${builtFile}`);
+  assert.equal(await readFile(builtFile, 'utf8'), await readFile(join(publicDir, entry.name), 'utf8'), `Modified Yandex verification file: ${builtFile}`);
+}
 
 const cnamePath = join(root, 'CNAME');
 if (cnameHost) {
